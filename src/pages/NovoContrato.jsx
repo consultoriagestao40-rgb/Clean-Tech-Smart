@@ -99,24 +99,14 @@ export default function NovoContrato() {
         return;
       }
 
-      // 2. Construir o HTML
-      let htmlContent = `
-        <div style="padding: 40px; font-family: sans-serif; color: #333; line-height: 1.6;">
-          <h1 style="text-align: center; margin-bottom: 30px; font-size: 24px;">CONTRATO DE LOCAÇÃO - ${displayContract.code}</h1>
-          
-          <div style="margin-bottom: 20px; font-size: 14px;">
-            <p><strong>CLIENTE:</strong> ${displayContract.client_name}</p>
-            <p><strong>DATA:</strong> ${formatDate(displayContract.start_date)}</p>
-            <p><strong>VALOR TOTAL:</strong> ${formatCurrency(parseFloat(displayContract.total_rental_value) + parseFloat(displayContract.total_services_value))}</p>
-          </div>
-          
-          <hr style="border: 1px solid #eee; margin-bottom: 20px;" />
-      `;
+      // Cliente completo
+      const client = dbClients.find(c => String(c.id) === String(displayContract.client_id)) || {};
 
+      // 2. Construir o HTML
       // Mesclar cláusulas
       const clauses = typeof defaultTemplate.clauses === 'string' ? JSON.parse(defaultTemplate.clauses) : defaultTemplate.clauses;
       
-      clauses.forEach(clause => {
+      const clausesHtml = clauses.map(clause => {
         let content = clause.content || '';
         // Motor de substituição (Mail Merge)
         content = content.replace(/{{CLIENT_NAME}}/g, displayContract.client_name);
@@ -124,14 +114,138 @@ export default function NovoContrato() {
         content = content.replace(/{{START_DATE}}/g, formatDate(displayContract.start_date));
         content = content.replace(/{{TOTAL_VALUE}}/g, formatCurrency(parseFloat(displayContract.total_rental_value) + parseFloat(displayContract.total_services_value)));
         
-        htmlContent += `
-          <h3 style="margin-top: 20px; font-size: 16px;">${clause.title}</h3>
-          <p style="font-size: 14px; text-align: justify; margin-bottom: 15px;">${content.replace(/\n/g, '<br/>')}</p>
+        return `
+          <p style="font-weight: bold; margin-top: 15px; margin-bottom: 5px; text-transform: uppercase;">${clause.title}:</p>
+          <p style="margin-top: 0; margin-bottom: 10px;">${content.replace(/\n/g, '<br/>')}</p>
         `;
-      });
+      }).join('');
 
-      htmlContent += `
-          <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+      const equipmentsHtml = displayContract.equipments.map(eq => {
+         const eqData = dbEquipments.find(e => String(e.id) === String(eq.equipment_id)) || {};
+         const modData = dbModalities.find(m => String(m.id) === String(eq.modality_id)) || {};
+         return `
+          <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 8px 5px;">${eqData.name || 'Desconhecido'}</td>
+            <td style="padding: 8px 5px; text-align: right;">R$ 0,00</td>
+            <td style="padding: 8px 5px;">${eqData.serial_number || '-'}</td>
+            <td style="padding: 8px 5px;">${modData.name || '-'}</td>
+            <td style="padding: 8px 5px; text-align: right;">1,00</td>
+            <td style="padding: 8px 5px; text-align: right;">${formatCurrency(eq.price)}</td>
+            <td style="padding: 8px 5px;">${formatDate(eq.prev_retirada)}</td>
+          </tr>
+         `;
+      }).join('');
+
+      const servicesHtml = displayContract.services.length === 0 ? `
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+          <td colspan="2" style="padding: 8px 5px; text-align: center; color: #6b7280;">Nenhum serviço adicionado</td>
+        </tr>
+      ` : displayContract.services.map(svc => {
+        return `
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+          <td style="padding: 8px 5px;">${svc.description || 'Serviço'}</td>
+          <td style="padding: 8px 5px; text-align: right;">${formatCurrency(svc.price)}</td>
+        </tr>
+        `;
+      }).join('');
+
+      const totalContractValue = parseFloat(displayContract.total_rental_value || 0) + parseFloat(displayContract.total_services_value || 0);
+
+      let htmlContent = `
+        <div style="font-family: Arial, sans-serif; font-size: 12px; color: #000; background: #fff; padding: 10px;">
+          
+          <!-- Header -->
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="font-size: 22px; font-weight: bold; margin: 0;">Clean Tech Pro</h1>
+            <p style="margin: 2px 0; font-size: 11px;">CNPJ: 00.000.000/0001-00</p>
+            <p style="margin: 2px 0; font-size: 11px;">Curitiba - PR</p>
+            <p style="margin: 2px 0; font-size: 11px;">Telefone: 41984042835</p>
+          </div>
+          
+          <hr style="border: 0; border-top: 2px solid #000; margin-bottom: 20px;" />
+          
+          <!-- Título Contrato -->
+          <div style="text-align: center; margin-bottom: 25px;">
+            <h2 style="font-size: 16px; font-weight: bold; margin: 0; text-transform: uppercase;">CONTRATO DE BENS MÓVEIS - SEM OPERADOR</h2>
+            <p style="margin: 8px 0; font-weight: bold;">Contrato nº ${displayContract.code}</p>
+            <p style="margin: 8px 0;">Data: ${formatDate(displayContract.start_date)}</p>
+          </div>
+          
+          <!-- Dados do Cliente -->
+          <div style="background-color: #f3f4f6; padding: 15px; margin-bottom: 25px;">
+            <h3 style="font-size: 13px; font-weight: bold; margin-top: 0; margin-bottom: 10px; text-transform: uppercase;">DADOS DO CLIENTE</h3>
+            <p style="margin: 4px 0;"><strong>Cliente:</strong> ${client.name || displayContract.client_name || '-'}</p>
+            <p style="margin: 4px 0;"><strong>Código:</strong> ${client.id ? 'CLI-' + String(client.id).padStart(4, '0') : '-'}</p>
+            <p style="margin: 4px 0;"><strong>CNPJ/CPF:</strong> ${client.document || '-'}</p>
+            <p style="margin: 4px 0;"><strong>Endereço:</strong> ${client.address || '-'}</p>
+            <p style="margin: 4px 0;"><strong>Cidade:</strong> ${client.city || '-'}</p>
+            <p style="margin: 4px 0;"><strong>Telefone:</strong> ${client.phone || '-'}</p>
+            <p style="margin: 4px 0;"><strong>Email:</strong> ${client.email || '-'}</p>
+            <p style="margin: 4px 0;"><strong>Contato:</strong> ${client.contact || '-'}</p>
+          </div>
+          
+          <!-- Equipamentos -->
+          <h3 style="font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px;">EQUIPAMENTOS</h3>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 11px;">
+            <thead>
+              <tr style="background-color: #1f2937; color: #fff;">
+                <th style="padding: 8px 5px; text-align: left;">Equipamento</th>
+                <th style="padding: 8px 5px; text-align: right;">Vlr Venda</th>
+                <th style="padding: 8px 5px; text-align: left;">Num. Série</th>
+                <th style="padding: 8px 5px; text-align: left;">Tp Aluguel</th>
+                <th style="padding: 8px 5px; text-align: right;">Qtde</th>
+                <th style="padding: 8px 5px; text-align: right;">Vlr Previsto</th>
+                <th style="padding: 8px 5px; text-align: left;">Prev. Devolução</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${equipmentsHtml}
+            </tbody>
+            <tfoot>
+              <tr style="background-color: #f3f4f6; font-weight: bold;">
+                <td colspan="5" style="padding: 8px 5px; text-align: right;">Total dos Equipamentos:</td>
+                <td style="padding: 8px 5px; text-align: right;">${formatCurrency(displayContract.total_rental_value)}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+          
+          <!-- Serviços -->
+          <h3 style="font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 8px;">SERVIÇOS</h3>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 11px;">
+            <thead>
+              <tr style="background-color: #1f2937; color: #fff;">
+                <th style="padding: 8px 5px; text-align: left;">Descrição</th>
+                <th style="padding: 8px 5px; text-align: right;">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${servicesHtml}
+            </tbody>
+            <tfoot>
+              <tr style="background-color: #f3f4f6; font-weight: bold;">
+                <td style="padding: 8px 5px; text-align: right;">Total dos Serviços:</td>
+                <td style="padding: 8px 5px; text-align: right;">${formatCurrency(displayContract.total_services_value)}</td>
+              </tr>
+            </tfoot>
+          </table>
+          
+          <!-- Total Geral -->
+          <div style="background-color: #dcfce7; border: 1px solid #22c55e; padding: 12px; text-align: center; font-weight: bold; font-size: 15px; margin-bottom: 30px;">
+            VALOR TOTAL DO CONTRATO: ${formatCurrency(totalContractValue)}
+          </div>
+          
+          <!-- Cláusulas -->
+          <div style="text-align: center; margin-bottom: 10px;">
+            <h2 style="font-size: 16px; font-weight: bold; margin: 0; text-transform: uppercase;">CLÁUSULAS</h2>
+          </div>
+          <hr style="border: 0; border-top: 1px solid #000; margin-bottom: 20px;" />
+          
+          <div style="font-size: 11px; text-align: justify; line-height: 1.6;">
+            ${clausesHtml}
+          </div>
+
+          <div style="margin-top: 80px; display: flex; justify-content: space-between; page-break-inside: avoid;">
              <div style="border-top: 1px solid #333; width: 45%; text-align: center; padding-top: 10px;">Assinatura Contratante</div>
              <div style="border-top: 1px solid #333; width: 45%; text-align: center; padding-top: 10px;">Assinatura Contratada</div>
           </div>
@@ -142,10 +256,10 @@ export default function NovoContrato() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin:       10,
+        margin:       [10, 10, 10, 10],
         filename:     `Contrato_${displayContract.code}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
+        image:        { type: 'jpeg', quality: 1 }, // Qualidade máxima do JPEG
+        html2canvas:  { scale: 4, useCORS: true, logging: false }, // Scale 4 para altíssima resolução de texto
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
