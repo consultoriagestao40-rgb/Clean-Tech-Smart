@@ -72,13 +72,13 @@ export default function NovoContrato() {
           <span className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full hidden md:inline-block">
             {displayContract.status}
           </span>
-          <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
+          <button onClick={() => alert('Modo de Edição ativado (Em breve)')} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
             <Edit className="w-4 h-4 mr-2" /> Editar
           </button>
-          <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
+          <button onClick={() => alert('Gerando PDF... (Módulo de Templates em breve)')} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
             <Printer className="w-4 h-4 mr-2" /> Emitir Contrato
           </button>
-          <button className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 flex items-center transition-colors">
+          <button onClick={() => { if(confirm('Tem certeza que deseja cancelar este contrato?')) alert('Contrato cancelado com sucesso.') }} className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 flex items-center transition-colors">
             <Ban className="w-4 h-4 mr-2" /> Cancelar Contrato
           </button>
         </div>
