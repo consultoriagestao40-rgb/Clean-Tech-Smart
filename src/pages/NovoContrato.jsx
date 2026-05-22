@@ -255,35 +255,68 @@ export default function NovoContrato() {
         </div>
       `;
 
-      // 3. Abrir janela de impressão nativa para qualidade vetorial
+      // 3. Abrir janela de impressão nativa para qualidade vetorial e visualização prévia
       const printWindow = window.open('', '_blank');
       if (printWindow) {
         printWindow.document.write(`
           <!DOCTYPE html>
           <html>
           <head>
-            <title>Contrato - ${displayContract.code}</title>
+            <title>Visualização do Contrato - ${displayContract.code}</title>
             <style>
               @media print {
                 @page { margin: 15mm; }
-                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: #fff !important; padding: 0 !important; }
+                #print-btn-container { display: none !important; }
+                .page-container { box-shadow: none !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
               }
-              body { font-family: Arial, sans-serif; }
+              body { 
+                font-family: Arial, sans-serif; 
+                background-color: #e5e7eb; 
+                margin: 0; 
+                padding: 40px 20px; 
+              }
+              .page-container {
+                background-color: #fff;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 40px;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+                border-radius: 8px;
+              }
               table { width: 100%; border-collapse: collapse; }
               th, td { border: 1px solid #e5e7eb; padding: 8px 5px; text-align: left; }
               th { background-color: #1f2937 !important; color: #fff !important; }
+              
+              /* Floating Button */
+              #print-btn-container {
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                z-index: 1000;
+              }
+              #print-btn {
+                background-color: #2563eb;
+                color: #fff;
+                border: none;
+                padding: 14px 28px;
+                font-size: 16px;
+                font-weight: bold;
+                border-radius: 50px;
+                cursor: pointer;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+                transition: background-color 0.2s;
+              }
+              #print-btn:hover { background-color: #1d4ed8; }
             </style>
           </head>
           <body>
-            ${htmlContent}
-            <script>
-              window.onload = () => {
-                setTimeout(() => {
-                  window.print();
-                  window.close();
-                }, 500);
-              };
-            </script>
+            <div id="print-btn-container">
+              <button id="print-btn" onclick="window.print()">🖨️ Salvar PDF / Imprimir</button>
+            </div>
+            <div class="page-container">
+              ${htmlContent}
+            </div>
           </body>
           </html>
         `);
