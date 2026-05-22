@@ -20,6 +20,7 @@ export default function NovoContrato() {
   const [dbEquipments, setDbEquipments] = useState([]);
   const [dbModalities, setDbModalities] = useState([]);
   const [dbServices, setDbServices] = useState([]);
+  const [dbClients, setDbClients] = useState([]);
 
   // Estados dos modais (Formulários)
   const [eqForm, setEqForm] = useState({ equipment_id: '', modality_id: '', prev_entrega: '', prev_retirada: '', horimetro_saida: 0, horimetro_retorno: 0, price: '' });
@@ -35,18 +36,21 @@ export default function NovoContrato() {
 
   async function fetchCatalogs() {
     try {
-      const [eqRes, modRes, svcRes] = await Promise.all([
+      const [eqRes, modRes, svcRes, cliRes] = await Promise.all([
         fetch('/api/get-equipments'),
         fetch('/api/get-modalities'),
-        fetch('/api/get-services')
+        fetch('/api/get-services'),
+        fetch('/api/get-clients')
       ]);
       const eqData = await eqRes.json();
       const modData = await modRes.json();
       const svcData = await svcRes.json();
+      const cliData = await cliRes.json();
       
       if (eqData.equipments) setDbEquipments(eqData.equipments);
       if (modData.modalities) setDbModalities(modData.modalities);
       if (svcData.services) setDbServices(svcData.services);
+      if (cliData.clients) setDbClients(cliData.clients);
     } catch (error) {
       console.error('Erro ao buscar catálogos:', error);
     }
@@ -74,7 +78,7 @@ export default function NovoContrato() {
   const formatDateTime = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('pt-BR') : '-';
 
   const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
-  const [generalForm, setGeneralForm] = useState({ start_date: '', client_name: '' });
+  const [generalForm, setGeneralForm] = useState({ start_date: '', client_name: '', client_id: '' });
 
   const handleEmitContract = async () => {
     setIsGeneratingPDF(true);
@@ -171,7 +175,7 @@ export default function NovoContrato() {
     try {
       const payload = {
         id: updatedContract.id,
-        client_id: updatedContract.client_id || 1, // Mock para teste
+        client_id: updatedContract.client_id,
         client_name: updatedContract.client_name, // Passar o nome atualizado para salvar
         start_date: updatedContract.start_date,
         status: updatedContract.status,
@@ -201,7 +205,8 @@ export default function NovoContrato() {
     const updatedContract = {
       ...displayContract,
       start_date: generalForm.start_date || displayContract.start_date,
-      client_name: generalForm.client_name || displayContract.client_name
+      client_name: generalForm.client_name || displayContract.client_name,
+      client_id: generalForm.client_id || displayContract.client_id
     };
     setContract(updatedContract);
     handleSaveContract(updatedContract);
@@ -274,7 +279,11 @@ export default function NovoContrato() {
             {displayContract.status}
           </span>
           <button onClick={() => {
-            setGeneralForm({ start_date: displayContract.start_date ? new Date(displayContract.start_date).toISOString().split('T')[0] : '', client_name: displayContract.client_name });
+            setGeneralForm({ 
+              start_date: displayContract.start_date ? new Date(displayContract.start_date).toISOString().split('T')[0] : '', 
+              client_name: displayContract.client_name,
+              client_id: displayContract.client_id
+            });
             setIsGeneralModalOpen(true);
           }} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
             <Edit className="w-4 h-4 mr-2" /> Editar
@@ -587,14 +596,25 @@ export default function NovoContrato() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-1">Nome do Cliente</label>
-                <input 
-                  type="text" 
-                  value={generalForm.client_name} 
-                  onChange={e => setGeneralForm({...generalForm, client_name: e.target.value})} 
-                  placeholder="Nome do Cliente..." 
-                  className="w-full px-3 py-2 border rounded-lg" 
-                />
+                <label className="block text-sm font-semibold mb-1">Cliente</label>
+                <div className="flex space-x-2">
+                  <select 
+                    value={generalForm.client_id || ''} 
+                    onChange={e => {
+                      const sel = dbClients.find(c => String(c.id) === String(e.target.value));
+                      setGeneralForm({...generalForm, client_id: e.target.value, client_name: sel ? sel.name : ''});
+                    }}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  >
+                    <option value="">Selecione um cliente...</option>
+                    {dbClients.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                  <button onClick={() => navigate('/clientes')} className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium whitespace-nowrap transition-colors">
+                    + Novo
+                  </button>
+                </div>
               </div>
             </div>
             <div className="mt-6 flex justify-end space-x-3">
