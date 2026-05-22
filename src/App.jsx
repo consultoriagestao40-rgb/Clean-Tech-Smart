@@ -8,6 +8,7 @@ import Modalidades from './pages/Modalidades';
 import Templates from './pages/Templates';
 import Contratos from './pages/Contratos';
 import NovoContrato from './pages/NovoContrato';
+import Faturas from './pages/Faturas';
 
 function Placeholder({ title }) {
   return (
@@ -34,9 +35,9 @@ function App() {
           <Route path="contratos" element={<Contratos />} />
           <Route path="contratos/novo" element={<NovoContrato />} />
           <Route path="contratos/editar/:id" element={<NovoContrato />} />
+          <Route path="faturas" element={<Faturas />} />
           
           {/* Outras Rotas (Placeholders) */}
-          <Route path="faturas" element={<Placeholder title="Faturas" />} />
           <Route path="disponibilidade" element={<Placeholder title="Disponibilidade" />} />
           <Route path="relatorios" element={<Placeholder title="Relatórios" />} />
           <Route path="suporte" element={<Placeholder title="Suporte" />} />
