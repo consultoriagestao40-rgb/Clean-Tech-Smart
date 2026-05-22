@@ -10,7 +10,7 @@ export default function Clientes() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', document: '', email: '', phone: '', status: 'Ativo'
+    name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: ''
   });
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function Clientes() {
       
       if (response.ok) {
         setIsModalOpen(false);
-        setFormData({ name: '', document: '', email: '', phone: '', status: 'Ativo' });
+        setFormData({ name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: '' });
         fetchClients();
       } else {
         const errorData = await response.json();
@@ -129,8 +129,8 @@ export default function Clientes() {
                     <td className="px-6 py-4 font-medium text-gray-900">{client.name}</td>
                     <td className="px-6 py-4 text-gray-500">{client.document || '-'}</td>
                     <td className="px-6 py-4">
-                      <p className="text-gray-800">{client.email || '-'}</p>
-                      <p className="text-xs text-gray-500">{client.phone || '-'}</p>
+                      <p className="text-gray-900 font-medium">{client.contact_person || '-'}</p>
+                      <p className="text-xs text-gray-500">{client.email || '-'} | {client.phone || '-'}</p>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full ${client.status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
@@ -180,6 +180,16 @@ export default function Clientes() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Pessoa de Contato</label>
+                <input 
+                  type="text" 
+                  value={formData.contact_person}
+                  onChange={e => setFormData({...formData, contact_person: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Nome de quem atende"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
@@ -199,6 +209,15 @@ export default function Clientes() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Endereço Completo (para cálculo de KM)</label>
+                <textarea 
+                  value={formData.address}
+                  onChange={e => setFormData({...formData, address: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none h-20"
+                  placeholder="Rua, Número, Bairro, Cidade - Estado"
+                ></textarea>
               </div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button 

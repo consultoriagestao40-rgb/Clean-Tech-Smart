@@ -15,17 +15,17 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
-    const { name, document, email, phone, status } = req.body;
+    const { name, document, email, phone, status, contact_person, address } = req.body;
     
     if (!name) {
       return res.status(400).json({ error: 'O nome do cliente é obrigatório.' });
     }
 
     const result = await client.query(`
-      INSERT INTO clients (name, document, email, phone, status)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO clients (name, document, email, phone, status, contact_person, address)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *;
-    `, [name, document, email, phone, status || 'Ativo']);
+    `, [name, document, email, phone, status || 'Ativo', contact_person, address]);
     
     return res.status(200).json({ success: true, client: result.rows[0] });
   } catch (error) {

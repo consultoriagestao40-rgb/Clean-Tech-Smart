@@ -19,7 +19,7 @@ export default function Equipamentos() {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isSavingClient, setIsSavingClient] = useState(false);
   const [clientFormData, setClientFormData] = useState({
-    name: '', document: '', email: '', phone: '', status: 'Ativo'
+    name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: ''
   });
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function Equipamentos() {
       if (response.ok) {
         const data = await response.json();
         setIsClientModalOpen(false);
-        setClientFormData({ name: '', document: '', email: '', phone: '', status: 'Ativo' });
+        setClientFormData({ name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: '' });
         await fetchClients();
         // Auto-select the newly created client
         setFormData(prev => ({ ...prev, client_id: data.client.id }));
@@ -321,6 +321,10 @@ export default function Equipamentos() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Documento (CPF/CNPJ)</label>
                 <input type="text" value={clientFormData.document} onChange={e => setClientFormData({...clientFormData, document: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Pessoa de Contato</label>
+                <input type="text" value={clientFormData.contact_person} onChange={e => setClientFormData({...clientFormData, contact_person: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Nome de quem atende" />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
@@ -330,6 +334,10 @@ export default function Equipamentos() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
                   <input type="text" value={clientFormData.phone} onChange={e => setClientFormData({...clientFormData, phone: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Endereço Completo</label>
+                <textarea value={clientFormData.address} onChange={e => setClientFormData({...clientFormData, address: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none h-20" placeholder="Endereço para cálculo de KM"></textarea>
               </div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button type="button" onClick={() => setIsClientModalOpen(false)} className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
