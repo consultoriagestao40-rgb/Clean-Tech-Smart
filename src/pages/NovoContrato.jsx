@@ -131,7 +131,7 @@ export default function NovoContrato() {
       
       const opt = {
         margin:       10,
-        filename:     \`Contrato_\${displayContract.code}.pdf\`,
+        filename:     `Contrato_${displayContract.code}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -155,8 +155,83 @@ export default function NovoContrato() {
 
   // Mock dados caso seja novo (para não quebrar a tela)
   const displayContract = contract || {
-    code: 'Novo', start_date: new Date(), client_name: 'Selecione um cliente...', total_rental_value: 0, total_services_value: 0, total_venal_value: 0, status: 'Reserva',
+    id: null, code: 'Novo', start_date: new Date(), client_id: '', client_name: 'Selecione um cliente...', total_rental_value: 0, total_services_value: 0, total_venal_value: 0, status: 'Reserva',
     equipments: [], services: []
+  };
+
+  const handleSaveContract = async (updatedContract) => {
+    try {
+      const payload = {
+        id: updatedContract.id,
+        client_id: updatedContract.client_id || 1, // Mock para teste
+        start_date: updatedContract.start_date,
+        status: updatedContract.status,
+        equipments: updatedContract.equipments,
+        services: updatedContract.services,
+        total_rental_value: updatedContract.total_rental_value,
+        total_services_value: updatedContract.total_services_value,
+        total_venal_value: updatedContract.total_venal_value
+      };
+      
+      const res = await fetch('/api/save-contract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setContract({...updatedContract, ...data.contract});
+      }
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+    }
+  };
+
+  const addEquipment = () => {
+    if (!eqForm.equipment_id) {
+      alert("Selecione um equipamento.");
+      return;
+    }
+    const price = parseFloat(eqForm.price || 0);
+    const newEq = { ...eqForm, price };
+    const newEquipments = [...displayContract.equipments, newEq];
+    
+    const newTotalRental = newEquipments.reduce((acc, eq) => acc + (parseFloat(eq.price) || 0), 0);
+    
+    const updatedContract = {
+      ...displayContract,
+      equipments: newEquipments,
+      total_rental_value: newTotalRental
+    };
+    
+    setContract(updatedContract);
+    handleSaveContract(updatedContract);
+    setIsEqModalOpen(false);
+    setEqForm({ equipment_id: '', modality_id: '', prev_entrega: '', prev_retirada: '', horimetro_saida: 0, horimetro_retorno: 0, price: '' });
+  };
+
+  const addService = () => {
+    if (!svcForm.service_id) {
+      alert("Selecione um serviço.");
+      return;
+    }
+    const price = parseFloat(svcForm.price || 0);
+    const newSvc = { ...svcForm, price };
+    const newServices = [...displayContract.services, newSvc];
+    
+    const newTotalServices = newServices.reduce((acc, svc) => acc + (parseFloat(svc.price) || 0), 0);
+    
+    const updatedContract = {
+      ...displayContract,
+      services: newServices,
+      total_services_value: newTotalServices
+    };
+    
+    setContract(updatedContract);
+    handleSaveContract(updatedContract);
+    setIsSvcModalOpen(false);
+    setSvcForm({ service_id: '', price: '', description: '' });
   };
 
   return (
@@ -207,7 +282,7 @@ export default function NovoContrato() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-gray-100">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-6 border-t border-gray-100">
           <div>
             <p className="text-xs font-semibold text-gray-500 mb-1">Valor Total Locação</p>
             <p className="text-2xl font-bold text-blue-600">{formatCurrency(displayContract.total_rental_value)}</p>
@@ -219,6 +294,10 @@ export default function NovoContrato() {
           <div>
             <p className="text-xs font-semibold text-gray-500 mb-1">Valor Total Venal</p>
             <p className="text-2xl font-bold text-gray-900">{formatCurrency(displayContract.total_venal_value)}</p>
+          </div>
+          <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+            <p className="text-xs font-bold text-blue-800 mb-1">TOTAL MENSAL</p>
+            <p className="text-2xl font-black text-blue-700">{formatCurrency(parseFloat(displayContract.total_rental_value || 0) + parseFloat(displayContract.total_services_value || 0))}</p>
           </div>
         </div>
       </div>
@@ -411,11 +490,7 @@ export default function NovoContrato() {
             </div>
             <div className="mt-6 flex justify-end space-x-3">
               <button onClick={() => setIsEqModalOpen(false)} className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
-              <button onClick={() => {
-                // Aqui no futuro salvará no displayContract ou via API
-                alert('Equipamento vinculado no Front! (A função de Salvar Banco vem a seguir)');
-                setIsEqModalOpen(false);
-              }} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Adicionar</button>
+              <button onClick={addEquipment} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Adicionar</button>
             </div>
           </div>
         </div>
@@ -466,10 +541,7 @@ export default function NovoContrato() {
             </div>
             <div className="mt-6 flex justify-end space-x-3">
               <button onClick={() => setIsSvcModalOpen(false)} className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
-              <button onClick={() => {
-                alert('Serviço vinculado no Front!');
-                setIsSvcModalOpen(false);
-              }} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Adicionar</button>
+              <button onClick={addService} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Adicionar</button>
             </div>
           </div>
         </div>
