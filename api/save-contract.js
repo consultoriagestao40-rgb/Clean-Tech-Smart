@@ -33,6 +33,11 @@ export default async function handler(req, res) {
         WHERE id = $10
         RETURNING *;
       `, [client_id, start_date, status || 'Reserva', equipmentsJson, servicesJson, observations, total_rental_value, total_services_value, total_venal_value, id]);
+
+      await client.query(`
+        INSERT INTO contract_history (contract_id, action, status) VALUES ($1, $2, $3)
+      `, [id, 'Contrato editado', result.rows[0].status]);
+
     } else {
       // Gerar código sequencial
       const maxIdRes = await client.query('SELECT MAX(id) as max_id FROM contracts');
@@ -44,6 +49,10 @@ export default async function handler(req, res) {
         VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8, $9, $10)
         RETURNING *;
       `, [code, client_id, start_date, status || 'Reserva', equipmentsJson, servicesJson, observations, total_rental_value, total_services_value, total_venal_value]);
+
+      await client.query(`
+        INSERT INTO contract_history (contract_id, action, status) VALUES ($1, $2, $3)
+      `, [result.rows[0].id, 'Contrato criado', result.rows[0].status]);
     }
     
     return res.status(200).json({ success: true, contract: result.rows[0] });

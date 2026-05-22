@@ -1,364 +1,322 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, User, Calendar, FileText, Package, Wrench, Plus, Loader2, Trash2 } from 'lucide-react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Edit, Plus, Trash2, Printer, Ban, Package, Wrench, History, Loader2, Calendar } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 export default function NovoContrato() {
   const { id } = useParams();
   const navigate = useNavigate();
   
-  const [clients, setClients] = useState([]);
-  const [equipmentsList, setEquipmentsList] = useState([]);
-  const [modalitiesList, setModalitiesList] = useState([]);
+  const [contract, setContract] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [history, setHistory] = useState([]);
   
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [formData, setFormData] = useState({
-    id: id || null,
-    client_id: '',
-    start_date: new Date().toISOString().split('T')[0],
-    observations: '',
-    equipments: [], // { equipment_id, modality_id, price }
-    services: [] // { description, price }
-  });
+  // Modal States
+  const [isEqModalOpen, setIsEqModalOpen] = useState(false);
+  const [isSvcModalOpen, setIsSvcModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchInitialData();
-  }, []);
+    if (id) fetchDetails();
+    else {
+      // Setup para "Novo Contrato" vazio (MVP Simplificado para focar na UX de edição)
+      setIsLoading(false);
+    }
+  }, [id]);
 
-  async function fetchInitialData() {
+  async function fetchDetails() {
     setIsLoading(true);
     try {
-      const [cliRes, eqRes, modRes] = await Promise.all([
-        fetch('/api/get-clients'),
-        fetch('/api/get-equipments'),
-        fetch('/api/get-modalities')
-      ]);
-      const cliData = await cliRes.json();
-      const eqData = await eqRes.json();
-      const modData = await modRes.json();
-      
-      setClients(cliData.clients || []);
-      setEquipmentsList(eqData.equipments || []);
-      setModalitiesList(modData.modalities || []);
-      
-      // Se for edição, carregar contrato
-      if (id) {
-        // Implementação futura de edição:
-        // const res = await fetch(`/api/get-contract?id=${id}`);
-        // const data = await res.json();
-        // setFormData(data);
+      const res = await fetch(`/api/get-contract-details?id=${id}`);
+      const data = await res.json();
+      if (data.contract) {
+        setContract(data.contract);
+        setInvoices(data.invoices || []);
+        setHistory(data.history || []);
       }
-      
     } catch (error) {
-      console.error('Erro ao buscar dados:', error);
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
   }
 
-  const addEquipment = () => {
-    setFormData(prev => ({
-      ...prev,
-      equipments: [...prev.equipments, { equipment_id: '', modality_id: '', price: 0 }]
-    }));
+  const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+  const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString('pt-BR') : '-';
+  const formatDateTime = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('pt-BR') : '-';
+
+  if (isLoading) return <div className="flex justify-center p-20"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>;
+
+  // Mock dados caso seja novo (para não quebrar a tela)
+  const displayContract = contract || {
+    code: 'Novo', start_date: new Date(), client_name: 'Selecione um cliente...', total_rental_value: 0, total_services_value: 0, total_venal_value: 0, status: 'Reserva',
+    equipments: [], services: []
   };
-
-  const updateEquipment = (index, field, value) => {
-    const newEq = [...formData.equipments];
-    newEq[index][field] = value;
-    setFormData(prev => ({ ...prev, equipments: newEq }));
-  };
-
-  const removeEquipment = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      equipments: prev.equipments.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addService = () => {
-    setFormData(prev => ({
-      ...prev,
-      services: [...prev.services, { description: '', price: 0 }]
-    }));
-  };
-
-  const updateService = (index, field, value) => {
-    const newSvc = [...formData.services];
-    newSvc[index][field] = value;
-    setFormData(prev => ({ ...prev, services: newSvc }));
-  };
-
-  const removeService = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      services: prev.services.filter((_, i) => i !== index)
-    }));
-  };
-
-  const calculateTotals = () => {
-    const total_rental_value = formData.equipments.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
-    const total_services_value = formData.services.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
-    return { total_rental_value, total_services_value, total_venal_value: 0 };
-  };
-
-  const handleSave = async () => {
-    if (!formData.client_id) return alert('Selecione um cliente.');
-    
-    setIsSaving(true);
-    const totals = calculateTotals();
-    
-    try {
-      const payload = {
-        ...formData,
-        ...totals
-      };
-
-      const response = await fetch('/api/save-contract', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      
-      if (response.ok) {
-        navigate('/contratos');
-      } else {
-        const errorData = await response.json();
-        alert('Erro ao salvar: ' + (errorData.error || 'Desconhecido'));
-      }
-    } catch (error) {
-      alert('Erro de rede.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  if (isLoading) {
-    return <div className="flex justify-center p-20"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>;
-  }
-
-  const { total_rental_value, total_services_value } = calculateTotals();
-  const grandTotal = total_rental_value + total_services_value;
 
   return (
-    <div className="font-sans text-gray-800 max-w-4xl mx-auto space-y-6 pb-20">
+    <div className="font-sans text-gray-800 max-w-5xl mx-auto space-y-6 pb-20">
       
-      <header className="flex items-center space-x-4 mb-6">
-        <button onClick={() => navigate('/contratos')} className="text-gray-400 hover:text-gray-600 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{id ? 'Editar Contrato' : 'Novo Contrato'}</h1>
-          <p className="text-sm text-gray-500">Crie ou edite um contrato de locação</p>
-        </div>
-      </header>
-
-      {/* DADOS DO CONTRATO */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex items-center space-x-2">
-          <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
-            <FileText className="w-5 h-5" />
-          </div>
+      {/* HEADER DE AÇÕES */}
+      <header className="flex items-center justify-between mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <div className="flex items-center space-x-4">
+          <button onClick={() => navigate('/contratos')} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
           <div>
-            <h2 className="font-bold text-gray-900">Dados do Contrato</h2>
-            <p className="text-xs text-gray-500">Preencha as informações básicas</p>
+            <h1 className="text-xl font-bold text-gray-900">{displayContract.code !== 'Novo' ? displayContract.code : 'Novo Contrato'}</h1>
+            <p className="text-sm text-gray-500">Detalhes do contrato</p>
           </div>
         </div>
         
-        <div className="p-6 space-y-5">
-          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center">
-            <Calendar className="w-4 h-4 mr-1" /> Informações Básicas
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Data do Contrato *</label>
-              <input 
-                type="date" 
-                value={formData.start_date}
-                onChange={e => setFormData({...formData, start_date: e.target.value})}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center">
-                <User className="w-4 h-4 mr-1" /> Cliente *
-              </label>
-              <select 
-                value={formData.client_id}
-                onChange={e => setFormData({...formData, client_id: e.target.value})}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-              >
-                <option value="">Selecione um cliente...</option>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
+        <div className="flex items-center space-x-3">
+          <span className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full hidden md:inline-block">
+            {displayContract.status}
+          </span>
+          <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
+            <Edit className="w-4 h-4 mr-2" /> Editar
+          </button>
+          <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
+            <Printer className="w-4 h-4 mr-2" /> Emitir Contrato
+          </button>
+          <button className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 flex items-center transition-colors">
+            <Ban className="w-4 h-4 mr-2" /> Cancelar Contrato
+          </button>
+        </div>
+      </header>
+
+      {/* INFORMAÇÕES GERAIS */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-1">Informações Gerais</h2>
+        <p className="text-sm text-gray-500 mb-6">Dados principais do contrato</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-1 flex items-center"><Calendar className="w-4 h-4 mr-1"/> Data do Contrato</p>
+            <p className="text-sm text-gray-900 font-medium">{formatDate(displayContract.start_date)}</p>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Observações</label>
-            <input 
-              type="text" 
-              placeholder="Notas do contrato"
-              value={formData.observations}
-              onChange={e => setFormData({...formData, observations: e.target.value})}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            />
+            <p className="text-xs font-semibold text-gray-500 mb-1">Cliente</p>
+            <p className="text-sm text-gray-900 font-medium">{displayContract.client_name}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-gray-100">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-1">Valor Total Locação</p>
+            <p className="text-2xl font-bold text-blue-600">{formatCurrency(displayContract.total_rental_value)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-1">Valor Total Serviços</p>
+            <p className="text-2xl font-bold text-blue-400">{formatCurrency(displayContract.total_services_value)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-1">Valor Total Venal</p>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(displayContract.total_venal_value)}</p>
           </div>
         </div>
       </div>
 
       {/* EQUIPAMENTOS */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg">
-              <Package className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900">Equipamentos</h2>
-              <p className="text-xs text-gray-500">Adicione os equipamentos deste contrato</p>
-            </div>
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 flex items-center"><Package className="w-5 h-5 mr-2 text-indigo-600"/> Equipamentos</h2>
+            <p className="text-sm text-gray-500 mt-1">Lista de equipamentos deste contrato</p>
           </div>
-          <button onClick={addEquipment} className="px-3 py-1.5 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 flex items-center">
-            <Plus className="w-4 h-4 mr-1" /> Adicionar
+          <button onClick={() => setIsEqModalOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center transition-colors">
+            <Plus className="w-4 h-4 mr-2" /> Adicionar Equipamento
           </button>
         </div>
-
-        <div className="p-6">
-          {formData.equipments.length === 0 ? (
-            <div className="text-center p-8 border border-dashed border-gray-200 rounded-xl bg-gray-50">
-              <Package className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-500 font-medium">Nenhum equipamento adicionado</p>
-              <p className="text-xs text-gray-400 mb-4">Clique no botão abaixo para adicionar equipamentos</p>
-              <button onClick={addEquipment} className="px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm font-medium hover:bg-gray-50 flex items-center mx-auto">
-                <Plus className="w-4 h-4 mr-2" /> Adicionar Equipamento
-              </button>
-            </div>
+        <div className="p-6 overflow-x-auto">
+          {displayContract.equipments.length === 0 ? (
+            <p className="text-center text-gray-400 text-sm">Nenhum equipamento adicionado ainda.</p>
           ) : (
-            <div className="space-y-4">
-              {formData.equipments.map((eq, idx) => (
-                <div key={idx} className="flex flex-col md:flex-row gap-3 items-start border p-4 rounded-lg relative bg-white">
-                  <div className="flex-1 w-full">
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Equipamento</label>
-                    <select 
-                      value={eq.equipment_id} 
-                      onChange={e => updateEquipment(idx, 'equipment_id', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 outline-none text-sm bg-white"
-                    >
-                      <option value="">Selecione...</option>
-                      {equipmentsList.map(e => <option key={e.id} value={e.id}>{e.brand} - {e.model}</option>)}
-                    </select>
-                  </div>
-                  <div className="w-full md:w-1/3">
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Modalidade</label>
-                    <select 
-                      value={eq.modality_id} 
-                      onChange={e => updateEquipment(idx, 'modality_id', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 outline-none text-sm bg-white"
-                    >
-                      <option value="">Selecione...</option>
-                      {modalitiesList.map(m => <option key={m.id} value={m.id}>{m.name} ({m.days_count} dias)</option>)}
-                    </select>
-                  </div>
-                  <div className="w-full md:w-1/4">
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Valor (R$)</label>
-                    <input 
-                      type="number" step="0.01" 
-                      value={eq.price} 
-                      onChange={e => updateEquipment(idx, 'price', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 outline-none text-sm"
-                    />
-                  </div>
-                  <button onClick={() => removeEquipment(idx)} className="mt-6 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
+            <table className="w-full text-left text-sm text-gray-600">
+              <thead className="border-b border-gray-200">
+                <tr>
+                  <th className="pb-3 font-semibold text-gray-500 text-xs">Equipamento</th>
+                  <th className="pb-3 font-semibold text-gray-500 text-xs">Modalidade</th>
+                  <th className="pb-3 font-semibold text-gray-500 text-xs">Prev. Entrega</th>
+                  <th className="pb-3 font-semibold text-gray-500 text-xs">Valor Locação</th>
+                  <th className="pb-3 font-semibold text-gray-500 text-xs text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayContract.equipments.map((eq, i) => (
+                  <tr key={i} className="border-b border-gray-50">
+                    <td className="py-4 font-medium text-gray-900">Eq ID: {eq.equipment_id}</td>
+                    <td className="py-4 text-blue-600 font-medium">Mod: {eq.modality_id}</td>
+                    <td className="py-4">{formatDate(displayContract.start_date)}</td>
+                    <td className="py-4 font-bold">{formatCurrency(eq.price)}</td>
+                    <td className="py-4 text-right">
+                      <button onClick={() => setIsEqModalOpen(true)} className="text-gray-400 hover:text-blue-500 mr-3"><Edit className="w-4 h-4 inline" /></button>
+                      <button className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4 inline" /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       </div>
 
       {/* SERVIÇOS */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="p-1.5 bg-green-100 text-green-600 rounded-lg">
-              <Wrench className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900">Serviços</h2>
-              <p className="text-xs text-gray-500">Adicione serviços adicionais ao contrato (opcional)</p>
-            </div>
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 flex items-center"><Wrench className="w-5 h-5 mr-2 text-green-600"/> Serviços</h2>
+            <p className="text-sm text-gray-500 mt-1">Serviços adicionais do contrato</p>
           </div>
-          <button onClick={addService} className="px-3 py-1.5 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 flex items-center">
-            <Plus className="w-4 h-4 mr-1" /> Adicionar
+          <button onClick={() => setIsSvcModalOpen(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center transition-colors">
+            <Plus className="w-4 h-4 mr-2" /> Adicionar Serviço
           </button>
         </div>
-
         <div className="p-6">
-          {formData.services.length === 0 ? (
-             <div className="text-center p-8 border border-dashed border-gray-200 rounded-xl bg-gray-50">
-              <Wrench className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-500 font-medium">Nenhum serviço adicionado</p>
-              <p className="text-xs text-gray-400 mb-4">Serviços são opcionais para o contrato</p>
-              <button onClick={addService} className="px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm font-medium hover:bg-gray-50 flex items-center mx-auto">
-                <Plus className="w-4 h-4 mr-2" /> Adicionar Serviço
-              </button>
-            </div>
+           {displayContract.services.length === 0 ? (
+            <p className="text-center text-gray-400 text-sm">Nenhum serviço adicionado ainda.</p>
           ) : (
-            <div className="space-y-4">
-              {formData.services.map((svc, idx) => (
-                <div key={idx} className="flex gap-3 items-start border p-4 rounded-lg bg-white">
-                  <div className="flex-1">
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Descrição</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ex: Treinamento Operacional"
-                      value={svc.description} 
-                      onChange={e => updateService(idx, 'description', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 outline-none text-sm"
-                    />
+            <ul className="space-y-4">
+              {displayContract.services.map((svc, i) => (
+                <li key={i} className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
+                  <div>
+                    <p className="font-bold text-gray-900 text-sm">{svc.description}</p>
                   </div>
-                  <div className="w-1/3">
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Valor (R$)</label>
-                    <input 
-                      type="number" step="0.01" 
-                      value={svc.price} 
-                      onChange={e => updateService(idx, 'price', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 outline-none text-sm"
-                    />
+                  <div className="flex items-center space-x-4">
+                    <span className="font-bold text-gray-900">{formatCurrency(svc.price)}</span>
+                    <button className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                   </div>
-                  <button onClick={() => removeService(idx)} className="mt-6 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       </div>
 
-      {/* FOOTER ACTIONS */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg flex justify-end items-center z-10 px-8">
-        <div className="mr-8 text-right hidden md:block">
-          <p className="text-sm text-gray-500">Valor Total Mensal</p>
-          <p className="text-xl font-bold text-blue-600">R$ {grandTotal.toFixed(2).replace('.', ',')}</p>
+      {/* HISTÓRICOS */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        <div className="p-6 border-b border-gray-100">
+           <h2 className="text-lg font-bold text-gray-900">Histórico de Cobranças</h2>
+           <p className="text-sm text-gray-500">Períodos faturados e valores recebidos</p>
         </div>
-        <div className="flex space-x-4">
-          <button onClick={() => navigate('/contratos')} className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
-            Cancelar
-          </button>
-          <button 
-            onClick={handleSave} 
-            disabled={isSaving}
-            className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors flex items-center"
-          >
-            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-            {isSaving ? 'Criando...' : 'Criar Contrato'}
-          </button>
+        <div className="p-6 text-center text-sm text-gray-500">
+          {invoices.length === 0 ? "Nenhuma fatura emitida ainda." : (
+            <ul className="text-left space-y-2">
+              {invoices.map(inv => (
+                <li key={inv.id} className="flex justify-between border-b pb-2">
+                  <span>{formatDate(inv.due_date)} - {inv.description}</span>
+                  <span className="font-bold">{formatCurrency(inv.amount)} - {inv.status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+           <h2 className="text-lg font-bold text-gray-900 flex items-center"><History className="w-5 h-5 mr-2 text-gray-600" /> Histórico de Atividades</h2>
+        </div>
+        <div className="p-6">
+          {history.length === 0 ? (
+            <p className="text-center text-sm text-gray-500">Sem atividades recentes.</p>
+          ) : (
+             <table className="w-full text-left text-sm text-gray-600">
+              <thead className="border-b border-gray-200">
+                <tr>
+                  <th className="pb-3 font-semibold text-gray-500 text-xs">Data/Hora</th>
+                  <th className="pb-3 font-semibold text-gray-500 text-xs">Ação</th>
+                  <th className="pb-3 font-semibold text-gray-500 text-xs">Status</th>
+                  <th className="pb-3 font-semibold text-gray-500 text-xs">Usuário</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map(h => (
+                  <tr key={h.id} className="border-b border-gray-50">
+                    <td className="py-4">{formatDateTime(h.created_at)}</td>
+                    <td className="py-4 font-medium text-gray-900">{h.action}</td>
+                    <td className="py-4"><span className="px-2 py-1 bg-gray-100 text-xs rounded-full">{h.status}</span></td>
+                    <td className="py-4">{h.user_name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* MODAL EQUIPAMENTO */}
+      {isEqModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+            <h2 className="text-xl font-bold mb-1">Editar Equipamento</h2>
+            <p className="text-sm text-gray-500 mb-6">Atualize as informações do equipamento no contrato</p>
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <p className="font-bold text-gray-900">A Gás (GLP)</p>
+                <p className="text-xs text-gray-500">Série: 0000012522256</p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Modalidade</label>
+                <select className="w-full px-3 py-2 border rounded-lg"><option>Anual</option></select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Previsão Entrega</label>
+                  <input type="date" className="w-full px-3 py-2 border rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Previsão Retirada</label>
+                  <input type="date" className="w-full px-3 py-2 border rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Horímetro Saída</label>
+                  <input type="number" defaultValue={0} className="w-full px-3 py-2 border rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Horímetro Retorno</label>
+                  <input type="number" defaultValue={0} className="w-full px-3 py-2 border rounded-lg" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Valor Locação</label>
+                <input type="text" defaultValue="R$ 1.300,00" className="w-full px-3 py-2 border rounded-lg" />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button onClick={() => setIsEqModalOpen(false)} className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
+              <button onClick={() => setIsEqModalOpen(false)} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Salvar Alterações</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SERVIÇO */}
+      {isSvcModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-1">Adicionar Serviço</h2>
+            <p className="text-sm text-gray-500 mb-6">Selecione um serviço do catálogo e configure os detalhes</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Serviço *</label>
+                <select className="w-full px-3 py-2 border rounded-lg"><option>Selecione um serviço...</option></select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Valor *</label>
+                <input type="text" defaultValue="R$ 0,00" className="w-full px-3 py-2 border rounded-lg" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Descrição</label>
+                <input type="text" placeholder="Detalhes adicionais do serviço" className="w-full px-3 py-2 border rounded-lg" />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button onClick={() => setIsSvcModalOpen(false)} className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
+              <button onClick={() => setIsSvcModalOpen(false)} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Adicionar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
