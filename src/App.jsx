@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './layouts/Layout';
 import Dashboard from './pages/Dashboard';
 import NewBudget from './pages/NewBudget';
+import Clientes from './pages/Clientes';
 
 function Placeholder({ title }) {
   return (
@@ -21,11 +22,11 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="servicos" element={<NewBudget />} />
+          <Route path="clientes" element={<Clientes />} />
           
           {/* Outras Rotas (Placeholders) */}
           <Route path="contratos" element={<Placeholder title="Contratos" />} />
           <Route path="faturas" element={<Placeholder title="Faturas" />} />
-          <Route path="clientes" element={<Placeholder title="Clientes" />} />
           <Route path="equipamentos" element={<Placeholder title="Equipamentos" />} />
           <Route path="modalidades" element={<Placeholder title="Modalidades" />} />
           <Route path="templates" element={<Placeholder title="Templates" />} />
