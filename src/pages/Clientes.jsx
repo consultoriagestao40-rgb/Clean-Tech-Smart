@@ -10,7 +10,7 @@ export default function Clientes() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: ''
+    id: null, name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: ''
   });
 
   useEffect(() => {
@@ -32,6 +32,25 @@ export default function Clientes() {
     }
   }
 
+  const handleEdit = (client) => {
+    setFormData({
+      id: client.id,
+      name: client.name || '',
+      document: client.document || '',
+      email: client.email || '',
+      phone: client.phone || '',
+      status: client.status || 'Ativo',
+      contact_person: client.contact_person || '',
+      address: client.address || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const openNewClient = () => {
+    setFormData({ id: null, name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: '' });
+    setIsModalOpen(true);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
@@ -44,7 +63,7 @@ export default function Clientes() {
       
       if (response.ok) {
         setIsModalOpen(false);
-        setFormData({ name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: '' });
+        setFormData({ id: null, name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: '' });
         fetchClients();
       } else {
         const errorData = await response.json();
@@ -74,7 +93,7 @@ export default function Clientes() {
         </div>
         <div className="flex space-x-3 mt-4 md:mt-0">
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={openNewClient}
             className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -138,7 +157,11 @@ export default function Clientes() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all mr-2" title="Editar cliente">
+                      <button 
+                        onClick={() => handleEdit(client)}
+                        className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all mr-2" 
+                        title="Editar cliente"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
                     </td>
@@ -155,7 +178,7 @@ export default function Clientes() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900">Novo Cliente</h2>
+              <h2 className="text-xl font-bold text-gray-900">{formData.id ? 'Editar Cliente' : 'Novo Cliente'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                 <X className="w-5 h-5" />
               </button>
