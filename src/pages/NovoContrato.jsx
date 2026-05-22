@@ -45,7 +45,7 @@ export default function NovoContrato() {
       // Se for edição, carregar contrato
       if (id) {
         // Implementação futura de edição:
-        // const res = await fetch(\`/api/get-contract?id=\${id}\`);
+        // const res = await fetch(`/api/get-contract?id=${id}`);
         // const data = await res.json();
         // setFormData(data);
       }

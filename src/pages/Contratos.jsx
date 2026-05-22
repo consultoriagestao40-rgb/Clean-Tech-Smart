@@ -147,7 +147,7 @@ export default function Contratos() {
                     <td className="px-4 py-4 text-right text-blue-600 font-medium">{formatCurrency(ctr.total_services_value)}</td>
                     <td className="px-4 py-4 text-center">
                       <button 
-                        onClick={() => navigate(\`/contratos/editar/\${ctr.id}\`)}
+                        onClick={() => navigate(`/contratos/editar/${ctr.id}`)}
                         className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" 
                         title="Editar Contrato"
                       >
