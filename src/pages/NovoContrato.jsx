@@ -9,22 +9,48 @@ export default function NovoContrato() {
   const [contract, setContract] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [history, setHistory] = useState([]);
-  
   const [isLoading, setIsLoading] = useState(true);
-
-  // Modal States
+  
   const [isEqModalOpen, setIsEqModalOpen] = useState(false);
   const [isSvcModalOpen, setIsSvcModalOpen] = useState(false);
 
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
+  // Dados dos catálogos
+  const [dbEquipments, setDbEquipments] = useState([]);
+  const [dbModalities, setDbModalities] = useState([]);
+  const [dbServices, setDbServices] = useState([]);
+
+  // Estados dos modais (Formulários)
+  const [eqForm, setEqForm] = useState({ equipment_id: '', modality_id: '', prev_entrega: '', prev_retirada: '', horimetro_saida: 0, horimetro_retorno: 0, price: '' });
+  const [svcForm, setSvcForm] = useState({ service_id: '', price: '', description: '' });
+
   useEffect(() => {
+    fetchCatalogs();
     if (id) fetchDetails();
     else {
-      // Setup para "Novo Contrato" vazio (MVP Simplificado para focar na UX de edição)
       setIsLoading(false);
     }
   }, [id]);
+
+  async function fetchCatalogs() {
+    try {
+      const [eqRes, modRes, svcRes] = await Promise.all([
+        fetch('/api/get-equipments'),
+        fetch('/api/get-modalities'),
+        fetch('/api/get-services')
+      ]);
+      const eqData = await eqRes.json();
+      const modData = await modRes.json();
+      const svcData = await svcRes.json();
+      
+      if (eqData.equipments) setDbEquipments(eqData.equipments);
+      if (modData.modalities) setDbModalities(modData.modalities);
+      if (svcData.services) setDbServices(svcData.services);
+    } catch (error) {
+      console.error('Erro ao buscar catálogos:', error);
+    }
+  }
 
   async function fetchDetails() {
     setIsLoading(true);
@@ -329,43 +355,67 @@ export default function NovoContrato() {
       {isEqModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold mb-1">Editar Equipamento</h2>
-            <p className="text-sm text-gray-500 mb-6">Atualize as informações do equipamento no contrato</p>
+            <h2 className="text-xl font-bold mb-1">Adicionar Equipamento</h2>
+            <p className="text-sm text-gray-500 mb-6">Selecione o equipamento e defina os detalhes</p>
             <div className="space-y-4">
-              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <p className="font-bold text-gray-900">A Gás (GLP)</p>
-                <p className="text-xs text-gray-500">Série: 0000012522256</p>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Equipamento *</label>
+                <select 
+                  value={eqForm.equipment_id} 
+                  onChange={e => setEqForm({...eqForm, equipment_id: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="">Selecione um equipamento...</option>
+                  {dbEquipments.map(eq => (
+                    <option key={eq.id} value={eq.id}>
+                      {eq.name} (Série: {eq.serial_number}) - Disp: {eq.status}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-1">Modalidade</label>
-                <select className="w-full px-3 py-2 border rounded-lg"><option>Anual</option></select>
+                <label className="block text-sm font-semibold mb-1">Modalidade *</label>
+                <select 
+                  value={eqForm.modality_id} 
+                  onChange={e => setEqForm({...eqForm, modality_id: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="">Selecione a modalidade...</option>
+                  {dbModalities.map(mod => (
+                    <option key={mod.id} value={mod.id}>{mod.name}</option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-1">Previsão Entrega</label>
-                  <input type="date" className="w-full px-3 py-2 border rounded-lg" />
+                  <input type="date" value={eqForm.prev_entrega} onChange={e => setEqForm({...eqForm, prev_entrega: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1">Previsão Retirada</label>
-                  <input type="date" className="w-full px-3 py-2 border rounded-lg" />
+                  <input type="date" value={eqForm.prev_retirada} onChange={e => setEqForm({...eqForm, prev_retirada: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1">Horímetro Saída</label>
-                  <input type="number" defaultValue={0} className="w-full px-3 py-2 border rounded-lg" />
+                  <input type="number" value={eqForm.horimetro_saida} onChange={e => setEqForm({...eqForm, horimetro_saida: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1">Horímetro Retorno</label>
-                  <input type="number" defaultValue={0} className="w-full px-3 py-2 border rounded-lg" />
+                  <input type="number" value={eqForm.horimetro_retorno} onChange={e => setEqForm({...eqForm, horimetro_retorno: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-1">Valor Locação</label>
-                <input type="text" defaultValue="R$ 1.300,00" className="w-full px-3 py-2 border rounded-lg" />
+                <label className="block text-sm font-semibold mb-1">Valor Locação (R$)</label>
+                <input type="number" step="0.01" value={eqForm.price} onChange={e => setEqForm({...eqForm, price: e.target.value})} className="w-full px-3 py-2 border rounded-lg" placeholder="Ex: 1500.00" />
               </div>
             </div>
             <div className="mt-6 flex justify-end space-x-3">
               <button onClick={() => setIsEqModalOpen(false)} className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
-              <button onClick={() => setIsEqModalOpen(false)} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Salvar Alterações</button>
+              <button onClick={() => {
+                // Aqui no futuro salvará no displayContract ou via API
+                alert('Equipamento vinculado no Front! (A função de Salvar Banco vem a seguir)');
+                setIsEqModalOpen(false);
+              }} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Adicionar</button>
             </div>
           </div>
         </div>
@@ -380,20 +430,46 @@ export default function NovoContrato() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold mb-1">Serviço *</label>
-                <select className="w-full px-3 py-2 border rounded-lg"><option>Selecione um serviço...</option></select>
+                <select 
+                  value={svcForm.service_id} 
+                  onChange={e => {
+                    const sel = dbServices.find(s => String(s.id) === String(e.target.value));
+                    setSvcForm({...svcForm, service_id: e.target.value, price: sel ? sel.default_price : ''});
+                  }}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="">Selecione um serviço...</option>
+                  {dbServices.map(svc => (
+                    <option key={svc.id} value={svc.id}>{svc.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-1">Valor *</label>
-                <input type="text" defaultValue="R$ 0,00" className="w-full px-3 py-2 border rounded-lg" />
+                <label className="block text-sm font-semibold mb-1">Valor (R$) *</label>
+                <input 
+                  type="number" step="0.01" 
+                  value={svcForm.price} 
+                  onChange={e => setSvcForm({...svcForm, price: e.target.value})} 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-1">Descrição</label>
-                <input type="text" placeholder="Detalhes adicionais do serviço" className="w-full px-3 py-2 border rounded-lg" />
+                <label className="block text-sm font-semibold mb-1">Descrição Adicional</label>
+                <input 
+                  type="text" 
+                  value={svcForm.description} 
+                  onChange={e => setSvcForm({...svcForm, description: e.target.value})} 
+                  placeholder="Detalhes adicionais..." 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                />
               </div>
             </div>
             <div className="mt-6 flex justify-end space-x-3">
               <button onClick={() => setIsSvcModalOpen(false)} className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
-              <button onClick={() => setIsSvcModalOpen(false)} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Adicionar</button>
+              <button onClick={() => {
+                alert('Serviço vinculado no Front!');
+                setIsSvcModalOpen(false);
+              }} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Adicionar</button>
             </div>
           </div>
         </div>
