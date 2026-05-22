@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import NewBudget from './pages/NewBudget';
 import Clientes from './pages/Clientes';
 import Equipamentos from './pages/Equipamentos';
+import Modalidades from './pages/Modalidades';
 
 function Placeholder({ title }) {
   return (
@@ -25,11 +26,11 @@ function App() {
           <Route path="servicos" element={<NewBudget />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="equipamentos" element={<Equipamentos />} />
+          <Route path="modalidades" element={<Modalidades />} />
           
           {/* Outras Rotas (Placeholders) */}
           <Route path="contratos" element={<Placeholder title="Contratos" />} />
           <Route path="faturas" element={<Placeholder title="Faturas" />} />
-          <Route path="modalidades" element={<Placeholder title="Modalidades" />} />
           <Route path="templates" element={<Placeholder title="Templates" />} />
           <Route path="disponibilidade" element={<Placeholder title="Disponibilidade" />} />
           <Route path="relatorios" element={<Placeholder title="Relatórios" />} />
