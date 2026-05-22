@@ -221,11 +221,11 @@ export default function Faturas() {
                     <td className="py-4 text-right font-bold text-gray-900">{formatCurrency(inv.amount)}</td>
                     <td className="py-4">{formatDate(inv.due_date)}</td>
                     <td className="py-4">
-                      <span className={\`px-2 py-1 text-xs font-semibold rounded-full \${
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                         inv.status === 'Paga' ? 'bg-green-100 text-green-700' :
                         inv.status === 'Vencida' ? 'bg-red-100 text-red-700' :
                         'bg-yellow-100 text-yellow-700'
-                      }\`}>
+                      }`}>
                         {inv.status}
                       </span>
                     </td>
