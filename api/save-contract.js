@@ -37,7 +37,7 @@ export default async function handler(req, res) {
       // Gerar código sequencial
       const maxIdRes = await client.query('SELECT MAX(id) as max_id FROM contracts');
       const nextId = (maxIdRes.rows[0].max_id || 0) + 1;
-      const code = \`CTR-\${String(nextId).padStart(4, '0')}\`;
+      const code = `CTR-${String(nextId).padStart(4, '0')}`;
 
       result = await client.query(`
         INSERT INTO contracts (code, client_id, start_date, status, equipments, services, observations, total_rental_value, total_services_value, total_venal_value)
