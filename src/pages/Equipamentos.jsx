@@ -15,6 +15,13 @@ export default function Equipamentos() {
     ownership_type: 'proprio', supplier_name: '', client_id: '', status: 'Disponível'
   });
 
+  // Client Modal state
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [isSavingClient, setIsSavingClient] = useState(false);
+  const [clientFormData, setClientFormData] = useState({
+    name: '', document: '', email: '', phone: '', status: 'Ativo'
+  });
+
   useEffect(() => {
     fetchEquipments();
     fetchClients();
@@ -66,6 +73,35 @@ export default function Equipamentos() {
       alert('Erro de rede ao salvar.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveClient = async (e) => {
+    e.preventDefault();
+    setIsSavingClient(true);
+    try {
+      const response = await fetch('/api/save-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(clientFormData)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsClientModalOpen(false);
+        setClientFormData({ name: '', document: '', email: '', phone: '', status: 'Ativo' });
+        await fetchClients();
+        // Auto-select the newly created client
+        setFormData(prev => ({ ...prev, client_id: data.client.id }));
+      } else {
+        const errorData = await response.json();
+        alert('Erro ao salvar cliente: ' + (errorData.error || 'Erro desconhecido'));
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de rede ao salvar cliente.');
+    } finally {
+      setIsSavingClient(false);
     }
   };
 
@@ -234,10 +270,20 @@ export default function Equipamentos() {
                 {formData.ownership_type === 'cliente' && (
                   <div className="animate-in fade-in slide-in-from-top-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Qual o cliente dono? *</label>
-                    <select required value={formData.client_id} onChange={e => setFormData({...formData, client_id: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
-                      <option value="">Selecione o Cliente</option>
-                      {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                    <div className="flex space-x-2">
+                      <select required value={formData.client_id} onChange={e => setFormData({...formData, client_id: e.target.value})} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                        <option value="">Selecione o Cliente</option>
+                        {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsClientModalOpen(true)}
+                        className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg transition-colors flex items-center justify-center"
+                        title="Cadastrar Novo Cliente"
+                      >
+                        <Plus className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -255,6 +301,50 @@ export default function Equipamentos() {
           </div>
         </div>
       )}
+
+      {/* Modal Rápido de Novo Cliente */}
+      {isClientModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">Cadastro Rápido de Cliente</h2>
+              <button onClick={() => setIsClientModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveClient} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome / Razão Social *</label>
+                <input required type="text" value={clientFormData.name} onChange={e => setClientFormData({...clientFormData, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Documento (CPF/CNPJ)</label>
+                <input type="text" value={clientFormData.document} onChange={e => setClientFormData({...clientFormData, document: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                  <input type="email" value={clientFormData.email} onChange={e => setClientFormData({...clientFormData, email: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                  <input type="text" value={clientFormData.phone} onChange={e => setClientFormData({...clientFormData, phone: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+              </div>
+              <div className="pt-4 flex justify-end space-x-3">
+                <button type="button" onClick={() => setIsClientModalOpen(false)} className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={isSavingClient} className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors flex items-center">
+                  {isSavingClient ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  {isSavingClient ? 'Salvando...' : 'Salvar Cliente'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
