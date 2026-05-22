@@ -16,6 +16,8 @@ export default function NovoContrato() {
   const [isEqModalOpen, setIsEqModalOpen] = useState(false);
   const [isSvcModalOpen, setIsSvcModalOpen] = useState(false);
 
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
   useEffect(() => {
     if (id) fetchDetails();
     else {
@@ -44,6 +46,84 @@ export default function NovoContrato() {
   const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
   const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString('pt-BR') : '-';
   const formatDateTime = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('pt-BR') : '-';
+
+  const handleEmitContract = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      // 1. Buscar o template padrão
+      const res = await fetch('/api/get-templates');
+      const data = await res.json();
+      const defaultTemplate = data.templates?.find(t => t.is_default);
+
+      if (!defaultTemplate) {
+        alert('Nenhum Template Padrão encontrado. Vá em Templates e marque um como Padrão.');
+        setIsGeneratingPDF(false);
+        return;
+      }
+
+      // 2. Construir o HTML
+      let htmlContent = `
+        <div style="padding: 40px; font-family: sans-serif; color: #333; line-height: 1.6;">
+          <h1 style="text-align: center; margin-bottom: 30px; font-size: 24px;">CONTRATO DE LOCAÇÃO - ${displayContract.code}</h1>
+          
+          <div style="margin-bottom: 20px; font-size: 14px;">
+            <p><strong>CLIENTE:</strong> ${displayContract.client_name}</p>
+            <p><strong>DATA:</strong> ${formatDate(displayContract.start_date)}</p>
+            <p><strong>VALOR TOTAL:</strong> ${formatCurrency(parseFloat(displayContract.total_rental_value) + parseFloat(displayContract.total_services_value))}</p>
+          </div>
+          
+          <hr style="border: 1px solid #eee; margin-bottom: 20px;" />
+      `;
+
+      // Mesclar cláusulas
+      const clauses = typeof defaultTemplate.clauses === 'string' ? JSON.parse(defaultTemplate.clauses) : defaultTemplate.clauses;
+      
+      clauses.forEach(clause => {
+        let content = clause.content || '';
+        // Motor de substituição (Mail Merge)
+        content = content.replace(/{{CLIENT_NAME}}/g, displayContract.client_name);
+        content = content.replace(/{{CONTRACT_CODE}}/g, displayContract.code);
+        content = content.replace(/{{START_DATE}}/g, formatDate(displayContract.start_date));
+        content = content.replace(/{{TOTAL_VALUE}}/g, formatCurrency(parseFloat(displayContract.total_rental_value) + parseFloat(displayContract.total_services_value)));
+        
+        htmlContent += `
+          <h3 style="margin-top: 20px; font-size: 16px;">${clause.title}</h3>
+          <p style="font-size: 14px; text-align: justify; margin-bottom: 15px;">${content.replace(/\n/g, '<br/>')}</p>
+        `;
+      });
+
+      htmlContent += `
+          <div style="margin-top: 60px; display: flex; justify-content: space-between;">
+             <div style="border-top: 1px solid #333; width: 45%; text-align: center; padding-top: 10px;">Assinatura Contratante</div>
+             <div style="border-top: 1px solid #333; width: 45%; text-align: center; padding-top: 10px;">Assinatura Contratada</div>
+          </div>
+        </div>
+      `;
+
+      // 3. Importar dinamicamente e gerar PDF
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const opt = {
+        margin:       10,
+        filename:     \`Contrato_\${displayContract.code}.pdf\`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      // Criar elemento virtual
+      const element = document.createElement('div');
+      element.innerHTML = htmlContent;
+      
+      await html2pdf().from(element).set(opt).save();
+
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao gerar PDF');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   if (isLoading) return <div className="flex justify-center p-20"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>;
 
@@ -75,8 +155,9 @@ export default function NovoContrato() {
           <button onClick={() => alert('Modo de Edição ativado (Em breve)')} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
             <Edit className="w-4 h-4 mr-2" /> Editar
           </button>
-          <button onClick={() => alert('Gerando PDF... (Módulo de Templates em breve)')} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
-            <Printer className="w-4 h-4 mr-2" /> Emitir Contrato
+          <button onClick={handleEmitContract} disabled={isGeneratingPDF} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors disabled:opacity-50">
+            {isGeneratingPDF ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Printer className="w-4 h-4 mr-2" />}
+            {isGeneratingPDF ? 'Gerando...' : 'Emitir Contrato'}
           </button>
           <button onClick={() => { if(confirm('Tem certeza que deseja cancelar este contrato?')) alert('Contrato cancelado com sucesso.') }} className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 flex items-center transition-colors">
             <Ban className="w-4 h-4 mr-2" /> Cancelar Contrato
