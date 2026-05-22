@@ -80,6 +80,9 @@ export default function NovoContrato() {
   const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
   const [generalForm, setGeneralForm] = useState({ start_date: '', client_name: '', client_id: '' });
 
+  const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
+  const [newClientForm, setNewClientForm] = useState({ name: '', document: '', email: '', phone: '', address: '', city: '', contact: '' });
+
   const handleEmitContract = async () => {
     setIsGeneratingPDF(true);
     try {
@@ -325,6 +328,45 @@ export default function NovoContrato() {
     setContract(updatedContract);
     handleSaveContract(updatedContract);
     setIsGeneralModalOpen(false);
+  };
+
+  const handleSaveNewClient = async () => {
+    if (!newClientForm.name) {
+      alert('Nome do cliente é obrigatório');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/save-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newClientForm)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const createdClient = data.client;
+        
+        // Atualiza a lista de clientes com o novo cliente
+        setDbClients(prev => [...prev, createdClient]);
+        
+        // Já deixa ele selecionado no formulário
+        setGeneralForm({
+          ...generalForm,
+          client_id: createdClient.id,
+          client_name: createdClient.name
+        });
+        
+        // Fecha o modal
+        setIsNewClientModalOpen(false);
+        setNewClientForm({ name: '', document: '', email: '', phone: '', address: '', city: '', contact: '' });
+      } else {
+        alert('Erro ao salvar cliente');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      alert('Erro na comunicação com o servidor');
+    }
   };
 
   const addEquipment = () => {
@@ -725,7 +767,7 @@ export default function NovoContrato() {
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
-                  <button onClick={() => navigate('/clientes')} className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium whitespace-nowrap transition-colors">
+                  <button onClick={() => setIsNewClientModalOpen(true)} className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium whitespace-nowrap transition-colors">
                     + Novo
                   </button>
                 </div>
@@ -734,6 +776,90 @@ export default function NovoContrato() {
             <div className="mt-6 flex justify-end space-x-3">
               <button onClick={() => setIsGeneralModalOpen(false)} className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
               <button onClick={saveGeneralInfo} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Salvar Alterações</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL NOVO CLIENTE (RÁPIDO) */}
+      {isNewClientModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-1">Cadastrar Novo Cliente</h2>
+            <p className="text-sm text-gray-500 mb-6">Cadastre rapidamente para vincular ao contrato.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold mb-1">Razão Social / Nome *</label>
+                <input 
+                  type="text" 
+                  value={newClientForm.name} 
+                  onChange={e => setNewClientForm({...newClientForm, name: e.target.value})} 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                  placeholder="Ex: HECKE REPRESENTACOES LTDA" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">CNPJ/CPF</label>
+                <input 
+                  type="text" 
+                  value={newClientForm.document} 
+                  onChange={e => setNewClientForm({...newClientForm, document: e.target.value})} 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                  placeholder="Ex: 00.000.000/0000-00" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Contato (Pessoa)</label>
+                <input 
+                  type="text" 
+                  value={newClientForm.contact} 
+                  onChange={e => setNewClientForm({...newClientForm, contact: e.target.value})} 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                  placeholder="Ex: Geovaney" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">E-mail</label>
+                <input 
+                  type="email" 
+                  value={newClientForm.email} 
+                  onChange={e => setNewClientForm({...newClientForm, email: e.target.value})} 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Telefone</label>
+                <input 
+                  type="text" 
+                  value={newClientForm.phone} 
+                  onChange={e => setNewClientForm({...newClientForm, phone: e.target.value})} 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold mb-1">Endereço Completo</label>
+                <input 
+                  type="text" 
+                  value={newClientForm.address} 
+                  onChange={e => setNewClientForm({...newClientForm, address: e.target.value})} 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                  placeholder="Ex: Rua Brasílio Cuman, 1650"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold mb-1">Cidade - UF</label>
+                <input 
+                  type="text" 
+                  value={newClientForm.city} 
+                  onChange={e => setNewClientForm({...newClientForm, city: e.target.value})} 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                  placeholder="Ex: Curitiba - PR"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button onClick={() => setIsNewClientModalOpen(false)} className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
+              <button onClick={handleSaveNewClient} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Salvar e Utilizar</button>
             </div>
           </div>
         </div>
