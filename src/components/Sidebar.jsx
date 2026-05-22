@@ -65,7 +65,7 @@ export default function Sidebar() {
       {/* Logo Area */}
       <div className="p-6">
         <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
-          <span className="text-blue-600">Clean</span>Tech
+          <span className="text-blue-600">Clean Tech</span> Smart
         </h2>
       </div>
 
