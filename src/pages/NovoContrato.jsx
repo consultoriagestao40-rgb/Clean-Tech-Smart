@@ -255,22 +255,42 @@ export default function NovoContrato() {
         </div>
       `;
 
-      // 3. Importar dinamicamente e gerar PDF
-      const html2pdf = (await import('html2pdf.js')).default;
-      
-      const opt = {
-        margin:       [10, 10, 10, 10],
-        filename:     `Contrato_${displayContract.code}.pdf`,
-        image:        { type: 'jpeg', quality: 1 }, // Qualidade máxima do JPEG
-        html2canvas:  { scale: 4, useCORS: true, logging: false }, // Scale 4 para altíssima resolução de texto
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-
-      // Criar elemento virtual
-      const element = document.createElement('div');
-      element.innerHTML = htmlContent;
-      
-      await html2pdf().from(element).set(opt).save();
+      // 3. Abrir janela de impressão nativa para qualidade vetorial
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Contrato - ${displayContract.code}</title>
+            <style>
+              @media print {
+                @page { margin: 15mm; }
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              }
+              body { font-family: Arial, sans-serif; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #e5e7eb; padding: 8px 5px; text-align: left; }
+              th { background-color: #1f2937 !important; color: #fff !important; }
+            </style>
+          </head>
+          <body>
+            ${htmlContent}
+            <script>
+              window.onload = () => {
+                setTimeout(() => {
+                  window.print();
+                  window.close();
+                }, 500);
+              };
+            </script>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      } else {
+        alert('O bloqueador de pop-ups impediu a geração do PDF. Permita pop-ups para este site.');
+      }
 
     } catch (error) {
       console.error(error);
