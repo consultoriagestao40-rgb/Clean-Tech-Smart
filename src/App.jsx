@@ -6,6 +6,8 @@ import Clientes from './pages/Clientes';
 import Equipamentos from './pages/Equipamentos';
 import Modalidades from './pages/Modalidades';
 import Templates from './pages/Templates';
+import Contratos from './pages/Contratos';
+import NovoContrato from './pages/NovoContrato';
 
 function Placeholder({ title }) {
   return (
@@ -29,9 +31,11 @@ function App() {
           <Route path="equipamentos" element={<Equipamentos />} />
           <Route path="modalidades" element={<Modalidades />} />
           <Route path="templates" element={<Templates />} />
+          <Route path="contratos" element={<Contratos />} />
+          <Route path="contratos/novo" element={<NovoContrato />} />
+          <Route path="contratos/editar/:id" element={<NovoContrato />} />
           
           {/* Outras Rotas (Placeholders) */}
-          <Route path="contratos" element={<Placeholder title="Contratos" />} />
           <Route path="faturas" element={<Placeholder title="Faturas" />} />
           <Route path="disponibilidade" element={<Placeholder title="Disponibilidade" />} />
           <Route path="relatorios" element={<Placeholder title="Relatórios" />} />
