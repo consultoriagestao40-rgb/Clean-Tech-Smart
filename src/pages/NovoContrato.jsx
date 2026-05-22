@@ -73,16 +73,24 @@ export default function NovoContrato() {
   const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString('pt-BR') : '-';
   const formatDateTime = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('pt-BR') : '-';
 
+  const [isGeneralModalOpen, setIsGeneralModalOpen] = useState(false);
+  const [generalForm, setGeneralForm] = useState({ start_date: '', client_name: '' });
+
   const handleEmitContract = async () => {
     setIsGeneratingPDF(true);
     try {
       // 1. Buscar o template padrão
       const res = await fetch('/api/get-templates');
       const data = await res.json();
-      const defaultTemplate = data.templates?.find(t => t.is_default);
+      let defaultTemplate = data.templates?.find(t => t.is_default);
+      
+      // Fallback: se não tiver um marcado como padrão, pega o primeiro que achar
+      if (!defaultTemplate && data.templates?.length > 0) {
+        defaultTemplate = data.templates[0];
+      }
 
       if (!defaultTemplate) {
-        alert('Nenhum Template Padrão encontrado. Vá em Templates e marque um como Padrão.');
+        alert('Nenhum Template cadastrado. Vá em Templates e crie um novo.');
         setIsGeneratingPDF(false);
         return;
       }
@@ -164,6 +172,7 @@ export default function NovoContrato() {
       const payload = {
         id: updatedContract.id,
         client_id: updatedContract.client_id || 1, // Mock para teste
+        client_name: updatedContract.client_name, // Passar o nome atualizado para salvar
         start_date: updatedContract.start_date,
         status: updatedContract.status,
         equipments: updatedContract.equipments,
@@ -186,6 +195,17 @@ export default function NovoContrato() {
     } catch (error) {
       console.error('Erro ao salvar:', error);
     }
+  };
+
+  const saveGeneralInfo = () => {
+    const updatedContract = {
+      ...displayContract,
+      start_date: generalForm.start_date || displayContract.start_date,
+      client_name: generalForm.client_name || displayContract.client_name
+    };
+    setContract(updatedContract);
+    handleSaveContract(updatedContract);
+    setIsGeneralModalOpen(false);
   };
 
   const addEquipment = () => {
@@ -253,7 +273,10 @@ export default function NovoContrato() {
           <span className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full hidden md:inline-block">
             {displayContract.status}
           </span>
-          <button onClick={() => alert('Modo de Edição ativado (Em breve)')} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
+          <button onClick={() => {
+            setGeneralForm({ start_date: displayContract.start_date ? new Date(displayContract.start_date).toISOString().split('T')[0] : '', client_name: displayContract.client_name });
+            setIsGeneralModalOpen(true);
+          }} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
             <Edit className="w-4 h-4 mr-2" /> Editar
           </button>
           <button onClick={handleEmitContract} disabled={isGeneratingPDF} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors disabled:opacity-50">
@@ -542,6 +565,41 @@ export default function NovoContrato() {
             <div className="mt-6 flex justify-end space-x-3">
               <button onClick={() => setIsSvcModalOpen(false)} className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
               <button onClick={addService} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Adicionar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIÇÃO GERAL */}
+      {isGeneralModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-1">Editar Informações Gerais</h2>
+            <p className="text-sm text-gray-500 mb-6">Atualize os dados básicos do contrato</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Data do Contrato</label>
+                <input 
+                  type="date" 
+                  value={generalForm.start_date} 
+                  onChange={e => setGeneralForm({...generalForm, start_date: e.target.value})} 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Nome do Cliente</label>
+                <input 
+                  type="text" 
+                  value={generalForm.client_name} 
+                  onChange={e => setGeneralForm({...generalForm, client_name: e.target.value})} 
+                  placeholder="Nome do Cliente..." 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button onClick={() => setIsGeneralModalOpen(false)} className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
+              <button onClick={saveGeneralInfo} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Salvar Alterações</button>
             </div>
           </div>
         </div>
