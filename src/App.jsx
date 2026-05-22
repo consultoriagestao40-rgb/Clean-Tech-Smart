@@ -1,7 +1,14 @@
 import { useState } from 'react';
-import { Plus, Trash2, Save, Send } from 'lucide-react';
+import { Plus, Trash2, Save, Send, Loader2 } from 'lucide-react';
 
 function App() {
+  const [clientData, setClientData] = useState({
+    client: '',
+    contact: '',
+    contactInfo: '',
+    serviceType: 'corretiva'
+  });
+  const [isSaving, setIsSaving] = useState(false);
   const [laborItems, setLaborItems] = useState([
     { id: 1, description: 'Técnico de Campo', hours: 2, unitPrice: 150 },
     { id: 2, description: 'Auxiliar Técnico', hours: 2, unitPrice: 80 },
@@ -26,6 +33,42 @@ function App() {
   const totalKm = Math.max(0, logistics.finalKm - logistics.initialKm);
   const totalLogistics = totalKm * logistics.pricePerKm;
   const grandTotal = totalLabor + totalParts + totalLogistics;
+
+  const handleSubmit = async () => {
+    setIsSaving(true);
+    try {
+      const payload = {
+        ...clientData,
+        laborItems,
+        partsItems,
+        logistics,
+        notes,
+        totalLabor,
+        totalParts,
+        totalLogistics,
+        grandTotal
+      };
+
+      const response = await fetch('/api/save-budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        alert('Orçamento salvo com sucesso!');
+        // Opcional: limpar o formulário
+      } else {
+        const errorData = await response.json();
+        alert('Erro ao salvar: ' + (errorData.error || 'Erro desconhecido'));
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de rede ao salvar orçamento.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const addLaborItem = () => {
     setLaborItems([...laborItems, { id: Date.now(), description: '', hours: 1, unitPrice: 0 }]);
@@ -66,9 +109,13 @@ function App() {
               <Save className="w-4 h-4 mr-2" />
               Salvar Rascunho
             </button>
-            <button className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm">
-              <Send className="w-4 h-4 mr-2" />
-              Enviar para Aprovação
+            <button 
+              onClick={handleSubmit} 
+              disabled={isSaving}
+              className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors shadow-sm"
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+              {isSaving ? 'Salvando...' : 'Enviar para Aprovação'}
             </button>
           </div>
         </header>
@@ -79,7 +126,11 @@ function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-600 mb-1">Cliente</label>
-              <select className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
+              <select 
+                value={clientData.client} 
+                onChange={(e) => setClientData({...clientData, client: e.target.value})}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+              >
                 <option value="">Selecione o Cliente</option>
                 <option value="1">Industria Alpha S.A. - 12.345.678/0001-99</option>
                 <option value="2">Beta Tech Ltda - 98.765.432/0001-11</option>
@@ -87,15 +138,31 @@ function App() {
             </div>
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-600 mb-1">Contato</label>
-              <input type="text" placeholder="Nome do solicitante" className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" />
+              <input 
+                type="text" 
+                value={clientData.contact}
+                onChange={(e) => setClientData({...clientData, contact: e.target.value})}
+                placeholder="Nome do solicitante" 
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" 
+              />
             </div>
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-600 mb-1">Celular / E-mail</label>
-              <input type="text" placeholder="(11) 99999-9999 / email@empresa.com" className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" />
+              <input 
+                type="text" 
+                value={clientData.contactInfo}
+                onChange={(e) => setClientData({...clientData, contactInfo: e.target.value})}
+                placeholder="(11) 99999-9999 / email@empresa.com" 
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all" 
+              />
             </div>
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-600 mb-1">Tipo de Serviço</label>
-              <select className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
+              <select 
+                value={clientData.serviceType}
+                onChange={(e) => setClientData({...clientData, serviceType: e.target.value})}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+              >
                 <option value="corretiva">Manutenção Corretiva</option>
                 <option value="preventiva">Manutenção Preventiva</option>
                 <option value="instalacao">Instalação</option>
