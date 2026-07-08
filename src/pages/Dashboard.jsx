@@ -146,6 +146,7 @@ body{padding-top:50px}
 .doc-num{font-size:24px;font-weight:800;color:#0f172a;text-align:right;margin-top:2px}
 .doc-date{font-size:11px;color:#64748b;text-align:right;margin-top:2px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:28px}
 .box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px}
 .box-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1e40af;padding-bottom:8px;border-bottom:1px solid #e2e8f0;margin-bottom:10px}
 .row{display:flex;gap:6px;font-size:12px;margin-bottom:4px}
@@ -200,12 +201,22 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
     </div>
   </div>
 
-  <div class="grid2">
+  <div class="grid3">
     <div class="box">
       <div class="box-title">Dados do Cliente</div>
       <div class="row"><b>Cliente:</b>${budget.client_name || budget.client_id || 'Não informado'}</div>
       <div class="row"><b>Documento:</b>${budget.client_document || '&mdash;'}</div>
       <div class="row"><b>Endereço:</b>${budget.client_address || '&mdash;'}</div>
+    </div>
+    <div class="box">
+      <div class="box-title">Ativo / Equipamento</div>
+      ${budget.equipment_name ? `
+        <div class="row"><b>Nome:</b>${budget.equipment_name}</div>
+        <div class="row"><b>Marca/Mod:</b>${budget.equipment_brand || '&mdash;'} ${budget.equipment_model ? `/ ${budget.equipment_model}` : ''}</div>
+        <div class="row"><b>Nº Série:</b>${budget.equipment_serial_number || '&mdash;'}</div>
+      ` : `
+        <div class="row" style="color:#94a3b8;font-style:italic;">Nenhum equipamento associado</div>
+      `}
     </div>
     <div class="box">
       <div class="box-title">Detalhes da Proposta</div>
@@ -451,12 +462,24 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
               ) : selectedBudget ? (
                 <>
                   {/* Grid Infos */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
                     <div>
                       <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Dados do Cliente</h3>
                       <p className="font-semibold text-gray-800">{selectedBudget.budget.client_name || selectedBudget.budget.client_id || 'Não informado'}</p>
                       <p className="text-sm text-gray-600 mt-1"><strong>CNPJ/CPF:</strong> {selectedBudget.budget.client_document || '-'}</p>
                       <p className="text-sm text-gray-600 mt-1"><strong>Endereço:</strong> {selectedBudget.budget.client_address || '-'}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Ativo / Equipamento</h3>
+                      {selectedBudget.budget.equipment_name ? (
+                        <>
+                          <p className="font-semibold text-gray-800">{selectedBudget.budget.equipment_name}</p>
+                          <p className="text-sm text-gray-600 mt-1"><strong>Marca/Modelo:</strong> {selectedBudget.budget.equipment_brand || '-'} {selectedBudget.budget.equipment_model ? `/ ${selectedBudget.budget.equipment_model}` : ''}</p>
+                          <p className="text-sm text-gray-600 mt-1"><strong>Nº de Série:</strong> {selectedBudget.budget.equipment_serial_number || '-'}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">Nenhum equipamento associado</p>
+                      )}
                     </div>
                     <div>
                       <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Contato & Serviço</h3>

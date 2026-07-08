@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Os campos Nome e Propriedade são obrigatórios.' });
     }
 
-    const finalClientId = ownership_type === 'cliente' ? client_id : null;
+    const finalClientId = client_id ? Number(client_id) : null;
     const finalSupplierName = ownership_type === 'sublocado' ? supplier_name : null;
 
     const result = await client.query(`

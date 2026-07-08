@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Trash2, Save, Send, Loader2, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Save, Send, Loader2, ArrowLeft, X } from 'lucide-react';
 
 export default function NewBudget() {
   const navigate = useNavigate();
@@ -10,27 +10,58 @@ export default function NewBudget() {
       maximumFractionDigits: 2
     });
   };
+  
   const [clients, setClients] = useState([]);
+  const [allEquipments, setAllEquipments] = useState([]);
+  
   const [clientData, setClientData] = useState({
     client: '',
     contact: '',
     contactInfo: '',
-    serviceType: 'corretiva'
+    serviceType: 'corretiva',
+    equipmentId: ''
   });
 
+  // Modal Equipamento states
+  const [isEqModalOpen, setIsEqModalOpen] = useState(false);
+  const [isSavingEq, setIsSavingEq] = useState(false);
+  const [eqFormData, setEqFormData] = useState({
+    name: '',
+    brand: '',
+    model: '',
+    serial_number: '',
+    ownership_type: 'cliente',
+    supplier_name: '',
+    client_id: '',
+    status: 'Disponível'
+  });
+
+  const fetchEquipments = async () => {
+    try {
+      const res = await fetch('/api/get-equipments');
+      const data = await res.json();
+      if (data.equipments) {
+        setAllEquipments(data.equipments);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar equipamentos:', error);
+    }
+  };
+
   useEffect(() => {
-    async function fetchClients() {
+    async function initData() {
       try {
-        const res = await fetch('/api/get-clients');
-        const data = await res.json();
-        if (data.clients) {
-          setClients(data.clients);
+        const clientsRes = await fetch('/api/get-clients');
+        const clientsData = await clientsRes.json();
+        if (clientsData.clients) {
+          setClients(clientsData.clients);
         }
+        await fetchEquipments();
       } catch (error) {
-        console.error('Erro ao carregar clientes:', error);
+        console.error('Erro ao inicializar dados:', error);
       }
     }
-    fetchClients();
+    initData();
   }, []);
   const [isSaving, setIsSaving] = useState(false);
   const [laborItems, setLaborItems] = useState([
@@ -51,6 +82,60 @@ export default function NewBudget() {
 
   const [notes, setNotes] = useState('');
 
+  const filteredEquipments = allEquipments.filter(e => {
+    if (!clientData.client) return false;
+    return String(e.client_id) === String(clientData.client);
+  });
+
+  const handleSaveEquipment = async (e) => {
+    e.preventDefault();
+    if (!eqFormData.name) {
+      alert('Por favor, insira o nome do equipamento.');
+      return;
+    }
+    setIsSavingEq(true);
+    try {
+      const payload = {
+        ...eqFormData,
+        client_id: Number(clientData.client)
+      };
+      
+      const response = await fetch('/api/save-equipment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setEqFormData({
+          name: '',
+          brand: '',
+          model: '',
+          serial_number: '',
+          ownership_type: 'cliente',
+          supplier_name: '',
+          client_id: '',
+          status: 'Disponível'
+        });
+        setIsEqModalOpen(false);
+        await fetchEquipments();
+        setClientData(prev => ({
+          ...prev,
+          equipmentId: String(data.equipment.id)
+        }));
+      } else {
+        const errorData = await response.json();
+        alert('Erro ao salvar equipamento: ' + (errorData.error || 'Erro desconhecido'));
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de rede ao salvar equipamento.');
+    } finally {
+      setIsSavingEq(false);
+    }
+  };
+
   // Calculations
   const totalLabor = laborItems.reduce((acc, item) => acc + item.hours * item.unitPrice, 0);
   const totalParts = partsItems.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0);
@@ -59,6 +144,14 @@ export default function NewBudget() {
   const grandTotal = totalLabor + totalParts + totalLogistics;
 
   const handleSubmit = async (status) => {
+    if (!clientData.client) {
+      alert('Por favor, selecione um cliente.');
+      return;
+    }
+    if (!clientData.equipmentId) {
+      alert('Por favor, selecione o Ativo / Equipamento do cliente.');
+      return;
+    }
     setIsSaving(true);
     try {
       const payload = {
@@ -159,13 +252,13 @@ export default function NewBudget() {
         {/* 2. Bloco 1: Dados do Cliente e Metadados */}
         <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">Dados do Cliente</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600 mb-1">Cliente</label>
+              <label className="text-sm font-medium text-gray-600 mb-1">Cliente *</label>
               <select 
                 value={clientData.client} 
-                onChange={(e) => setClientData({...clientData, client: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                onChange={(e) => setClientData({...clientData, client: e.target.value, equipmentId: ''})}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white"
               >
                 <option value="">Selecione o Cliente</option>
                 {clients.map(c => (
@@ -173,6 +266,37 @@ export default function NewBudget() {
                 ))}
               </select>
             </div>
+            
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-600 mb-1">Ativo / Equipamento *</label>
+              <div className="flex space-x-2">
+                <select 
+                  value={clientData.equipmentId}
+                  disabled={!clientData.client}
+                  onChange={(e) => setClientData({...clientData, equipmentId: e.target.value})}
+                  className="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {!clientData.client ? 'Selecione o Cliente' : 'Selecione o Ativo'}
+                  </option>
+                  {filteredEquipments.map(e => (
+                    <option key={e.id} value={e.id}>
+                      {e.name} {e.brand ? `(${e.brand})` : ''} {e.serial_number ? `- N/S: ${e.serial_number}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <button 
+                  type="button"
+                  disabled={!clientData.client}
+                  onClick={() => setIsEqModalOpen(true)}
+                  className="p-2 bg-blue-50 hover:bg-blue-100 disabled:bg-gray-50 text-blue-600 disabled:text-gray-400 border border-blue-200 disabled:border-gray-200 rounded-lg transition-colors flex items-center justify-center shadow-sm"
+                  title="Cadastrar Novo Equipamento"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-600 mb-1">Contato</label>
               <input 
@@ -198,7 +322,7 @@ export default function NewBudget() {
               <select 
                 value={clientData.serviceType}
                 onChange={(e) => setClientData({...clientData, serviceType: e.target.value})}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white"
               >
                 <option value="corretiva">Manutenção Corretiva</option>
                 <option value="preventiva">Manutenção Preventiva</option>
@@ -386,6 +510,122 @@ export default function NewBudget() {
         </section>
 
       </div>
+
+      {/* Modal Cadastro de Equipamento */}
+      {isEqModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Novo Equipamento para o Cliente</h2>
+                <p className="text-xs text-gray-500 mt-1">Este equipamento será associado ao cliente selecionado.</p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsEqModalOpen(false)} 
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveEquipment} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome / Descrição *</label>
+                <input 
+                  required 
+                  type="text" 
+                  value={eqFormData.name} 
+                  onChange={e => setEqFormData({...eqFormData, name: e.target.value})} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" 
+                  placeholder="Ex: Lavadora Hidropneumática 3000" 
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
+                  <input 
+                    type="text" 
+                    value={eqFormData.brand} 
+                    onChange={e => setEqFormData({...eqFormData, brand: e.target.value})} 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" 
+                    placeholder="Ex: Kärcher"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Modelo</label>
+                  <input 
+                    type="text" 
+                    value={eqFormData.model} 
+                    onChange={e => setEqFormData({...eqFormData, model: e.target.value})} 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" 
+                    placeholder="Ex: HD 585"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Número de Série</label>
+                <input 
+                  type="text" 
+                  value={eqFormData.serial_number} 
+                  onChange={e => setEqFormData({...eqFormData, serial_number: e.target.value})} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" 
+                  placeholder="Ex: NS-998877"
+                />
+              </div>
+
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Propriedade do Equipamento *</label>
+                  <select 
+                    value={eqFormData.ownership_type} 
+                    onChange={e => setEqFormData({...eqFormData, ownership_type: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
+                  >
+                    <option value="cliente">Do Cliente (Assistência Técnica)</option>
+                    <option value="proprio">Ativo Próprio (Locado ao Cliente)</option>
+                    <option value="sublocado">Sublocado (Dono Original de Terceiros)</option>
+                  </select>
+                </div>
+
+                {eqFormData.ownership_type === 'sublocado' && (
+                  <div className="animate-in fade-in duration-200">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Dono / Fornecedor Original *</label>
+                    <input 
+                      required 
+                      type="text" 
+                      value={eqFormData.supplier_name} 
+                      onChange={e => setEqFormData({...eqFormData, supplier_name: e.target.value})} 
+                      placeholder="Ex: Alfa Tennant" 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" 
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 flex justify-end space-x-3 border-t border-gray-100">
+                <button 
+                  type="button" 
+                  onClick={() => setIsEqModalOpen(false)} 
+                  className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSavingEq} 
+                  className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors flex items-center shadow-sm"
+                >
+                  {isSavingEq && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {isSavingEq ? 'Salvando...' : 'Cadastrar e Selecionar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
