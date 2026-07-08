@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 import { Plus, Search, FileText, Loader2, Filter, Eye, Check, X, FileDown } from 'lucide-react';
 
 export default function Dashboard() {
+  const formatBRL = (val) => {
+    return Number(val || 0).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
   const [budgets, setBudgets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -98,8 +105,8 @@ export default function Dashboard() {
           <tr>
             <td>${item.description}</td>
             <td class="center">${Number(item.hours)}</td>
-            <td class="right">R$ ${Number(item.unit_price).toFixed(2)}</td>
-            <td class="right bold">R$ ${(Number(item.hours) * Number(item.unit_price)).toFixed(2)}</td>
+            <td class="right">R$ ${formatBRL(item.unit_price)}</td>
+            <td class="right bold">R$ ${formatBRL(Number(item.hours) * Number(item.unit_price))}</td>
           </tr>`).join('');
 
     const partsRows = partsItems.length === 0
@@ -108,8 +115,8 @@ export default function Dashboard() {
           <tr>
             <td>${item.part_name}</td>
             <td class="center">${item.quantity}</td>
-            <td class="right">R$ ${Number(item.unit_price).toFixed(2)}</td>
-            <td class="right bold">R$ ${(Number(item.quantity) * Number(item.unit_price)).toFixed(2)}</td>
+            <td class="right">R$ ${formatBRL(item.unit_price)}</td>
+            <td class="right bold">R$ ${formatBRL(Number(item.quantity) * Number(item.unit_price))}</td>
           </tr>`).join('');
 
     const dist = Math.max(0, (budget.final_km || 0) - (budget.initial_km || 0));
@@ -245,8 +252,8 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
         <td class="center">${budget.initial_km || 0}</td>
         <td class="center">${budget.final_km || 0}</td>
         <td class="center">${dist} km</td>
-        <td class="right">R$ ${Number(budget.price_per_km || 0).toFixed(2)}</td>
-        <td class="right bold">R$ ${Number(budget.total_logistics || 0).toFixed(2)}</td>
+        <td class="right">R$ ${formatBRL(budget.price_per_km || 0)}</td>
+        <td class="right bold">R$ ${formatBRL(budget.total_logistics || 0)}</td>
       </tr>
     </tbody>
   </table>
@@ -256,11 +263,11 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
   <div class="sumwrap">
     <div class="sumbox">
       <div class="sum-title">Resumo Financeiro</div>
-      <div class="sum-row"><span>Mão de Obra</span><span>R$ ${Number(budget.total_labor || 0).toFixed(2)}</span></div>
-      <div class="sum-row"><span>Peças e Insumos</span><span>R$ ${Number(budget.total_parts || 0).toFixed(2)}</span></div>
-      <div class="sum-row"><span>Deslocamento</span><span>R$ ${Number(budget.total_logistics || 0).toFixed(2)}</span></div>
+      <div class="sum-row"><span>Mão de Obra</span><span>R$ ${formatBRL(budget.total_labor || 0)}</span></div>
+      <div class="sum-row"><span>Peças e Insumos</span><span>R$ ${formatBRL(budget.total_parts || 0)}</span></div>
+      <div class="sum-row"><span>Deslocamento</span><span>R$ ${formatBRL(budget.total_logistics || 0)}</span></div>
       <hr class="sum-div">
-      <div class="sum-total"><span>Total Geral</span><span>R$ ${Number(budget.grand_total || 0).toFixed(2)}</span></div>
+      <div class="sum-total"><span>Total Geral</span><span>R$ ${formatBRL(budget.grand_total || 0)}</span></div>
     </div>
   </div>
 
@@ -322,7 +329,7 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
           <div>
             <p className="text-sm text-gray-500 font-medium">Valor Total (Todos)</p>
             <p className="text-2xl font-bold text-gray-900">
-              R$ {budgets.reduce((acc, curr) => acc + Number(curr.grand_total || 0), 0).toFixed(2)}
+              R$ {formatBRL(budgets.reduce((acc, curr) => acc + Number(curr.grand_total || 0), 0))}
             </p>
           </div>
         </div>
@@ -387,7 +394,7 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
                     </td>
                     <td className="px-6 py-4 capitalize">{budget.service_type}</td>
                     <td className="px-6 py-4 font-medium text-gray-900">
-                      R$ {Number(budget.grand_total).toFixed(2)}
+                      R$ {formatBRL(budget.grand_total)}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
@@ -491,8 +498,8 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
                             <tr key={item.id} className="border-b border-gray-100">
                               <td className="px-4 py-2">{item.description}</td>
                               <td className="px-4 py-2 text-center">{Number(item.hours)}</td>
-                              <td className="px-4 py-2 text-right">R$ {Number(item.unit_price).toFixed(2)}</td>
-                              <td className="px-4 py-2 text-right font-medium text-gray-800">R$ {(item.hours * item.unit_price).toFixed(2)}</td>
+                              <td className="px-4 py-2 text-right">R$ {formatBRL(item.unit_price)}</td>
+                              <td className="px-4 py-2 text-right font-medium text-gray-800">R$ {formatBRL(item.hours * item.unit_price)}</td>
                             </tr>
                           ))
                         )}
@@ -522,8 +529,8 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
                             <tr key={item.id} className="border-b border-gray-100">
                               <td className="px-4 py-2">{item.part_name}</td>
                               <td className="px-4 py-2 text-center">{item.quantity}</td>
-                              <td className="px-4 py-2 text-right">R$ {Number(item.unit_price).toFixed(2)}</td>
-                              <td className="px-4 py-2 text-right font-medium text-gray-800">R$ {(item.quantity * item.unit_price).toFixed(2)}</td>
+                              <td className="px-4 py-2 text-right">R$ {formatBRL(item.unit_price)}</td>
+                              <td className="px-4 py-2 text-right font-medium text-gray-800">R$ {formatBRL(item.quantity * item.unit_price)}</td>
                             </tr>
                           ))
                         )}
@@ -539,8 +546,8 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
                         <div className="text-sm space-y-1.5 text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
                           <p><strong>KM Inicial / Final:</strong> {selectedBudget.budget.initial_km} / {selectedBudget.budget.final_km}</p>
                           <p><strong>Total de KM Rodados:</strong> {Math.max(0, selectedBudget.budget.final_km - selectedBudget.budget.initial_km)} km</p>
-                          <p><strong>Valor por KM:</strong> R$ {Number(selectedBudget.budget.price_per_km).toFixed(2)}</p>
-                          <p className="font-semibold text-blue-600 pt-1"><strong>Subtotal Logística:</strong> R$ {Number(selectedBudget.budget.total_logistics).toFixed(2)}</p>
+                          <p><strong>Valor por KM:</strong> R$ {formatBRL(selectedBudget.budget.price_per_km)}</p>
+                          <p className="font-semibold text-blue-600 pt-1"><strong>Subtotal Logística:</strong> R$ {formatBRL(selectedBudget.budget.total_logistics)}</p>
                         </div>
                       </div>
                       {selectedBudget.budget.notes && (
@@ -560,21 +567,21 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
                         <div className="space-y-2 text-sm text-gray-600 mb-6">
                           <div className="flex justify-between">
                             <span>Subtotal Mão de Obra:</span>
-                            <span className="font-medium text-gray-800">R$ {Number(selectedBudget.budget.total_labor).toFixed(2)}</span>
+                            <span className="font-medium text-gray-800">R$ {formatBRL(selectedBudget.budget.total_labor)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span>Subtotal Peças:</span>
-                            <span className="font-medium text-gray-800">R$ {Number(selectedBudget.budget.total_parts).toFixed(2)}</span>
+                            <span className="font-medium text-gray-800">R$ {formatBRL(selectedBudget.budget.total_parts)}</span>
                           </div>
                           <div className="flex justify-between pb-3 border-b border-blue-100">
                             <span>Subtotal Logística:</span>
-                            <span className="font-medium text-gray-800">R$ {Number(selectedBudget.budget.total_logistics).toFixed(2)}</span>
+                            <span className="font-medium text-gray-800">R$ {formatBRL(selectedBudget.budget.total_logistics)}</span>
                           </div>
                         </div>
                       </div>
                       <div className="bg-blue-600 p-4 rounded-lg text-white">
                         <span className="block text-xs font-semibold uppercase tracking-wider opacity-90">Valor Total do Orçamento</span>
-                        <span className="block text-3xl font-bold mt-1">R$ {Number(selectedBudget.budget.grand_total).toFixed(2)}</span>
+                        <span className="block text-3xl font-bold mt-1">R$ {formatBRL(selectedBudget.budget.grand_total)}</span>
                       </div>
                     </div>
                   </div>

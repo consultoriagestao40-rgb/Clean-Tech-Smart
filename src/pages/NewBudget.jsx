@@ -4,6 +4,12 @@ import { Plus, Trash2, Save, Send, Loader2, ArrowLeft } from 'lucide-react';
 
 export default function NewBudget() {
   const navigate = useNavigate();
+  const formatBRL = (val) => {
+    return Number(val || 0).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
   const [clients, setClients] = useState([]);
   const [clientData, setClientData] = useState({
     client: '',
@@ -236,7 +242,7 @@ export default function NewBudget() {
                       <input type="number" min="0" value={item.unitPrice} onChange={(e) => updateLaborItem(item.id, 'unitPrice', Number(e.target.value))} className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" />
                     </td>
                     <td className="px-4 py-2 font-medium text-gray-800">
-                      R$ {(item.hours * item.unitPrice).toFixed(2)}
+                      R$ {formatBRL(item.hours * item.unitPrice)}
                     </td>
                     <td className="px-4 py-2 text-center">
                       <button onClick={() => removeLaborItem(item.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Remover item">
@@ -251,7 +257,7 @@ export default function NewBudget() {
           <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
             <div className="text-right">
               <span className="text-sm text-gray-500">Subtotal Mão de Obra</span>
-              <p className="text-lg font-semibold text-gray-800">R$ {totalLabor.toFixed(2)}</p>
+              <p className="text-lg font-semibold text-gray-800">R$ {formatBRL(totalLabor)}</p>
             </div>
           </div>
         </section>
@@ -279,7 +285,7 @@ export default function NewBudget() {
               </div>
               <div className="text-right">
                 <span className="block text-xs text-gray-500 font-medium uppercase tracking-wider">Total Deslocamento</span>
-                <span className="block text-lg font-semibold text-blue-600">R$ {totalLogistics.toFixed(2)}</span>
+                <span className="block text-lg font-semibold text-blue-600">R$ {formatBRL(totalLogistics)}</span>
               </div>
             </div>
           </div>
@@ -319,7 +325,7 @@ export default function NewBudget() {
                       <input type="number" min="0" value={item.unitPrice} onChange={(e) => updatePartItem(item.id, 'unitPrice', Number(e.target.value))} className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" />
                     </td>
                     <td className="px-4 py-2 font-medium text-gray-800">
-                      R$ {(item.quantity * item.unitPrice).toFixed(2)}
+                      R$ {formatBRL(item.quantity * item.unitPrice)}
                     </td>
                     <td className="px-4 py-2 text-center">
                       <button onClick={() => removePartItem(item.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Remover peça">
@@ -334,7 +340,7 @@ export default function NewBudget() {
           <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
             <div className="text-right">
               <span className="text-sm text-gray-500">Subtotal Peças</span>
-              <p className="text-lg font-semibold text-gray-800">R$ {totalParts.toFixed(2)}</p>
+              <p className="text-lg font-semibold text-gray-800">R$ {formatBRL(totalParts)}</p>
             </div>
           </div>
         </section>
@@ -359,21 +365,21 @@ export default function NewBudget() {
             <div className="space-y-3 mb-6">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">Subtotal Mão de Obra</span>
-                <span className="font-medium text-gray-800">R$ {totalLabor.toFixed(2)}</span>
+                <span className="font-medium text-gray-800">R$ {formatBRL(totalLabor)}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">Subtotal Logística</span>
-                <span className="font-medium text-gray-800">R$ {totalLogistics.toFixed(2)}</span>
+                <span className="font-medium text-gray-800">R$ {formatBRL(totalLogistics)}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">Subtotal Peças</span>
-                <span className="font-medium text-gray-800">R$ {totalParts.toFixed(2)}</span>
+                <span className="font-medium text-gray-800">R$ {formatBRL(totalParts)}</span>
               </div>
             </div>
             <div className="pt-4 border-t border-gray-200">
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
                 <span className="block text-sm text-blue-600 font-semibold mb-1 uppercase tracking-wide">Valor Total do Orçamento</span>
-                <span className="block text-4xl font-bold text-blue-900">R$ {grandTotal.toFixed(2)}</span>
+                <span className="block text-4xl font-bold text-blue-900">R$ {formatBRL(grandTotal)}</span>
               </div>
             </div>
           </div>
