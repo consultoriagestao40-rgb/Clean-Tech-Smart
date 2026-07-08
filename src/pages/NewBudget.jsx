@@ -252,7 +252,7 @@ export default function NewBudget() {
         {/* 2. Bloco 1: Dados do Cliente e Metadados */}
         <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">Dados do Cliente</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-600 mb-1">Cliente *</label>
               <select 
@@ -267,7 +267,7 @@ export default function NewBudget() {
               </select>
             </div>
             
-            <div className="flex flex-col">
+            <div className="flex flex-col lg:col-span-2">
               <label className="text-sm font-medium text-gray-600 mb-1">Ativo / Equipamento *</label>
               <div className="flex space-x-2">
                 <select 
