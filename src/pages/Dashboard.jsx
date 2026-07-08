@@ -94,15 +94,12 @@ export default function Dashboard() {
     const { budget, laborItems, partsItems } = budgetData;
     
     const element = document.createElement('div');
-    element.style.position = 'absolute';
-    element.style.left = '-9999px';
-    element.style.top = '0';
-    element.style.width = '750px';
-    element.style.padding = '30px';
+    element.style.padding = '20px';
     element.style.backgroundColor = '#ffffff';
     element.style.fontFamily = 'Arial, sans-serif';
     element.style.color = '#333333';
     element.style.lineHeight = '1.4';
+    element.style.width = '750px';
     
     element.innerHTML = `
       <!-- Header -->
@@ -247,8 +244,6 @@ export default function Dashboard() {
         </tr>
       </table>
     `;
-    
-    document.body.appendChild(element);
 
     const opt = {
       margin:       10,
@@ -258,9 +253,7 @@ export default function Dashboard() {
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     
-    html2pdf().from(element).set(opt).save().then(() => {
-      document.body.removeChild(element);
-    });
+    html2pdf().from(element).set(opt).save();
   };
 
   return (
