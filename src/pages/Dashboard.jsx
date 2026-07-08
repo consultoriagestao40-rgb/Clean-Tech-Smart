@@ -123,7 +123,8 @@ export default function Dashboard() {
 <title>Orçamento #${String(budget.id).padStart(4,'0')} - Clean Tech Smart</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+
 body{font-family:'Inter',Arial,sans-serif;background:#f1f5f9;color:#1e293b;font-size:13px;line-height:1.6}
 .print-bar{position:fixed;top:0;left:0;right:0;background:#1e3a8a;color:#fff;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;z-index:999;font-size:13px}
 .print-bar strong{font-weight:600}
