@@ -94,12 +94,17 @@ export default function Dashboard() {
     const { budget, laborItems, partsItems } = budgetData;
     
     const element = document.createElement('div');
-    element.style.padding = '20px';
+    element.style.position = 'fixed';
+    element.style.left = '0';
+    element.style.top = '0';
+    element.style.width = '794px';
+    element.style.padding = '30px';
     element.style.backgroundColor = '#ffffff';
     element.style.fontFamily = 'Arial, sans-serif';
     element.style.color = '#333333';
     element.style.lineHeight = '1.4';
-    element.style.width = '750px';
+    element.style.zIndex = '-9999';
+    element.style.pointerEvents = 'none';
     
     element.innerHTML = `
       <!-- Header -->
@@ -244,16 +249,25 @@ export default function Dashboard() {
         </tr>
       </table>
     `;
+    
+    document.body.appendChild(element);
 
     const opt = {
       margin:       10,
       filename:     `orcamento_${budget.id}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
+      html2canvas:  { 
+        scale: 2, 
+        useCORS: true,
+        width: 794,
+        windowWidth: 794
+      },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     
-    html2pdf().from(element).set(opt).save();
+    html2pdf().from(element).set(opt).save().then(() => {
+      document.body.removeChild(element);
+    });
   };
 
   return (
