@@ -24,13 +24,14 @@ export default async function handler(req, res) {
       INSERT INTO budgets (
         client_id, contact_name, contact_info, service_type, 
         initial_km, final_km, price_per_km, 
-        total_labor, total_parts, total_logistics, grand_total, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        total_labor, total_parts, total_logistics, grand_total, notes, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING id;
     `, [
       data.client, data.contact, data.contactInfo, data.serviceType,
       data.logistics.initialKm, data.logistics.finalKm, data.logistics.pricePerKm,
-      data.totalLabor, data.totalParts, data.totalLogistics, data.grandTotal, data.notes
+      data.totalLabor, data.totalParts, data.totalLogistics, data.grandTotal, data.notes,
+      data.status || 'Pendente'
     ]);
 
     const budgetId = budgetResult.rows[0].id;

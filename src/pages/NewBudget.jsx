@@ -1,13 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2, Save, Send, Loader2 } from 'lucide-react';
 
 export default function NewBudget() {
+  const [clients, setClients] = useState([]);
   const [clientData, setClientData] = useState({
     client: '',
     contact: '',
     contactInfo: '',
     serviceType: 'corretiva'
   });
+
+  useEffect(() => {
+    async function fetchClients() {
+      try {
+        const res = await fetch('/api/get-clients');
+        const data = await res.json();
+        if (data.clients) {
+          setClients(data.clients);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar clientes:', error);
+      }
+    }
+    fetchClients();
+  }, []);
   const [isSaving, setIsSaving] = useState(false);
   const [laborItems, setLaborItems] = useState([
     { id: 1, description: 'Técnico de Campo', hours: 2, unitPrice: 150 },
@@ -34,7 +50,7 @@ export default function NewBudget() {
   const totalLogistics = totalKm * logistics.pricePerKm;
   const grandTotal = totalLabor + totalParts + totalLogistics;
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (status) => {
     setIsSaving(true);
     try {
       const payload = {
@@ -46,7 +62,8 @@ export default function NewBudget() {
         totalLabor,
         totalParts,
         totalLogistics,
-        grandTotal
+        grandTotal,
+        status
       };
 
       const response = await fetch('/api/save-budget', {
@@ -56,8 +73,28 @@ export default function NewBudget() {
       });
 
       if (response.ok) {
-        alert('Orçamento salvo com sucesso!');
-        // Opcional: limpar o formulário
+        alert(status === 'Rascunho' ? 'Rascunho salvo com sucesso!' : 'Orçamento enviado para aprovação com sucesso!');
+        // Limpar formulário
+        setClientData({
+          client: '',
+          contact: '',
+          contactInfo: '',
+          serviceType: 'corretiva'
+        });
+        setLaborItems([
+          { id: 1, description: 'Técnico de Campo', hours: 2, unitPrice: 150 },
+          { id: 2, description: 'Auxiliar Técnico', hours: 2, unitPrice: 80 },
+          { id: 3, description: 'Visita Técnica', hours: 1, unitPrice: 100 },
+        ]);
+        setPartsItems([
+          { id: 1, partName: 'Placa de Controle Principal', quantity: 1, unitPrice: 450 },
+        ]);
+        setLogistics({
+          initialKm: 12000,
+          finalKm: 12050,
+          pricePerKm: 1.5,
+        });
+        setNotes('');
       } else {
         const errorData = await response.json();
         alert('Erro ao salvar: ' + (errorData.error || 'Erro desconhecido'));
@@ -105,12 +142,16 @@ export default function NewBudget() {
             <p className="text-sm text-gray-500 mt-1">Preencha os dados e os custos para a proposta técnica</p>
           </div>
           <div className="flex space-x-3 mt-4 md:mt-0">
-            <button className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors">
+            <button 
+              onClick={() => handleSubmit('Rascunho')}
+              disabled={isSaving}
+              className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+            >
               <Save className="w-4 h-4 mr-2" />
               Salvar Rascunho
             </button>
             <button 
-              onClick={handleSubmit} 
+              onClick={() => handleSubmit('Pendente')} 
               disabled={isSaving}
               className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors shadow-sm"
             >
@@ -132,8 +173,9 @@ export default function NewBudget() {
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
               >
                 <option value="">Selecione o Cliente</option>
-                <option value="1">Industria Alpha S.A. - 12.345.678/0001-99</option>
-                <option value="2">Beta Tech Ltda - 98.765.432/0001-11</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
               </select>
             </div>
             <div className="flex flex-col">

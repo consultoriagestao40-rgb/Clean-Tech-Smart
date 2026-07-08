@@ -17,14 +17,17 @@ export default async function handler(req, res) {
   try {
     const result = await client.query(`
       SELECT 
-        id, 
-        client_id, 
-        contact_name, 
-        service_type, 
-        grand_total, 
-        created_at 
-      FROM budgets 
-      ORDER BY created_at DESC
+        b.id, 
+        b.client_id, 
+        b.contact_name, 
+        b.service_type, 
+        b.grand_total, 
+        b.status,
+        b.created_at,
+        c.name as client_name
+      FROM budgets b
+      LEFT JOIN clients c ON b.client_id::text = c.id::text
+      ORDER BY b.created_at DESC
     `);
     
     return res.status(200).json({ budgets: result.rows });
