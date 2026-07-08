@@ -94,147 +94,173 @@ export default function Dashboard() {
     const { budget, laborItems, partsItems } = budgetData;
     
     const element = document.createElement('div');
-    element.className = 'p-8 bg-white font-sans text-gray-800 text-sm';
-    element.style.width = '800px';
+    element.style.position = 'absolute';
+    element.style.left = '-9999px';
+    element.style.top = '0';
+    element.style.width = '750px';
+    element.style.padding = '30px';
+    element.style.backgroundColor = '#ffffff';
+    element.style.fontFamily = 'Arial, sans-serif';
+    element.style.color = '#333333';
+    element.style.lineHeight = '1.4';
     
     element.innerHTML = `
-      <div style="border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <h1 style="font-size: 24px; font-weight: bold; color: #1e3a8a; margin: 0;">Clean Tech Smart</h1>
-            <p style="font-size: 12px; color: #4b5563; margin: 2px 0 0 0;">Soluções Inteligentes em Higiene e Limpeza</p>
-          </div>
-          <div style="text-align: right;">
-            <h2 style="font-size: 18px; font-weight: bold; color: #2563eb; margin: 0;">PROPOSTA TÉCNICA / ORÇAMENTO</h2>
-            <p style="font-size: 14px; font-weight: bold; color: #4b5563; margin: 5px 0 0 0;">Nº: #${budget.id}</p>
-          </div>
-        </div>
-      </div>
+      <!-- Header -->
+      <table style="width: 100%; border-bottom: 2px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px;">
+        <tr>
+          <td style="vertical-align: top;">
+            <h1 style="font-size: 22px; font-weight: bold; color: #1e3a8a; margin: 0;">Clean Tech Smart</h1>
+            <p style="font-size: 11px; color: #666666; margin: 2px 0 0 0;">Soluções Inteligentes em Higiene e Limpeza</p>
+          </td>
+          <td style="vertical-align: top; text-align: right;">
+            <h2 style="font-size: 16px; font-weight: bold; color: #2563eb; margin: 0; text-transform: uppercase;">Proposta Técnica / Orçamento</h2>
+            <p style="font-size: 13px; font-weight: bold; color: #444444; margin: 4px 0 0 0;">Nº: #${budget.id}</p>
+          </td>
+        </tr>
+      </table>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-        <div>
-          <h3 style="font-size: 13px; font-weight: bold; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; color: #1f2937; margin-bottom: 8px;">DADOS DO CLIENTE</h3>
-          <p style="margin: 4px 0;"><strong>Cliente:</strong> ${budget.client_name || budget.client_id || 'Não informado'}</p>
-          <p style="margin: 4px 0;"><strong>Documento:</strong> ${budget.client_document || '-'}</p>
-          <p style="margin: 4px 0;"><strong>Endereço:</strong> ${budget.client_address || '-'}</p>
-        </div>
-        <div style="text-align: right;">
-          <h3 style="font-size: 13px; font-weight: bold; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; color: #1f2937; margin-bottom: 8px;">DETALHES DA PROPOSTA</h3>
-          <p style="margin: 4px 0;"><strong>Solicitante:</strong> ${budget.contact_name || '-'}</p>
-          <p style="margin: 4px 0;"><strong>Contato:</strong> ${budget.contact_info || '-'}</p>
-          <p style="margin: 4px 0;"><strong>Emissão:</strong> ${new Date(budget.created_at).toLocaleDateString('pt-BR')}</p>
-          <p style="margin: 4px 0;"><strong>Tipo de Serviço:</strong> <span style="text-transform: capitalize;">${budget.service_type}</span></p>
-        </div>
-      </div>
+      <!-- Infos -->
+      <table style="width: 100%; margin-bottom: 20px; font-size: 12px;">
+        <tr>
+          <td style="width: 50%; vertical-align: top; padding-right: 10px;">
+            <h3 style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; color: #1f2937; margin-bottom: 6px; text-transform: uppercase;">Dados do Cliente</h3>
+            <p style="margin: 3px 0;"><strong>Cliente:</strong> ${budget.client_name || budget.client_id || 'Não informado'}</p>
+            <p style="margin: 3px 0;"><strong>Documento:</strong> ${budget.client_document || '-'}</p>
+            <p style="margin: 3px 0;"><strong>Endereço:</strong> ${budget.client_address || '-'}</p>
+          </td>
+          <td style="width: 50%; vertical-align: top; padding-left: 10px;">
+            <h3 style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; color: #1f2937; margin-bottom: 6px; text-transform: uppercase;">Detalhes da Proposta</h3>
+            <p style="margin: 3px 0;"><strong>Solicitante:</strong> ${budget.contact_name || '-'}</p>
+            <p style="margin: 3px 0;"><strong>Contato:</strong> ${budget.contact_info || '-'}</p>
+            <p style="margin: 3px 0;"><strong>Emissão:</strong> ${new Date(budget.created_at).toLocaleDateString('pt-BR')}</p>
+            <p style="margin: 3px 0;"><strong>Tipo de Serviço:</strong> <span style="text-transform: capitalize;">${budget.service_type}</span></p>
+          </td>
+        </tr>
+      </table>
 
-      <h3 style="font-size: 13px; font-weight: bold; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-top: 25px; color: #1f2937;">MÃO DE OBRA</h3>
-      <table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; font-size: 12px;">
+      <!-- Mão de Obra -->
+      <h3 style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin-top: 20px; color: #1f2937; text-transform: uppercase;">Mão de Obra</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 6px; margin-bottom: 15px; font-size: 11px;">
         <thead>
           <tr style="background-color: #f3f4f6; text-align: left;">
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Descrição do Serviço</th>
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; width: 100px; text-align: center;">Horas</th>
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; width: 120px; text-align: right;">Valor Unitário</th>
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; width: 120px; text-align: right;">Total</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold;">Descrição do Serviço</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold; width: 80px; text-align: center;">Horas</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold; width: 100px; text-align: right;">Valor Unitário</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold; width: 100px; text-align: right;">Total</th>
           </tr>
         </thead>
         <tbody>
-          ${laborItems.length === 0 ? '<tr><td colspan="4" style="padding: 8px; border: 1px solid #e5e7eb; text-align: center; color: #9ca3af;">Nenhuma hora técnica cobrada.</td></tr>' : 
+          ${laborItems.length === 0 ? '<tr><td colspan="4" style="padding: 6px; border: 1px solid #e5e7eb; text-align: center; color: #9ca3af;">Nenhuma hora técnica cobrada.</td></tr>' : 
             laborItems.map(item => `
               <tr>
-                <td style="padding: 8px; border: 1px solid #e5e7eb;">${item.description}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">${Number(item.hours)}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">R$ ${Number(item.unit_price).toFixed(2)}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-weight: bold;">R$ ${(Number(item.hours) * Number(item.unit_price)).toFixed(2)}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb;">${item.description}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">${Number(item.hours)}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: right;">R$ ${Number(item.unit_price).toFixed(2)}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: right; font-weight: bold;">R$ ${(Number(item.hours) * Number(item.unit_price)).toFixed(2)}</td>
               </tr>
             `).join('')
           }
         </tbody>
       </table>
 
-      <h3 style="font-size: 13px; font-weight: bold; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-top: 25px; color: #1f2937;">PEÇAS E INSUMOS</h3>
-      <table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; font-size: 12px;">
+      <!-- Peças -->
+      <h3 style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin-top: 20px; color: #1f2937; text-transform: uppercase;">Peças e Insumos</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 6px; margin-bottom: 15px; font-size: 11px;">
         <thead>
           <tr style="background-color: #f3f4f6; text-align: left;">
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Descrição da Peça</th>
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; width: 100px; text-align: center;">Qtd.</th>
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; width: 120px; text-align: right;">Valor Unitário</th>
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; width: 120px; text-align: right;">Total</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold;">Descrição da Peça</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold; width: 80px; text-align: center;">Qtd.</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold; width: 100px; text-align: right;">Valor Unitário</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold; width: 100px; text-align: right;">Total</th>
           </tr>
         </thead>
         <tbody>
-          ${partsItems.length === 0 ? '<tr><td colspan="4" style="padding: 8px; border: 1px solid #e5e7eb; text-align: center; color: #9ca3af;">Nenhuma peça incluída.</td></tr>' : 
+          ${partsItems.length === 0 ? '<tr><td colspan="4" style="padding: 6px; border: 1px solid #e5e7eb; text-align: center; color: #9ca3af;">Nenhuma peça incluída.</td></tr>' : 
             partsItems.map(item => `
               <tr>
-                <td style="padding: 8px; border: 1px solid #e5e7eb;">${item.part_name}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">R$ ${Number(item.unit_price).toFixed(2)}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-weight: bold;">R$ ${(Number(item.quantity) * Number(item.unit_price)).toFixed(2)}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb;">${item.part_name}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">${item.quantity}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: right;">R$ ${Number(item.unit_price).toFixed(2)}</td>
+                <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: right; font-weight: bold;">R$ ${(Number(item.quantity) * Number(item.unit_price)).toFixed(2)}</td>
               </tr>
             `).join('')
           }
         </tbody>
       </table>
 
-      <h3 style="font-size: 13px; font-weight: bold; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-top: 25px; color: #1f2937;">DESLOCAMENTO / LOGÍSTICA</h3>
-      <table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; font-size: 12px;">
+      <!-- Logística -->
+      <h3 style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin-top: 20px; color: #1f2937; text-transform: uppercase;">Deslocamento / Logística</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 6px; margin-bottom: 15px; font-size: 11px;">
         <thead>
           <tr style="background-color: #f3f4f6; text-align: left;">
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; text-align: center;">KM Inicial</th>
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; text-align: center;">KM Final</th>
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; text-align: center;">Distância</th>
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; text-align: right;">Valor por KM</th>
-            <th style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold; text-align: right; width: 120px;">Total Deslocamento</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold; text-align: center;">KM Inicial</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold; text-align: center;">KM Final</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold; text-align: center;">Distância</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold; text-align: right;">Valor por KM</th>
+            <th style="padding: 6px; border: 1px solid #e5e7eb; font-weight: bold; text-align: right; width: 100px;">Total</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">${budget.initial_km}</td>
-            <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">${budget.final_km}</td>
-            <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">${Math.max(0, budget.final_km - budget.initial_km)} km</td>
-            <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">R$ ${Number(budget.price_per_km).toFixed(2)}</td>
-            <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-weight: bold;">R$ ${Number(budget.total_logistics).toFixed(2)}</td>
+            <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">${budget.initial_km}</td>
+            <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">${budget.final_km}</td>
+            <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">${Math.max(0, budget.final_km - budget.initial_km)} km</td>
+            <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: right;">R$ ${Number(budget.price_per_km).toFixed(2)}</td>
+            <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: right; font-weight: bold;">R$ ${Number(budget.total_logistics).toFixed(2)}</td>
           </tr>
         </tbody>
       </table>
 
       ${budget.notes ? `
-        <div style="margin-top: 25px; padding: 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
-          <h4 style="font-weight: bold; margin: 0 0 5px 0; color: #374151; font-size: 12px;">Observações:</h4>
-          <p style="margin: 0; color: #4b5563; font-style: italic; font-size: 11px;">${budget.notes}</p>
+        <div style="margin-top: 20px; padding: 10px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 11px;">
+          <strong>Observações:</strong>
+          <p style="margin: 3px 0 0 0; color: #555555; font-style: italic;">${budget.notes}</p>
         </div>
       ` : ''}
 
-      <div style="margin-top: 40px; display: flex; justify-content: flex-end;">
-        <div style="width: 300px; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 15px; font-size: 12px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span style="color: #4b5563;">Mão de Obra:</span>
-            <span style="font-weight: bold;">R$ ${Number(budget.total_labor).toFixed(2)}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span style="color: #4b5563;">Peças:</span>
-            <span style="font-weight: bold;">R$ ${Number(budget.total_parts).toFixed(2)}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #bfdbfe;">
-            <span style="color: #4b5563;">Deslocamento:</span>
-            <span style="font-weight: bold;">R$ ${Number(budget.total_logistics).toFixed(2)}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; color: #1e3a8a;">
-            <span>VALOR TOTAL:</span>
-            <span>R$ ${Number(budget.grand_total).toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
+      <!-- Resumo Financeiro -->
+      <table style="width: 100%; margin-top: 30px;">
+        <tr>
+          <td style="width: 60%;"></td>
+          <td style="width: 40%;">
+            <div style="background-color: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px; font-size: 11px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 2px 0; color: #555555;">Mão de Obra:</td>
+                  <td style="padding: 2px 0; text-align: right; font-weight: bold;">R$ ${Number(budget.total_labor).toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 2px 0; color: #555555;">Peças:</td>
+                  <td style="padding: 2px 0; text-align: right; font-weight: bold;">R$ ${Number(budget.total_parts).toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 2px 0; color: #555555; border-bottom: 1px solid #bfdbfe;">Deslocamento:</td>
+                  <td style="padding: 2px 0; text-align: right; font-weight: bold; border-bottom: 1px solid #bfdbfe;">R$ ${Number(budget.total_logistics).toFixed(2)}</td>
+                </tr>
+                <tr style="font-size: 13px; color: #1e3a8a; font-weight: bold;">
+                  <td style="padding: 6px 0 0 0;">Valor Total:</td>
+                  <td style="padding: 6px 0 0 0; text-align: right;">R$ ${Number(budget.grand_total).toFixed(2)}</td>
+                </tr>
+              </table>
+            </div>
+          </td>
+        </tr>
+      </table>
     `;
     
+    document.body.appendChild(element);
+
     const opt = {
       margin:       10,
       filename:     `orcamento_${budget.id}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2 },
+      html2canvas:  { scale: 2, useCORS: true },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     
-    html2pdf().from(element).set(opt).save();
+    html2pdf().from(element).set(opt).save().then(() => {
+      document.body.removeChild(element);
+    });
   };
 
   return (

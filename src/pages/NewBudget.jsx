@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Save, Send, Loader2 } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Plus, Trash2, Save, Send, Loader2, ArrowLeft } from 'lucide-react';
 
 export default function NewBudget() {
+  const navigate = useNavigate();
   const [clients, setClients] = useState([]);
   const [clientData, setClientData] = useState({
     client: '',
@@ -74,27 +76,7 @@ export default function NewBudget() {
 
       if (response.ok) {
         alert(status === 'Rascunho' ? 'Rascunho salvo com sucesso!' : 'Orçamento enviado para aprovação com sucesso!');
-        // Limpar formulário
-        setClientData({
-          client: '',
-          contact: '',
-          contactInfo: '',
-          serviceType: 'corretiva'
-        });
-        setLaborItems([
-          { id: 1, description: 'Técnico de Campo', hours: 2, unitPrice: 150 },
-          { id: 2, description: 'Auxiliar Técnico', hours: 2, unitPrice: 80 },
-          { id: 3, description: 'Visita Técnica', hours: 1, unitPrice: 100 },
-        ]);
-        setPartsItems([
-          { id: 1, partName: 'Placa de Controle Principal', quantity: 1, unitPrice: 450 },
-        ]);
-        setLogistics({
-          initialKm: 12000,
-          finalKm: 12050,
-          pricePerKm: 1.5,
-        });
-        setNotes('');
+        navigate('/');
       } else {
         const errorData = await response.json();
         alert('Erro ao salvar: ' + (errorData.error || 'Erro desconhecido'));
@@ -142,6 +124,13 @@ export default function NewBudget() {
             <p className="text-sm text-gray-500 mt-1">Preencha os dados e os custos para a proposta técnica</p>
           </div>
           <div className="flex space-x-3 mt-4 md:mt-0">
+            <Link 
+              to="/" 
+              className="flex items-center px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-medium rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Link>
             <button 
               onClick={() => handleSubmit('Rascunho')}
               disabled={isSaving}
