@@ -8,6 +8,7 @@ import Modalidades from './pages/Modalidades';
 import Templates from './pages/Templates';
 import Contratos from './pages/Contratos';
 import NovoContrato from './pages/NovoContrato';
+import Faturas from './pages/Faturas';
 import Estoque from './pages/Estoque';
 import Chamados from './pages/Chamados';
 
