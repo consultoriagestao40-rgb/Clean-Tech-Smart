@@ -45,6 +45,8 @@ export default function NewBudget() {
   const [isSavingCategory, setIsSavingCategory] = useState(false);
   const [categoryFormData, setCategoryFormData] = useState({ id: null, name: '' });
   const [inventoryParts, setInventoryParts] = useState([]);
+  const [activeSearchItemId, setActiveSearchItemId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchEquipments = async () => {
     try {
@@ -329,31 +331,34 @@ export default function NewBudget() {
     setPartsItems(partsItems.filter((item) => item.id !== id));
   };
 
-  const handlePartSearchChange = (id, value) => {
-    let matchedPart = inventoryParts.find(p => {
-      const optionValue = `${p.sku ? p.sku + ' - ' : ''}${p.name}`;
-      return optionValue === value;
-    });
+  const getFilteredParts = (query) => {
+    if (!query) return [];
+    const lowerQuery = query.toLowerCase();
+    return inventoryParts.filter(p => 
+      (p.name && p.name.toLowerCase().includes(lowerQuery)) ||
+      (p.sku && p.sku.toLowerCase().includes(lowerQuery)) ||
+      (p.description && p.description.toLowerCase().includes(lowerQuery))
+    ).slice(0, 15);
+  };
 
-    if (!matchedPart) {
-      matchedPart = inventoryParts.find(p => p.sku === value || p.name === value);
-    }
+  const handlePartInputChange = (id, value) => {
+    setPartsItems(partsItems.map(item => (
+      item.id === id ? { ...item, partName: value } : item
+    )));
+    setSearchQuery(value);
+  };
 
-    if (matchedPart) {
-      setPartsItems(partsItems.map(item => (
-        item.id === id 
-          ? { 
-              ...item, 
-              partName: matchedPart.name, 
-              unitPrice: Number(matchedPart.unit_price || 0) 
-            } 
-          : item
-      )));
-    } else {
-      setPartsItems(partsItems.map(item => (
-        item.id === id ? { ...item, partName: value } : item
-      )));
-    }
+  const handleSelectPart = (id, part) => {
+    setPartsItems(partsItems.map(item => (
+      item.id === id 
+        ? { 
+            ...item, 
+            partName: part.name, 
+            unitPrice: Number(part.unit_price || 0) 
+          } 
+        : item
+    )));
+    setActiveSearchItemId(null);
   };
 
   const updatePartItem = (id, field, value) => {
@@ -587,14 +592,50 @@ export default function NewBudget() {
                 {partsItems.map((item) => (
                   <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-2">
-                      <input 
-                        list="parts-list"
-                        type="text" 
-                        value={item.partName} 
-                        onChange={(e) => handlePartSearchChange(item.id, e.target.value)} 
-                        className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" 
-                        placeholder="Buscar peça no estoque..." 
-                      />
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          value={item.partName} 
+                          onChange={(e) => handlePartInputChange(item.id, e.target.value)} 
+                          onFocus={() => {
+                            setActiveSearchItemId(item.id);
+                            setSearchQuery(item.partName);
+                          }}
+                          onBlur={() => {
+                            setTimeout(() => {
+                              setActiveSearchItemId(null);
+                            }, 200);
+                          }}
+                          className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" 
+                          placeholder="Buscar peça no estoque..." 
+                        />
+                        {activeSearchItemId === item.id && searchQuery && (
+                          <div className="absolute left-0 top-full mt-1 w-full max-w-md bg-white border border-gray-200 rounded-xl shadow-xl z-[90] max-h-60 overflow-y-auto divide-y divide-gray-50 text-left">
+                            {getFilteredParts(searchQuery).map(part => (
+                              <button
+                                key={part.id}
+                                type="button"
+                                onMouseDown={() => handleSelectPart(item.id, part)}
+                                className="w-full text-left px-4 py-2.5 hover:bg-blue-50 text-xs transition-colors flex flex-col gap-0.5"
+                              >
+                                <span className="font-semibold text-gray-800">
+                                  {part.sku ? `${part.sku} - ` : ''}{part.name}
+                                </span>
+                                {part.description && (
+                                  <span className="text-gray-400 truncate text-[10px]">
+                                    {part.description}
+                                  </span>
+                                )}
+                              </button>
+                            ))}
+                            {getFilteredParts(searchQuery).length === 0 && (
+                              <div className="p-3 text-xs text-gray-400 italic">
+                                Nenhuma peça encontrada
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-2">
                       <input type="number" min="1" value={item.quantity} onChange={(e) => updatePartItem(item.id, 'quantity', Number(e.target.value))} className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" />
@@ -901,13 +942,6 @@ export default function NewBudget() {
           </div>
         </div>
       )}
-
-      {/* Lista de Peças do Estoque para Autocomplete */}
-      <datalist id="parts-list">
-        {inventoryParts.map(part => (
-          <option key={part.id} value={`${part.sku ? part.sku + ' - ' : ''}${part.name}`} />
-        ))}
-      </datalist>
     </div>
   );
 }
