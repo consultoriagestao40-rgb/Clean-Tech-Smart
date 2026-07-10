@@ -15,13 +15,14 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
-    const { id, sku, name, description, unit_price, quantity, min_quantity } = req.body;
+    const { id, sku, name, description, unit_price, quantity, min_quantity, ncm } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'O nome da peça é obrigatório.' });
     }
 
     const cleanSku = sku ? String(sku).trim() : null;
+    const cleanNcm = ncm ? String(ncm).trim() : null;
     const price = Number(unit_price || 0);
     const qty = Number(quantity || 0);
     const minQty = Number(min_quantity || 0);
@@ -31,23 +32,24 @@ export default async function handler(req, res) {
     if (id) {
       result = await client.query(`
         UPDATE parts
-        SET sku = $1, name = $2, description = $3, unit_price = $4, quantity = $5, min_quantity = $6
-        WHERE id = $7
+        SET sku = $1, name = $2, description = $3, unit_price = $4, quantity = $5, min_quantity = $6, ncm = $7
+        WHERE id = $8
         RETURNING *;
-      `, [cleanSku, name.trim(), description || null, price, qty, minQty, id]);
+      `, [cleanSku, name.trim(), description || null, price, qty, minQty, cleanNcm, id]);
     } else {
       result = await client.query(`
-        INSERT INTO parts (sku, name, description, unit_price, quantity, min_quantity)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO parts (sku, name, description, unit_price, quantity, min_quantity, ncm)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (sku) 
         DO UPDATE SET 
           name = EXCLUDED.name, 
           description = EXCLUDED.description, 
           unit_price = EXCLUDED.unit_price, 
           quantity = EXCLUDED.quantity, 
-          min_quantity = EXCLUDED.min_quantity
+          min_quantity = EXCLUDED.min_quantity,
+          ncm = EXCLUDED.ncm
         RETURNING *;
-      `, [cleanSku, name.trim(), description || null, price, qty, minQty]);
+      `, [cleanSku, name.trim(), description || null, price, qty, minQty, cleanNcm]);
     }
 
     return res.status(200).json({ success: true, part: result.rows[0] });

@@ -25,27 +25,27 @@ export default async function handler(req, res) {
     const valuePlaceholders = [];
     
     parts.forEach((part, index) => {
-      const offset = index * 5;
+      const offset = index * 6;
       const sku = part.sku ? String(part.sku).trim() : null;
       const name = part.name ? String(part.name).trim() : 'Peça sem nome';
       const description = part.description ? String(part.description).trim() : null;
       const unit_price = Number(part.unit_price || 0);
       const quantity = Number(part.quantity || 0);
+      const ncm = part.ncm ? String(part.ncm).trim() : null;
       
-      values.push(sku, name, description, unit_price, quantity);
-      valuePlaceholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`);
+      values.push(sku, name, description, unit_price, quantity, ncm);
+      valuePlaceholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6})`);
     });
     
-    // Para peças que possuem SKU, atualiza o nome, descrição e preço se houver conflito.
-    // Peças sem SKU (nulo) serão simplesmente inseridas como novos registros.
     const query = `
-      INSERT INTO parts (sku, name, description, unit_price, quantity)
+      INSERT INTO parts (sku, name, description, unit_price, quantity, ncm)
       VALUES ${valuePlaceholders.join(', ')}
       ON CONFLICT (sku) 
       DO UPDATE SET 
         name = EXCLUDED.name,
         description = EXCLUDED.description,
-        unit_price = EXCLUDED.unit_price;
+        unit_price = EXCLUDED.unit_price,
+        ncm = EXCLUDED.ncm;
     `;
     
     await client.query(query, values);

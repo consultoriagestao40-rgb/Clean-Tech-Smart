@@ -38,7 +38,8 @@ export default function Estoque() {
     description: '',
     unit_price: 0,
     quantity: 0,
-    min_quantity: 5
+    min_quantity: 5,
+    ncm: ''
   });
 
   // Inline Inventory Editing
@@ -99,7 +100,8 @@ export default function Estoque() {
       description: '',
       unit_price: 0,
       quantity: 0,
-      min_quantity: 5
+      min_quantity: 5,
+      ncm: ''
     });
     setIsModalOpen(true);
   };
@@ -112,7 +114,8 @@ export default function Estoque() {
       description: part.description || '',
       unit_price: Number(part.unit_price || 0),
       quantity: Number(part.quantity || 0),
-      min_quantity: Number(part.min_quantity || 0)
+      min_quantity: Number(part.min_quantity || 0),
+      ncm: part.ncm || ''
     });
     setIsModalOpen(true);
   };
@@ -236,27 +239,42 @@ export default function Estoque() {
 
           setImportProgress({ current: 0, total: jsonData.length, status: 'Mapeando colunas...' });
 
-          // 2. Mapeamento de colunas flexível (Tenta encontrar SKU, Nome, Descrição, Preço e Qtd)
+          // 2. Mapeamento de colunas flexível (Tenta encontrar SKU, Nome, Descrição, Preço, NCM e Qtd)
           const mappedParts = jsonData.map(row => {
             const keys = Object.keys(row);
             
-            // SKU mappings
-            const skuKey = keys.find(k => /sku|c[oó]d(igo)?|ref(er[eê]ncia)?/i.test(k));
-            // Name mappings
-            const nameKey = keys.find(k => /nome|descri[cç][aã]o|produto|item/i.test(k));
-            // Price mappings
-            const priceKey = keys.find(k => /pre[cç]o|valor|custo|unit/i.test(k));
+            // SKU mappings (e.g. PRODUTO, SKU, CODIGO, REF)
+            const skuKey = keys.find(k => /produto|sku|c[oó]d(igo)?|ref(er[eê]ncia)?/i.test(k));
+            // Name mappings (e.g. DESCRIÇÃO, NOME, ITEM)
+            const nameKey = keys.find(k => k !== skuKey && /descri[cç][aã]o|nome|item/i.test(k));
+            // NCM mappings
+            const ncmKey = keys.find(k => /ncm/i.test(k));
+            // Price mappings (e.g. VL TOTAL, PREÇO, VALOR, CUSTO, UNIT, VL)
+            const priceKey = keys.find(k => /vl|total|pre[cç]o|valor|custo|unit/i.test(k));
             // Quantity mappings
             const qtyKey = keys.find(k => /qtd|quant(idade)?|estoque/i.test(k));
             // Description mappings
-            const descKey = keys.find(k => /detalhes|obs|especifica[cç][aã]o/i.test(k));
+            const descKey = keys.find(k => k !== nameKey && k !== skuKey && /detalhes|obs|especifica[cç][aã]o/i.test(k));
+
+            // Função para parsear valor monetário em BRL para float
+            const parseBRLFloat = (val) => {
+              if (val === undefined || val === null) return 0;
+              let str = String(val).trim();
+              str = str.replace(/R\$\s*/g, '');
+              if (str.includes(',')) {
+                str = str.replace(/\./g, '');
+                str = str.replace(',', '.');
+              }
+              return parseFloat(str) || 0;
+            };
 
             return {
-              sku: skuKey ? String(row[skuKey]) : '',
-              name: nameKey ? String(row[nameKey]) : 'Peça sem nome',
-              description: descKey ? String(row[descKey]) : '',
-              unit_price: priceKey ? parseFloat(String(row[priceKey]).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0 : 0,
-              quantity: qtyKey ? parseInt(row[qtyKey], 10) || 0 : 0
+              sku: skuKey ? String(row[skuKey] || '').trim() : '',
+              name: nameKey ? String(row[nameKey] || '').trim() : 'Peça sem nome',
+              description: descKey ? String(row[descKey] || '').trim() : '',
+              unit_price: priceKey ? parseBRLFloat(row[priceKey]) : 0,
+              quantity: qtyKey ? parseInt(row[qtyKey], 10) || 0 : 0,
+              ncm: ncmKey ? String(row[ncmKey] || '').trim() : ''
             };
           });
 
@@ -487,6 +505,7 @@ export default function Estoque() {
               <thead className="bg-gray-50/50 border-b border-gray-100 text-gray-700">
                 <tr>
                   <th className="px-6 py-4 font-semibold w-36">SKU / Código</th>
+                  <th className="px-6 py-4 font-semibold w-32">NCM</th>
                   <th className="px-6 py-4 font-semibold">Nome da Peça / Descrição</th>
                   <th className="px-6 py-4 font-semibold w-40 text-right">Preço Unitário</th>
                   <th className="px-6 py-4 font-semibold w-40 text-center">Estoque Atual</th>
@@ -497,7 +516,7 @@ export default function Estoque() {
               <tbody className="divide-y divide-gray-100">
                 {currentItems.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-400 italic">
+                    <td colSpan={7} className="px-6 py-12 text-center text-gray-400 italic">
                       Nenhuma peça encontrada no catálogo.
                     </td>
                   </tr>
@@ -516,6 +535,9 @@ export default function Estoque() {
                       >
                         <td className="px-6 py-4 font-mono font-medium text-gray-900">
                           {part.sku || <span className="text-gray-300 font-sans italic text-xs">Sem SKU</span>}
+                        </td>
+                        <td className="px-6 py-4 font-mono font-medium text-gray-500 text-xs">
+                          {part.ncm || <span className="text-gray-300 font-sans italic">-</span>}
                         </td>
                         <td className="px-6 py-4">
                           <p className="font-semibold text-gray-800">{part.name}</p>
@@ -658,15 +680,27 @@ export default function Estoque() {
             </div>
             
             <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Código SKU *</label>
-                <input 
-                  type="text" 
-                  value={formData.sku} 
-                  onChange={e => setFormData({ ...formData, sku: e.target.value })} 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white" 
-                  placeholder="Ex: PC-9988" 
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Código SKU *</label>
+                  <input 
+                    type="text" 
+                    value={formData.sku} 
+                    onChange={e => setFormData({ ...formData, sku: e.target.value })} 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white" 
+                    placeholder="Ex: PC-9988" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">NCM</label>
+                  <input 
+                    type="text" 
+                    value={formData.ncm} 
+                    onChange={e => setFormData({ ...formData, ncm: e.target.value })} 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white" 
+                    placeholder="Ex: 68053090" 
+                  />
+                </div>
               </div>
 
               <div>
