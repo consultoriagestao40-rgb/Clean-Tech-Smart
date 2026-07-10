@@ -21,6 +21,7 @@ export default function Estoque() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [pageInputVal, setPageInputVal] = useState('1');
   
   // Stats
   const [totalItems, setTotalItems] = useState(0);
@@ -72,6 +73,10 @@ export default function Estoque() {
   useEffect(() => {
     fetchParts();
   }, []);
+
+  useEffect(() => {
+    setPageInputVal(String(currentPage));
+  }, [currentPage]);
 
   const calculateStats = (items) => {
     let value = 0;
@@ -243,20 +248,34 @@ export default function Estoque() {
           const mappedParts = jsonData.map(row => {
             const keys = Object.keys(row);
             
-            // SKU mappings (e.g. PRODUTO, SKU, CODIGO, REF)
-            const skuKey = keys.find(k => /produto|sku|c[oó]d(igo)?|ref(er[eê]ncia)?/i.test(k));
-            // Name mappings (e.g. DESCRIÇÃO, NOME, ITEM)
-            const nameKey = keys.find(k => k !== skuKey && /descri[cç][aã]o|nome|item/i.test(k));
-            // NCM mappings
-            const ncmKey = keys.find(k => /ncm/i.test(k));
-            // Price mappings (e.g. prioritiza unit/unitario, depois preco/valor/custo/total/vl)
-            let priceKey = keys.find(k => /unit|unit[aá]rio/i.test(k));
-            if (!priceKey) {
-              priceKey = keys.find(k => /pre[cç]o|valor|custo|vl|total/i.test(k));
+            // SKU (Coluna A - índice 0 - PRODUTO)
+            let skuKey = keys[0];
+            if (!skuKey || !/produto|sku|c[oó]d/i.test(skuKey)) {
+              skuKey = keys.find(k => /produto|sku|c[oó]d(igo)?|ref(er[eê]ncia)?/i.test(k));
             }
-            // Quantity mappings
+            
+            // Nome/Descrição (Coluna B - índice 1 - DESCRIÇÃO)
+            let nameKey = keys[1];
+            if (!nameKey || !/descri/i.test(nameKey)) {
+              nameKey = keys.find(k => k !== skuKey && /descri[cç][aã]o|nome|item/i.test(k));
+            }
+            
+            // NCM (Coluna C - índice 2 - NCM)
+            let ncmKey = keys[2];
+            if (!ncmKey || !/ncm/i.test(ncmKey)) {
+              ncmKey = keys.find(k => /ncm/i.test(k));
+            }
+            
+            // Preço (Coluna L - índice 11 - VL TOTAL)
+            let priceKey = keys[11];
+            if (!priceKey) {
+              priceKey = keys.find(k => /vl\s*total|total/i.test(k)) || keys.find(k => /pre[cç]o|valor/i.test(k));
+            }
+            
+            // Quantidade
             const qtyKey = keys.find(k => /qtd|quant(idade)?|estoque/i.test(k));
-            // Description mappings
+            
+            // Descrição adicional
             const descKey = keys.find(k => k !== nameKey && k !== skuKey && /detalhes|obs|especifica[cç][aã]o/i.test(k));
 
             // Função para parsear valor monetário em BRL para float
@@ -642,10 +661,28 @@ export default function Estoque() {
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="p-6 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-xs text-gray-500">
-              Exibindo {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, filteredParts.length)} de {filteredParts.length} peças.
-            </span>
+          <div className="p-6 border-t border-gray-100 flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center space-x-4">
+              <span className="text-xs text-gray-500">
+                Exibindo {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, filteredParts.length)} de {filteredParts.length} peças.
+              </span>
+              <div className="flex items-center space-x-1.5 text-xs text-gray-500 border-l border-gray-200 pl-4">
+                <span>Exibir:</span>
+                <select 
+                  value={itemsPerPage} 
+                  onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                  className="px-2 py-1 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white text-xs font-medium"
+                >
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                  <option value={500}>500</option>
+                </select>
+                <span>linhas</span>
+              </div>
+            </div>
+            
             <div className="flex items-center space-x-1.5">
               <button 
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -654,9 +691,35 @@ export default function Estoque() {
               >
                 Anterior
               </button>
-              <span className="text-xs font-medium text-gray-600 px-3">
-                Página {currentPage} de {totalPages}
-              </span>
+              
+              <div className="flex items-center space-x-1.5 text-xs text-gray-600 px-2">
+                <span>Página</span>
+                <input 
+                  type="text" 
+                  value={pageInputVal}
+                  onChange={e => setPageInputVal(e.target.value)}
+                  onBlur={() => {
+                    let pageNum = parseInt(pageInputVal, 10);
+                    if (isNaN(pageNum) || pageNum < 1) pageNum = 1;
+                    if (pageNum > totalPages) pageNum = totalPages;
+                    setCurrentPage(pageNum);
+                    setPageInputVal(String(pageNum));
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      let pageNum = parseInt(pageInputVal, 10);
+                      if (isNaN(pageNum) || pageNum < 1) pageNum = 1;
+                      if (pageNum > totalPages) pageNum = totalPages;
+                      setCurrentPage(pageNum);
+                      setPageInputVal(String(pageNum));
+                      e.target.blur();
+                    }
+                  }}
+                  className="w-12 px-1 py-0.5 border border-gray-300 rounded text-center focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white font-medium"
+                />
+                <span>de {totalPages}</span>
+              </div>
+
               <button 
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
