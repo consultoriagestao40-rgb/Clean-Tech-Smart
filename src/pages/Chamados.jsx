@@ -22,6 +22,8 @@ export default function Chamados() {
   const [equipments, setEquipments] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('tabela'); // 'tabela' | 'kanban'
+  const [kanbanGroupBy, setKanbanGroupBy] = useState('status'); // 'status' | 'technician'
   
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -231,6 +233,49 @@ export default function Chamados() {
     }
   };
 
+  const handleDragStart = (e, ticketId) => {
+    e.dataTransfer.setData('text/plain', String(ticketId));
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e, groupKey) => {
+    e.preventDefault();
+    const ticketId = Number(e.dataTransfer.getData('text/plain'));
+    if (!ticketId) return;
+
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+
+    let updatedFields = {};
+    if (kanbanGroupBy === 'status') {
+      updatedFields = { status: groupKey };
+    } else {
+      updatedFields = { 
+        technician_id: groupKey === 'unassigned' ? null : Number(groupKey),
+        technician_name: groupKey === 'unassigned' ? null : (technicians.find(t => t.id === Number(groupKey))?.name || '')
+      };
+    }
+
+    try {
+      const res = await fetch('/api/save-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...ticket,
+          ...updatedFields
+        })
+      });
+      if (res.ok) {
+        fetchTickets();
+      }
+    } catch (err) {
+      console.error('Erro ao mover chamado:', err);
+    }
+  };
+
   // Filtered tickets selector
   const filteredTickets = tickets.filter(ticket => {
     const matchesSearch = 
@@ -305,6 +350,39 @@ export default function Chamados() {
   const selectedClient = clients.find(c => String(c.id) === String(formData.client_id));
   const selectedClientAddress = selectedClient?.address || '';
 
+  const getKanbanColumns = () => {
+    if (kanbanGroupBy === 'status') {
+      return [
+        { key: 'Aberto', title: 'Aberto', color: 'border-t-2 border-red-500 bg-red-50/20 text-red-700' },
+        { key: 'Em Atendimento', title: 'Em Atendimento', color: 'border-t-2 border-amber-500 bg-amber-50/20 text-amber-700' },
+        { key: 'Concluído', title: 'Concluído', color: 'border-t-2 border-green-500 bg-green-50/20 text-green-700' },
+        { key: 'Cancelado', title: 'Cancelado', color: 'border-t-2 border-gray-500 bg-gray-50/20 text-gray-500' }
+      ];
+    } else {
+      return [
+        { key: 'unassigned', title: 'Não Designado', color: 'border-t-2 border-gray-400 bg-gray-50/20 text-gray-500' },
+        ...technicians.map(t => ({
+          key: String(t.id),
+          title: t.name,
+          color: 'border-t-2 border-blue-500 bg-blue-50/20 text-blue-700'
+        }))
+      ];
+    }
+  };
+
+  const getTicketsForColumn = (columnKey) => {
+    return filteredTickets.filter(ticket => {
+      if (kanbanGroupBy === 'status') {
+        return (ticket.status || 'Aberto') === columnKey;
+      } else {
+        if (columnKey === 'unassigned') {
+          return !ticket.technician_id;
+        }
+        return String(ticket.technician_id) === columnKey;
+      }
+    });
+  };
+
   return (
     <div className="font-sans text-gray-800 space-y-6">
       
@@ -357,13 +435,32 @@ export default function Chamados() {
           <h1 className="text-xl font-bold text-gray-900">Chamados de Manutenção</h1>
           <p className="text-xs text-gray-500 mt-1">Abra, direcione e monitore o fluxo de atendimentos e treinamentos em tempo real.</p>
         </div>
-        <button 
-          onClick={handleOpenNew}
-          className="flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-sm text-sm"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Chamado
-        </button>
+        
+        <div className="flex items-center space-x-4">
+          {/* Segmented Control */}
+          <div className="bg-gray-100 p-1 rounded-xl flex space-x-1 text-xs font-semibold">
+            <button 
+              onClick={() => setViewMode('tabela')} 
+              className={`px-3 py-1.5 rounded-lg transition-all ${viewMode === 'tabela' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+            >
+              Tabela
+            </button>
+            <button 
+              onClick={() => setViewMode('kanban')} 
+              className={`px-3 py-1.5 rounded-lg transition-all ${viewMode === 'kanban' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+            >
+              Kanban
+            </button>
+          </div>
+
+          <button 
+            onClick={handleOpenNew}
+            className="flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-sm text-sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Chamado
+          </button>
+        </div>
       </div>
 
       {/* Filters Box */}
@@ -432,15 +529,39 @@ export default function Chamados() {
         </div>
       </div>
 
-      {/* Tickets List Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center p-12 text-gray-500">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-              <span>Carregando chamados...</span>
+      {/* Kanban GroupBy Selector Row */}
+      {viewMode === 'kanban' && (
+        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <span className="font-semibold">Agrupar Kanban por:</span>
+            <div className="bg-gray-100 p-0.5 rounded-lg flex space-x-1 text-xs">
+              <button 
+                onClick={() => setKanbanGroupBy('status')} 
+                className={`px-3 py-1 rounded-md transition-all ${kanbanGroupBy === 'status' ? 'bg-white text-blue-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-gray-800'}`}
+              >
+                Status
+              </button>
+              <button 
+                onClick={() => setKanbanGroupBy('technician')} 
+                className={`px-3 py-1 rounded-md transition-all ${kanbanGroupBy === 'technician' ? 'bg-white text-blue-600 shadow-sm font-semibold' : 'text-gray-500 hover:text-gray-800'}`}
+              >
+                Técnico
+              </button>
             </div>
-          ) : (
+          </div>
+          <span className="text-xs text-gray-400 italic">Dica: Arraste e solte os cartões para redefinir status ou designar técnicos.</span>
+        </div>
+      )}
+
+      {/* Content Area (Table or Kanban) */}
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center p-12 text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
+          <span>Carregando chamados...</span>
+        </div>
+      ) : viewMode === 'tabela' ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-gray-600">
               <thead className="bg-gray-50/50 border-b border-gray-100 text-gray-700">
                 <tr>
@@ -569,9 +690,132 @@ export default function Chamados() {
                 )}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className={`items-start pb-4 ${kanbanGroupBy === 'status' ? 'grid grid-cols-1 md:grid-cols-4 gap-6' : 'flex space-x-6 overflow-x-auto pb-4 custom-scrollbar'}`}>
+          {getKanbanColumns().map(column => {
+            const columnTickets = getTicketsForColumn(column.key);
+            
+            return (
+              <div 
+                key={column.key}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, column.key)}
+                className={`bg-gray-50/50 rounded-2xl border border-gray-200/60 p-4 space-y-4 min-h-[500px] transition-colors ${
+                  kanbanGroupBy === 'technician' ? 'min-w-[290px] w-[290px] shrink-0' : ''
+                }`}
+              >
+                {/* Column Header */}
+                <div className={`p-3 rounded-xl flex justify-between items-center ${column.color}`}>
+                  <span className="font-bold text-xs uppercase tracking-wider truncate mr-2">{column.title}</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/80 shadow-sm shrink-0">
+                    {columnTickets.length}
+                  </span>
+                </div>
+
+                {/* Column Cards Container */}
+                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+                  {columnTickets.length === 0 ? (
+                    <div className="border-2 border-dashed border-gray-200 rounded-xl py-8 px-4 text-center text-xs text-gray-400 italic">
+                      Arraste chamados aqui
+                    </div>
+                  ) : (
+                    columnTickets.map(ticket => (
+                      <div 
+                        key={ticket.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, ticket.id)}
+                        className={`bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 transition-all space-y-3 border-l-4 ${
+                          ticket.priority === 'Alta' ? 'border-l-red-500' :
+                          ticket.priority === 'Baixa' ? 'border-l-green-500' : 'border-l-amber-500'
+                        }`}
+                      >
+                        {/* Card Header */}
+                        <div className="flex justify-between items-start">
+                          <span className="font-mono text-xs font-bold text-blue-600">#{ticket.id}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getTicketTypeClass(ticket.ticket_type)}`}>
+                            {getTicketTypeLabel(ticket.ticket_type)}
+                          </span>
+                        </div>
+
+                        {/* Card Body */}
+                        <div className="space-y-1">
+                          <h4 className="text-xs font-bold text-gray-900 leading-tight text-left">{ticket.client_name}</h4>
+                          {ticket.client_address && (
+                            <p className="text-[10px] text-gray-400 truncate text-left" title={ticket.client_address}>
+                              {ticket.client_address}
+                            </p>
+                          )}
+                          {ticket.equipment_name && (
+                            <div className="text-[10px] text-gray-600 bg-gray-50 p-1.5 rounded-lg font-medium leading-tight text-left truncate">
+                              {ticket.equipment_name}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Card Footer */}
+                        <div className="flex items-center justify-between text-[10px] text-gray-500 pt-2 border-t border-gray-100">
+                          {ticket.scheduled_date ? (
+                            <div className="flex items-center text-[10px] text-gray-500">
+                              <Calendar className="w-3 h-3 mr-1 text-gray-400" />
+                              <span>{formatDate(ticket.scheduled_date).split(' ')[0]}</span>
+                            </div>
+                          ) : (
+                            <span className="text-[9px] text-gray-300 italic">Sem data</span>
+                          )}
+
+                          {/* Quick Route Link */}
+                          {ticket.client_address ? (
+                            <div className="flex items-center space-x-1 font-bold text-[9px]">
+                              <a 
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ticket.client_address)}`}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-500 hover:text-blue-700"
+                              >
+                                Maps
+                              </a>
+                              <span className="text-gray-300">|</span>
+                              <a 
+                                href={`https://waze.com/ul?q=${encodeURIComponent(ticket.client_address)}&navigate=yes`}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-cyan-500 hover:text-cyan-700"
+                              >
+                                Waze
+                              </a>
+                            </div>
+                          ) : null}
+
+                          <div className="flex space-x-0.5">
+                            <button 
+                              type="button"
+                              onClick={() => handleOpenEdit(ticket)} 
+                              className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                              title="Editar"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => handleDelete(ticket.id)} 
+                              className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Edit / New Ticket Modal */}
       {isModalOpen && (
