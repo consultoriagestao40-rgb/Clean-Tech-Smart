@@ -11,6 +11,7 @@ import NovoContrato from './pages/NovoContrato';
 import Faturas from './pages/Faturas';
 import Estoque from './pages/Estoque';
 import Chamados from './pages/Chamados';
+import Tecnicos from './pages/Tecnicos';
 
 function Placeholder({ title }) {
   return (
@@ -40,6 +41,7 @@ function App() {
           <Route path="faturas" element={<Faturas />} />
           <Route path="estoque" element={<Estoque />} />
           <Route path="chamados" element={<Chamados />} />
+          <Route path="tecnicos" element={<Tecnicos />} />
           
           {/* Outras Rotas (Placeholders) */}
           <Route path="disponibilidade" element={<Placeholder title="Disponibilidade" />} />

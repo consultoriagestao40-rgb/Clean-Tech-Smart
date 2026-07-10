@@ -26,6 +26,7 @@ export default function Sidebar() {
     { name: 'Contratos', path: '/contratos', icon: <FileText size={20} /> },
     { name: 'Faturas', path: '/faturas', icon: <DollarSign size={20} /> },
     { name: 'Clientes', path: '/clientes', icon: <Users size={20} /> },
+    { name: 'Técnicos', path: '/tecnicos', icon: <User size={20} /> },
     { name: 'Equipamentos', path: '/equipamentos', icon: <Package size={20} /> },
     { name: 'Estoque', path: '/estoque', icon: <Boxes size={20} /> },
     { name: 'Chamados', path: '/chamados', icon: <ClipboardList size={20} /> },
