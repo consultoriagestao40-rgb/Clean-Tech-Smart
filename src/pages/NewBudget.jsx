@@ -577,7 +577,7 @@ export default function NewBudget() {
               Adicionar Peça do Estoque
             </button>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-visible">
             <table className="w-full text-left text-sm text-gray-600">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
