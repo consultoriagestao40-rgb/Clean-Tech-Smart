@@ -15,23 +15,38 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
-    const { name } = req.body;
+    const { id, name } = req.body;
     
     if (!name) {
       return res.status(400).json({ error: 'O nome da categoria é obrigatório.' });
     }
 
-    // Tenta inserir a categoria
-    const result = await client.query(`
-      INSERT INTO equipment_categories (name)
-      VALUES ($1)
-      ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
-      RETURNING *;
-    `, [name.trim()]);
+    let result;
+
+    if (id) {
+      // Atualiza categoria existente pelo ID
+      result = await client.query(`
+        UPDATE equipment_categories
+        SET name = $1
+        WHERE id = $2
+        RETURNING *;
+      `, [name.trim(), id]);
+    } else {
+      // Tenta inserir nova categoria
+      result = await client.query(`
+        INSERT INTO equipment_categories (name)
+        VALUES ($1)
+        ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+        RETURNING *;
+      `, [name.trim()]);
+    }
     
     return res.status(200).json({ success: true, category: result.rows[0] });
   } catch (error) {
     console.error('Erro ao salvar categoria:', error);
+    if (error.code === '23505') {
+      return res.status(400).json({ error: 'Já existe uma categoria cadastrada com este nome.' });
+    }
     return res.status(500).json({ error: 'Erro interno ao salvar categoria' });
   } finally {
     client.release();

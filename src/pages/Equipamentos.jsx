@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Loader2, Edit, X, Package } from 'lucide-react';
+import { Plus, Search, Loader2, Edit, X, Package, Trash2 } from 'lucide-react';
 
 export default function Equipamentos() {
   const [equipments, setEquipments] = useState([]);
