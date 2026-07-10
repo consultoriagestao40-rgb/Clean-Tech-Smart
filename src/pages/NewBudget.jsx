@@ -44,6 +44,7 @@ export default function NewBudget() {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSavingCategory, setIsSavingCategory] = useState(false);
   const [categoryFormData, setCategoryFormData] = useState({ id: null, name: '' });
+  const [inventoryParts, setInventoryParts] = useState([]);
 
   const fetchEquipments = async () => {
     try {
@@ -79,6 +80,14 @@ export default function NewBudget() {
         }
         await fetchEquipments();
         await fetchCategories();
+        
+        try {
+          const partsRes = await fetch('/api/get-parts');
+          const partsData = await partsRes.json();
+          if (partsData.parts) setInventoryParts(partsData.parts);
+        } catch (err) {
+          console.error('Erro ao buscar peças do estoque:', err);
+        }
 
         if (budgetId) {
           const budgetRes = await fetch(`/api/get-budget-details?id=${budgetId}`);
@@ -320,6 +329,33 @@ export default function NewBudget() {
     setPartsItems(partsItems.filter((item) => item.id !== id));
   };
 
+  const handlePartSearchChange = (id, value) => {
+    let matchedPart = inventoryParts.find(p => {
+      const optionValue = `${p.sku ? p.sku + ' - ' : ''}${p.name}`;
+      return optionValue === value;
+    });
+
+    if (!matchedPart) {
+      matchedPart = inventoryParts.find(p => p.sku === value || p.name === value);
+    }
+
+    if (matchedPart) {
+      setPartsItems(partsItems.map(item => (
+        item.id === id 
+          ? { 
+              ...item, 
+              partName: matchedPart.name, 
+              unitPrice: Number(matchedPart.unit_price || 0) 
+            } 
+          : item
+      )));
+    } else {
+      setPartsItems(partsItems.map(item => (
+        item.id === id ? { ...item, partName: value } : item
+      )));
+    }
+  };
+
   const updatePartItem = (id, field, value) => {
     setPartsItems(partsItems.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
   };
@@ -551,7 +587,14 @@ export default function NewBudget() {
                 {partsItems.map((item) => (
                   <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-2">
-                      <input type="text" value={item.partName} onChange={(e) => updatePartItem(item.id, 'partName', e.target.value)} className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" placeholder="Buscar peça..." />
+                      <input 
+                        list="parts-list"
+                        type="text" 
+                        value={item.partName} 
+                        onChange={(e) => handlePartSearchChange(item.id, e.target.value)} 
+                        className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" 
+                        placeholder="Buscar peça no estoque..." 
+                      />
                     </td>
                     <td className="px-4 py-2">
                       <input type="number" min="1" value={item.quantity} onChange={(e) => updatePartItem(item.id, 'quantity', Number(e.target.value))} className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" />
@@ -858,6 +901,13 @@ export default function NewBudget() {
           </div>
         </div>
       )}
+
+      {/* Lista de Peças do Estoque para Autocomplete */}
+      <datalist id="parts-list">
+        {inventoryParts.map(part => (
+          <option key={part.id} value={`${part.sku ? part.sku + ' - ' : ''}${part.name}`} />
+        ))}
+      </datalist>
     </div>
   );
 }

@@ -13,7 +13,8 @@ import {
   HelpCircle, 
   UserCog, 
   LogOut,
-  User
+  User,
+  Boxes
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -25,6 +26,7 @@ export default function Sidebar() {
     { name: 'Faturas', path: '/faturas', icon: <DollarSign size={20} /> },
     { name: 'Clientes', path: '/clientes', icon: <Users size={20} /> },
     { name: 'Equipamentos', path: '/equipamentos', icon: <Package size={20} /> },
+    { name: 'Estoque', path: '/estoque', icon: <Boxes size={20} /> },
     { name: 'Modalidades', path: '/modalidades', icon: <Tags size={20} /> },
     { name: 'Serviços', path: '/servicos', icon: <Wrench size={20} /> },
     { name: 'Templates', path: '/templates', icon: <FileBox size={20} /> },
