@@ -47,6 +47,7 @@ export default function NewBudget() {
   const [inventoryParts, setInventoryParts] = useState([]);
   const [activeSearchItemId, setActiveSearchItemId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [markupPercent, setMarkupPercent] = useState(28);
 
   const fetchEquipments = async () => {
     try {
@@ -103,6 +104,7 @@ export default function NewBudget() {
               serviceType: b.service_type || 'corretiva',
               equipmentId: b.equipment_id ? String(b.equipment_id) : ''
             });
+            setMarkupPercent(b.markup_percent !== undefined && b.markup_percent !== null ? Number(b.markup_percent) : 28);
             if (budgetData.laborItems) {
               setLaborItems(budgetData.laborItems.map(item => ({
                 id: item.id,
@@ -116,7 +118,8 @@ export default function NewBudget() {
                 id: item.id,
                 partName: item.part_name,
                 quantity: item.quantity,
-                unitPrice: item.unit_price
+                unitPrice: Number(item.unit_price || 0),
+                costPrice: item.cost_price !== undefined && item.cost_price !== null ? Number(item.cost_price) : Number(item.unit_price || 0) / 1.28
               })));
             }
             setLogistics({
@@ -287,7 +290,8 @@ export default function NewBudget() {
         totalParts,
         totalLogistics,
         grandTotal,
-        status
+        status,
+        markupPercent
       };
 
       const response = await fetch('/api/save-budget', {
@@ -324,7 +328,7 @@ export default function NewBudget() {
   };
 
   const addPartItem = () => {
-    setPartsItems([...partsItems, { id: Date.now(), partName: '', quantity: 1, unitPrice: 0 }]);
+    setPartsItems([...partsItems, { id: Date.now(), partName: '', quantity: 1, unitPrice: 0, costPrice: 0 }]);
   };
 
   const removePartItem = (id) => {
@@ -349,16 +353,35 @@ export default function NewBudget() {
   };
 
   const handleSelectPart = (id, part) => {
+    const rawCost = Number(part.unit_price || 0);
+    const sellingPrice = Number((rawCost * (1 + markupPercent / 100)).toFixed(2));
     setPartsItems(partsItems.map(item => (
       item.id === id 
         ? { 
             ...item, 
             partName: part.name, 
-            unitPrice: Number(part.unit_price || 0) 
+            costPrice: rawCost,
+            unitPrice: sellingPrice
           } 
         : item
     )));
     setActiveSearchItemId(null);
+  };
+
+  const handleMarkupPercentChange = (newPercent) => {
+    const percent = Number(newPercent);
+    setMarkupPercent(newPercent); // Keep user input string state so they can type backspace/dot
+    
+    // Recalculate selling price for each item based on its costPrice
+    const numericPercent = isNaN(percent) ? 0 : percent;
+    setPartsItems(partsItems.map(item => {
+      const rawCost = Number(item.costPrice || 0);
+      const sellingPrice = Number((rawCost * (1 + numericPercent / 100)).toFixed(2));
+      return {
+        ...item,
+        unitPrice: rawCost > 0 ? sellingPrice : item.unitPrice
+      };
+    }));
   };
 
   const updatePartItem = (id, field, value) => {
@@ -571,12 +594,25 @@ export default function NewBudget() {
         {/* 5. Bloco 4: Peças e Insumos */}
         <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
            <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Peças e Insumos</h2>
-            <button onClick={addPartItem} className="text-sm flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors">
-              <Plus className="w-4 h-4 mr-1" />
-              Adicionar Peça do Estoque
-            </button>
-          </div>
+             <div className="flex items-center space-x-6">
+               <h2 className="text-lg font-semibold text-gray-800">Peças e Insumos</h2>
+               <div className="flex items-center space-x-2 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
+                 <span className="text-xs font-semibold text-blue-700">Margem Peças / NF:</span>
+                 <input 
+                   type="number" 
+                   value={markupPercent} 
+                   onChange={(e) => handleMarkupPercentChange(e.target.value)} 
+                   className="w-16 px-1.5 py-0.5 border border-blue-200 rounded text-center focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white text-xs font-bold text-blue-900"
+                   placeholder="28" 
+                 />
+                 <span className="text-xs font-semibold text-blue-700">%</span>
+               </div>
+             </div>
+             <button onClick={addPartItem} className="text-sm flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors">
+               <Plus className="w-4 h-4 mr-1" />
+               Adicionar Peça do Estoque
+             </button>
+           </div>
           <div className="overflow-visible">
             <table className="w-full text-left text-sm text-gray-600">
               <thead className="bg-gray-50 border-b border-gray-200">
