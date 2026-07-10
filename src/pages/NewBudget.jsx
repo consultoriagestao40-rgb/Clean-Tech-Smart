@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, Save, Send, Loader2, ArrowLeft, X } from 'lucide-react';
+import { Plus, Trash2, Save, Send, Loader2, ArrowLeft, X, Edit } from 'lucide-react';
 
 export default function NewBudget() {
   const navigate = useNavigate();
