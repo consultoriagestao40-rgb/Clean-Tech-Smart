@@ -49,6 +49,7 @@ export default function NewBudget() {
   const [searchQuery, setSearchQuery] = useState('');
   const [markupPercent, setMarkupPercent] = useState(28);
   const [editingUnitPriceId, setEditingUnitPriceId] = useState(null);
+  const [editingLaborPriceId, setEditingLaborPriceId] = useState(null);
 
   const fetchEquipments = async () => {
     try {
@@ -139,14 +140,12 @@ export default function NewBudget() {
   }, [budgetId]);
   const [isSaving, setIsSaving] = useState(false);
   const [laborItems, setLaborItems] = useState([
-    { id: 1, description: 'Técnico de Campo', hours: 2, unitPrice: 150 },
-    { id: 2, description: 'Auxiliar Técnico', hours: 2, unitPrice: 80 },
+    { id: 1, description: 'Técnico de Campo', hours: 2, unitPrice: 240 },
+    { id: 2, description: 'Auxiliar Técnico', hours: 2, unitPrice: 180 },
     { id: 3, description: 'Visita Técnica', hours: 1, unitPrice: 100 },
   ]);
 
-  const [partsItems, setPartsItems] = useState([
-    { id: 1, partName: 'Placa de Controle Principal', quantity: 1, unitPrice: 450 },
-  ]);
+  const [partsItems, setPartsItems] = useState([]);
 
   const [logistics, setLogistics] = useState({
     initialKm: 12000,
@@ -326,6 +325,27 @@ export default function NewBudget() {
 
   const updateLaborItem = (id, field, value) => {
     setLaborItems(laborItems.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+  };
+
+  const handleLaborDescriptionChange = (id, val) => {
+    let price = null;
+    const cleanVal = val.trim();
+    if (/t[eé]cnico\s+de\s+campo/i.test(cleanVal)) {
+      price = 240;
+    } else if (/auxiliar\s+t[eé]cnico/i.test(cleanVal)) {
+      price = 180;
+    }
+    
+    setLaborItems(laborItems.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          description: val,
+          unitPrice: price !== null ? price : item.unitPrice
+        };
+      }
+      return item;
+    }));
   };
 
   const addPartItem = () => {
@@ -523,9 +543,9 @@ export default function NewBudget() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 font-medium text-gray-700 rounded-tl-lg">Descrição do Serviço</th>
-                  <th className="px-4 py-3 font-medium text-gray-700 w-24">Qtd. Horas</th>
-                  <th className="px-4 py-3 font-medium text-gray-700 w-32">Valor Unitário</th>
-                  <th className="px-4 py-3 font-medium text-gray-700 w-32">Total</th>
+                  <th className="px-4 py-3 font-medium text-gray-700 w-24 text-center">Qtd. Horas</th>
+                  <th className="px-4 py-3 font-medium text-gray-700 w-44 text-right">Valor Unitário</th>
+                  <th className="px-4 py-3 font-medium text-gray-700 w-44 text-right">Total</th>
                   <th className="px-4 py-3 font-medium text-gray-700 w-16 text-center rounded-tr-lg">Ações</th>
                 </tr>
               </thead>
@@ -533,20 +553,61 @@ export default function NewBudget() {
                 {laborItems.map((item) => (
                   <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-2">
-                      <input type="text" value={item.description} onChange={(e) => updateLaborItem(item.id, 'description', e.target.value)} className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" placeholder="Ex: Técnico de Campo" />
-                    </td>
-                    <td className="px-4 py-2">
-                      <input type="number" min="0" value={item.hours} onChange={(e) => updateLaborItem(item.id, 'hours', Number(e.target.value))} className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" />
-                    </td>
-                    <td className="px-4 py-2 flex items-center">
-                      <span className="text-gray-500 mr-1">R$</span>
-                      <input type="number" min="0" value={item.unitPrice} onChange={(e) => updateLaborItem(item.id, 'unitPrice', Number(e.target.value))} className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" />
-                    </td>
-                    <td className="px-4 py-2 font-medium text-gray-800">
-                      R$ {formatBRL(item.hours * item.unitPrice)}
-                    </td>
-                    <td className="px-4 py-2 text-center">
-                      <button onClick={() => removeLaborItem(item.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Remover item">
+                       <input 
+                         list="labor-services"
+                         type="text" 
+                         value={item.description} 
+                         onChange={(e) => handleLaborDescriptionChange(item.id, e.target.value)} 
+                         className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" 
+                         placeholder="Ex: Técnico de Campo" 
+                       />
+                     </td>
+                     <td className="px-4 py-2 text-center">
+                       <input 
+                         type="number" 
+                         min="0" 
+                         value={item.hours} 
+                         onChange={(e) => updateLaborItem(item.id, 'hours', Number(e.target.value))} 
+                         className="w-16 bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 rounded px-2 py-1 text-center font-medium" 
+                       />
+                     </td>
+                     <td className="px-4 py-2">
+                       <div className="flex items-center justify-end border border-transparent hover:border-gray-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-200 rounded px-2 transition-all min-h-[38px]">
+                         {editingLaborPriceId === item.id ? (
+                           <>
+                             <span className="text-gray-400 text-xs mr-1">R$</span>
+                             <input 
+                               type="number" 
+                               step="0.01"
+                               min="0" 
+                               value={item.unitPrice} 
+                               onChange={(e) => updateLaborItem(item.id, 'unitPrice', Number(e.target.value))} 
+                               onBlur={() => setEditingLaborPriceId(null)}
+                               onKeyDown={(e) => {
+                                 if (e.key === 'Enter') {
+                                   setEditingLaborPriceId(null);
+                                 }
+                               }}
+                               autoFocus
+                               className="w-24 bg-transparent border-none focus:ring-0 p-1 text-sm text-right font-medium text-gray-800 focus:outline-none" 
+                             />
+                           </>
+                         ) : (
+                           <button 
+                             type="button"
+                             onClick={() => setEditingLaborPriceId(item.id)}
+                             className="w-full text-right text-sm font-medium text-gray-800 bg-transparent border-none p-1 hover:bg-gray-100/50 rounded transition-colors"
+                           >
+                             R$ {formatBRL(item.unitPrice)}
+                           </button>
+                         )}
+                       </div>
+                     </td>
+                     <td className="px-4 py-2 text-right font-semibold text-gray-800">
+                       R$ {formatBRL(item.hours * item.unitPrice)}
+                     </td>
+                     <td className="px-4 py-2 text-center">
+                       <button onClick={() => removeLaborItem(item.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Remover item">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
@@ -1013,6 +1074,13 @@ export default function NewBudget() {
           </div>
         </div>
       )}
+
+      {/* Datalist de Serviços Padrão para Mão de Obra */}
+      <datalist id="labor-services">
+        <option value="Técnico de Campo" />
+        <option value="Auxiliar Técnico" />
+        <option value="Visita Técnica" />
+      </datalist>
     </div>
   );
 }
