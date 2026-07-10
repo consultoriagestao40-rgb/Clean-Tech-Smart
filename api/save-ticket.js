@@ -24,6 +24,7 @@ export default async function handler(req, res) {
       priority,
       description,
       technician_name,
+      technician_id,
       scheduled_date,
       internal_notes
     } = req.body;
@@ -35,6 +36,7 @@ export default async function handler(req, res) {
     const finalClientId = Number(client_id);
     const finalEquipmentId = equipment_id ? Number(equipment_id) : null;
     const finalScheduledDate = scheduled_date ? new Date(scheduled_date) : null;
+    const finalTechnicianId = technician_id ? Number(technician_id) : null;
 
     let result;
 
@@ -44,25 +46,26 @@ export default async function handler(req, res) {
         UPDATE service_tickets
         SET client_id = $1, equipment_id = $2, ticket_type = $3, status = $4, priority = $5,
             description = $6, technician_name = $7, scheduled_date = $8, internal_notes = $9,
-            updated_at = NOW()
-        WHERE id = $10
+            technician_id = $10, updated_at = NOW()
+        WHERE id = $11
         RETURNING *;
       `, [
         finalClientId, finalEquipmentId, ticket_type, status || 'Aberto', priority || 'Média',
         description || null, technician_name || null, finalScheduledDate, internal_notes || null,
-        id
+        finalTechnicianId, id
       ]);
     } else {
       // Criar novo chamado
       result = await client.query(`
         INSERT INTO service_tickets (
           client_id, equipment_id, ticket_type, status, priority,
-          description, technician_name, scheduled_date, internal_notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          description, technician_name, scheduled_date, internal_notes, technician_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *;
       `, [
         finalClientId, finalEquipmentId, ticket_type, status || 'Aberto', priority || 'Média',
-        description || null, technician_name || null, finalScheduledDate, internal_notes || null
+        description || null, technician_name || null, finalScheduledDate, internal_notes || null,
+        finalTechnicianId
       ]);
     }
 

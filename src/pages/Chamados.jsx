@@ -20,6 +20,7 @@ export default function Chamados() {
   const [tickets, setTickets] = useState([]);
   const [clients, setClients] = useState([]);
   const [equipments, setEquipments] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Search & Filter state
@@ -40,9 +41,15 @@ export default function Chamados() {
     priority: 'Média',
     description: '',
     technician_name: '',
+    technician_id: '',
     scheduled_date: '',
     internal_notes: ''
   });
+
+  // Technician modal state
+  const [isTechModalOpen, setIsTechModalOpen] = useState(false);
+  const [isSavingTech, setIsSavingTech] = useState(false);
+  const [techFormData, setTechFormData] = useState({ id: null, name: '', email: '', phone: '' });
 
   // Metric stats
   const [stats, setStats] = useState({
@@ -62,6 +69,18 @@ export default function Chamados() {
       }
     } catch (err) {
       console.error('Erro ao buscar chamados:', err);
+    }
+  };
+
+  const fetchTechnicians = async () => {
+    try {
+      const res = await fetch('/api/get-technicians');
+      const data = await res.json();
+      if (data.success) {
+        setTechnicians(data.technicians);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar técnicos:', err);
     }
   };
 
@@ -91,10 +110,58 @@ export default function Chamados() {
     setStats(counts);
   };
 
+  const handleSaveTechnician = async (e) => {
+    e.preventDefault();
+    if (!techFormData.name) return;
+    setIsSavingTech(true);
+    try {
+      const res = await fetch('/api/save-technician', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(techFormData)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTechFormData({ id: null, name: '', email: '', phone: '' });
+        await fetchTechnicians();
+        if (!techFormData.id && data.technician) {
+          setFormData(prev => ({ ...prev, technician_id: String(data.technician.id) }));
+        }
+      } else {
+        alert('Erro ao salvar técnico.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro de rede ao salvar técnico.');
+    } finally {
+      setIsSavingTech(false);
+    }
+  };
+
+  const handleDeleteTechnician = async (techId) => {
+    if (!confirm('Deseja realmente excluir este técnico?')) return;
+    try {
+      const res = await fetch('/api/delete-technician', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: techId })
+      });
+      if (res.ok) {
+        await fetchTechnicians();
+        // Clear selection if deleted
+        if (String(formData.technician_id) === String(techId)) {
+          setFormData(prev => ({ ...prev, technician_id: '' }));
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
-      await Promise.all([fetchTickets(), fetchClientsAndEquipments()]);
+      await Promise.all([fetchTickets(), fetchClientsAndEquipments(), fetchTechnicians()]);
       setIsLoading(false);
     };
     init();
@@ -110,6 +177,7 @@ export default function Chamados() {
       priority: 'Média',
       description: '',
       technician_name: '',
+      technician_id: '',
       scheduled_date: '',
       internal_notes: ''
     });
@@ -136,6 +204,7 @@ export default function Chamados() {
       priority: ticket.priority || 'Média',
       description: ticket.description || '',
       technician_name: ticket.technician_name || '',
+      technician_id: String(ticket.technician_id || ''),
       scheduled_date: formattedDate,
       internal_notes: ticket.internal_notes || ''
     });
@@ -625,13 +694,29 @@ export default function Chamados() {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Técnico Responsável</label>
-                  <input 
-                    type="text" 
-                    value={formData.technician_name} 
-                    onChange={e => setFormData({ ...formData, technician_name: e.target.value })} 
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white" 
-                    placeholder="Nome do técnico"
-                  />
+                  <div className="flex space-x-2">
+                    <select 
+                      value={formData.technician_id} 
+                      onChange={e => setFormData({ ...formData, technician_id: e.target.value })} 
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white"
+                    >
+                      <option value="">Selecione o Técnico</option>
+                      {technicians.map(t => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setTechFormData({ id: null, name: '', email: '', phone: '' });
+                        setIsTechModalOpen(true);
+                      }}
+                      className="px-3 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition-colors flex items-center font-bold"
+                      title="Gerenciar Técnicos"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -673,6 +758,120 @@ export default function Chamados() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Rápido de Técnicos */}
+      {isTechModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">Gerenciar Técnicos</h2>
+              <button type="button" onClick={() => setIsTechModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Formulário de Adicionar / Editar Técnico */}
+            <form onSubmit={handleSaveTechnician} className="p-6 border-b border-gray-100 bg-gray-50 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                  {techFormData.id ? 'Editar Cadastro de Técnico' : 'Novo Técnico'}
+                </label>
+                <div className="space-y-2">
+                  <input 
+                    required 
+                    type="text" 
+                    value={techFormData.name} 
+                    onChange={e => setTechFormData({ ...techFormData, name: e.target.value })} 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-sm" 
+                    placeholder="Nome Completo *" 
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input 
+                      type="text" 
+                      value={techFormData.phone || ''} 
+                      onChange={e => setTechFormData({ ...techFormData, phone: e.target.value })} 
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-sm" 
+                      placeholder="Telefone" 
+                    />
+                    <input 
+                      type="email" 
+                      value={techFormData.email || ''} 
+                      onChange={e => setTechFormData({ ...techFormData, email: e.target.value })} 
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-sm" 
+                      placeholder="E-mail" 
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2 pt-2">
+                    {techFormData.id && (
+                      <button 
+                        type="button" 
+                        onClick={() => setTechFormData({ id: null, name: '', email: '', phone: '' })}
+                        className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs font-medium transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                    <button 
+                      type="submit" 
+                      disabled={isSavingTech} 
+                      className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors flex items-center text-xs shadow-sm"
+                    >
+                      {isSavingTech ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (techFormData.id ? 'Atualizar' : 'Salvar')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            {/* Listagem de Técnicos Existentes */}
+            <div className="p-6 max-h-60 overflow-y-auto space-y-2">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Técnicos Cadastrados</h3>
+              {technicians.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">Nenhum técnico cadastrado.</p>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {technicians.map(t => (
+                    <div key={t.id} className="flex justify-between items-center py-2 text-xs">
+                      <div>
+                        <span className="font-semibold text-gray-800">{t.name}</span>
+                        {t.phone && <span className="text-gray-400 block text-[10px]">{t.phone}</span>}
+                      </div>
+                      <div className="flex space-x-1">
+                        <button 
+                          type="button"
+                          onClick={() => setTechFormData({ id: t.id, name: t.name, email: t.email, phone: t.phone })}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="Editar Técnico"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => handleDeleteTechnician(t.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Excluir Técnico"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <button 
+                type="button" 
+                onClick={() => setIsTechModalOpen(false)} 
+                className="px-4 py-2 text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-xs transition-colors shadow-sm"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}

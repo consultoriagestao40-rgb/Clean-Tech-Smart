@@ -18,10 +18,12 @@ export default async function handler(req, res) {
     const result = await client.query(`
       SELECT st.*, 
              c.name as client_name, c.phone as client_phone, c.address as client_address,
-             e.name as equipment_name, e.brand as equipment_brand, e.model as equipment_model, e.serial_number as equipment_serial_number
+             e.name as equipment_name, e.brand as equipment_brand, e.model as equipment_model, e.serial_number as equipment_serial_number,
+             COALESCE(t.name, st.technician_name) as technician_name
       FROM service_tickets st
       LEFT JOIN clients c ON st.client_id::text = c.id::text
       LEFT JOIN equipments e ON st.equipment_id = e.id
+      LEFT JOIN technicians t ON st.technician_id = t.id
       ORDER BY st.created_at DESC
     `);
     
