@@ -458,6 +458,7 @@ export default function Equipamentos() {
             </form>
           </div>
         </div>
+      )}
       {/* Modal Rápido de Nova Categoria */}
       {isCategoryModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
