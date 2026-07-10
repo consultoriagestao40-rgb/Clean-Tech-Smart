@@ -249,8 +249,11 @@ export default function Estoque() {
             const nameKey = keys.find(k => k !== skuKey && /descri[cç][aã]o|nome|item/i.test(k));
             // NCM mappings
             const ncmKey = keys.find(k => /ncm/i.test(k));
-            // Price mappings (e.g. VL TOTAL, PREÇO, VALOR, CUSTO, UNIT, VL)
-            const priceKey = keys.find(k => /vl|total|pre[cç]o|valor|custo|unit/i.test(k));
+            // Price mappings (e.g. prioritiza unit/unitario, depois preco/valor/custo/total/vl)
+            let priceKey = keys.find(k => /unit|unit[aá]rio/i.test(k));
+            if (!priceKey) {
+              priceKey = keys.find(k => /pre[cç]o|valor|custo|vl|total/i.test(k));
+            }
             // Quantity mappings
             const qtyKey = keys.find(k => /qtd|quant(idade)?|estoque/i.test(k));
             // Description mappings
