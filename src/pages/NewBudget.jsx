@@ -41,7 +41,7 @@ export default function NewBudget() {
   const [categories, setCategories] = useState([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSavingCategory, setIsSavingCategory] = useState(false);
-  const [categoryFormData, setCategoryFormData] = useState({ name: '' });
+  const [categoryFormData, setCategoryFormData] = useState({ id: null, name: '' });
 
   const fetchEquipments = async () => {
     try {
@@ -169,10 +169,11 @@ export default function NewBudget() {
       });
       if (res.ok) {
         const data = await res.json();
-        setIsCategoryModalOpen(false);
-        setCategoryFormData({ name: '' });
+        setCategoryFormData({ id: null, name: '' });
         await fetchCategories();
-        setEqFormData(prev => ({ ...prev, category_id: data.category.id }));
+        if (!categoryFormData.id) {
+          setEqFormData(prev => ({ ...prev, category_id: data.category.id }));
+        }
       } else {
         const errorData = await res.json();
         alert('Erro ao salvar categoria: ' + (errorData.error || 'Erro desconhecido'));
@@ -182,6 +183,28 @@ export default function NewBudget() {
       alert('Erro de rede ao salvar categoria.');
     } finally {
       setIsSavingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (catId) => {
+    if (!confirm('Tem certeza que deseja excluir esta categoria? Os equipamentos associados a ela ficarão sem categoria.')) return;
+    try {
+      const res = await fetch('/api/delete-category', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: catId })
+      });
+      if (res.ok) {
+        await fetchCategories();
+        if (String(eqFormData.category_id) === String(catId)) {
+          setEqFormData(prev => ({ ...prev, category_id: '' }));
+        }
+      } else {
+        alert('Erro ao excluir categoria');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de rede ao excluir categoria.');
     }
   };
 
@@ -614,39 +637,41 @@ export default function NewBudget() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de Série</label>
-                  <input 
-                    type="text" 
-                    value={eqFormData.serial_number} 
-                    onChange={e => setEqFormData({...eqFormData, serial_number: e.target.value})} 
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" 
-                    placeholder="Ex: NS-998877"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-                  <div className="flex space-x-2">
-                    <select 
-                      value={eqFormData.category_id || ''} 
-                      onChange={e => setEqFormData({...eqFormData, category_id: e.target.value})} 
-                      className="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium text-gray-800 text-sm"
-                    >
-                      <option value="">Selecione</option>
-                      {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                    <button 
-                      type="button" 
-                      onClick={() => setIsCategoryModalOpen(true)}
-                      className="px-3 py-2 bg-blue-50 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-100 flex items-center justify-center font-bold shadow-sm"
-                      title="Adicionar Nova Categoria"
-                    >
-                      +
-                    </button>
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Número de Série</label>
+                <input 
+                  type="text" 
+                  value={eqFormData.serial_number} 
+                  onChange={e => setEqFormData({...eqFormData, serial_number: e.target.value})} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" 
+                  placeholder="Ex: NS-998877"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                <div className="flex space-x-2">
+                  <select 
+                    value={eqFormData.category_id || ''} 
+                    onChange={e => setEqFormData({...eqFormData, category_id: e.target.value})} 
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium text-gray-800 text-sm"
+                  >
+                    <option value="">Selecione a categoria</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setCategoryFormData({ id: null, name: '' });
+                      setIsCategoryModalOpen(true);
+                    }}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg flex items-center justify-center shadow-sm text-lg transition-colors"
+                    title="Gerenciar Categorias"
+                  >
+                    +
+                  </button>
                 </div>
               </div>
 
@@ -704,35 +729,92 @@ export default function NewBudget() {
       {/* Modal Rápido de Nova Categoria */}
       {isCategoryModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">Nova Categoria</h2>
+              <h2 className="text-lg font-bold text-gray-900">Gerenciar Categorias</h2>
               <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleSaveCategory} className="p-6 space-y-4">
+            
+            {/* Formulário de Adicionar / Editar */}
+            <form onSubmit={handleSaveCategory} className="p-6 border-b border-gray-100 bg-gray-50 space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Categoria *</label>
-                <input 
-                  required 
-                  type="text" 
-                  value={categoryFormData.name} 
-                  onChange={e => setCategoryFormData({ name: e.target.value })} 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" 
-                  placeholder="Ex: Varredeiras" 
-                />
-              </div>
-              <div className="pt-4 flex justify-end space-x-3">
-                <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
-                  Cancelar
-                </button>
-                <button type="submit" disabled={isSavingCategory} className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors flex items-center">
-                  {isSavingCategory ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  {isSavingCategory ? 'Salvando...' : 'Salvar Categoria'}
-                </button>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                  {categoryFormData.id ? 'Editar Nome da Categoria' : 'Nova Categoria'}
+                </label>
+                <div className="flex space-x-2">
+                  <input 
+                    required 
+                    type="text" 
+                    value={categoryFormData.name} 
+                    onChange={e => setCategoryFormData({ ...categoryFormData, name: e.target.value })} 
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-sm" 
+                    placeholder="Ex: Varredeiras" 
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={isSavingCategory} 
+                    className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors flex items-center text-sm shadow-sm"
+                  >
+                    {isSavingCategory ? <Loader2 className="w-4 h-4 animate-spin" /> : (categoryFormData.id ? 'Atualizar' : 'Salvar')}
+                  </button>
+                  {categoryFormData.id && (
+                    <button 
+                      type="button" 
+                      onClick={() => setCategoryFormData({ id: null, name: '' })}
+                      className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  )}
+                </div>
               </div>
             </form>
+
+            {/* Listagem de Categorias Existentes */}
+            <div className="p-6 max-h-60 overflow-y-auto space-y-2">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Categorias Cadastradas</h3>
+              {categories.length === 0 ? (
+                <p className="text-sm text-gray-400 italic">Nenhuma categoria cadastrada.</p>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {categories.map(cat => (
+                    <div key={cat.id} className="flex justify-between items-center py-2 text-sm">
+                      <span className="font-medium text-gray-800">{cat.name}</span>
+                      <div className="flex space-x-1">
+                        <button 
+                          type="button"
+                          onClick={() => setCategoryFormData({ id: cat.id, name: cat.name })}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="Editar Categoria"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => handleDeleteCategory(cat.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Excluir Categoria"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <button 
+                type="button" 
+                onClick={() => setIsCategoryModalOpen(false)} 
+                className="px-4 py-2 text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors shadow-sm"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
