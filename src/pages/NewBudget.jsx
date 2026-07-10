@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, Save, Send, Loader2, ArrowLeft, X } from 'lucide-react';
 
 export default function NewBudget() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const budgetId = searchParams.get('id');
   const formatBRL = (val) => {
     return Number(val || 0).toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
@@ -77,12 +79,49 @@ export default function NewBudget() {
         }
         await fetchEquipments();
         await fetchCategories();
+
+        if (budgetId) {
+          const budgetRes = await fetch(`/api/get-budget-details?id=${budgetId}`);
+          const budgetData = await budgetRes.json();
+          if (budgetData.success) {
+            const b = budgetData.budget;
+            setClientData({
+              client: b.client_id || '',
+              contact: b.contact_name || '',
+              contactInfo: b.contact_info || '',
+              serviceType: b.service_type || 'corretiva',
+              equipmentId: b.equipment_id ? String(b.equipment_id) : ''
+            });
+            if (budgetData.laborItems) {
+              setLaborItems(budgetData.laborItems.map(item => ({
+                id: item.id,
+                description: item.description,
+                hours: item.hours,
+                unitPrice: item.unit_price
+              })));
+            }
+            if (budgetData.partsItems) {
+              setPartsItems(budgetData.partsItems.map(item => ({
+                id: item.id,
+                partName: item.part_name,
+                quantity: item.quantity,
+                unitPrice: item.unit_price
+              })));
+            }
+            setLogistics({
+              initialKm: b.initial_km || 0,
+              finalKm: b.final_km || 0,
+              pricePerKm: b.price_per_km || 0
+            });
+            setNotes(b.notes || '');
+          }
+        }
       } catch (error) {
         console.error('Erro ao inicializar dados:', error);
       }
     }
     initData();
-  }, []);
+  }, [budgetId]);
   const [isSaving, setIsSaving] = useState(false);
   const [laborItems, setLaborItems] = useState([
     { id: 1, description: 'Técnico de Campo', hours: 2, unitPrice: 150 },
@@ -227,6 +266,7 @@ export default function NewBudget() {
     setIsSaving(true);
     try {
       const payload = {
+        id: budgetId || null,
         ...clientData,
         laborItems,
         partsItems,

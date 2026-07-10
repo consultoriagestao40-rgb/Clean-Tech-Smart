@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Search, FileText, Loader2, Filter, Eye, Check, X, FileDown } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Search, FileText, Loader2, Filter, Eye, Check, X, FileDown, Edit, Trash2 } from 'lucide-react';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const formatBRL = (val) => {
     return Number(val || 0).toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
@@ -20,22 +21,42 @@ export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
-  useEffect(() => {
-    async function fetchBudgets() {
-      try {
-        const res = await fetch('/api/get-budgets');
-        const data = await res.json();
-        if (data.budgets) {
-          setBudgets(data.budgets);
-        }
-      } catch (error) {
-        console.error('Erro ao buscar orçamentos:', error);
-      } finally {
-        setIsLoading(false);
+  const fetchBudgets = async () => {
+    try {
+      const res = await fetch('/api/get-budgets');
+      const data = await res.json();
+      if (data.budgets) {
+        setBudgets(data.budgets);
       }
+    } catch (error) {
+      console.error('Erro ao buscar orçamentos:', error);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchBudgets();
   }, []);
+
+  const handleDeleteBudget = async (id) => {
+    if (!confirm(`Tem certeza que deseja excluir o orçamento #${String(id).padStart(4, '0')}?`)) return;
+    try {
+      const res = await fetch('/api/delete-budget', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      if (res.ok) {
+        fetchBudgets();
+      } else {
+        alert('Erro ao excluir orçamento');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de rede ao excluir.');
+    }
+  };
 
   const filteredBudgets = budgets.filter(b => 
     b.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -418,13 +439,29 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleViewDetails(budget.id)}
-                        className="inline-flex items-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-medium transition-colors"
-                      >
-                        <Eye className="w-3.5 h-3.5 mr-1" />
-                        Detalhes
-                      </button>
+                      <div className="flex items-center justify-end space-x-1.5">
+                        <button 
+                          onClick={() => handleViewDetails(budget.id)}
+                          className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                          title="Visualizar Detalhes"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => navigate(`/novo-orcamento?id=${budget.id}`)}
+                          className="p-1.5 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors"
+                          title="Editar Orçamento"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteBudget(budget.id)}
+                          className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                          title="Excluir Orçamento"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
