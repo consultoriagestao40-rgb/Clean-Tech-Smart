@@ -302,6 +302,8 @@ export default function Chamados() {
 
   // Filter equipments strictly owned by selected client
   const clientEquipments = equipments.filter(e => String(e.client_id) === String(formData.client_id));
+  const selectedClient = clients.find(c => String(c.id) === String(formData.client_id));
+  const selectedClientAddress = selectedClient?.address || '';
 
   return (
     <div className="font-sans text-gray-800 space-y-6">
@@ -466,8 +468,38 @@ export default function Chamados() {
                       <td className="px-6 py-4 font-mono font-bold text-blue-600">
                         #{ticket.id}
                       </td>
-                      <td className="px-6 py-4 font-semibold text-gray-900">
-                        {ticket.client_name || <span className="text-gray-300 font-sans italic">-</span>}
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-gray-900">
+                          {ticket.client_name || <span className="text-gray-300 font-sans italic">-</span>}
+                        </div>
+                        {ticket.client_address ? (
+                          <div className="mt-1 space-y-1">
+                            <p className="text-[11px] text-gray-400 max-w-[220px] truncate" title={ticket.client_address}>
+                              {ticket.client_address}
+                            </p>
+                            <div className="flex items-center space-x-2 text-[10px] font-bold">
+                              <a 
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ticket.client_address)}`}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 flex items-center hover:underline"
+                              >
+                                Maps ↗
+                              </a>
+                              <span className="text-gray-300">|</span>
+                              <a 
+                                href={`https://waze.com/ul?q=${encodeURIComponent(ticket.client_address)}&navigate=yes`}
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-cyan-500 hover:text-cyan-700 flex items-center hover:underline"
+                              >
+                                Waze ↗
+                              </a>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-gray-300 italic block">Sem endereço</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         {ticket.equipment_name ? (
@@ -587,6 +619,32 @@ export default function Chamados() {
                   </select>
                 </div>
               </div>
+
+              {selectedClientAddress && (
+                <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100/50 space-y-1 text-left">
+                  <span className="block text-[10px] font-bold text-blue-500 uppercase tracking-wider">Endereço do Cliente</span>
+                  <p className="text-xs text-gray-700 font-medium">{selectedClientAddress}</p>
+                  <div className="flex items-center space-x-3 pt-1 text-[11px] font-bold">
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedClientAddress)}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 hover:underline flex items-center"
+                    >
+                      Google Maps ↗
+                    </a>
+                    <span className="text-gray-300">|</span>
+                    <a 
+                      href={`https://waze.com/ul?q=${encodeURIComponent(selectedClientAddress)}&navigate=yes`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-cyan-500 hover:text-cyan-700 hover:underline flex items-center"
+                    >
+                      Waze ↗
+                    </a>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
