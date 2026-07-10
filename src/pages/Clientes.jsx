@@ -10,7 +10,7 @@ export default function Clientes() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    id: null, name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: ''
+    id: null, name: '', razao_social: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: ''
   });
 
   useEffect(() => {
@@ -36,6 +36,7 @@ export default function Clientes() {
     setFormData({
       id: client.id,
       name: client.name || '',
+      razao_social: client.razao_social || '',
       document: client.document || '',
       email: client.email || '',
       phone: client.phone || '',
@@ -47,7 +48,7 @@ export default function Clientes() {
   };
 
   const openNewClient = () => {
-    setFormData({ id: null, name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: '' });
+    setFormData({ id: null, name: '', razao_social: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: '' });
     setIsModalOpen(true);
   };
 
@@ -79,6 +80,7 @@ export default function Clientes() {
 
   const filteredClients = clients.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.document?.includes(searchTerm)
   );
 
@@ -145,7 +147,10 @@ export default function Clientes() {
               ) : (
                 filteredClients.map((client) => (
                   <tr key={client.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{client.name}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <p>{client.name}</p>
+                      {client.razao_social && <p className="text-xs text-gray-400 font-normal">{client.razao_social}</p>}
+                    </td>
                     <td className="px-6 py-4 text-gray-500">{client.document || '-'}</td>
                     <td className="px-6 py-4">
                       <p className="text-gray-900 font-medium">{client.contact_person || '-'}</p>
@@ -184,15 +189,28 @@ export default function Clientes() {
               </button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome / Razão Social *</label>
-                <input 
-                  required
-                  type="text" 
-                  value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome Fantasia / Nome *</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={formData.name}
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Nome fantasia ou Nome"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Razão Social</label>
+                  <input 
+                    type="text" 
+                    value={formData.razao_social}
+                    onChange={e => setFormData({...formData, razao_social: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Razão social jurídica"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Documento (CPF/CNPJ)</label>

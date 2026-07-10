@@ -81,7 +81,7 @@ export default function NovoContrato() {
   const [generalForm, setGeneralForm] = useState({ start_date: '', client_name: '', client_id: '' });
 
   const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
-  const [newClientForm, setNewClientForm] = useState({ name: '', document: '', email: '', phone: '', address: '', city: '', contact: '' });
+  const [newClientForm, setNewClientForm] = useState({ name: '', razao_social: '', document: '', email: '', phone: '', address: '', city: '', contact: '' });
 
   const handleEmitContract = async () => {
     setIsGeneratingPDF(true);
@@ -412,7 +412,7 @@ export default function NovoContrato() {
         
         // Fecha o modal
         setIsNewClientModalOpen(false);
-        setNewClientForm({ name: '', document: '', email: '', phone: '', address: '', city: '', contact: '' });
+        setNewClientForm({ name: '', razao_social: '', document: '', email: '', phone: '', address: '', city: '', contact: '' });
       } else {
         alert('Erro ao salvar cliente');
       }
@@ -841,14 +841,24 @@ export default function NovoContrato() {
             <h2 className="text-xl font-bold mb-1">Cadastrar Novo Cliente</h2>
             <p className="text-sm text-gray-500 mb-6">Cadastre rapidamente para vincular ao contrato.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold mb-1">Razão Social / Nome *</label>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Nome Fantasia / Nome *</label>
                 <input 
                   type="text" 
                   value={newClientForm.name} 
                   onChange={e => setNewClientForm({...newClientForm, name: e.target.value})} 
                   className="w-full px-3 py-2 border rounded-lg" 
-                  placeholder="Ex: HECKE REPRESENTACOES LTDA" 
+                  placeholder="Ex: Clean Tech Pro" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Razão Social</label>
+                <input 
+                  type="text" 
+                  value={newClientForm.razao_social} 
+                  onChange={e => setNewClientForm({...newClientForm, razao_social: e.target.value})} 
+                  className="w-full px-3 py-2 border rounded-lg" 
+                  placeholder="Ex: Clean Tech Ltda" 
                 />
               </div>
               <div>

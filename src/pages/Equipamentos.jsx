@@ -19,7 +19,7 @@ export default function Equipamentos() {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isSavingClient, setIsSavingClient] = useState(false);
   const [clientFormData, setClientFormData] = useState({
-    name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: ''
+    name: '', razao_social: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: ''
   });
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function Equipamentos() {
       if (response.ok) {
         const data = await response.json();
         setIsClientModalOpen(false);
-        setClientFormData({ name: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: '' });
+        setClientFormData({ name: '', razao_social: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: '' });
         await fetchClients();
         // Auto-select the newly created client
         setFormData(prev => ({ ...prev, client_id: data.client.id }));
@@ -313,9 +313,15 @@ export default function Equipamentos() {
               </button>
             </div>
             <form onSubmit={handleSaveClient} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome / Razão Social *</label>
-                <input required type="text" value={clientFormData.name} onChange={e => setClientFormData({...clientFormData, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome Fantasia / Nome *</label>
+                  <input required type="text" value={clientFormData.name} onChange={e => setClientFormData({...clientFormData, name: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ex: Clean Tech Pro" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Razão Social</label>
+                  <input type="text" value={clientFormData.razao_social} onChange={e => setClientFormData({...clientFormData, razao_social: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ex: Clean Tech Ltda" />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Documento (CPF/CNPJ)</label>

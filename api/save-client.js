@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
-    const { id, name, document, email, phone, status, contact_person, address } = req.body;
+    const { id, name, document, email, phone, status, contact_person, address, razao_social } = req.body;
     
     if (!name) {
       return res.status(400).json({ error: 'O nome do cliente é obrigatório.' });
@@ -27,17 +27,17 @@ export default async function handler(req, res) {
       // Atualizar cliente existente
       result = await client.query(`
         UPDATE clients 
-        SET name = $1, document = $2, email = $3, phone = $4, status = $5, contact_person = $6, address = $7
-        WHERE id = $8
+        SET name = $1, document = $2, email = $3, phone = $4, status = $5, contact_person = $6, address = $7, razao_social = $8
+        WHERE id = $9
         RETURNING *;
-      `, [name, document, email, phone, status || 'Ativo', contact_person, address, id]);
+      `, [name, document, email, phone, status || 'Ativo', contact_person, address, razao_social, id]);
     } else {
       // Inserir novo cliente
       result = await client.query(`
-        INSERT INTO clients (name, document, email, phone, status, contact_person, address)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO clients (name, document, email, phone, status, contact_person, address, razao_social)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *;
-      `, [name, document, email, phone, status || 'Ativo', contact_person, address]);
+      `, [name, document, email, phone, status || 'Ativo', contact_person, address, razao_social]);
     }
     
     return res.status(200).json({ success: true, client: result.rows[0] });
