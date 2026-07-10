@@ -16,17 +16,13 @@ export default async function handler(req, res) {
 
   try {
     const result = await client.query(`
-      SELECT e.*, c.name as client_name, cat.name as category_name
-      FROM equipments e
-      LEFT JOIN clients c ON e.client_id = c.id
-      LEFT JOIN equipment_categories cat ON e.category_id = cat.id
-      ORDER BY e.created_at DESC
+      SELECT * FROM equipment_categories ORDER BY name ASC
     `);
     
-    return res.status(200).json({ equipments: result.rows });
+    return res.status(200).json({ categories: result.rows });
   } catch (error) {
-    console.error('Erro ao buscar equipamentos:', error);
-    return res.status(500).json({ error: 'Erro interno ao buscar equipamentos' });
+    console.error('Erro ao buscar categorias:', error);
+    return res.status(500).json({ error: 'Erro interno ao buscar categorias' });
   } finally {
     client.release();
   }

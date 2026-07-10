@@ -11,8 +11,8 @@ export default function Equipamentos() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', brand: '', model: '', serial_number: '', 
-    ownership_type: 'proprio', supplier_name: '', client_id: '', status: 'Disponível'
+    id: null, name: '', brand: '', model: '', serial_number: '', 
+    ownership_type: 'proprio', supplier_name: '', client_id: '', status: 'Disponível', category_id: ''
   });
 
   // Client Modal state
@@ -22,9 +22,16 @@ export default function Equipamentos() {
     name: '', razao_social: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: ''
   });
 
+  // Category Modal state
+  const [categories, setCategories] = useState([]);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
+  const [categoryFormData, setCategoryFormData] = useState({ name: '' });
+
   useEffect(() => {
     fetchEquipments();
     fetchClients();
+    fetchCategories();
   }, []);
 
   async function fetchEquipments() {
@@ -50,6 +57,40 @@ export default function Equipamentos() {
     }
   }
 
+  async function fetchCategories() {
+    try {
+      const res = await fetch('/api/get-categories');
+      const data = await res.json();
+      if (data.categories) setCategories(data.categories);
+    } catch (error) {
+      console.error('Erro ao buscar categorias:', error);
+    }
+  }
+
+  const handleEdit = (eq) => {
+    setFormData({
+      id: eq.id,
+      name: eq.name || '',
+      brand: eq.brand || '',
+      model: eq.model || '',
+      serial_number: eq.serial_number || '',
+      ownership_type: eq.ownership_type || 'proprio',
+      supplier_name: eq.supplier_name || '',
+      client_id: eq.client_id || '',
+      status: eq.status || 'Disponível',
+      category_id: eq.category_id || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const openNewEquipment = () => {
+    setFormData({
+      id: null, name: '', brand: '', model: '', serial_number: '', 
+      ownership_type: 'proprio', supplier_name: '', client_id: '', status: 'Disponível', category_id: ''
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
@@ -62,7 +103,7 @@ export default function Equipamentos() {
       
       if (response.ok) {
         setIsModalOpen(false);
-        setFormData({ name: '', brand: '', model: '', serial_number: '', ownership_type: 'proprio', supplier_name: '', client_id: '', status: 'Disponível' });
+        setFormData({ id: null, name: '', brand: '', model: '', serial_number: '', ownership_type: 'proprio', supplier_name: '', client_id: '', status: 'Disponível', category_id: '' });
         fetchEquipments();
       } else {
         const errorData = await response.json();
@@ -73,6 +114,34 @@ export default function Equipamentos() {
       alert('Erro de rede ao salvar.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveCategory = async (e) => {
+    e.preventDefault();
+    if (!categoryFormData.name) return;
+    setIsSavingCategory(true);
+    try {
+      const res = await fetch('/api/save-category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categoryFormData)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsCategoryModalOpen(false);
+        setCategoryFormData({ name: '' });
+        await fetchCategories();
+        setFormData(prev => ({ ...prev, category_id: data.category.id }));
+      } else {
+        const errorData = await res.json();
+        alert('Erro ao salvar categoria: ' + (errorData.error || 'Erro desconhecido'));
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de rede ao salvar categoria.');
+    } finally {
+      setIsSavingCategory(false);
     }
   };
 
@@ -132,7 +201,7 @@ export default function Equipamentos() {
         </div>
         <div className="flex space-x-3 mt-4 md:mt-0">
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={openNewEquipment}
             className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -185,7 +254,14 @@ export default function Equipamentos() {
                 filtered.map((eq) => (
                   <tr key={eq.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
-                      <p className="font-medium text-gray-900">{eq.name}</p>
+                      <p className="font-medium text-gray-900 flex items-center">
+                        {eq.name}
+                        {eq.category_name && (
+                          <span className="ml-2 px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-semibold rounded border border-blue-100 uppercase tracking-wide">
+                            {eq.category_name}
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-gray-500">{eq.brand} {eq.model}</p>
                     </td>
                     <td className="px-6 py-4 text-gray-700">{eq.serial_number || '-'}</td>
@@ -201,7 +277,7 @@ export default function Equipamentos() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all" title="Editar">
+                      <button onClick={() => handleEdit(eq)} className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all" title="Editar">
                         <Edit className="w-4 h-4" />
                       </button>
                     </td>
@@ -241,9 +317,34 @@ export default function Equipamentos() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Número de Série</label>
-                <input type="text" value={formData.serial_number} onChange={e => setFormData({...formData, serial_number: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de Série</label>
+                  <input type="text" value={formData.serial_number} onChange={e => setFormData({...formData, serial_number: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                  <div className="flex space-x-2">
+                    <select 
+                      value={formData.category_id || ''} 
+                      onChange={e => setFormData({...formData, category_id: e.target.value})} 
+                      className="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium text-gray-800"
+                    >
+                      <option value="">Selecione</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsCategoryModalOpen(true)}
+                      className="px-3 py-2 bg-blue-50 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-100 flex items-center justify-center font-bold shadow-sm"
+                      title="Adicionar Nova Categoria"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg mt-4 space-y-4">
@@ -352,6 +453,40 @@ export default function Equipamentos() {
                 <button type="submit" disabled={isSavingClient} className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors flex items-center">
                   {isSavingClient ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                   {isSavingClient ? 'Salvando...' : 'Salvar Cliente'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      {/* Modal Rápido de Nova Categoria */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">Nova Categoria</h2>
+              <button onClick={() => setIsCategoryModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveCategory} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Categoria *</label>
+                <input 
+                  required 
+                  type="text" 
+                  value={categoryFormData.name} 
+                  onChange={e => setCategoryFormData({ name: e.target.value })} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" 
+                  placeholder="Ex: Varredeiras" 
+                />
+              </div>
+              <div className="pt-4 flex justify-end space-x-3">
+                <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={isSavingCategory} className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors flex items-center">
+                  {isSavingCategory ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  {isSavingCategory ? 'Salvando...' : 'Salvar Categoria'}
                 </button>
               </div>
             </form>
