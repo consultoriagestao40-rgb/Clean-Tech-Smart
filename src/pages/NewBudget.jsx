@@ -618,9 +618,9 @@ export default function NewBudget() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 font-medium text-gray-700 rounded-tl-lg">Selecionar Peça (SKU + Nome)</th>
-                  <th className="px-4 py-3 font-medium text-gray-700 w-24">Qtd.</th>
-                  <th className="px-4 py-3 font-medium text-gray-700 w-32">Valor Unitário</th>
-                  <th className="px-4 py-3 font-medium text-gray-700 w-32">Total</th>
+                  <th className="px-4 py-3 font-medium text-gray-700 w-24 text-center">Qtd.</th>
+                  <th className="px-4 py-3 font-medium text-gray-700 w-44 text-right">Valor Unitário</th>
+                  <th className="px-4 py-3 font-medium text-gray-700 w-44 text-right">Total</th>
                   <th className="px-4 py-3 font-medium text-gray-700 w-16 text-center rounded-tr-lg">Ações</th>
                 </tr>
               </thead>
@@ -673,14 +673,29 @@ export default function NewBudget() {
                         )}
                       </div>
                     </td>
+                    <td className="px-4 py-2 text-center">
+                      <input 
+                        type="number" 
+                        min="1" 
+                        value={item.quantity} 
+                        onChange={(e) => updatePartItem(item.id, 'quantity', Number(e.target.value))} 
+                        className="w-16 bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 rounded px-2 py-1 text-center font-medium" 
+                      />
+                    </td>
                     <td className="px-4 py-2">
-                      <input type="number" min="1" value={item.quantity} onChange={(e) => updatePartItem(item.id, 'quantity', Number(e.target.value))} className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" />
+                      <div className="flex items-center justify-end border border-transparent hover:border-gray-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-200 rounded px-2 transition-all">
+                        <span className="text-gray-400 text-xs mr-1">R$</span>
+                        <input 
+                          type="number" 
+                          step="0.01"
+                          min="0" 
+                          value={item.unitPrice} 
+                          onChange={(e) => updatePartItem(item.id, 'unitPrice', Number(e.target.value))} 
+                          className="w-24 bg-transparent border-none focus:ring-0 p-1 text-sm text-right font-medium text-gray-800" 
+                        />
+                      </div>
                     </td>
-                    <td className="px-4 py-2 flex items-center">
-                      <span className="text-gray-500 mr-1">R$</span>
-                      <input type="number" min="0" value={item.unitPrice} onChange={(e) => updatePartItem(item.id, 'unitPrice', Number(e.target.value))} className="w-full bg-transparent border-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1" />
-                    </td>
-                    <td className="px-4 py-2 font-medium text-gray-800">
+                    <td className="px-4 py-2 text-right font-semibold text-gray-800">
                       R$ {formatBRL(item.quantity * item.unitPrice)}
                     </td>
                     <td className="px-4 py-2 text-center">
