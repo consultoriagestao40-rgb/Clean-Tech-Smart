@@ -48,6 +48,7 @@ export default function NewBudget() {
   const [activeSearchItemId, setActiveSearchItemId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [markupPercent, setMarkupPercent] = useState(28);
+  const [editingUnitPriceId, setEditingUnitPriceId] = useState(null);
 
   const fetchEquipments = async () => {
     try {
@@ -683,16 +684,35 @@ export default function NewBudget() {
                       />
                     </td>
                     <td className="px-4 py-2">
-                      <div className="flex items-center justify-end border border-transparent hover:border-gray-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-200 rounded px-2 transition-all">
-                        <span className="text-gray-400 text-xs mr-1">R$</span>
-                        <input 
-                          type="number" 
-                          step="0.01"
-                          min="0" 
-                          value={item.unitPrice} 
-                          onChange={(e) => updatePartItem(item.id, 'unitPrice', Number(e.target.value))} 
-                          className="w-24 bg-transparent border-none focus:ring-0 p-1 text-sm text-right font-medium text-gray-800" 
-                        />
+                      <div className="flex items-center justify-end border border-transparent hover:border-gray-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-200 rounded px-2 transition-all min-h-[38px]">
+                        {editingUnitPriceId === item.id ? (
+                          <>
+                            <span className="text-gray-400 text-xs mr-1">R$</span>
+                            <input 
+                              type="number" 
+                              step="0.01"
+                              min="0" 
+                              value={item.unitPrice} 
+                              onChange={(e) => updatePartItem(item.id, 'unitPrice', Number(e.target.value))} 
+                              onBlur={() => setEditingUnitPriceId(null)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  setEditingUnitPriceId(null);
+                                }
+                              }}
+                              autoFocus
+                              className="w-24 bg-transparent border-none focus:ring-0 p-1 text-sm text-right font-medium text-gray-800 focus:outline-none" 
+                            />
+                          </>
+                        ) : (
+                          <button 
+                            type="button"
+                            onClick={() => setEditingUnitPriceId(item.id)}
+                            className="w-full text-right text-sm font-medium text-gray-800 bg-transparent border-none p-1 hover:bg-gray-100/50 rounded transition-colors"
+                          >
+                            R$ {formatBRL(item.unitPrice)}
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-2 text-right font-semibold text-gray-800">
