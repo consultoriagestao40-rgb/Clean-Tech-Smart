@@ -448,7 +448,7 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
                           <Eye className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => navigate(`/novo-orcamento?id=${budget.id}`)}
+                          onClick={() => navigate(`/servicos?id=${budget.id}`)}
                           className="p-1.5 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors"
                           title="Editar Orçamento"
                         >
