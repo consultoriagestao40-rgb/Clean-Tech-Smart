@@ -88,7 +88,7 @@ function injectLoginReminder() {
   div.style.padding = '12px 18px';
   div.style.borderRadius = '12px';
   div.style.boxShadow = '0 4px 12px rgba(37,99,235,0.2)';
-  div.style.zIndex = '999999';
+  div.style.zIndex = '99999';
   div.style.fontFamily = 'sans-serif';
   div.style.fontSize = '12px';
   div.style.fontWeight = 'bold';
@@ -1072,27 +1072,18 @@ async function handleSaveQuickTicket(e) {
   }
 }
 
-// Robust, multi-level fallback extractor for WhatsApp Web chat list containing message preview and unread status
+// Robust, multi-level fallback extractor for WhatsApp Web/Business Web chat list containing message preview and unread status
 function getAllChatsFromDom() {
   const chats = [];
   
-  // 1. Query list elements
-  let elements = document.querySelectorAll('[data-testid="chat-list-item"]');
-  
-  if (elements.length === 0) {
-    elements = document.querySelectorAll('div[role="listitem"]');
-  }
-  
-  if (elements.length === 0) {
-    elements = document.querySelectorAll('div[data-id]');
-  }
+  // Query all chat row elements containing JIDs in the sidebar list (both standard Web and Business Web)
+  const elements = document.querySelectorAll('#pane-side div[data-id*="@c.us"]') || 
+                   document.querySelectorAll('[data-testid="chat-list"] div[data-id*="@c.us"]') ||
+                   document.querySelectorAll('div[data-id*="@c.us"]');
 
   elements.forEach(item => {
-    const dataId = item.closest('[data-id]')?.getAttribute('data-id') || 
-                   item.querySelector('[data-id]')?.getAttribute('data-id') || 
-                   item.getAttribute('data-id') || '';
-                   
-    if (!dataId.endsWith('@c.us')) return;
+    const dataId = item.getAttribute('data-id') || '';
+    if (!dataId.endsWith('@c.us') || dataId.includes('_')) return; // Avoid matching internal message ids containing underscores
     
     const phone = dataId.split('@')[0].replace(/\D/g, '');
     if (!phone) return;
@@ -1104,22 +1095,42 @@ function getAllChatsFromDom() {
     
     // Capture unread badge count
     const badgeNode = item.querySelector('[aria-label*="unread"]') || 
-                        item.querySelector('[aria-label*="não lida"]') || 
-                        item.querySelector('[class*="unread"]') || 
-                        item.querySelector('[class*="badge"]');
+                      item.querySelector('[aria-label*="não lida"]') || 
+                      item.querySelector('[class*="unread"]') || 
+                      item.querySelector('[class*="badge"]');
     const unreadCount = badgeNode ? parseInt(badgeNode.innerText.replace(/\D/g, '')) || 0 : 0;
 
     // Capture last message preview string
     const lastMsgNode = item.querySelector('[data-testid="last-msg-status"]')?.parentElement?.querySelector('span') || 
-                          item.querySelector('.selectable-text') ||
-                          item.querySelector('[class*="last-msg"]') ||
-                          item.querySelector('span[dir="auto"]');
+                        item.querySelector('.selectable-text') ||
+                        item.querySelector('[class*="last-msg"]') ||
+                        item.querySelector('span[dir="auto"]');
     const lastMessage = lastMsgNode ? lastMsgNode.innerText : '';
 
     if (phone && name && !chats.some(c => c.phone === phone)) {
       chats.push({ name, phone, lastMessage, unreadCount });
     }
   });
+  
+  // Fallback if elements list is empty
+  if (chats.length === 0) {
+    const listItems = document.querySelectorAll('[data-testid="chat-list-item"]') || document.querySelectorAll('div[role="listitem"]');
+    listItems.forEach(item => {
+      const parent = item.closest('[data-id]') || item;
+      const dataId = parent.getAttribute('data-id') || '';
+      if (!dataId.endsWith('@c.us')) return;
+      
+      const phone = dataId.split('@')[0].replace(/\D/g, '');
+      if (!phone) return;
+      
+      const nameNode = item.querySelector('span[title]') || item.querySelector('div[title]');
+      const name = nameNode ? (nameNode.getAttribute('title') || nameNode.innerText) : phone;
+      
+      if (phone && name && !chats.some(c => c.phone === phone)) {
+        chats.push({ name, phone, lastMessage: '', unreadCount: 0 });
+      }
+    });
+  }
   
   return chats;
 }
