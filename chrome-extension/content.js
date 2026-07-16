@@ -10,6 +10,7 @@ let leadData = null;
 let sellersList = [];
 let leadsList = [];
 let selectedSeller = 'all';
+let activeFilterStage = 'all';
 
 const DEFAULT_STAGES = [
   { key: 'inbox', title: 'Inbox', color: 'border-top: 3px solid #64748b;' },
@@ -123,11 +124,12 @@ function removeSidebar() {
   
   const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
   if (appElement) {
-    appElement.style.width = '100%';
+    appElement.style.setProperty('width', 'calc(100% - 60px)', 'important');
   }
   
   shadowRoot = null;
   sidebarElement = null;
+  updateLeftToolbarActiveStates();
 }
 
 function initSidebar() {
@@ -192,7 +194,7 @@ function initSidebar() {
 
     const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
     if (appElement) {
-      appElement.style.width = 'calc(100% - 350px)';
+      appElement.style.width = 'calc(100% - 410px)'; // 350px sidebar + 60px left menu
     }
     return;
   }
@@ -208,6 +210,7 @@ function initSidebar() {
 
   // Fetch sellers to populate lists
   fetchSellersList();
+  updateLeftToolbarActiveStates();
 }
 
 async function handleInlineLogin() {
@@ -449,7 +452,7 @@ function renderSidebarView() {
   // Restore regular App width
   const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
   if (appElement) {
-    appElement.style.width = 'calc(100% - 350px)';
+    appElement.style.setProperty('width', 'calc(100% - 410px)', 'important'); // 350px sidebar + 60px left menu
   }
 
   // Setup Event Listeners for Tabs
@@ -499,31 +502,31 @@ function toggleKanbanMode(active) {
   const root = document.getElementById('crm-sidebar-root');
   const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
   
-  // WhatsApp central panels
-  const waMain = document.getElementById('main') || 
-                 document.querySelector('[data-testid="conversation-panel-wrapper"]') || 
-                 document.querySelector('[data-testid="startup-social"]');
+  const leftPanel = document.querySelector('[data-testid="side"]') || document.querySelector('.two');
+  const rightPanel = leftPanel ? leftPanel.nextElementSibling : null;
 
   if (active) {
     if (root) {
       root.classList.add('kanban-mode');
     }
     
-    // Hide whatsapp main panel to give space
-    if (waMain) waMain.style.setProperty('display', 'none', 'important');
-    
-    const welcome = document.querySelector('[class*="intro"]') || document.querySelector('[data-testid="startup-social"]');
-    if (welcome) welcome.style.setProperty('display', 'none', 'important');
+    // Hide/Offscreen WhatsApp central panel (preserving active inputs and click events)
+    if (rightPanel) {
+      rightPanel.style.setProperty('position', 'absolute', 'important');
+      rightPanel.style.setProperty('left', '-9999px', 'important');
+      rightPanel.style.setProperty('width', '1px', 'important');
+      rightPanel.style.setProperty('height', '1px', 'important');
+      rightPanel.style.setProperty('overflow', 'hidden', 'important');
+    }
 
-    const leftPanel = document.querySelector('[data-testid="side"]') || document.querySelector('.two');
     const leftPanelWidth = leftPanel ? leftPanel.getBoundingClientRect().width : 400;
 
     if (root) {
-      root.style.left = `${leftPanelWidth}px`;
-      root.style.width = `calc(100% - ${leftPanelWidth}px)`;
+      root.style.left = `${leftPanelWidth + 60}px`; // leftPanelWidth + 60px left menu
+      root.style.width = `calc(100% - ${leftPanelWidth + 60}px)`;
     }
     if (appElement) {
-      appElement.style.width = `${leftPanelWidth}px`;
+      appElement.style.setProperty('width', `${leftPanelWidth}px`, 'important');
     }
 
     renderKanbanView();
@@ -534,17 +537,22 @@ function toggleKanbanMode(active) {
       root.style.width = '350px';
     }
     
-    if (waMain) waMain.style.setProperty('display', 'flex', 'important');
-    
-    const welcome = document.querySelector('[class*="intro"]') || document.querySelector('[data-testid="startup-social"]');
-    if (welcome) welcome.style.setProperty('display', 'flex', 'important');
+    // Restore whatsapp central panel
+    if (rightPanel) {
+      rightPanel.style.removeProperty('position');
+      rightPanel.style.removeProperty('left');
+      rightPanel.style.removeProperty('width');
+      rightPanel.style.removeProperty('height');
+      rightPanel.style.removeProperty('overflow');
+    }
 
     if (appElement) {
-      appElement.style.width = 'calc(100% - 350px)';
+      appElement.style.setProperty('width', 'calc(100% - 410px)', 'important'); // 350px sidebar + 60px left menu
     }
 
     renderSidebarView();
   }
+  updateLeftToolbarActiveStates();
 }
 
 async function renderKanbanView() {
@@ -748,17 +756,27 @@ async function loadKanbanLeads() {
           });
 
           // Action Toolbar click listeners
-          card.querySelector('.btn-action-reminder').addEventListener('click', () => {
+          card.querySelector('.btn-action-reminder').addEventListener('click', (e) => {
+            e.stopPropagation();
             openReminderModal(lead);
           });
-          card.querySelector('.btn-action-note').addEventListener('click', () => {
+          card.querySelector('.btn-action-note').addEventListener('click', (e) => {
+            e.stopPropagation();
             openNoteModal(lead);
           });
-          card.querySelector('.btn-action-move').addEventListener('click', () => {
+          card.querySelector('.btn-action-move').addEventListener('click', (e) => {
+            e.stopPropagation();
             openMoveModal(lead);
           });
-          card.querySelector('.btn-action-chat').addEventListener('click', () => {
-            openChatByPhone(lead.phone);
+          card.querySelector('.btn-action-chat').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openChatModal(lead);
+          });
+
+          // Clicking the card body opens conversation overlay instantly! (WaSeller Print 03)
+          card.addEventListener('click', (e) => {
+            if (e.target.closest('.kanban-card-icon-btn')) return;
+            openChatModal(lead);
           });
 
           cardsContainer.appendChild(card);
@@ -805,27 +823,170 @@ async function updateLeadStage(phone, stage) {
     });
     if (res.ok) {
       loadKanbanLeads();
+      fetchLeadsAndRefresh();
     }
   } catch (err) {
     console.error(err);
   }
 }
 
-// Open chat helper by clicking panel items
-function openChatByPhone(phone) {
+// Open chat/select in background
+function selectChatInBackground(phone) {
   const chatListItem = document.querySelector(`[data-id*="${phone}"]`) || 
                        document.querySelector(`div[data-id="${phone}@c.us"]`);
   if (chatListItem) {
     const clickable = chatListItem.querySelector('[role="button"]') || chatListItem;
     clickable.click();
-    toggleKanbanMode(false);
   } else {
     window.location.hash = `#/chat/${phone}@c.us`;
-    toggleKanbanMode(false);
   }
 }
 
+function sendWhatsAppMessage(text) {
+  const inputBox = document.querySelector('#main footer div[contenteditable="true"]');
+  if (inputBox) {
+    inputBox.focus();
+    
+    // Insert text into the contenteditable element
+    document.execCommand('insertText', false, text);
+    
+    // Trigger input event
+    const inputEvent = new Event('input', { bubbles: true });
+    inputBox.dispatchEvent(inputEvent);
+    
+    // Click the send button
+    setTimeout(() => {
+      const sendBtn = document.querySelector('#main footer button[data-testid="compose-btn-send"]') || 
+                      document.querySelector('#main footer span[data-testid="send"]') || 
+                      document.querySelector('#main footer button');
+      if (sendBtn) {
+        sendBtn.click();
+      }
+    }, 100);
+  }
+}
+
+function getActiveChatMessages() {
+  const messages = [];
+  const messageNodes = document.querySelectorAll('#main div[data-id*="@c.us"]');
+  messageNodes.forEach(node => {
+    const textNode = node.querySelector('.selectable-text span') || node.querySelector('[class*="selectable-text"]');
+    const text = textNode ? textNode.innerText : '';
+    const dataId = node.getAttribute('data-id') || '';
+    const isIncoming = dataId.startsWith('false_');
+    if (text) {
+      messages.push({ text, isIncoming });
+    }
+  });
+  return messages;
+}
+
 // ---------------- DIALOG MODALS RENDERING (Shadow DOM) ----------------
+function openChatModal(lead) {
+  const container = shadowRoot.getElementById('extension-modal-container');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="extension-modal-overlay" id="chat-overlay-wrapper">
+      <div class="extension-modal-box" style="max-width: 650px; height: 80vh; display: flex; flex-direction: column; padding: 0; gap: 0; overflow: hidden; border: 1px solid #cbd5e1; border-radius: 20px;">
+        <!-- Modal Header -->
+        <div class="extension-modal-header" style="padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background-color: #ffffff; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="kanban-card-avatar" style="width: 32px; height: 32px; font-size: 12px;">${getInitialsName(lead.name)}</div>
+            <div style="text-align: left;">
+              <h4 class="extension-modal-title" style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0;">${lead.name || lead.phone}</h4>
+              <span style="font-size: 10px; color: #64748b; font-family: monospace;">${lead.phone}</span>
+            </div>
+          </div>
+          <button class="extension-modal-close-btn" id="btn-close-chat-modal" style="padding: 6px; border: none; background: none; cursor: pointer; color: #94a3b8; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          </button>
+        </div>
+        
+        <!-- Messages Container -->
+        <div id="chat-modal-messages" style="flex: 1; overflow-y: auto; padding: 20px; background-color: #f1f5f9; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box;">
+          <div style="margin: auto; color: #64748b; font-size: 12px; font-style: italic;">Conectando e carregando conversa...</div>
+        </div>
+        
+        <!-- Message Input Footer -->
+        <div style="padding: 14px 20px; border-top: 1px solid #e2e8f0; background-color: #ffffff; display: flex; gap: 10px; align-items: center; flex-shrink: 0; box-sizing: border-box; width: 100%;">
+          <input type="text" id="chat-modal-input" placeholder="Digite uma mensagem..." style="flex: 1; padding: 10px 16px; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 13px; box-sizing: border-box; outline: none; background-color: #f8fafc;" autocomplete="off">
+          <button id="chat-modal-send-btn" style="border: none; background-color: #2563eb; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s; flex-shrink: 0; box-shadow: 0 2px 6px rgba(37,99,235,0.2);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform: rotate(45deg); margin-left: -2px; margin-top: 2px;"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const closeModal = () => {
+    clearInterval(chatSyncInterval);
+    container.innerHTML = '';
+  };
+
+  shadowRoot.getElementById('btn-close-chat-modal').addEventListener('click', closeModal);
+  
+  const inputField = shadowRoot.getElementById('chat-modal-input');
+  const sendBtn = shadowRoot.getElementById('chat-modal-send-btn');
+  
+  const sendMessage = () => {
+    const text = inputField.value.trim();
+    if (!text) return;
+    sendWhatsAppMessage(text);
+    inputField.value = '';
+    // Immediate sync trigger
+    setTimeout(syncChatMessages, 200);
+  };
+
+  inputField.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  });
+  sendBtn.addEventListener('click', sendMessage);
+
+  // Periodically sync chat messages
+  let lastMsgCount = 0;
+  const syncChatMessages = () => {
+    const messages = getActiveChatMessages();
+    const msgContainer = shadowRoot.getElementById('chat-modal-messages');
+    if (!msgContainer) return;
+
+    if (messages.length === 0) {
+      msgContainer.innerHTML = '<div style="margin: auto; color: #64748b; font-size: 12px; font-style: italic;">Carregando histórico de mensagens...</div>';
+      return;
+    }
+
+    // Render message bubbles
+    msgContainer.innerHTML = messages.map(msg => {
+      const bg = msg.isIncoming ? '#ffffff' : '#e2f7cb';
+      const align = msg.isIncoming ? 'flex-start' : 'flex-end';
+      const color = '#1e293b';
+      const borderRadius = msg.isIncoming ? '0 12px 12px 12px' : '12px 0 12px 12px';
+      
+      return `
+        <div style="align-self: ${align}; max-width: 80%; background-color: ${bg}; color: ${color}; padding: 8px 14px; border-radius: ${borderRadius}; font-size: 13px; line-height: 1.45; box-shadow: 0 1px 2px rgba(0,0,0,0.05); word-break: break-word; text-align: left;">
+          ${msg.text}
+        </div>
+      `;
+    }).join('');
+
+    // Autoscroll to bottom if new messages arrived
+    if (messages.length !== lastMsgCount) {
+      lastMsgCount = messages.length;
+      msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+  };
+
+  // Select chat and start polling
+  selectChatInBackground(lead.phone);
+  
+  // Fast sync interval (800ms)
+  const chatSyncInterval = setInterval(syncChatMessages, 800);
+  // Run once immediately
+  setTimeout(syncChatMessages, 400);
+}
+
 function openAddStageModal() {
   const container = shadowRoot.getElementById('extension-modal-container');
   if (!container) return;
@@ -879,6 +1040,7 @@ function openAddStageModal() {
     chrome.storage.local.set({ crm_stages: funnelStages }, () => {
       closeModal();
       loadKanbanLeads();
+      injectHorizontalTabs();
     });
   });
 }
@@ -1109,7 +1271,18 @@ function openMoveModal(lead) {
 // ---------------- OBSERVER & CHAT LOADERS ----------------
 function startChatObserver() {
   console.log('CRM: Iniciando escuta de conversas...');
-  setInterval(detectActiveChat, 1500);
+  injectLeftToolbar();
+  fetchLeadsAndRefresh();
+  
+  // Refresh leads every 15 seconds to keep counts and tags updated in background
+  setInterval(fetchLeadsAndRefresh, 15000);
+  
+  // Real-time sync for active chat and chat list filters
+  setInterval(() => {
+    detectActiveChat();
+    applyChatListFilter();
+    injectHorizontalTabs();
+  }, 1500);
 }
 
 function detectActiveChat() {
@@ -1171,6 +1344,177 @@ function detectActiveChat() {
     }
 
     loadContactData(currentPhone, currentName);
+  }
+}
+
+async function fetchLeadsAndRefresh() {
+  if (!crmToken) return;
+  try {
+    const url = `${crmServerUrl}/api/crm/leads`;
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${crmToken}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      leadsList = data.leads || [];
+      injectHorizontalTabs();
+      applyChatListFilter();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Left side panel horizontal filters tabs
+function injectHorizontalTabs() {
+  const sidePanel = document.querySelector('[data-testid="side"]') || document.querySelector('.two');
+  if (!sidePanel || !crmToken) return;
+
+  let tabsBar = document.getElementById('crm-horizontal-filter-tabs');
+  if (!tabsBar) {
+    tabsBar = document.createElement('div');
+    tabsBar.id = 'crm-horizontal-filter-tabs';
+    tabsBar.className = 'crm-horizontal-tabs';
+    // Prepend as first child of the sidePanel (so it sits right at the top!)
+    sidePanel.insertBefore(tabsBar, sidePanel.firstChild);
+  }
+
+  let tabsHtml = `
+    <button class="crm-tab-tag ${activeFilterStage === 'all' ? 'active' : ''}" data-stage="all">
+      <span>Tudo</span>
+      <span class="crm-tab-tag-count">${leadsList.length}</span>
+    </button>
+  `;
+
+  funnelStages.forEach(st => {
+    const stageLeadsCount = leadsList.filter(l => l.stage === st.key).length;
+    tabsHtml += `
+      <button class="crm-tab-tag ${activeFilterStage === st.key ? 'active' : ''}" data-stage="${st.key}">
+        <span>${st.title}</span>
+        <span class="crm-tab-tag-count">${stageLeadsCount}</span>
+      </button>
+    `;
+  });
+
+  tabsBar.innerHTML = tabsHtml;
+
+  // Bind click actions
+  tabsBar.querySelectorAll('.crm-tab-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      activeFilterStage = tag.getAttribute('data-stage');
+      tabsBar.querySelectorAll('.crm-tab-tag').forEach(t => t.classList.remove('active'));
+      tag.classList.add('active');
+      applyChatListFilter();
+    });
+  });
+}
+
+function applyChatListFilter() {
+  if (!crmToken) return;
+
+  const chatItems = document.querySelectorAll('[data-testid="chat-list-item"]');
+  if (activeFilterStage === 'all') {
+    chatItems.forEach(item => {
+      item.style.removeProperty('display');
+    });
+    return;
+  }
+
+  const allowedPhones = leadsList
+    .filter(l => l.stage === activeFilterStage)
+    .map(l => l.phone);
+
+  chatItems.forEach(item => {
+    const dataId = item.closest('[data-id]')?.getAttribute('data-id') || 
+                   item.querySelector('[data-id]')?.getAttribute('data-id') || 
+                   item.getAttribute('data-id') || '';
+    const phone = dataId.split('@')[0].replace(/\D/g, '');
+    
+    if (phone && allowedPhones.includes(phone)) {
+      item.style.setProperty('display', 'flex', 'important');
+    } else {
+      item.style.setProperty('display', 'none', 'important');
+    }
+  });
+}
+
+// Left vertical toolbar manager
+function injectLeftToolbar() {
+  if (document.getElementById('crm-left-toolbar-root') || !crmToken) return;
+
+  const toolbar = document.createElement('div');
+  toolbar.id = 'crm-left-toolbar-root';
+  toolbar.className = 'crm-left-toolbar';
+  
+  toolbar.innerHTML = `
+    <div class="crm-left-logo" title="Clean Tech Smart">CT</div>
+    
+    <button class="crm-left-item" id="crm-left-btn-funnel" title="Funil de Vendas (Kanban)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+    </button>
+
+    <button class="crm-left-item" id="crm-left-btn-chat" title="CRM do Cliente Ativo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </button>
+
+    <button class="crm-left-item" id="crm-left-btn-link" title="Ir para o Painel Web">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    </button>
+  `;
+
+  document.body.appendChild(toolbar);
+
+  // Push the WhatsApp container to the right
+  const app = document.getElementById('app') || document.querySelector('.app-wrapper');
+  if (app) {
+    app.style.setProperty('margin-left', '60px', 'important');
+    app.style.setProperty('width', 'calc(100% - 60px)', 'important');
+  }
+
+  // Bind actions
+  toolbar.querySelector('#crm-left-btn-funnel').addEventListener('click', () => {
+    if (isKanbanViewActive) {
+      toggleKanbanMode(false);
+      removeSidebar();
+    } else {
+      toggleKanbanMode(true);
+      removeSidebar();
+      initSidebar();
+    }
+  });
+
+  toolbar.querySelector('#crm-left-btn-chat').addEventListener('click', () => {
+    if (!isKanbanViewActive && document.getElementById('crm-sidebar-root')) {
+      removeSidebar();
+    } else {
+      toggleKanbanMode(false);
+      removeSidebar();
+      initSidebar();
+    }
+  });
+
+  toolbar.querySelector('#crm-left-btn-link').addEventListener('click', () => {
+    window.open(crmServerUrl + '/crm', '_blank');
+  });
+
+  updateLeftToolbarActiveStates();
+}
+
+function updateLeftToolbarActiveStates() {
+  const toolbar = document.getElementById('crm-left-toolbar-root');
+  if (!toolbar) return;
+  
+  const btnFunnel = toolbar.querySelector('#crm-left-btn-funnel');
+  const btnChat = toolbar.querySelector('#crm-left-btn-chat');
+  
+  if (btnFunnel) {
+    if (isKanbanViewActive) btnFunnel.classList.add('active');
+    else btnFunnel.classList.remove('active');
+  }
+  
+  if (btnChat) {
+    if (!isKanbanViewActive && document.getElementById('crm-sidebar-root')) btnChat.classList.add('active');
+    else btnChat.classList.remove('active');
   }
 }
 
@@ -1402,6 +1746,7 @@ async function handleSaveLead(e) {
       }
 
       loadContactData(currentPhone, name || currentName);
+      fetchLeadsAndRefresh();
     } else {
       statusDiv.innerText = '❌ Erro ao salvar dados.';
     }

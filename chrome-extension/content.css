@@ -6,7 +6,7 @@
 
 .sidebar-container {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  width: 350px;
+  width: 100%;
   height: 100vh;
   background-color: #ffffff;
   border-left: 1px solid #e5e7eb;
@@ -596,4 +596,130 @@ input:focus, select:focus, textarea:focus {
   gap: 12px;
   border-top: 1px solid #f1f5f9;
   padding-top: 14px;
+}
+
+/* Left Vertical Toolbar Styles */
+.crm-left-toolbar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 60px;
+  height: 100vh;
+  background-color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  gap: 24px;
+  z-index: 99999;
+  border-right: 1px solid #1e293b;
+  box-sizing: border-box;
+}
+
+.crm-left-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+  margin-bottom: 12px;
+}
+
+.crm-left-item {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  border: none;
+}
+
+.crm-left-item:hover {
+  color: #ffffff;
+  background-color: #1e293b;
+}
+
+.crm-left-item.active {
+  color: #ffffff;
+  background-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+/* Horizontal Stages Filter Tabs on WhatsApp Left Pane */
+.crm-horizontal-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 14px;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Custom Scrollbar for horizontal tabs */
+.crm-horizontal-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+.crm-horizontal-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+.crm-horizontal-tabs::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+.crm-tab-tag {
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.crm-tab-tag:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
+.crm-tab-tag.active {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.05);
+}
+
+.crm-tab-tag-count {
+  font-size: 9px;
+  background-color: #f1f5f9;
+  color: #64748b;
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-weight: bold;
+}
+
+.crm-tab-tag.active .crm-tab-tag-count {
+  background-color: #2563eb;
+  color: #ffffff;
 }
