@@ -522,6 +522,9 @@ async function fetchSellersList() {
 async function loadContactData(phone, name) {
   if (!shadowRoot) return;
 
+  currentPhone = phone;
+  currentName = name;
+
   const headerSpan = shadowRoot.getElementById('active-lead-header');
   headerSpan.innerText = `🔄 Carregando dados de ${name}...`;
 
