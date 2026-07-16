@@ -419,6 +419,7 @@ function renderBoard() {
         }
       }
   });
+});
 }
 
 async function deleteLeadFromServer(phone) {
