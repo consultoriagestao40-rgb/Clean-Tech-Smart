@@ -146,7 +146,7 @@ function initSidebar() {
     rootContainer.style.position = 'fixed';
     rootContainer.style.right = '0';
     rootContainer.style.top = '0';
-    rootContainer.style.width = isKanbanViewActive ? 'calc(100% - 460px)' : '350px';
+    rootContainer.style.width = isKanbanViewActive ? 'calc(100% - 60px)' : '350px';
     rootContainer.style.height = '100vh';
     rootContainer.style.zIndex = '99999';
     rootContainer.style.backgroundColor = '#ffffff';
@@ -506,10 +506,6 @@ function toggleKanbanMode(active) {
     const root = document.getElementById('crm-sidebar-root');
     const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
     
-    const sideElement = document.querySelector('[data-testid="side"]');
-    const leftPanel = sideElement ? (sideElement.closest('.two') || sideElement.parentElement) : document.querySelector('.two');
-    const rightPanel = leftPanel ? leftPanel.nextElementSibling : null;
-
     if (active) {
       // If sidebar root not initialized, create it
       if (!root) {
@@ -520,24 +516,23 @@ function toggleKanbanMode(active) {
 
       const expandedRoot = document.getElementById('crm-sidebar-root');
       
-      // Hide/Offscreen WhatsApp central panel
-      if (rightPanel) {
-        rightPanel.style.setProperty('position', 'absolute', 'important');
-        rightPanel.style.setProperty('left', '-9999px', 'important');
-        rightPanel.style.setProperty('width', '1px', 'important');
-        rightPanel.style.setProperty('height', '1px', 'important');
-        rightPanel.style.setProperty('overflow', 'hidden', 'important');
+      // Hide the entire WhatsApp Web app offscreen to prevent squishing and overlap
+      if (appElement) {
+        appElement.style.setProperty('position', 'absolute', 'important');
+        appElement.style.setProperty('left', '-9999px', 'important');
+        appElement.style.setProperty('width', '1px', 'important');
+        appElement.style.setProperty('height', '1px', 'important');
+        appElement.style.setProperty('overflow', 'hidden', 'important');
       }
-
-      const leftPanelWidth = leftPanel ? leftPanel.getBoundingClientRect().width : 400;
 
       if (expandedRoot) {
-        expandedRoot.style.left = `${leftPanelWidth + 60}px`; // leftPanelWidth + 60px left menu
-        expandedRoot.style.width = `calc(100% - ${leftPanelWidth + 60}px)`;
+        expandedRoot.style.setProperty('position', 'fixed', 'important');
+        expandedRoot.style.setProperty('left', '60px', 'important');
+        expandedRoot.style.setProperty('top', '50px', 'important'); // below horizontal bar
+        expandedRoot.style.setProperty('width', 'calc(100% - 60px)', 'important');
+        expandedRoot.style.setProperty('height', 'calc(100vh - 50px)', 'important');
         expandedRoot.style.setProperty('display', 'block', 'important');
-      }
-      if (appElement) {
-        appElement.style.setProperty('width', `${leftPanelWidth}px`, 'important');
+        expandedRoot.style.setProperty('z-index', '99999', 'important');
       }
 
       renderKanbanView();
@@ -546,16 +541,16 @@ function toggleKanbanMode(active) {
       removeSidebar();
       
       // Restore whatsapp central panel
-      if (rightPanel) {
-        rightPanel.style.removeProperty('position');
-        rightPanel.style.removeProperty('left');
-        rightPanel.style.removeProperty('width');
-        rightPanel.style.removeProperty('height');
-        rightPanel.style.removeProperty('overflow');
-      }
-
       if (appElement) {
+        appElement.style.removeProperty('position');
+        appElement.style.removeProperty('left');
+        appElement.style.removeProperty('width');
+        appElement.style.removeProperty('height');
+        appElement.style.removeProperty('overflow');
+        appElement.style.setProperty('margin-left', '60px', 'important');
+        appElement.style.setProperty('margin-top', '50px', 'important');
         appElement.style.setProperty('width', 'calc(100% - 60px)', 'important');
+        appElement.style.setProperty('height', 'calc(100vh - 50px)', 'important');
       }
     }
   } catch (err) {
@@ -712,7 +707,7 @@ async function loadKanbanLeads() {
           }
         });
 
-        // Render cards inside column container (safely query scoped container directly)
+        // Render cards inside column container
         const cardsContainer = colDiv.querySelector('.kanban-cards-container');
         if (cardsContainer) {
           stageLeads.forEach(lead => {
@@ -1376,8 +1371,9 @@ function injectHorizontalTabs() {
     document.body.appendChild(tabsBar);
   }
 
+  // Push #app wrapper down to make space for top bar (only if Kanban view is inactive)
   const app = document.getElementById('app') || document.querySelector('.app-wrapper');
-  if (app) {
+  if (app && !isKanbanViewActive) {
     app.style.setProperty('margin-top', '50px', 'important');
     app.style.setProperty('height', 'calc(100vh - 50px)', 'important');
   }
@@ -1548,16 +1544,6 @@ async function fetchSellersList() {
     if (res.ok) {
       const data = await res.json();
       sellersList = data.sellers || [];
-      
-      if (shadowRoot) {
-        const select = shadowRoot.getElementById('lead-seller');
-        if (select) {
-          select.innerHTML = '<option value="">Nenhum</option>';
-          sellersList.forEach(s => {
-            select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-          });
-        }
-      }
     }
   } catch (err) {
     console.error('Erro ao buscar lista de vendedores:', err);
