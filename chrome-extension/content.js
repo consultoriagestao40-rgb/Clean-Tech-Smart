@@ -8,10 +8,19 @@ let currentPhone = '';
 let currentName = '';
 let leadData = null;
 let sellersList = [];
+let leadsList = [];
+let selectedSeller = 'all';
+
+let isKanbanViewActive = false;
 
 // Shadow Root reference
 let shadowRoot = null;
 let sidebarElement = null;
+
+// Modal States inside Extension
+let activeNoteLead = null;
+let activeReminderLead = null;
+let activeMoveLead = null;
 
 // Initialize Session from Storage
 chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url'], (res) => {
@@ -40,6 +49,11 @@ chrome.storage.onChanged.addListener((changes) => {
       reminder.remove();
     } else if (!crmToken && !reminder) {
       injectLoginReminder();
+    }
+
+    // Toggle kanban mode off on logout
+    if (!crmToken && isKanbanViewActive) {
+      toggleKanbanMode(false);
     }
 
     removeSidebar();
@@ -87,6 +101,8 @@ function removeSidebar() {
   const container = document.getElementById('crm-sidebar-root');
   if (container) container.remove();
   
+  document.body.classList.remove('crm-hide-whatsapp-main');
+  
   const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
   if (appElement) {
     appElement.style.width = '100%';
@@ -125,6 +141,7 @@ function initSidebar() {
   sidebarElement.className = 'sidebar-container';
 
   if (!crmToken) {
+    // Render Login Form in Sidebar
     sidebarElement.innerHTML = `
       <div class="sidebar-header">
         <h3 class="sidebar-title">
@@ -153,61 +170,7 @@ function initSidebar() {
     shadowRoot.appendChild(sidebarElement);
 
     // Bind login form events
-    shadowRoot.getElementById('btn-side-login').addEventListener('click', async () => {
-      const serverUrl = shadowRoot.getElementById('side-server-url').value.trim().replace(/\/$/, '');
-      const email = shadowRoot.getElementById('side-email').value.trim();
-      const password = shadowRoot.getElementById('side-password').value;
-      const errDiv = shadowRoot.getElementById('side-login-error');
-      errDiv.style.display = 'none';
-
-      if (!serverUrl || !email || !password) {
-        errDiv.innerText = 'Preencha todos os campos.';
-        errDiv.style.display = 'block';
-        return;
-      }
-
-      const btn = shadowRoot.getElementById('btn-side-login');
-      btn.disabled = true;
-      btn.innerText = 'Conectando...';
-
-      try {
-        const response = await fetch(`${serverUrl}/api/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        const data = await response.json();
-        if (response.ok) {
-          chrome.storage.local.set({
-            crm_token: data.token,
-            crm_user: data.user,
-            crm_server_url: serverUrl
-          }, () => {
-            crmServerUrl = serverUrl;
-            crmToken = data.token;
-            crmUser = data.user;
-
-            // Remove login reminder if present
-            const reminder = document.getElementById('crm-login-reminder');
-            if (reminder) reminder.remove();
-
-            removeSidebar();
-            initSidebar();
-            startChatObserver();
-          });
-        } else {
-          errDiv.innerText = data.error || 'Credenciais inválidas.';
-          errDiv.style.display = 'block';
-        }
-      } catch (err) {
-        console.error(err);
-        errDiv.innerText = 'Erro ao conectar ao servidor.';
-        errDiv.style.display = 'block';
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Entrar no CRM';
-      }
-    });
+    shadowRoot.getElementById('btn-side-login').addEventListener('click', handleInlineLogin);
 
     const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
     if (appElement) {
@@ -216,12 +179,93 @@ function initSidebar() {
     return;
   }
 
+  shadowRoot.appendChild(sidebarElement);
+
+  // If logged in, render according to mode
+  if (isKanbanViewActive) {
+    toggleKanbanMode(true);
+  } else {
+    renderSidebarView();
+  }
+
+  // Fetch sellers to populate lists
+  fetchSellersList();
+}
+
+async function handleInlineLogin() {
+  const serverUrl = shadowRoot.getElementById('side-server-url').value.trim().replace(/\/$/, '');
+  const email = shadowRoot.getElementById('side-email').value.trim();
+  const password = shadowRoot.getElementById('side-password').value;
+  const errDiv = shadowRoot.getElementById('side-login-error');
+  errDiv.style.display = 'none';
+
+  if (!serverUrl || !email || !password) {
+    errDiv.innerText = 'Preencha todos os campos.';
+    errDiv.style.display = 'block';
+    return;
+  }
+
+  const btn = shadowRoot.getElementById('btn-side-login');
+  btn.disabled = true;
+  btn.innerText = 'Conectando...';
+
+  try {
+    const response = await fetch(`${serverUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await response.json();
+    if (response.ok) {
+      chrome.storage.local.set({
+        crm_token: data.token,
+        crm_user: data.user,
+        crm_server_url: serverUrl
+      }, () => {
+        crmServerUrl = serverUrl;
+        crmToken = data.token;
+        crmUser = data.user;
+
+        // Remove login reminder if present
+        const reminder = document.getElementById('crm-login-reminder');
+        if (reminder) reminder.remove();
+
+        removeSidebar();
+        initSidebar();
+        startChatObserver();
+      });
+    } else {
+      errDiv.innerText = data.error || 'Credenciais inválidas.';
+      errDiv.style.display = 'block';
+    }
+  } catch (err) {
+    console.error(err);
+    errDiv.innerText = 'Erro ao conectar ao servidor.';
+    errDiv.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Entrar no CRM';
+  }
+}
+
+// ---------------- SIDEBAR VIEW RENDERING ----------------
+function renderSidebarView() {
+  if (!sidebarElement) return;
+
   sidebarElement.innerHTML = `
     <div class="sidebar-header">
-      <h3 class="sidebar-title">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Clean Tech CRM
-      </h3>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="sidebar-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Clean Tech CRM
+        </h3>
+        
+        <!-- Toggle button to full Kanban Board view -->
+        <button id="btn-toggle-kanban" style="padding: 4px 8px; font-size: 10px; font-weight: bold; background-color: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h4v10H7zm6 0h4v6h-4z"/></svg>
+          Ver Funil
+        </button>
+      </div>
       <p class="sidebar-subtitle">Integração WhatsApp Web</p>
     </div>
 
@@ -390,9 +434,7 @@ function initSidebar() {
     </div>
   `;
 
-  shadowRoot.appendChild(sidebarElement);
-
-  // Resize WhatsApp UI wrapper
+  // Restore regular App width
   const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
   if (appElement) {
     appElement.style.width = 'calc(100% - 350px)';
@@ -428,22 +470,577 @@ function initSidebar() {
   // Setup Quick Ticket submission
   shadowRoot.getElementById('quick-ticket-form').addEventListener('submit', handleSaveQuickTicket);
 
-  // Fetch sellers to populate select list
-  fetchSellersList();
+  // Toggle Kanban view click listener
+  shadowRoot.getElementById('btn-toggle-kanban').addEventListener('click', () => {
+    toggleKanbanMode(true);
+  });
+
+  // Reload current contact values if loaded
+  if (currentPhone) {
+    loadContactData(currentPhone, currentName);
+  }
 }
 
+// ---------------- KANBAN BOARD VIEW RENDERING ----------------
+function toggleKanbanMode(active) {
+  isKanbanViewActive = active;
+  const root = document.getElementById('crm-sidebar-root');
+  const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
+  
+  // WhatsApp central panels
+  const waMain = document.getElementById('main') || 
+                 document.querySelector('[data-testid="conversation-panel-wrapper"]') || 
+                 document.querySelector('[data-testid="startup-social"]');
+
+  if (active) {
+    if (root) {
+      root.classList.add('kanban-mode');
+    }
+    
+    // Hide whatsapp main panel to give space
+    if (waMain) waMain.style.setProperty('display', 'none', 'important');
+    
+    const welcome = document.querySelector('[class*="intro"]') || document.querySelector('[data-testid="startup-social"]');
+    if (welcome) welcome.style.setProperty('display', 'none', 'important');
+
+    const leftPanel = document.querySelector('[data-testid="side"]') || document.querySelector('.two');
+    const leftPanelWidth = leftPanel ? leftPanel.getBoundingClientRect().width : 400;
+
+    if (root) {
+      root.style.left = `${leftPanelWidth}px`;
+      root.style.width = `calc(100% - ${leftPanelWidth}px)`;
+    }
+    if (appElement) {
+      appElement.style.width = `${leftPanelWidth}px`;
+    }
+
+    renderKanbanView();
+  } else {
+    if (root) {
+      root.classList.remove('kanban-mode');
+      root.style.left = 'auto';
+      root.style.width = '350px';
+    }
+    
+    if (waMain) waMain.style.setProperty('display', 'flex', 'important');
+    
+    const welcome = document.querySelector('[class*="intro"]') || document.querySelector('[data-testid="startup-social"]');
+    if (welcome) welcome.style.setProperty('display', 'flex', 'important');
+
+    if (appElement) {
+      appElement.style.width = 'calc(100% - 350px)';
+    }
+
+    renderSidebarView();
+  }
+}
+
+async function renderKanbanView() {
+  if (!sidebarElement) return;
+
+  // Header showing seller filter and toggle back to chat button
+  let sellerFilterHtml = '';
+  if (crmUser && crmUser.role === 'gestor') {
+    sellerFilterHtml = `
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase;">Filtrar:</span>
+        <select id="kanban-seller-filter" style="padding: 4px 8px; font-size: 11px; width: auto; height: 26px; border-radius: 6px;">
+          <option value="all">Todos</option>
+          ${sellersList.map(s => `<option value="${s.id}" ${selectedSeller == s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
+        </select>
+      </div>
+    `;
+  } else {
+    sellerFilterHtml = `<span style="font-size: 11px; color: #64748b; font-style: italic;">Leads de ${crmUser ? crmUser.name.split(' ')[0] : 'Vendedor'}</span>`;
+  }
+
+  sidebarElement.innerHTML = `
+    <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <h3 class="sidebar-title" style="font-size: 15px;">Funil de Vendas CRM</h3>
+      </div>
+      
+      <div style="display: flex; items-center; gap: 12px;">
+        ${sellerFilterHtml}
+        
+        <button id="btn-toggle-chat" style="padding: 4px 8px; font-size: 10px; font-weight: bold; background-color: #475569; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Abrir Chat
+        </button>
+      </div>
+    </div>
+    
+    <div class="kanban-board-container" id="kanban-columns-wrapper">
+      <!-- Loading state -->
+      <div style="margin: auto; text-align: center; color: #64748b; font-size: 13px; font-weight: bold;">
+        Carregando Quadro Funil...
+      </div>
+    </div>
+
+    <!-- Modals container inside Shadow DOM -->
+    <div id="extension-modal-container"></div>
+  `;
+
+  // Bind Header actions
+  shadowRoot.getElementById('btn-toggle-chat').addEventListener('click', () => {
+    toggleKanbanMode(false);
+  });
+
+  const sellerSelect = shadowRoot.getElementById('kanban-seller-filter');
+  if (sellerSelect) {
+    sellerSelect.addEventListener('change', (e) => {
+      selectedSeller = e.target.value;
+      loadKanbanLeads();
+    });
+  }
+
+  // Load leads and populate board
+  loadKanbanLeads();
+}
+
+async function loadKanbanLeads() {
+  const container = shadowRoot.getElementById('kanban-columns-wrapper');
+  if (!container) return;
+
+  try {
+    const url = selectedSeller !== 'all' 
+      ? `${crmServerUrl}/api/crm/leads?assigned_to=${selectedSeller}`
+      : `${crmServerUrl}/api/crm/leads`;
+
+    const res = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${crmToken}` }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      leadsList = data.leads || [];
+
+      // Render column structures
+      const stages = [
+        { key: 'inbox', title: 'Inbox', color: 'border-top: 3px solid #64748b;' },
+        { key: 'lead', title: 'Lead de Serviço', color: 'border-top: 3px solid #3b82f6;' },
+        { key: 'tratar', title: 'Tratar', color: 'border-top: 3px solid #eab308;' },
+        { key: 'atendimento', title: 'Atendimento', color: 'border-top: 3px solid #06b6d4;' },
+        { key: 'programado', title: 'Programado', color: 'border-top: 3px solid #a855f7;' },
+        { key: 'a_faturar', title: 'A Faturar', color: 'border-top: 3px solid #f97316;' },
+        { key: 'faturado', title: 'Fatura Enviada', color: 'border-top: 3px solid #10b981;' },
+        { key: 'perdido', title: 'Perdido', color: 'border-top: 3px solid #ef4444;' }
+      ];
+
+      container.innerHTML = '';
+
+      stages.forEach(st => {
+        const stageLeads = leadsList.filter(l => l.stage === st.key);
+        const stageValSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
+
+        const colDiv = document.createElement('div');
+        colDiv.className = 'kanban-column';
+        colDiv.setAttribute('data-stage', st.key);
+        
+        colDiv.innerHTML = `
+          <div class="kanban-column-header" style="${st.color}">
+            <div class="kanban-column-top">
+              <span class="kanban-column-title">${st.title}</span>
+              <span class="kanban-column-count">${stageLeads.length}</span>
+            </div>
+            <div class="kanban-column-sum">R$ ${stageValSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          </div>
+          <div class="kanban-cards-container" id="cards-container-${st.key}">
+            ${stageLeads.length === 0 ? `
+              <div class="kanban-empty-state">Sem leads</div>
+            ` : ''}
+          </div>
+        `;
+
+        container.appendChild(colDiv);
+
+        // Render cards inside column container
+        const cardsContainer = shadowRoot.getElementById(`cards-container-${st.key}`);
+        stageLeads.forEach(lead => {
+          const initials = getInitialsName(lead.name);
+          const val = parseFloat(lead.value) || 0;
+          const formattedVal = val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          
+          let reminderBadge = '';
+          if (lead.next_contact_at) {
+            const dateStr = new Date(lead.next_contact_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+            reminderBadge = `
+              <div class="kanban-card-reminder">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                <span>${dateStr}</span>
+              </div>
+            `;
+          }
+
+          const card = document.createElement('div');
+          card.className = 'kanban-card';
+          card.draggable = true;
+          card.setAttribute('data-phone', lead.phone);
+          
+          card.innerHTML = `
+            <div class="kanban-card-top">
+              <div class="kanban-card-avatar-wrapper">
+                <div class="kanban-card-avatar">${initials}</div>
+                <div>
+                  <div class="kanban-card-name" title="${lead.name || lead.phone}">${lead.name || lead.phone}</div>
+                  <div class="kanban-card-phone">${lead.phone}</div>
+                </div>
+              </div>
+              <div class="kanban-card-value">R$ ${formattedVal}</div>
+            </div>
+            
+            ${reminderBadge}
+
+            <div class="kanban-card-bottom">
+              <span class="kanban-card-seller">${lead.assigned_to_name ? lead.assigned_to_name.split(' ')[0] : 'Sem vendedor'}</span>
+              <div class="kanban-card-toolbar">
+                <button class="kanban-card-icon-btn btn-action-reminder" title="Agendar Retorno" data-phone="${lead.phone}">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                </button>
+                <button class="kanban-card-icon-btn btn-action-note" title="Adicionar Nota" data-phone="${lead.phone}">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>
+                </button>
+                <button class="kanban-card-icon-btn btn-action-move" title="Mover Etapa" data-phone="${lead.phone}">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+                </button>
+                <button class="kanban-card-icon-btn btn-action-chat" title="Abrir Chat" data-phone="${lead.phone}">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </button>
+              </div>
+            </div>
+          `;
+
+          // Card Drag Events
+          card.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', lead.phone);
+          });
+
+          // Action Toolbar click listeners
+          card.querySelector('.btn-action-reminder').addEventListener('click', () => {
+            openReminderModal(lead);
+          });
+          card.querySelector('.btn-action-note').addEventListener('click', () => {
+            openNoteModal(lead);
+          });
+          card.querySelector('.btn-action-move').addEventListener('click', () => {
+            openMoveModal(lead);
+          });
+          card.querySelector('.btn-action-chat').addEventListener('click', () => {
+            openChatByPhone(lead.phone);
+          });
+
+          cardsContainer.appendChild(card);
+        });
+
+        // Column Drag and Drop Events
+        colDiv.addEventListener('dragover', (e) => {
+          e.preventDefault();
+        });
+        colDiv.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          const phone = e.dataTransfer.getData('text/plain');
+          if (phone) {
+            updateLeadStage(phone, st.key);
+          }
+        });
+      });
+
+    } else {
+      container.innerHTML = '<div style="margin: auto; color: #dc2626; font-weight: bold;">Erro ao carregar leads.</div>';
+    }
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = '<div style="margin: auto; color: #dc2626; font-weight: bold;">Erro de conexão com o painel.</div>';
+  }
+}
+
+function getInitialsName(name) {
+  if (!name) return 'LD';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+async function updateLeadStage(phone, stage) {
+  try {
+    const res = await fetch(`${crmServerUrl}/api/crm/contact`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${crmToken}`
+      },
+      body: JSON.stringify({ phone, stage })
+    });
+    if (res.ok) {
+      loadKanbanLeads();
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Open chat helper by clicking panel items
+function openChatByPhone(phone) {
+  // 1. Try to find the chat item in the left sidebar chat list and click it
+  const chatListItem = document.querySelector(`[data-id*="${phone}"]`) || 
+                       document.querySelector(`div[data-id="${phone}@c.us"]`);
+  if (chatListItem) {
+    const clickable = chatListItem.querySelector('[role="button"]') || chatListItem;
+    clickable.click();
+    
+    // Switch to sidebar view so they can see the chat they just opened!
+    toggleKanbanMode(false);
+  } else {
+    // 2. Fallback: navigate using location hash
+    window.location.hash = `#/chat/${phone}@c.us`;
+    toggleKanbanMode(false);
+  }
+}
+
+// ---------------- DIALOG MODALS RENDERING (Shadow DOM) ----------------
+function openNoteModal(lead) {
+  const container = shadowRoot.getElementById('extension-modal-container');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="extension-modal-overlay">
+      <div class="extension-modal-box">
+        <div class="extension-modal-header">
+          <h4 class="extension-modal-title">Criar anotação</h4>
+          <button class="extension-modal-close-btn" id="btn-close-modal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="extension-modal-body">
+          <div style="font-size: 12px; color: #64748b;">
+            <strong>Lead:</strong> ${lead.name || lead.phone}
+          </div>
+          <div class="form-group">
+            <label>Insira uma anotação</label>
+            <textarea id="modal-note-content" rows="4" placeholder="Insira sua nota..."></textarea>
+          </div>
+        </div>
+        <div class="extension-modal-footer">
+          <button class="btn-primary" id="btn-modal-cancel" style="margin: 0; background-color: #94a3b8; width: auto; padding: 8px 16px;">Cancelar</button>
+          <button class="btn-primary" id="btn-modal-save" style="margin: 0; width: auto; padding: 8px 16px;">Salvar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const closeModal = () => { container.innerHTML = ''; };
+
+  shadowRoot.getElementById('btn-close-modal').addEventListener('click', closeModal);
+  shadowRoot.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
+  
+  shadowRoot.getElementById('btn-modal-save').addEventListener('click', async () => {
+    const content = shadowRoot.getElementById('modal-note-content').value.trim();
+    if (!content) return;
+
+    const btn = shadowRoot.getElementById('btn-modal-save');
+    btn.disabled = true;
+    btn.innerText = 'Salvando...';
+
+    try {
+      const res = await fetch(`${crmServerUrl}/api/crm/notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${crmToken}`
+        },
+        body: JSON.stringify({
+          lead_phone: lead.phone,
+          content
+        })
+      });
+
+      if (res.ok) {
+        closeModal();
+        loadKanbanLeads();
+      } else {
+        alert('Erro ao salvar anotação.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar.');
+    } finally {
+      btn.disabled = false;
+      btn.innerText = 'Salvar';
+    }
+  });
+}
+
+function openReminderModal(lead) {
+  const container = shadowRoot.getElementById('extension-modal-container');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="extension-modal-overlay">
+      <div class="extension-modal-box">
+        <div class="extension-modal-header">
+          <h4 class="extension-modal-title">Criar Agendamento</h4>
+          <button class="extension-modal-close-btn" id="btn-close-modal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="extension-modal-body">
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">
+            <strong>Lead:</strong> ${lead.name || lead.phone}
+          </div>
+          <div class="form-group">
+            <label>Título (Opcional)</label>
+            <input type="text" id="modal-task-title" placeholder="Ex: Retorno de orçamento">
+          </div>
+          <div class="form-group">
+            <label>Mensagem / Observações</label>
+            <textarea id="modal-task-desc" rows="2" placeholder="Insira os detalhes do lembrete..."></textarea>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <div class="form-group" style="flex: 1; margin: 0;">
+              <label>Data</label>
+              <input type="date" id="modal-task-date">
+            </div>
+            <div class="form-group" style="flex: 1; margin: 0;">
+              <label>Hora</label>
+              <input type="time" id="modal-task-time">
+            </div>
+          </div>
+        </div>
+        <div class="extension-modal-footer">
+          <button class="btn-primary" id="btn-modal-cancel" style="margin: 0; background-color: #94a3b8; width: auto; padding: 8px 16px;">Cancelar</button>
+          <button class="btn-primary" id="btn-modal-save" style="margin: 0; width: auto; padding: 8px 16px;">Criar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const closeModal = () => { container.innerHTML = ''; };
+
+  shadowRoot.getElementById('btn-close-modal').addEventListener('click', closeModal);
+  shadowRoot.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
+  
+  shadowRoot.getElementById('btn-modal-save').addEventListener('click', async () => {
+    const title = shadowRoot.getElementById('modal-task-title').value.trim() || 'Retorno de Contato';
+    const message = shadowRoot.getElementById('modal-task-desc').value.trim();
+    const dateVal = shadowRoot.getElementById('modal-task-date').value;
+    const timeVal = shadowRoot.getElementById('modal-task-time').value;
+
+    if (!dateVal || !timeVal) {
+      alert('Data e hora são obrigatórias.');
+      return;
+    }
+
+    const combinedDateTime = `${dateVal}T${timeVal}`;
+    const btn = shadowRoot.getElementById('btn-modal-save');
+    btn.disabled = true;
+    btn.innerText = 'Criando...';
+
+    try {
+      // 1. Update Lead return time
+      const resContact = await fetch(`${crmServerUrl}/api/crm/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${crmToken}`
+        },
+        body: JSON.stringify({
+          phone: lead.phone,
+          next_contact_at: combinedDateTime
+        })
+      });
+
+      if (!resContact.ok) throw new Error('Erro ao salvar retorno no lead');
+
+      // 2. Create Task row
+      const finalTitle = message ? `${title}: ${message}` : title;
+      await fetch(`${crmServerUrl}/api/crm/tasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${crmToken}`
+        },
+        body: JSON.stringify({
+          lead_phone: lead.phone,
+          title: finalTitle,
+          due_date: combinedDateTime
+        })
+      });
+
+      closeModal();
+      loadKanbanLeads();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao agendar lembrete.');
+    } finally {
+      btn.disabled = false;
+      btn.innerText = 'Criar';
+    }
+  });
+}
+
+function openMoveModal(lead) {
+  const container = shadowRoot.getElementById('extension-modal-container');
+  if (!container) return;
+
+  const stages = [
+    { key: 'inbox', title: 'Inbox' },
+    { key: 'lead', title: 'Lead de Serviço' },
+    { key: 'tratar', title: 'Tratar' },
+    { key: 'atendimento', title: 'Atendimento' },
+    { key: 'programado', title: 'Programado' },
+    { key: 'a_faturar', title: 'A Faturar' },
+    { key: 'faturado', title: 'Fatura Enviada' },
+    { key: 'perdido', title: 'Perdido' }
+  ];
+
+  container.innerHTML = `
+    <div class="extension-modal-overlay">
+      <div class="extension-modal-box" style="max-width: 320px;">
+        <div class="extension-modal-header">
+          <h4 class="extension-modal-title">Mover de Etapa</h4>
+          <button class="extension-modal-close-btn" id="btn-close-modal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="extension-modal-body">
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">
+            <strong>Lead:</strong> ${lead.name || lead.phone}
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${stages.map(st => `
+              <button class="btn-stage-select" data-stage="${st.key}" style="padding: 10px; border-radius: 8px; border: 1px solid ${lead.stage === st.key ? '#2563eb' : '#e2e8f0'}; background-color: ${lead.stage === st.key ? '#eff6ff' : '#ffffff'}; color: ${lead.stage === st.key ? '#2563eb' : '#334155'}; font-size: 12px; font-weight: bold; cursor: pointer; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+                <span>${st.title}</span>
+                ${lead.stage === st.key ? '✓' : ''}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const closeModal = () => { container.innerHTML = ''; };
+
+  shadowRoot.getElementById('btn-close-modal').addEventListener('click', closeModal);
+  
+  shadowRoot.querySelectorAll('.btn-stage-select').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selectedStage = btn.getAttribute('data-stage');
+      updateLeadStage(lead.phone, selectedStage);
+      closeModal();
+    });
+  });
+}
+
+// ---------------- OBSERVER & CHAT LOADERS ----------------
 function startChatObserver() {
   console.log('CRM: Iniciando escuta de conversas...');
-  
-  // Scans for active chat details periodically (resilience wrapper)
   setInterval(detectActiveChat, 1500);
 }
 
 function detectActiveChat() {
-  if (!crmToken) return;
+  if (!crmToken || isKanbanViewActive) return;
 
-  // Search WhatsApp DOM for active chat details
-  // WA Web chat title selector inside header:
   const headerNameElement = document.querySelector('#main header span[title]') || 
                             document.querySelector('#main header div[title]') || 
                             document.querySelector('[data-testid="conversation-info"] span[title]');
@@ -451,11 +1048,8 @@ function detectActiveChat() {
   if (!headerNameElement) return;
 
   const chatName = headerNameElement.getAttribute('title') || headerNameElement.innerText;
-  
-  // Try to find raw JID or Phone number from DOM elements of the active chat item in conversation lists
   let detectedPhone = '';
   
-  // Standard JID detection from chat-list selection JID
   const selectedChatListItem = document.querySelector('[data-testid="chat-list-item"] [aria-selected="true"]') ||
                                document.querySelector('[data-testid="chat-list-item"] [class*="active"]') ||
                                document.querySelector('div[data-id*="@c.us"]');
@@ -467,12 +1061,10 @@ function detectActiveChat() {
     }
   }
 
-  // Fallback: If chat name itself looks like a phone number, clean it
   if (!detectedPhone && /^\+?[\d\s\-()]{10,}$/.test(chatName)) {
     detectedPhone = chatName.replace(/\D/g, '');
   }
 
-  // Fallback 2: Check sub-text/details in header
   if (!detectedPhone) {
     const headerSubtextElement = document.querySelector('#main header span[class*="selectable-text"]');
     if (headerSubtextElement) {
@@ -483,12 +1075,10 @@ function detectActiveChat() {
     }
   }
 
-  // If a new phone is detected, load it!
   if (detectedPhone && detectedPhone !== currentPhone) {
     currentPhone = detectedPhone;
     currentName = chatName;
     
-    // Auto-update raw phone textfield
     if (shadowRoot) {
       const phoneInput = shadowRoot.getElementById('phone-input');
       if (phoneInput) phoneInput.value = currentPhone;
@@ -507,7 +1097,6 @@ async function fetchSellersList() {
       const data = await res.json();
       sellersList = data.sellers || [];
       
-      // Populate select dropdown
       const select = shadowRoot.getElementById('lead-seller');
       if (select) {
         select.innerHTML = '<option value="">Nenhum</option>';
@@ -522,7 +1111,7 @@ async function fetchSellersList() {
 }
 
 async function loadContactData(phone, name) {
-  if (!shadowRoot) return;
+  if (!shadowRoot || isKanbanViewActive) return;
 
   currentPhone = phone;
   currentName = name;
@@ -542,7 +1131,6 @@ async function loadContactData(phone, name) {
 
       headerSpan.innerHTML = `👤 ${data.lead.name || name}`;
       
-      // Show form containers
       shadowRoot.getElementById('crm-form').style.display = 'block';
       shadowRoot.getElementById('crm-empty-state').style.display = 'none';
 
@@ -552,7 +1140,6 @@ async function loadContactData(phone, name) {
       shadowRoot.getElementById('related-container').style.display = 'block';
       shadowRoot.getElementById('related-empty-state').style.display = 'none';
 
-      // 1. Fill CRM Form fields
       shadowRoot.getElementById('lead-name').value = data.lead.name || '';
       shadowRoot.getElementById('lead-stage').value = data.lead.stage || 'inbox';
       shadowRoot.getElementById('lead-value').value = data.lead.value || 0;
@@ -562,7 +1149,6 @@ async function loadContactData(phone, name) {
       const reminderBadge = shadowRoot.getElementById('reminder-info');
       
       if (data.lead.next_contact_at) {
-        // Convert timestamp to local datetime-local value (YYYY-MM-DDThh:mm)
         const dateObj = new Date(data.lead.next_contact_at);
         const tzOffset = dateObj.getTimezoneOffset() * 60000;
         const localISOTime = (new Date(dateObj - tzOffset)).toISOString().slice(0, 16);
@@ -573,14 +1159,10 @@ async function loadContactData(phone, name) {
         reminderBadge.style.display = 'none';
       }
 
-      // 2. Render Notes list
       renderNotes(data.notes);
-
-      // 3. Render Related Contracts and Tickets
       renderContracts(data.contracts);
       renderTickets(data.tickets);
 
-      // 4. Fill quick ticket equipments dropdown if matching client exists
       const ticketBox = shadowRoot.getElementById('quick-ticket-box');
       const ticketEquipSelect = shadowRoot.getElementById('ticket-equip');
       
@@ -718,7 +1300,6 @@ async function handleSaveLead(e) {
       statusDiv.innerText = '✅ CRM Atualizado!';
       setTimeout(() => { statusDiv.innerText = ''; }, 3000);
 
-      // Trigger native notification alarm in background worker
       if (next_contact_at) {
         chrome.runtime.sendMessage({
           action: 'scheduleReminder',
@@ -768,9 +1349,6 @@ async function handleSaveNote() {
 
     if (res.ok) {
       contentInput.value = '';
-      const data = await res.json();
-      
-      // Reload contact list
       loadContactData(currentPhone, currentName);
     } else {
       alert('Erro ao salvar anotação.');
@@ -823,7 +1401,6 @@ async function handleSaveQuickTicket(e) {
       shadowRoot.getElementById('ticket-desc').value = '';
       shadowRoot.getElementById('ticket-date').value = '';
       
-      // Reload details to refresh tickets grid list
       loadContactData(currentPhone, currentName);
       
       setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
