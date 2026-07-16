@@ -11,6 +11,18 @@ let sellersList = [];
 let leadsList = [];
 let selectedSeller = 'all';
 
+const DEFAULT_STAGES = [
+  { key: 'inbox', title: 'Inbox', color: 'border-top: 3px solid #64748b;' },
+  { key: 'lead', title: 'Lead de Serviço', color: 'border-top: 3px solid #3b82f6;' },
+  { key: 'tratar', title: 'Tratar', color: 'border-top: 3px solid #eab308;' },
+  { key: 'atendimento', title: 'Atendimento', color: 'border-top: 3px solid #06b6d4;' },
+  { key: 'programado', title: 'Programado', color: 'border-top: 3px solid #a855f7;' },
+  { key: 'a_faturar', title: 'A Faturar', color: 'border-top: 3px solid #f97316;' },
+  { key: 'faturado', title: 'Fatura Enviada', color: 'border-top: 3px solid #10b981;' },
+  { key: 'perdido', title: 'Perdido', color: 'border-top: 3px solid #ef4444;' }
+];
+let funnelStages = [...DEFAULT_STAGES];
+
 let isKanbanViewActive = false;
 
 // Shadow Root reference
@@ -23,10 +35,13 @@ let activeReminderLead = null;
 let activeMoveLead = null;
 
 // Initialize Session from Storage
-chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url'], (res) => {
+chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url', 'crm_stages'], (res) => {
   crmServerUrl = res.crm_server_url || 'https://clean-tech-smart.vercel.app';
   crmToken = res.crm_token || '';
   crmUser = res.crm_user || null;
+  if (res.crm_stages && res.crm_stages.length > 0) {
+    funnelStages = res.crm_stages;
+  }
   
   initSidebar();
   if (crmToken) {
@@ -38,10 +53,13 @@ chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url'], (res) => {
 
 // Watch for storage changes (e.g. login/logout from popup)
 chrome.storage.onChanged.addListener((changes) => {
-  chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url'], (res) => {
+  chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url', 'crm_stages'], (res) => {
     crmServerUrl = res.crm_server_url || 'https://clean-tech-smart.vercel.app';
     crmToken = res.crm_token || '';
     crmUser = res.crm_user || null;
+    if (res.crm_stages && res.crm_stages.length > 0) {
+      funnelStages = res.crm_stages;
+    }
     
     // Remove login reminder if logged in
     const reminder = document.getElementById('crm-login-reminder');
@@ -262,7 +280,7 @@ function renderSidebarView() {
         
         <!-- Toggle button to full Kanban Board view -->
         <button id="btn-toggle-kanban" style="padding: 4px 8px; font-size: 10px; font-weight: bold; background-color: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h4v10H7zm6 0h4v6h-4z"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h4v10H7zm6 0h4v6h-4z"/></svg>
           Ver Funil
         </button>
       </div>
@@ -303,14 +321,8 @@ function renderSidebarView() {
           <div class="form-group">
             <label for="lead-stage">Etapa do Funil</label>
             <select id="lead-stage">
-              <option value="inbox">Inbox</option>
-              <option value="lead">Lead de Serviço</option>
-              <option value="tratar">Tratar</option>
-              <option value="atendimento">Atendimento</option>
-              <option value="programado">Programado</option>
-              <option value="a_faturar">A Faturar</option>
-              <option value="faturado">Fatura Enviada</option>
-              <option value="perdido">Perdido</option>
+              <!-- Render stages dynamically -->
+              ${funnelStages.map(st => `<option value="${st.key}">${st.title}</option>`).join('')}
             </select>
           </div>
 
@@ -544,7 +556,7 @@ async function renderKanbanView() {
     sellerFilterHtml = `
       <div style="display: flex; align-items: center; gap: 6px;">
         <span style="font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase;">Filtrar:</span>
-        <select id="kanban-seller-filter" style="padding: 4px 8px; font-size: 11px; width: auto; height: 26px; border-radius: 6px;">
+        <select id="kanban-seller-filter" style="padding: 4px 8px; font-size: 11px; width: auto; height: 26px; border-radius: 6px; margin: 0;">
           <option value="all">Todos</option>
           ${sellersList.map(s => `<option value="${s.id}" ${selectedSeller == s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
         </select>
@@ -560,11 +572,17 @@ async function renderKanbanView() {
         <h3 class="sidebar-title" style="font-size: 15px;">Funil de Vendas CRM</h3>
       </div>
       
-      <div style="display: flex; items-center; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
         ${sellerFilterHtml}
         
+        <!-- Add Stage Column Button -->
+        <button id="btn-add-kanban-stage" style="padding: 4px 8px; font-size: 10px; font-weight: bold; background-color: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+          Nova Etapa
+        </button>
+
         <button id="btn-toggle-chat" style="padding: 4px 8px; font-size: 10px; font-weight: bold; background-color: #475569; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Abrir Chat
         </button>
       </div>
@@ -585,6 +603,8 @@ async function renderKanbanView() {
   shadowRoot.getElementById('btn-toggle-chat').addEventListener('click', () => {
     toggleKanbanMode(false);
   });
+
+  shadowRoot.getElementById('btn-add-kanban-stage').addEventListener('click', openAddStageModal);
 
   const sellerSelect = shadowRoot.getElementById('kanban-seller-filter');
   if (sellerSelect) {
@@ -615,21 +635,9 @@ async function loadKanbanLeads() {
       const data = await res.json();
       leadsList = data.leads || [];
 
-      // Render column structures
-      const stages = [
-        { key: 'inbox', title: 'Inbox', color: 'border-top: 3px solid #64748b;' },
-        { key: 'lead', title: 'Lead de Serviço', color: 'border-top: 3px solid #3b82f6;' },
-        { key: 'tratar', title: 'Tratar', color: 'border-top: 3px solid #eab308;' },
-        { key: 'atendimento', title: 'Atendimento', color: 'border-top: 3px solid #06b6d4;' },
-        { key: 'programado', title: 'Programado', color: 'border-top: 3px solid #a855f7;' },
-        { key: 'a_faturar', title: 'A Faturar', color: 'border-top: 3px solid #f97316;' },
-        { key: 'faturado', title: 'Fatura Enviada', color: 'border-top: 3px solid #10b981;' },
-        { key: 'perdido', title: 'Perdido', color: 'border-top: 3px solid #ef4444;' }
-      ];
-
       container.innerHTML = '';
 
-      stages.forEach(st => {
+      funnelStages.forEach((st, index) => {
         const stageLeads = leadsList.filter(l => l.stage === st.key);
         const stageValSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
 
@@ -638,7 +646,8 @@ async function loadKanbanLeads() {
         colDiv.setAttribute('data-stage', st.key);
         
         colDiv.innerHTML = `
-          <div class="kanban-column-header" style="${st.color}">
+          <!-- Draggable Column Header for sideways reordering -->
+          <div class="kanban-column-header" style="${st.color}; cursor: grab;" draggable="true" data-index="${index}">
             <div class="kanban-column-top">
               <span class="kanban-column-title">${st.title}</span>
               <span class="kanban-column-count">${stageLeads.length}</span>
@@ -653,6 +662,29 @@ async function loadKanbanLeads() {
         `;
 
         container.appendChild(colDiv);
+
+        // Bind Column Header drag & drop reordering
+        const colHeader = colDiv.querySelector('.kanban-column-header');
+        colHeader.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/column-index', index);
+        });
+        colHeader.addEventListener('dragover', (e) => {
+          e.preventDefault();
+        });
+        colHeader.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const sourceIdxStr = e.dataTransfer.getData('text/column-index');
+          if (sourceIdxStr !== '') {
+            const sourceIndex = parseInt(sourceIdxStr, 10);
+            if (sourceIndex !== index) {
+              const [moved] = funnelStages.splice(sourceIndex, 1);
+              funnelStages.splice(index, 0, moved);
+              chrome.storage.local.set({ crm_stages: funnelStages }, () => {
+                loadKanbanLeads();
+              });
+            }
+          }
+        });
 
         // Render cards inside column container
         const cardsContainer = shadowRoot.getElementById(`cards-container-${st.key}`);
@@ -710,7 +742,7 @@ async function loadKanbanLeads() {
             </div>
           `;
 
-          // Card Drag Events
+          // Card Drag Events (leads reordering)
           card.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('text/plain', lead.phone);
           });
@@ -732,7 +764,7 @@ async function loadKanbanLeads() {
           cardsContainer.appendChild(card);
         });
 
-        // Column Drag and Drop Events
+        // Column drop listener for cards
         colDiv.addEventListener('dragover', (e) => {
           e.preventDefault();
         });
@@ -781,23 +813,76 @@ async function updateLeadStage(phone, stage) {
 
 // Open chat helper by clicking panel items
 function openChatByPhone(phone) {
-  // 1. Try to find the chat item in the left sidebar chat list and click it
   const chatListItem = document.querySelector(`[data-id*="${phone}"]`) || 
                        document.querySelector(`div[data-id="${phone}@c.us"]`);
   if (chatListItem) {
     const clickable = chatListItem.querySelector('[role="button"]') || chatListItem;
     clickable.click();
-    
-    // Switch to sidebar view so they can see the chat they just opened!
     toggleKanbanMode(false);
   } else {
-    // 2. Fallback: navigate using location hash
     window.location.hash = `#/chat/${phone}@c.us`;
     toggleKanbanMode(false);
   }
 }
 
 // ---------------- DIALOG MODALS RENDERING (Shadow DOM) ----------------
+function openAddStageModal() {
+  const container = shadowRoot.getElementById('extension-modal-container');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="extension-modal-overlay">
+      <div class="extension-modal-box" style="max-width: 340px;">
+        <div class="extension-modal-header">
+          <h4 class="extension-modal-title">Criar Etapa</h4>
+          <button class="extension-modal-close-btn" id="btn-close-modal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="extension-modal-body">
+          <div class="form-group">
+            <label>Nome da nova aba / etapa *</label>
+            <input type="text" id="modal-stage-title" placeholder="Nome da etapa...">
+          </div>
+        </div>
+        <div class="extension-modal-footer">
+          <button class="btn-primary" id="btn-modal-cancel" style="margin: 0; background-color: #94a3b8; width: auto; padding: 8px 16px;">Cancelar</button>
+          <button class="btn-primary" id="btn-modal-save" style="margin: 0; width: auto; padding: 8px 16px;">Criar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const closeModal = () => { container.innerHTML = ''; };
+
+  shadowRoot.getElementById('btn-close-modal').addEventListener('click', closeModal);
+  shadowRoot.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
+
+  shadowRoot.getElementById('btn-modal-save').addEventListener('click', () => {
+    const title = shadowRoot.getElementById('modal-stage-title').value.trim();
+    if (!title) return;
+    const key = title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_');
+    
+    const exists = funnelStages.some(st => st.key === key);
+    if (exists) {
+      alert('Esta etapa já existe.');
+      return;
+    }
+
+    const newStage = {
+      key,
+      title,
+      color: 'border-top: 3px solid #64748b;'
+    };
+
+    funnelStages.push(newStage);
+    chrome.storage.local.set({ crm_stages: funnelStages }, () => {
+      closeModal();
+      loadKanbanLeads();
+    });
+  });
+}
+
 function openNoteModal(lead) {
   const container = shadowRoot.getElementById('extension-modal-container');
   if (!container) return;
@@ -982,17 +1067,6 @@ function openMoveModal(lead) {
   const container = shadowRoot.getElementById('extension-modal-container');
   if (!container) return;
 
-  const stages = [
-    { key: 'inbox', title: 'Inbox' },
-    { key: 'lead', title: 'Lead de Serviço' },
-    { key: 'tratar', title: 'Tratar' },
-    { key: 'atendimento', title: 'Atendimento' },
-    { key: 'programado', title: 'Programado' },
-    { key: 'a_faturar', title: 'A Faturar' },
-    { key: 'faturado', title: 'Fatura Enviada' },
-    { key: 'perdido', title: 'Perdido' }
-  ];
-
   container.innerHTML = `
     <div class="extension-modal-overlay">
       <div class="extension-modal-box" style="max-width: 320px;">
@@ -1002,12 +1076,12 @@ function openMoveModal(lead) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
           </button>
         </div>
-        <div class="extension-modal-body">
+        <div class="extension-modal-body" style="max-height: 380px; overflow-y: auto;">
           <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">
             <strong>Lead:</strong> ${lead.name || lead.phone}
           </div>
           <div style="display: flex; flex-direction: column; gap: 8px;">
-            ${stages.map(st => `
+            ${funnelStages.map(st => `
               <button class="btn-stage-select" data-stage="${st.key}" style="padding: 10px; border-radius: 8px; border: 1px solid ${lead.stage === st.key ? '#2563eb' : '#e2e8f0'}; background-color: ${lead.stage === st.key ? '#eff6ff' : '#ffffff'}; color: ${lead.stage === st.key ? '#2563eb' : '#334155'}; font-size: 12px; font-weight: bold; cursor: pointer; text-align: left; display: flex; justify-content: space-between; align-items: center;">
                 <span>${st.title}</span>
                 ${lead.stage === st.key ? '✓' : ''}
@@ -1063,6 +1137,18 @@ function detectActiveChat() {
 
   if (!detectedPhone && /^\+?[\d\s\-()]{10,}$/.test(chatName)) {
     detectedPhone = chatName.replace(/\D/g, '');
+  }
+
+  if (!detectedPhone) {
+    // Look inside messages for data-id values containing JID
+    const msg = document.querySelector('#main div[data-id*="@c.us"]');
+    if (msg) {
+      const dataId = msg.getAttribute('data-id') || '';
+      const match = dataId.match(/(?:true|false)_(\d+)@c\.us/);
+      if (match) {
+        detectedPhone = match[1];
+      }
+    }
   }
 
   if (!detectedPhone) {

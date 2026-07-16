@@ -20,7 +20,7 @@ import {
   Check
 } from 'lucide-react';
 
-const FUNNEL_STAGES = [
+const DEFAULT_STAGES = [
   { key: 'inbox', title: 'Inbox', color: 'border-t-2 border-slate-400 bg-slate-50/20 text-slate-700' },
   { key: 'lead', title: 'Lead de Serviço', color: 'border-t-2 border-blue-500 bg-blue-50/20 text-blue-700' },
   { key: 'tratar', title: 'Tratar', color: 'border-t-2 border-yellow-500 bg-yellow-50/20 text-yellow-700' },
@@ -32,6 +32,19 @@ const FUNNEL_STAGES = [
 ];
 
 export default function Crm() {
+  const [funnelStages, setFunnelStages] = useState(() => {
+    const saved = localStorage.getItem('crm_stages');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return DEFAULT_STAGES;
+  });
+
+  const [isAddingStage, setIsAddingStage] = useState(false);
+  const [newStageTitle, setNewStageTitle] = useState('');
+  const [draggedColumnIndex, setDraggedColumnIndex] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('crm_token') || '');
   const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('crm_user') || 'null'));
   
@@ -104,6 +117,47 @@ export default function Crm() {
       conversionRate
     });
   }, [leads]);
+
+  const handleCreateStage = () => {
+    if (!newStageTitle.trim()) return;
+    const key = newStageTitle.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_');
+    const exists = funnelStages.some(st => st.key === key);
+    if (exists) {
+      alert('Esta etapa já existe.');
+      return;
+    }
+    const newStage = {
+      key,
+      title: newStageTitle.trim(),
+      color: 'border-t-2 border-slate-400 bg-slate-50/20 text-slate-700'
+    };
+    const updated = [...funnelStages, newStage];
+    setFunnelStages(updated);
+    localStorage.setItem('crm_stages', JSON.stringify(updated));
+    setIsAddingStage(false);
+    setNewStageTitle('');
+  };
+
+  const handleColumnDragStart = (e, index) => {
+    setDraggedColumnIndex(index);
+    e.dataTransfer.setData('text/column-index', index);
+  };
+
+  const handleColumnDrop = (e, targetIndex) => {
+    e.preventDefault();
+    const sourceIndexStr = e.dataTransfer.getData('text/column-index');
+    if (sourceIndexStr === '') return;
+    const sourceIndex = parseInt(sourceIndexStr, 10);
+    if (sourceIndex === targetIndex) return;
+
+    const updated = [...funnelStages];
+    const [moved] = updated.splice(sourceIndex, 1);
+    updated.splice(targetIndex, 0, moved);
+    
+    setFunnelStages(updated);
+    localStorage.setItem('crm_stages', JSON.stringify(updated));
+    setDraggedColumnIndex(null);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -478,6 +532,15 @@ export default function Crm() {
         </div>
 
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+          {/* Adicionar Etapa Button */}
+          <button
+            onClick={() => setIsAddingStage(true)}
+            className="flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nova Etapa</span>
+          </button>
+
           {/* Search bar */}
           <div className="relative min-w-[240px]">
             <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
@@ -519,7 +582,7 @@ export default function Crm() {
         </div>
       ) : (
         <div className="flex space-x-6 overflow-x-auto pb-4 custom-scrollbar items-start">
-          {FUNNEL_STAGES.map(stage => {
+          {funnelStages.map((stage, index) => {
             const stageLeads = getLeadsInStage(stage.key);
             const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
 
@@ -530,8 +593,14 @@ export default function Crm() {
                 onDrop={(e) => handleDrop(e, stage.key)}
                 className="bg-gray-50/40 rounded-2xl border border-gray-200/50 p-4 space-y-4 min-w-[290px] w-[290px] shrink-0 min-h-[550px]"
               >
-                {/* Stage Header */}
-                <div className={`p-3 rounded-xl flex flex-col space-y-1.5 shadow-sm border ${stage.color}`}>
+                {/* Stage Header (Draggable for reordering columns) */}
+                <div 
+                  draggable="true"
+                  onDragStart={(e) => handleColumnDragStart(e, index)}
+                  onDrop={(e) => handleColumnDrop(e, index)}
+                  onDragOver={handleDragOver}
+                  className={`p-3 rounded-xl flex flex-col space-y-1.5 shadow-sm border cursor-grab active:cursor-grabbing ${stage.color}`}
+                >
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-xs uppercase tracking-wider truncate">{stage.title}</span>
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/80 shadow-sm text-gray-700">
@@ -842,7 +911,7 @@ export default function Crm() {
             <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar text-left">
               <label className="text-xs font-bold text-gray-400 uppercase block mb-1">Selecione a nova etapa:</label>
               <div className="grid grid-cols-1 gap-2">
-                {FUNNEL_STAGES.map(st => (
+                {funnelStages.map(st => (
                   <button
                     key={st.key}
                     onClick={() => { updateLeadStageDirectly(activeMoveLead.phone, st.key); setActiveMoveLead(null); }}
@@ -852,6 +921,50 @@ export default function Crm() {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------- NEW CRM STAGE MODAL (WaSeller Style) ---------------- */}
+      {isAddingStage && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-gray-100 flex flex-col space-y-4 animate-in fade-in zoom-in-95 duration-150 text-left">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-lg">Criar Etapa</h3>
+              <button 
+                onClick={() => { setIsAddingStage(false); setNewStageTitle(''); }}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-50 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 block">Nome da nova aba / etapa *</label>
+              <input
+                type="text"
+                value={newStageTitle}
+                onChange={e => setNewStageTitle(e.target.value)}
+                placeholder="Insira o nome da nova etapa..."
+                className="w-full p-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50/50"
+                required
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 border-t border-gray-100 pt-4">
+              <button
+                onClick={() => { setIsAddingStage(false); setNewStageTitle(''); }}
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateStage}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/10 transition-all"
+              >
+                Criar
+              </button>
             </div>
           </div>
         </div>
