@@ -158,6 +158,7 @@ async function loadBoardData() {
     console.error(err);
     container.innerHTML = '<div class="loading-state" style="color: #dc2626;">Falha na conexão com o servidor.</div>';
   }
+}
 
 function getColumnLeads(stageKey, isFirstColumn) {
   const isStagesGrouping = currentGroupBy === 'stages';
