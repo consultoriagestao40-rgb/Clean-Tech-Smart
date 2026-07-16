@@ -6,6 +6,12 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Listener for runtime messages from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'openKanbanTab') {
+    chrome.tabs.create({ url: chrome.runtime.getURL('crm.html') });
+    sendResponse({ success: true });
+    return true;
+  }
+
   if (request.action === 'scheduleReminder') {
     const { phone, name, time } = request;
     const alarmTime = new Date(time).getTime();

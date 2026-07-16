@@ -711,7 +711,7 @@ function injectLeftToolbar() {
 
   // Opens the standalone crm.html page in a separate browser tab
   toolbar.querySelector('#crm-left-btn-funnel').addEventListener('click', () => {
-    window.open(chrome.runtime.getURL('crm.html'), '_blank');
+    chrome.runtime.sendMessage({ action: 'openKanbanTab' });
   });
 
   toolbar.querySelector('#crm-left-btn-sidebar').addEventListener('click', () => {
