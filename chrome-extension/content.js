@@ -520,7 +520,7 @@ function toggleKanbanMode(active) {
 
       const expandedRoot = document.getElementById('crm-sidebar-root');
       
-      // Hide/Offscreen WhatsApp central panel (preserving active inputs and click events)
+      // Hide/Offscreen WhatsApp central panel
       if (rightPanel) {
         rightPanel.style.setProperty('position', 'absolute', 'important');
         rightPanel.style.setProperty('left', '-9999px', 'important');
@@ -712,101 +712,92 @@ async function loadKanbanLeads() {
           }
         });
 
-        // Render cards inside column container
-        const cardsContainer = shadowRoot.getElementById(`cards-container-${st.key}`);
-        stageLeads.forEach(lead => {
-          const initials = getInitialsName(lead.name);
-          const val = parseFloat(lead.value) || 0;
-          const formattedVal = val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          
-          let reminderBadge = '';
-          if (lead.next_contact_at) {
-            const dateStr = new Date(lead.next_contact_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-            reminderBadge = `
-              <div class="kanban-card-reminder">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                <span>${dateStr}</span>
-              </div>
-            `;
-          }
+        // Render cards inside column container (safely query scoped container directly)
+        const cardsContainer = colDiv.querySelector('.kanban-cards-container');
+        if (cardsContainer) {
+          stageLeads.forEach(lead => {
+            const initials = getInitialsName(lead.name);
+            const val = parseFloat(lead.value) || 0;
+            const formattedVal = val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            let reminderBadge = '';
+            if (lead.next_contact_at) {
+              const dateStr = new Date(lead.next_contact_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+              reminderBadge = `
+                <div class="kanban-card-reminder">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                  <span>${dateStr}</span>
+                </div>
+              `;
+            }
 
-          const card = document.createElement('div');
-          card.className = 'kanban-card';
-          card.draggable = true;
-          card.setAttribute('data-phone', lead.phone);
-          
-          card.innerHTML = `
-            <div class="kanban-card-top">
-              <div class="kanban-card-avatar-wrapper">
-                <div class="kanban-card-avatar">${initials}</div>
-                <div>
-                  <div class="kanban-card-name" title="${lead.name || lead.phone}">${lead.name || lead.phone}</div>
-                  <div class="kanban-card-phone">${lead.phone}</div>
+            const card = document.createElement('div');
+            card.className = 'kanban-card';
+            card.draggable = true;
+            card.setAttribute('data-phone', lead.phone);
+            
+            card.innerHTML = `
+              <div class="kanban-card-top">
+                <div class="kanban-card-avatar-wrapper">
+                  <div class="kanban-card-avatar">${initials}</div>
+                  <div>
+                    <div class="kanban-card-name" title="${lead.name || lead.phone}">${lead.name || lead.phone}</div>
+                    <div class="kanban-card-phone">${lead.phone}</div>
+                  </div>
+                </div>
+                <div class="kanban-card-value">R$ ${formattedVal}</div>
+              </div>
+              
+              ${reminderBadge}
+
+              <div class="kanban-card-bottom">
+                <span class="kanban-card-seller">${lead.assigned_to_name ? lead.assigned_to_name.split(' ')[0] : 'Sem vendedor'}</span>
+                <div class="kanban-card-toolbar">
+                  <button class="kanban-card-icon-btn btn-action-reminder" title="Agendar Retorno" data-phone="${lead.phone}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                  </button>
+                  <button class="kanban-card-icon-btn btn-action-note" title="Adicionar Nota" data-phone="${lead.phone}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>
+                  </button>
+                  <button class="kanban-card-icon-btn btn-action-move" title="Mover Etapa" data-phone="${lead.phone}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+                  </button>
+                  <button class="kanban-card-icon-btn btn-action-chat" title="Abrir Chat" data-phone="${lead.phone}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </button>
                 </div>
               </div>
-              <div class="kanban-card-value">R$ ${formattedVal}</div>
-            </div>
-            
-            ${reminderBadge}
+            `;
 
-            <div class="kanban-card-bottom">
-              <span class="kanban-card-seller">${lead.assigned_to_name ? lead.assigned_to_name.split(' ')[0] : 'Sem vendedor'}</span>
-              <div class="kanban-card-toolbar">
-                <button class="kanban-card-icon-btn btn-action-reminder" title="Agendar Retorno" data-phone="${lead.phone}">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                </button>
-                <button class="kanban-card-icon-btn btn-action-note" title="Adicionar Nota" data-phone="${lead.phone}">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>
-                </button>
-                <button class="kanban-card-icon-btn btn-action-move" title="Mover Etapa" data-phone="${lead.phone}">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
-                </button>
-                <button class="kanban-card-icon-btn btn-action-chat" title="Abrir Chat" data-phone="${lead.phone}">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                </button>
-              </div>
-            </div>
-          `;
+            card.addEventListener('dragstart', (e) => {
+              e.dataTransfer.setData('text/plain', lead.phone);
+            });
 
-          card.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', lead.phone);
-          });
+            card.querySelector('.btn-action-reminder').addEventListener('click', (e) => {
+              e.stopPropagation();
+              openReminderModal(lead);
+            });
+            card.querySelector('.btn-action-note').addEventListener('click', (e) => {
+              e.stopPropagation();
+              openNoteModal(lead);
+            });
+            card.querySelector('.btn-action-move').addEventListener('click', (e) => {
+              e.stopPropagation();
+              openMoveModal(lead);
+            });
+            card.querySelector('.btn-action-chat').addEventListener('click', (e) => {
+              e.stopPropagation();
+              openChatModal(lead);
+            });
 
-          card.querySelector('.btn-action-reminder').addEventListener('click', (e) => {
-            e.stopPropagation();
-            openReminderModal(lead);
-          });
-          card.querySelector('.btn-action-note').addEventListener('click', (e) => {
-            e.stopPropagation();
-            openNoteModal(lead);
-          });
-          card.querySelector('.btn-action-move').addEventListener('click', (e) => {
-            e.stopPropagation();
-            openMoveModal(lead);
-          });
-          card.querySelector('.btn-action-chat').addEventListener('click', (e) => {
-            e.stopPropagation();
-            openChatModal(lead);
-          });
+            card.addEventListener('click', (e) => {
+              if (e.target.closest('.kanban-card-icon-btn')) return;
+              openChatModal(lead);
+            });
 
-          card.addEventListener('click', (e) => {
-            if (e.target.closest('.kanban-card-icon-btn')) return;
-            openChatModal(lead);
+            cardsContainer.appendChild(card);
           });
-
-          cardsContainer.appendChild(card);
-        });
-
-        colDiv.addEventListener('dragover', (e) => {
-          e.preventDefault();
-        });
-        colDiv.addEventListener('drop', async (e) => {
-          e.preventDefault();
-          const phone = e.dataTransfer.getData('text/plain');
-          if (phone) {
-            updateLeadStage(phone, st.key);
-          }
-        });
+        }
       });
 
     } else {
@@ -1385,7 +1376,6 @@ function injectHorizontalTabs() {
     document.body.appendChild(tabsBar);
   }
 
-  // Push #app wrapper down to make space for top bar
   const app = document.getElementById('app') || document.querySelector('.app-wrapper');
   if (app) {
     app.style.setProperty('margin-top', '50px', 'important');
@@ -1413,7 +1403,6 @@ function injectHorizontalTabs() {
 
   tabsBar.innerHTML = tabsHtml;
 
-  // Bind click actions
   tabsBar.querySelectorAll('.crm-tab-tag').forEach(tag => {
     tag.addEventListener('click', () => {
       activeFilterStage = tag.getAttribute('data-stage');
@@ -1438,7 +1427,6 @@ function injectHorizontalTabs() {
         countSpan.style.setProperty('background-color', '#2563eb', 'important');
         countSpan.style.setProperty('color', '#ffffff', 'important');
       }
-      
       applyChatListFilter();
     });
   });
