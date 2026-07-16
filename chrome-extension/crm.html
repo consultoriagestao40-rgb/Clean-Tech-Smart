@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Clean Tech CRM - Funil de Vendas</title>
+  <link rel="stylesheet" href="crm.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Left Navigation Toolbar -->
+    <div class="crm-left-toolbar">
+      <div class="crm-left-logo">CT</div>
+      <button class="crm-left-item active" title="Funil de Vendas (Kanban)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+      </button>
+      <button class="crm-left-item" id="btn-back-to-whatsapp" title="Voltar para o WhatsApp Web">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <button class="crm-left-item" id="btn-open-panel" title="Ir para o Painel Web">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </button>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="crm-main-content">
+      <!-- Top Action Bar -->
+      <div class="crm-top-bar">
+        <h2 class="crm-page-title">Funil de Vendas</h2>
+        
+        <div class="crm-actions-group">
+          <!-- View Grouping Filter -->
+          <div class="filter-item">
+            <span class="filter-label">Visualizar por:</span>
+            <select id="kanban-group-by" class="crm-select">
+              <option value="stages">Etapas do Funil</option>
+              <option value="labels">Etiquetas do WhatsApp</option>
+            </select>
+          </div>
+
+          <!-- Seller Filter -->
+          <div class="filter-item" id="seller-filter-wrapper" style="display: none;">
+            <span class="filter-label">Filtrar:</span>
+            <select id="kanban-seller-filter" class="crm-select">
+              <option value="all">Todos os Vendedores</option>
+            </select>
+          </div>
+
+          <!-- Actions buttons -->
+          <button id="btn-add-stage" class="btn btn-success">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 4px;"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            Nova Etapa
+          </button>
+          
+          <button id="btn-refresh-board" class="btn btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 4px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Atualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- Kanban Columns Wrapper -->
+      <div class="kanban-board-container" id="kanban-columns-wrapper">
+        <div class="loading-state">
+          Carregando Quadro Funil...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Overlays Container (Modals) -->
+  <div id="crm-modal-container"></div>
+
+  <!-- Load script file -->
+  <script src="crm.js"></script>
+</body>
+</html>
