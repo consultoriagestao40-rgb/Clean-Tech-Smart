@@ -157,7 +157,9 @@ async function loadBoardData() {
   } catch (err) {
     console.error(err);
     container.innerHTML = '<div class="loading-state" style="color: #dc2626;">Falha na conexão com o servidor.</div>';
- function getColumnLeads(stageKey, isFirstColumn) {
+  }
+
+function getColumnLeads(stageKey, isFirstColumn) {
   const isStagesGrouping = currentGroupBy === 'stages';
   if (isFirstColumn && isStagesGrouping) {
     // First stage displays both leads saved in 'inbox' AND active chats from whatsAppChats that are NOT saved in any other stage in CRM database.
