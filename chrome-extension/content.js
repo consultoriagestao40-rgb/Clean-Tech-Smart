@@ -1072,19 +1072,17 @@ async function handleSaveQuickTicket(e) {
   }
 }
 
-// Robust, multi-level fallback extractor for WhatsApp Web chat list
+// Robust, multi-level fallback extractor for WhatsApp Web chat list containing message preview and unread status
 function getAllChatsFromDom() {
   const chats = [];
   
-  // 1. Query standard list elements
+  // 1. Query list elements
   let elements = document.querySelectorAll('[data-testid="chat-list-item"]');
   
-  // 2. Try generic list item elements
   if (elements.length === 0) {
     elements = document.querySelectorAll('div[role="listitem"]');
   }
   
-  // 3. Fallback to any node with data-id (contains chat jid)
   if (elements.length === 0) {
     elements = document.querySelectorAll('div[data-id]');
   }
@@ -1094,7 +1092,6 @@ function getAllChatsFromDom() {
                    item.querySelector('[data-id]')?.getAttribute('data-id') || 
                    item.getAttribute('data-id') || '';
                    
-    // Validate JID format (ends with @c.us and does not have group suffix)
     if (!dataId.endsWith('@c.us')) return;
     
     const phone = dataId.split('@')[0].replace(/\D/g, '');
@@ -1105,9 +1102,22 @@ function getAllChatsFromDom() {
                      item.querySelector('[class*="title"]');
     const name = nameNode ? (nameNode.getAttribute('title') || nameNode.innerText) : phone;
     
-    // De-duplicate contacts
+    // Capture unread badge count
+    const badgeNode = item.querySelector('[aria-label*="unread"]') || 
+                        item.querySelector('[aria-label*="não lida"]') || 
+                        item.querySelector('[class*="unread"]') || 
+                        item.querySelector('[class*="badge"]');
+    const unreadCount = badgeNode ? parseInt(badgeNode.innerText.replace(/\D/g, '')) || 0 : 0;
+
+    // Capture last message preview string
+    const lastMsgNode = item.querySelector('[data-testid="last-msg-status"]')?.parentElement?.querySelector('span') || 
+                          item.querySelector('.selectable-text') ||
+                          item.querySelector('[class*="last-msg"]') ||
+                          item.querySelector('span[dir="auto"]');
+    const lastMessage = lastMsgNode ? lastMsgNode.innerText : '';
+
     if (phone && name && !chats.some(c => c.phone === phone)) {
-      chats.push({ name, phone });
+      chats.push({ name, phone, lastMessage, unreadCount });
     }
   });
   

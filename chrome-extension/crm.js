@@ -13,23 +13,23 @@ let currentFilterSeller = 'all';
 let currentGroupBy = 'stages'; // 'stages' or 'labels'
 
 const DEFAULT_STAGES = [
-  { key: 'inbox', title: 'Inbox', color: 'border-top: 3px solid #64748b;' },
-  { key: 'lead', title: 'Lead de Serviço', color: 'border-top: 3px solid #3b82f6;' },
-  { key: 'tratar', title: 'Tratar', color: 'border-top: 3px solid #eab308;' },
-  { key: 'atendimento', title: 'Atendimento', color: 'border-top: 3px solid #06b6d4;' },
-  { key: 'programado', title: 'Programado', color: 'border-top: 3px solid #a855f7;' },
-  { key: 'a_faturar', title: 'A Faturar', color: 'border-top: 3px solid #f97316;' },
-  { key: 'faturado', title: 'Fatura Enviada', color: 'border-top: 3px solid #10b981;' },
-  { key: 'perdido', title: 'Perdido', color: 'border-top: 3px solid #ef4444;' }
+  { key: 'inbox', title: 'Inbox', color: 'border-bottom: 3px solid #64748b;' },
+  { key: 'lead', title: 'Lead de Serviço', color: 'border-bottom: 3px solid #0d9488;' },
+  { key: 'tratar', title: 'Tratar', color: 'border-bottom: 3px solid #f97316;' },
+  { key: 'atendimento', title: 'Atendimento', color: 'border-bottom: 3px solid #2563eb;' },
+  { key: 'programado', title: 'Programado', color: 'border-bottom: 3px solid #8b5cf6;' },
+  { key: 'a_faturar', title: 'A Faturar', color: 'border-bottom: 3px solid #db2777;' },
+  { key: 'faturado', title: 'Fatura Enviada', color: 'border-bottom: 3px solid #10b981;' },
+  { key: 'perdido', title: 'Perdido', color: 'border-bottom: 3px solid #ef4444;' }
 ];
 
 const WHATSAPP_LABELS = [
-  { key: 'sem_etiqueta', title: 'Sem Etiqueta', color: 'border-top: 3px solid #64748b;' },
-  { key: 'novo_cliente', title: 'Novo Cliente', color: 'border-top: 3px solid #3b82f6;' },
-  { key: 'novo_pedido', title: 'Novo Pedido', color: 'border-top: 3px solid #eab308;' },
-  { key: 'aguardando_pagamento', title: 'Aguardando Pagamento', color: 'border-top: 3px solid #f97316;' },
-  { key: 'pago', title: 'Pago', color: 'border-top: 3px solid #10b981;' },
-  { key: 'pedido_finalizado', title: 'Pedido Finalizado', color: 'border-top: 3px solid #a855f7;' }
+  { key: 'sem_etiqueta', title: 'Sem Etiqueta', color: 'border-bottom: 3px solid #64748b;' },
+  { key: 'novo_cliente', title: 'Novo Cliente', color: 'border-bottom: 3px solid #3b82f6;' },
+  { key: 'novo_pedido', title: 'Novo Pedido', color: 'border-bottom: 3px solid #eab308;' },
+  { key: 'aguardando_pagamento', title: 'Aguardando Pagamento', color: 'border-bottom: 3px solid #f97316;' },
+  { key: 'pago', title: 'Pago', color: 'border-bottom: 3px solid #10b981;' },
+  { key: 'pedido_finalizado', title: 'Pedido Finalizado', color: 'border-bottom: 3px solid #a855f7;' }
 ];
 
 // Load Session
@@ -157,6 +157,61 @@ async function loadBoardData() {
   } catch (err) {
     console.error(err);
     container.innerHTML = '<div class="loading-state" style="color: #dc2626;">Falha na conexão com o servidor.</div>';
+ function getColumnLeads(stageKey, isFirstColumn) {
+  const isStagesGrouping = currentGroupBy === 'stages';
+  if (isFirstColumn && isStagesGrouping) {
+    // First stage displays both leads saved in 'inbox' AND active chats from whatsAppChats that are NOT saved in any other stage in CRM database.
+    const trackedPhonesOtherStages = leadsList
+      .filter(l => l.stage !== stageKey)
+      .map(l => l.phone);
+
+    const untrackedChats = whatsAppChats.filter(c => !trackedPhonesOtherStages.includes(c.phone));
+    const list = [];
+    
+    // Add active chats
+    untrackedChats.forEach(c => {
+      const savedLead = leadsList.find(l => l.phone === c.phone && l.stage === stageKey);
+      list.push({
+        phone: c.phone,
+        name: savedLead ? savedLead.name : c.name,
+        stage: stageKey,
+        value: savedLead ? savedLead.value : 0,
+        next_contact_at: savedLead ? savedLead.next_contact_at : null,
+        assigned_to_name: savedLead ? savedLead.assigned_to_name : null,
+        lastMessage: c.lastMessage || 'Sem conversa',
+        unreadCount: c.unreadCount || 0
+      });
+    });
+
+    // Add saved leads in 'inbox' that are NOT matching the whatsAppChats list (so we don't duplicate!)
+    const activeChatPhones = untrackedChats.map(c => c.phone);
+    const savedInboxOnly = leadsList.filter(l => l.stage === stageKey && !activeChatPhones.includes(l.phone));
+    savedInboxOnly.forEach(l => {
+      list.push({
+        ...l,
+        lastMessage: 'Sem conversa ativa',
+        unreadCount: 0
+      });
+    });
+
+    return list;
+  } else {
+    // Return leads in this stage/label
+    return leadsList.filter(l => {
+      if (isStagesGrouping) {
+        return l.stage === stageKey;
+      } else {
+        const leadLabel = l.label || 'sem_etiqueta';
+        return leadLabel === stageKey;
+      }
+    }).map(l => {
+      const liveChat = whatsAppChats.find(c => c.phone === l.phone);
+      return {
+        ...l,
+        lastMessage: liveChat ? liveChat.lastMessage : 'Sem conversa ativa',
+        unreadCount: liveChat ? liveChat.unreadCount : 0
+      };
+    });
   }
 }
 
@@ -167,121 +222,9 @@ function renderBoard() {
   const isStagesGrouping = currentGroupBy === 'stages';
   const activeStages = isStagesGrouping ? funnelStages : WHATSAPP_LABELS;
 
-  // ---------------- Render First Column: "Conversas WhatsApp" ----------------
-  if (isStagesGrouping) {
-    // Filter chats that are NOT yet in leadsList (CRM leads)
-    const trackedPhones = leadsList.map(l => l.phone);
-    const untrackedChats = whatsAppChats.filter(c => !trackedPhones.includes(c.phone));
-
-    const backlogCol = document.createElement('div');
-    backlogCol.className = 'kanban-column';
-    backlogCol.setAttribute('data-stage', 'backlog');
-    
-    backlogCol.innerHTML = `
-      <div class="kanban-column-header" style="border-top: 3px solid #94a3b8;">
-        <div class="kanban-column-top">
-          <span class="kanban-column-title">Conversas WhatsApp</span>
-          <span class="kanban-column-count">${untrackedChats.length}</span>
-        </div>
-        <div class="kanban-column-sum">Sem funil</div>
-      </div>
-      <div class="kanban-cards-container">
-        ${untrackedChats.length === 0 ? '<div class="kanban-empty-state">Nenhum chat novo</div>' : ''}
-      </div>
-    `;
-
-    container.appendChild(backlogCol);
-
-    const cardsContainer = backlogCol.querySelector('.kanban-cards-container');
-    untrackedChats.forEach(chat => {
-      const initials = getInitialsName(chat.name);
-      const card = document.createElement('div');
-      card.className = 'kanban-card';
-      card.draggable = true;
-      card.setAttribute('data-phone', chat.phone);
-      
-      card.innerHTML = `
-        <div class="kanban-card-top">
-          <div class="kanban-card-avatar-wrapper">
-            <div class="kanban-card-avatar">${initials}</div>
-            <div>
-              <div class="kanban-card-name" title="${chat.name}">${chat.name}</div>
-              <div class="kanban-card-phone">${chat.phone}</div>
-            </div>
-          </div>
-          <div class="kanban-card-value">R$ 0,00</div>
-        </div>
-        
-        <div class="kanban-card-bottom">
-          <span class="kanban-card-seller">Não rastreado</span>
-          <div class="kanban-card-toolbar">
-            <!-- 5 Standard tool icons -->
-            <button class="kanban-card-icon-btn btn-action-note" title="Adicionar Nota" data-phone="${chat.phone}">
-              <svg class="icon-note" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-            </button>
-            <button class="kanban-card-icon-btn btn-action-reminder" title="Agendar Retorno" data-phone="${chat.phone}">
-              <svg class="icon-reminder" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" x2="16" y1="2" x2="16" y2="6"/><line x1="8" x2="8" y1="2" x2="8" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><circle cx="16" cy="16" r="4"/><polyline points="16 14 16 16 17 17"/></svg>
-            </button>
-            <button class="kanban-card-icon-btn btn-action-chat" title="Abrir Conversa" data-phone="${chat.phone}">
-              <svg class="icon-chat" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-            </button>
-            <button class="kanban-card-icon-btn btn-action-value" title="Atualizar Valor" data-phone="${chat.phone}">
-              <svg class="icon-value" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M10 15h4"/></svg>
-            </button>
-            <button class="kanban-card-icon-btn btn-action-move" title="Definir Etapa / Etiqueta" data-phone="${chat.phone}">
-              <svg class="icon-move" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12l4 6-4 6H4l4-6-4-6z"/></svg>
-            </button>
-          </div>
-        </div>
-      `;
-
-      card.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', chat.phone);
-        e.dataTransfer.setData('text/source', 'backlog');
-        e.dataTransfer.setData('text/name', chat.name);
-      });
-
-      card.querySelector('.btn-action-note').addEventListener('click', (e) => {
-        e.stopPropagation();
-        openNoteModal({ phone: chat.phone, name: chat.name });
-      });
-      card.querySelector('.btn-action-reminder').addEventListener('click', (e) => {
-        e.stopPropagation();
-        openReminderModal({ phone: chat.phone, name: chat.name });
-      });
-      card.querySelector('.btn-action-chat').addEventListener('click', (e) => {
-        e.stopPropagation();
-        openChatOverlay({ phone: chat.phone, name: chat.name });
-      });
-      card.querySelector('.btn-action-value').addEventListener('click', (e) => {
-        e.stopPropagation();
-        openEditValueModal({ phone: chat.phone, name: chat.name, value: 0 });
-      });
-      card.querySelector('.btn-action-move').addEventListener('click', (e) => {
-        e.stopPropagation();
-        openMoveModal({ phone: chat.phone, name: chat.name });
-      });
-
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('.kanban-card-icon-btn')) return;
-        openChatOverlay({ phone: chat.phone, name: chat.name });
-      });
-
-      cardsContainer.appendChild(card);
-    });
-  }
-
-  // ---------------- Render Stages Columns ----------------
   activeStages.forEach((st, colIndex) => {
-    const stageLeads = leadsList.filter(l => {
-      if (isStagesGrouping) {
-        return l.stage === st.key;
-      } else {
-        const leadLabel = l.label || 'sem_etiqueta';
-        return leadLabel === st.key;
-      }
-    });
-
+    const isFirstColumn = colIndex === 0;
+    const stageLeads = getColumnLeads(st.key, isFirstColumn);
     const stageValSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
 
     const colDiv = document.createElement('div');
@@ -289,16 +232,19 @@ function renderBoard() {
     colDiv.setAttribute('data-stage', st.key);
     
     colDiv.innerHTML = `
-      <div class="kanban-column-header" style="${st.color}; cursor: grab;" draggable="true" data-index="${colIndex}">
+      <div class="kanban-column-header" style="${st.color}">
         <div class="kanban-column-top">
-          <span class="kanban-column-title">${st.title}</span>
           <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="kanban-column-title">${st.title}</span>
             <span class="kanban-column-count">${stageLeads.length}</span>
-            
-            <!-- Column options menu (Rename / Delete) - Only active in Stages Grouping -->
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button class="kanban-column-options-btn" title="Buscar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
             ${isStagesGrouping ? `
-              <button class="kanban-column-options-btn" data-key="${st.key}" data-title="${st.title}" title="Opções da Etapa">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+              <button class="kanban-column-options-btn btn-col-menu" data-key="${st.key}" data-title="${st.title}" title="Opções da Etapa">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5"><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
               </button>
             ` : ''}
           </div>
@@ -314,7 +260,7 @@ function renderBoard() {
 
     // Bind Column Header Menu click
     if (isStagesGrouping) {
-      const optionsBtn = colDiv.querySelector('.kanban-column-options-btn');
+      const optionsBtn = colDiv.querySelector('.btn-col-menu');
       if (optionsBtn) {
         optionsBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -373,9 +319,12 @@ function renderBoard() {
         <div class="kanban-card-top">
           <div class="kanban-card-avatar-wrapper">
             <div class="kanban-card-avatar">${initials}</div>
-            <div>
+            <div style="overflow: hidden; flex: 1;">
               <div class="kanban-card-name" title="${lead.name || lead.phone}">${lead.name || lead.phone}</div>
-              <div class="kanban-card-phone">${lead.phone}</div>
+              <div class="kanban-card-message-preview">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5" style="margin-right: 4px; flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span title="${lead.lastMessage}">${lead.lastMessage}</span>
+              </div>
             </div>
           </div>
           <div class="kanban-card-value">R$ ${formattedVal}</div>
@@ -384,7 +333,6 @@ function renderBoard() {
         ${reminderBadge}
 
         <div class="kanban-card-bottom">
-          <span class="kanban-card-seller">${lead.assigned_to_name ? lead.assigned_to_name.split(' ')[0] : 'Sem vendedor'}</span>
           <div class="kanban-card-toolbar">
             <!-- 5 Standard tool icons -->
             <button class="kanban-card-icon-btn btn-action-note" title="Adicionar Nota" data-phone="${lead.phone}">
@@ -393,14 +341,20 @@ function renderBoard() {
             <button class="kanban-card-icon-btn btn-action-reminder" title="Agendar Retorno" data-phone="${lead.phone}">
               <svg class="icon-reminder" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" x2="16" y1="2" x2="16" y2="6"/><line x1="8" x2="8" y1="2" x2="8" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><circle cx="16" cy="16" r="4"/><polyline points="16 14 16 16 17 17"/></svg>
             </button>
-            <button class="kanban-card-icon-btn btn-action-chat" title="Abrir Conversa" data-phone="${lead.phone}">
+            <button class="kanban-card-icon-btn btn-action-chat" title="Abrir Conversa" data-phone="${lead.phone}" style="position: relative;">
               <svg class="icon-chat" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              ${lead.unreadCount > 0 ? `<div class="kanban-card-unread-badge-icon">${lead.unreadCount}</div>` : ''}
             </button>
             <button class="kanban-card-icon-btn btn-action-value" title="Atualizar Valor" data-phone="${lead.phone}">
               <svg class="icon-value" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M10 15h4"/></svg>
             </button>
             <button class="kanban-card-icon-btn btn-action-move" title="Definir Etapa / Etiqueta" data-phone="${lead.phone}">
               <svg class="icon-move" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12l4 6-4 6H4l4-6-4-6z"/></svg>
+            </button>
+            
+            <!-- Quick delete button on far right -->
+            <button class="kanban-card-icon-btn btn-action-delete" title="Excluir Lead" data-phone="${lead.phone}" style="margin-left: auto;">
+              <svg class="icon-delete" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
             </button>
           </div>
         </div>
@@ -432,6 +386,12 @@ function renderBoard() {
         e.stopPropagation();
         openMoveModal(lead);
       });
+      card.querySelector('.btn-action-delete').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Tem certeza que deseja excluir o lead "${lead.name || lead.phone}"?`)) {
+          deleteLeadFromServer(lead.phone);
+        }
+      });
 
       card.addEventListener('click', (e) => {
         if (e.target.closest('.kanban-card-icon-btn')) return;
@@ -458,6 +418,27 @@ function renderBoard() {
       }
     });
   });
+}
+  });
+}
+
+async function deleteLeadFromServer(phone) {
+  try {
+    const res = await fetch(`${crmServerUrl}/api/crm/contact?phone=${phone}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${crmToken}`
+      }
+    });
+    if (res.ok) {
+      loadBoardData();
+    } else {
+      alert('Erro ao excluir lead do servidor.');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Erro de conexão ao servidor.');
+  }
 }
 
 function getInitialsName(name) {
@@ -518,38 +499,61 @@ async function sendToWhatsAppTab(message) {
   });
 }
 
-// ---------------- INLINE CHAT MODAL OVERLAY ----------------
+// ---------------- INLINE CHAT MODAL OVERLAY (WaSeller layout match) ----------------
 function openChatOverlay(lead) {
   const container = document.getElementById('crm-modal-container');
   if (!container) return;
 
+  const liveChat = whatsAppChats.find(c => c.phone === lead.phone);
+  const unreadCount = liveChat ? liveChat.unreadCount : 0;
+
   container.innerHTML = `
     <div class="modal-overlay" id="chat-overlay-wrapper">
-      <div class="modal-box" style="max-width: 650px; height: 80vh; display: flex; flex-direction: column; padding: 0; gap: 0; overflow: hidden; border-radius: 20px;">
-        <!-- Modal Header -->
-        <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background-color: #ffffff; flex-shrink: 0;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="kanban-card-avatar" style="width: 32px; height: 32px; font-size: 12px;">${getInitialsName(lead.name)}</div>
+      <div class="modal-box crm-whatsapp-chat-box">
+        <!-- WhatsApp Header -->
+        <div class="crm-chat-header">
+          <div class="crm-chat-header-left">
+            <div class="kanban-card-avatar" style="width: 40px; height: 40px; font-size: 14px;">${getInitialsName(lead.name)}</div>
             <div style="text-align: left;">
-              <h4 class="modal-title" style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0;">${lead.name || lead.phone}</h4>
-              <span style="font-size: 10px; color: #64748b; font-family: monospace;">${lead.phone}</span>
+              <h4 class="crm-chat-header-title">${lead.name || lead.phone}</h4>
+              <span class="crm-chat-header-phone">${lead.phone}</span>
             </div>
           </div>
-          <button class="modal-close-btn" id="btn-close-chat-modal">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          
+          <div class="crm-chat-header-right">
+            ${unreadCount > 0 ? `<div class="kanban-card-unread-badge" style="position: static; margin-right: 12px;">${unreadCount}</div>` : ''}
+            <button class="crm-chat-header-options" title="Mais Opções">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+            </button>
+            <button class="crm-chat-header-close-btn" id="btn-close-chat-modal">Fechar</button>
+          </div>
+        </div>
+        
+        <!-- Messages Area (Cream Background) -->
+        <div id="chat-modal-messages" class="crm-chat-messages-container">
+          <div style="margin: auto; color: #8696a0; font-size: 13px; font-style: italic;">Carregando histórico do WhatsApp...</div>
+        </div>
+        
+        <!-- WhatsApp Footer Input -->
+        <div class="crm-chat-footer">
+          <button class="crm-chat-footer-action-btn" title="Anexar Arquivo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           </button>
-        </div>
-        
-        <!-- Messages Container -->
-        <div id="chat-modal-messages" style="flex: 1; overflow-y: auto; padding: 20px; background-color: #f1f5f9; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box;">
-          <div style="margin: auto; color: #64748b; font-size: 12px; font-style: italic;">Carregando histórico de conversas...</div>
-        </div>
-        
-        <!-- Message Input Footer -->
-        <div style="padding: 14px 20px; border-top: 1px solid #e2e8f0; background-color: #ffffff; display: flex; gap: 10px; align-items: center; flex-shrink: 0; box-sizing: border-box; width: 100%;">
-          <input type="text" id="chat-modal-input" placeholder="Digite uma mensagem..." style="flex: 1; padding: 10px 16px; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 13px; box-sizing: border-box; outline: none; background-color: #f8fafc;" autocomplete="off">
-          <button id="chat-modal-send-btn" style="border: none; background-color: #2563eb; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s; flex-shrink: 0; box-shadow: 0 2px 6px rgba(37,99,235,0.2);">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform: rotate(45deg); margin-left: -2px; margin-top: 2px;"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <button class="crm-chat-footer-action-btn" title="Perfil do Cliente">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </button>
+          <button class="crm-chat-footer-action-btn" title="Etiquetas / Tags">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          </button>
+          
+          <input type="text" id="chat-modal-input" placeholder="Digite uma mensagem" class="crm-chat-input-field" autocomplete="off">
+          
+          <button class="crm-chat-footer-action-btn" title="Emojis" style="margin-left: 8px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          </button>
+          
+          <button id="chat-modal-send-btn" class="crm-chat-send-btn" title="Enviar Mensagem">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" style="transform: rotate(45deg); margin-left: -2px; margin-top: 1px;"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
       </div>
@@ -588,18 +592,17 @@ function openChatOverlay(lead) {
     if (!msgContainer) return;
 
     if (!res || !res.messages || res.messages.length === 0) {
-      msgContainer.innerHTML = '<div style="margin: auto; color: #64748b; font-size: 12px; font-style: italic;">Carregando histórico do WhatsApp...</div>';
+      msgContainer.innerHTML = '<div style="margin: auto; color: #8696a0; font-size: 13px; font-style: italic;">Carregando histórico do WhatsApp...</div>';
       return;
     }
 
     msgContainer.innerHTML = res.messages.map(msg => {
-      const bg = msg.isIncoming ? '#ffffff' : '#e2f7cb';
+      const bg = msg.isIncoming ? '#ffffff' : '#d9fdd3';
       const align = msg.isIncoming ? 'flex-start' : 'flex-end';
-      const color = '#1e293b';
       const borderRadius = msg.isIncoming ? '0 12px 12px 12px' : '12px 0 12px 12px';
       
       return `
-        <div style="align-self: ${align}; max-width: 80%; background-color: ${bg}; color: ${color}; padding: 8px 14px; border-radius: ${borderRadius}; font-size: 13px; line-height: 1.45; box-shadow: 0 1px 2px rgba(0,0,0,0.05); word-break: break-word; text-align: left;">
+        <div style="align-self: ${align}; max-width: 65%; background-color: ${bg}; color: #111b21; padding: 8px 12px; border-radius: ${borderRadius}; font-size: 13.5px; line-height: 1.45; box-shadow: 0 1px 1px rgba(11,20,26,0.12); word-break: break-word; text-align: left; position: relative;">
           ${msg.text}
         </div>
       `;
@@ -706,10 +709,8 @@ function openRenameStageModal(stage) {
 }
 
 function deleteStage(stageKey) {
-  // Filter out from array
   funnelStages = funnelStages.filter(st => st.key !== stageKey);
   chrome.storage.local.set({ crm_stages: funnelStages }, () => {
-    // Return leads to inbox stage on the server
     const stageLeads = leadsList.filter(l => l.stage === stageKey);
     const updates = stageLeads.map(lead => updateLeadStage(lead.phone, 'inbox', lead.name));
     Promise.all(updates).then(() => {
@@ -764,7 +765,7 @@ function openAddStageModal() {
     const newStage = {
       key,
       title,
-      color: 'border-top: 3px solid #64748b;'
+      color: 'border-bottom: 3px solid #64748b;'
     };
 
     funnelStages.push(newStage);
