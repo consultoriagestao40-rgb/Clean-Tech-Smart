@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Clean Tech Smart CRM",
+  "version": "1.0.0",
+  "description": "Integração do WhatsApp Web com o painel Clean Tech Smart CRM.",
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "https://*.vercel.app/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Clean Tech CRM"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://web.whatsapp.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["content.css"],
+      "matches": ["https://web.whatsapp.com/*"]
+    }
+  ]
+}

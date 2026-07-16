@@ -12,6 +12,7 @@ import Faturas from './pages/Faturas';
 import Estoque from './pages/Estoque';
 import Chamados from './pages/Chamados';
 import Tecnicos from './pages/Tecnicos';
+import Crm from './pages/Crm';
 
 function Placeholder({ title }) {
   return (
@@ -38,6 +39,7 @@ function App() {
           <Route path="contratos" element={<Contratos />} />
           <Route path="contratos/novo" element={<NovoContrato />} />
           <Route path="contratos/editar/:id" element={<NovoContrato />} />
+          <Route path="crm" element={<Crm />} />
           <Route path="faturas" element={<Faturas />} />
           <Route path="estoque" element={<Estoque />} />
           <Route path="chamados" element={<Chamados />} />
