@@ -50,14 +50,17 @@ export default function Crm() {
   // Search
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Inline edit states for cards
-  const [activeNoteEditPhone, setActiveNoteEditPhone] = useState(null);
+  // Modal edit states for cards (WaSeller layout)
+  const [activeNoteLead, setActiveNoteLead] = useState(null);
   const [quickNoteContent, setQuickNoteContent] = useState('');
   
-  const [activeReminderEditPhone, setActiveReminderEditPhone] = useState(null);
-  const [quickReminderDate, setQuickReminderDate] = useState('');
+  const [activeReminderLead, setActiveReminderLead] = useState(null);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskMessage, setTaskMessage] = useState('');
+  const [taskDate, setTaskDate] = useState('');
+  const [taskTime, setTaskTime] = useState('');
 
-  const [activeMoveEditPhone, setActiveMoveEditPhone] = useState(null);
+  const [activeMoveLead, setActiveMoveLead] = useState(null);
 
   const [isSavingQuick, setIsSavingQuick] = useState(false);
 
@@ -242,9 +245,9 @@ export default function Crm() {
       });
 
       if (res.ok) {
-        setActiveNoteEditPhone(null);
+        setActiveNoteLead(null);
         setQuickNoteContent('');
-        alert('Aotação salva com sucesso!');
+        alert('Anotação salva com sucesso!');
       } else {
         alert('Erro ao salvar anotação.');
       }
@@ -257,10 +260,15 @@ export default function Crm() {
   };
 
   const handleSaveQuickReminder = async (leadPhone) => {
-    if (!quickReminderDate) return;
+    if (!taskDate || !taskTime) {
+      alert('Data e Hora são obrigatórias.');
+      return;
+    }
+    const combinedDateTime = `${taskDate}T${taskTime}`;
     setIsSavingQuick(true);
     try {
-      const res = await fetch('/api/crm/contact', {
+      // 1. Update Lead Contact Return Date
+      const resContact = await fetch('/api/crm/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -268,16 +276,38 @@ export default function Crm() {
         },
         body: JSON.stringify({
           phone: leadPhone,
-          next_contact_at: quickReminderDate
+          next_contact_at: combinedDateTime
         })
       });
 
-      if (res.ok) {
-        setActiveReminderEditPhone(null);
-        setQuickReminderDate('');
+      if (!resContact.ok) throw new Error('Erro ao atualizar data no lead');
+
+      // 2. Create CRM Task
+      const taskTitleString = taskTitle.trim() || 'Retorno de Contato';
+      const taskDesc = taskMessage.trim() ? `: ${taskMessage.trim()}` : '';
+      const resTask = await fetch('/api/crm/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          lead_phone: leadPhone,
+          title: `${taskTitleString}${taskDesc}`,
+          due_date: combinedDateTime
+        })
+      });
+
+      if (resTask.ok) {
+        setActiveReminderLead(null);
+        setTaskTitle('');
+        setTaskMessage('');
+        setTaskDate('');
+        setTaskTime('');
         fetchLeads(); // Refresh to update date badge in UI
+        alert('Agendamento criado com sucesso!');
       } else {
-        alert('Erro ao agendar lembrete.');
+        alert('Erro ao criar agendamento na tabela de tarefas.');
       }
     } catch (err) {
       console.error(err);
@@ -558,82 +588,6 @@ export default function Crm() {
                             </div>
                           )}
 
-                          {/* Quick Toolbar Inline Editors */}
-                          {activeNoteEditPhone === lead.phone && (
-                            <div className="p-2 bg-gray-50 rounded-lg border border-gray-200 space-y-2 mt-2">
-                              <textarea
-                                value={quickNoteContent}
-                                onChange={e => setQuickNoteContent(e.target.value)}
-                                placeholder="Escreva sua anotação..."
-                                rows="2"
-                                className="w-full p-1.5 border border-gray-300 rounded text-xs bg-white focus:outline-none"
-                              ></textarea>
-                              <div className="flex justify-end space-x-1">
-                                <button
-                                  onClick={() => { setActiveNoteEditPhone(null); setQuickNoteContent(''); }}
-                                  className="p-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={() => handleSaveQuickNote(lead.phone)}
-                                  disabled={isSavingQuick}
-                                  className="p-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
-                                >
-                                  <Check className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {activeReminderEditPhone === lead.phone && (
-                            <div className="p-2 bg-gray-50 rounded-lg border border-gray-200 space-y-2 mt-2">
-                              <input
-                                type="datetime-local"
-                                value={quickReminderDate}
-                                onChange={e => setQuickReminderDate(e.target.value)}
-                                className="w-full p-1.5 border border-gray-300 rounded text-xs bg-white focus:outline-none"
-                              />
-                              <div className="flex justify-end space-x-1">
-                                <button
-                                  onClick={() => { setActiveReminderEditPhone(null); setQuickReminderDate(''); }}
-                                  className="p-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={() => handleSaveQuickReminder(lead.phone)}
-                                  disabled={isSavingQuick}
-                                  className="p-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
-                                >
-                                  <Check className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {activeMoveEditPhone === lead.phone && (
-                            <div className="p-2 bg-gray-50 rounded-lg border border-gray-200 space-y-2 mt-2">
-                              <select
-                                value={lead.stage}
-                                onChange={e => { updateLeadStageDirectly(lead.phone, e.target.value); setActiveMoveEditPhone(null); }}
-                                className="w-full p-1 border border-gray-300 rounded text-xs bg-white"
-                              >
-                                {FUNNEL_STAGES.map(st => (
-                                  <option key={st.key} value={st.key}>{st.title}</option>
-                                ))}
-                              </select>
-                              <div className="flex justify-end">
-                                <button
-                                  onClick={() => setActiveMoveEditPhone(null)}
-                                  className="p-1 bg-gray-200 hover:bg-gray-300 rounded text-[10px] text-gray-700 font-bold"
-                                >
-                                  Cancelar
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
                           {/* Quick Toolbar Icons Row */}
                           <div className="pt-2 border-t border-gray-100 flex justify-between items-center">
                             {/* Seller name initials badge */}
@@ -650,7 +604,7 @@ export default function Crm() {
                             <div className="flex space-x-1.5 items-center">
                               {/* Schedule reminder icon */}
                               <button
-                                onClick={() => { setActiveReminderEditPhone(lead.phone); setActiveNoteEditPhone(null); setActiveMoveEditPhone(null); }}
+                                onClick={() => { setActiveReminderLead(lead); setActiveNoteLead(null); setActiveMoveLead(null); }}
                                 className="p-1 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
                                 title="Agendar Retorno"
                               >
@@ -659,7 +613,7 @@ export default function Crm() {
 
                               {/* Add Note icon */}
                               <button
-                                onClick={() => { setActiveNoteEditPhone(lead.phone); setActiveReminderEditPhone(null); setActiveMoveEditPhone(null); }}
+                                onClick={() => { setActiveNoteLead(lead); setActiveReminderLead(null); setActiveMoveLead(null); }}
                                 className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
                                 title="Adicionar Nota"
                               >
@@ -668,7 +622,7 @@ export default function Crm() {
 
                               {/* Move column shortcut dropdown */}
                               <button
-                                onClick={() => { setActiveMoveEditPhone(lead.phone); setActiveNoteEditPhone(null); setActiveReminderEditPhone(null); }}
+                                onClick={() => { setActiveMoveLead(lead); setActiveNoteLead(null); setActiveReminderLead(null); }}
                                 className="p-1 text-gray-400 hover:text-purple-500 hover:bg-purple-50 rounded transition-all"
                                 title="Mover de Etapa"
                               >
@@ -695,6 +649,211 @@ export default function Crm() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ---------------- QUICK NOTE MODAL (WaSeller Style) ---------------- */}
+      {activeNoteLead && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-gray-100 flex flex-col space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-lg">Criar anotação</h3>
+              <button 
+                onClick={() => { setActiveNoteLead(null); setQuickNoteContent(''); }}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-50 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Drag & Drop Area Placeholder to match WaSeller layout perfectly */}
+            <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 bg-gray-50/50 flex flex-col items-center justify-center text-center space-y-1.5">
+              <Plus className="w-6 h-6 text-gray-400" />
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Adicione uma mídia na anotação</p>
+              <p className="text-[10px] text-gray-300">Arraste o arquivo aqui para upload (opcional)</p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-xs text-gray-400 font-bold uppercase block">Lead</span>
+              <span className="text-sm font-semibold text-gray-800 block">{activeNoteLead.name} ({activeNoteLead.phone})</span>
+            </div>
+
+            <div className="space-y-1.5 text-left">
+              <label className="text-xs font-bold text-gray-400 uppercase">Insira uma anotação</label>
+              <textarea
+                value={quickNoteContent}
+                onChange={e => setQuickNoteContent(e.target.value)}
+                placeholder="Insira sua nota..."
+                rows="4"
+                className="w-full p-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white shadow-inner"
+              ></textarea>
+            </div>
+
+            <div className="flex justify-end space-x-3 border-t border-gray-100 pt-4">
+              <button
+                onClick={() => { setActiveNoteLead(null); setQuickNoteContent(''); }}
+                className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleSaveQuickNote(activeNoteLead.phone)}
+                disabled={isSavingQuick}
+                className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md shadow-emerald-500/10 flex items-center justify-center space-x-1.5 transition-all"
+              >
+                {isSavingQuick ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Salvar</span>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------- QUICK REMINDER MODAL (WaSeller Style) ---------------- */}
+      {activeReminderLead && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100 flex flex-col space-y-4 animate-in fade-in zoom-in-95 duration-150 text-left">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-lg">Criar Agendamento</h3>
+              <button 
+                onClick={() => {
+                  setActiveReminderLead(null);
+                  setTaskTitle('');
+                  setTaskMessage('');
+                  setTaskDate('');
+                  setTaskTime('');
+                }}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-50 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-1">
+              <span className="text-[10px] text-gray-400 font-bold uppercase block">Destinatário / Lead</span>
+              <span className="text-sm font-bold text-gray-800 block">{activeReminderLead.name} ({activeReminderLead.phone})</span>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 block">Título (Opcional)</label>
+              <input
+                type="text"
+                value={taskTitle}
+                onChange={e => setTaskTitle(e.target.value)}
+                placeholder="Insira aqui o título do retorno..."
+                className="w-full p-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50/50"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-gray-500 block">Escolha um tipo</label>
+              <div className="flex gap-2">
+                <span className="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-bold cursor-default shadow-sm shadow-emerald-500/10">Criar texto</span>
+                <span className="px-3 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-bold cursor-not-allowed">Mídia</span>
+                <span className="px-3 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-bold cursor-not-allowed">Áudio</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 block">Mensagem / Observações</label>
+              <textarea
+                value={taskMessage}
+                onChange={e => setTaskMessage(e.target.value)}
+                placeholder="Insira os detalhes do lembrete..."
+                rows="3"
+                className="w-full p-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50/50"
+              ></textarea>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-500 block">Data</label>
+                <input
+                  type="date"
+                  value={taskDate}
+                  onChange={e => setTaskDate(e.target.value)}
+                  className="w-full p-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50/50"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-500 block">Hora</label>
+                <input
+                  type="time"
+                  value={taskTime}
+                  onChange={e => setTaskTime(e.target.value)}
+                  className="w-full p-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50/50"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 block">Recorrência</label>
+              <select className="w-full p-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50/50">
+                <option value="none">Nenhuma selecionada</option>
+                <option value="daily">Diária</option>
+                <option value="weekly">Semanal</option>
+                <option value="monthly">Mensal</option>
+              </select>
+            </div>
+
+            <div className="flex justify-end space-x-3 border-t border-gray-100 pt-4">
+              <button
+                onClick={() => {
+                  setActiveReminderLead(null);
+                  setTaskTitle('');
+                  setTaskMessage('');
+                  setTaskDate('');
+                  setTaskTime('');
+                }}
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleSaveQuickReminder(activeReminderLead.phone)}
+                disabled={isSavingQuick}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/10 flex items-center justify-center space-x-1.5 transition-all"
+              >
+                {isSavingQuick ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Criar</span>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------- QUICK MOVE STAGE MODAL ---------------- */}
+      {activeMoveLead && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl border border-gray-100 flex flex-col space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-base">Mover de Etapa</h3>
+              <button 
+                onClick={() => setActiveMoveLead(null)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-50 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-1 text-center">
+              <span className="text-xs text-gray-400 font-bold uppercase block">Lead</span>
+              <span className="text-sm font-semibold text-gray-800 block truncate">{activeMoveLead.name}</span>
+            </div>
+
+            <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar text-left">
+              <label className="text-xs font-bold text-gray-400 uppercase block mb-1">Selecione a nova etapa:</label>
+              <div className="grid grid-cols-1 gap-2">
+                {FUNNEL_STAGES.map(st => (
+                  <button
+                    key={st.key}
+                    onClick={() => { updateLeadStageDirectly(activeMoveLead.phone, st.key); setActiveMoveLead(null); }}
+                    className={`p-3 rounded-xl border text-xs font-bold text-left transition-all ${st.key === activeMoveLead.stage ? 'border-blue-600 bg-blue-50/50 text-blue-700 shadow-sm' : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'}`}
+                  >
+                    {st.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
