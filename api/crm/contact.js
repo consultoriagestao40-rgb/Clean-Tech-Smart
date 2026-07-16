@@ -158,9 +158,9 @@ export default async function handler(req, res) {
         // Update fields if provided
         const updatedName = name !== undefined ? name : currentLead.name;
         const updatedStage = stage !== undefined ? stage : currentLead.stage;
-        const updatedValue = value !== undefined ? value : currentLead.value;
-        const updatedAssigned = assigned_to !== undefined ? (assigned_to ? Number(assigned_to) : null) : currentLead.assigned_to;
-        const updatedNextContact = next_contact_at !== undefined ? (next_contact_at ? new Date(next_contact_at) : null) : currentLead.next_contact_at;
+        const updatedValue = value !== undefined ? (value === "" || value === null ? 0.00 : parseFloat(value)) : currentLead.value;
+        const updatedAssigned = assigned_to !== undefined ? (assigned_to === "" || assigned_to === null ? null : Number(assigned_to)) : currentLead.assigned_to;
+        const updatedNextContact = next_contact_at !== undefined ? (next_contact_at === "" || next_contact_at === null ? null : new Date(next_contact_at)) : currentLead.next_contact_at;
 
         const updateRes = await dbClient.query(
           `UPDATE leads 
