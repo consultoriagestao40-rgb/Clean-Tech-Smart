@@ -416,9 +416,6 @@ function renderBoard() {
           await updateLeadLabel(phone, st.key);
         }
       }
-    });
-  });
-}
   });
 }
 
