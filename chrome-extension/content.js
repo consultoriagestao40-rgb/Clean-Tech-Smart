@@ -131,85 +131,89 @@ function removeSidebar() {
   updateLeftToolbarActiveStates();
 }
 
-// initSidebar is only used for Login Form or for Kanban view (not active sidebar details)
+// initSidebar is only used for Login Form or for Kanban view
 function initSidebar() {
-  if (!isSidebarVisible && !isKanbanViewActive) {
-    removeSidebar();
-    return;
-  }
+  try {
+    if (!isSidebarVisible && !isKanbanViewActive) {
+      removeSidebar();
+      return;
+    }
 
-  if (document.getElementById('crm-sidebar-root')) return;
+    if (document.getElementById('crm-sidebar-root')) return;
 
-  const rootContainer = document.createElement('div');
-  rootContainer.id = 'crm-sidebar-root';
-  rootContainer.style.position = 'fixed';
-  rootContainer.style.right = '0';
-  rootContainer.style.top = '0';
-  rootContainer.style.width = isKanbanViewActive ? 'calc(100% - 460px)' : '350px';
-  rootContainer.style.height = '100vh';
-  rootContainer.style.zIndex = '99999';
-  rootContainer.style.backgroundColor = '#ffffff';
-  
-  document.body.appendChild(rootContainer);
+    const rootContainer = document.createElement('div');
+    rootContainer.id = 'crm-sidebar-root';
+    rootContainer.style.position = 'fixed';
+    rootContainer.style.right = '0';
+    rootContainer.style.top = '0';
+    rootContainer.style.width = isKanbanViewActive ? 'calc(100% - 460px)' : '350px';
+    rootContainer.style.height = '100vh';
+    rootContainer.style.zIndex = '99999';
+    rootContainer.style.backgroundColor = '#ffffff';
+    
+    document.body.appendChild(rootContainer);
 
-  // Attach Shadow DOM
-  shadowRoot = rootContainer.attachShadow({ mode: 'open' });
+    // Attach Shadow DOM
+    shadowRoot = rootContainer.attachShadow({ mode: 'open' });
 
-  // Load stylesheet link
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = chrome.runtime.getURL('content.css');
-  shadowRoot.appendChild(link);
+    // Load stylesheet link
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = chrome.runtime.getURL('content.css');
+    shadowRoot.appendChild(link);
 
-  // Injected HTML template
-  sidebarElement = document.createElement('div');
-  sidebarElement.className = 'sidebar-container';
+    // Injected HTML template
+    sidebarElement = document.createElement('div');
+    sidebarElement.className = 'sidebar-container';
 
-  if (!crmToken) {
-    // Render Login Form in Sidebar
-    sidebarElement.innerHTML = `
-      <div class="sidebar-header">
-        <h3 class="sidebar-title">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Clean Tech CRM
-        </h3>
-        <p class="sidebar-subtitle">Acesso ao CRM</p>
-      </div>
-      <div style="padding: 16px;">
-        <div class="form-group">
-          <label>Servidor do Painel</label>
-          <input type="text" id="side-server-url" value="${crmServerUrl}">
+    if (!crmToken) {
+      // Render Login Form in Sidebar
+      sidebarElement.innerHTML = `
+        <div class="sidebar-header">
+          <h3 class="sidebar-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Clean Tech CRM
+          </h3>
+          <p class="sidebar-subtitle">Acesso ao CRM</p>
         </div>
-        <div class="form-group">
-          <label>E-mail</label>
-          <input type="email" id="side-email" placeholder="vendedor@cleantech.com">
+        <div style="padding: 16px;">
+          <div class="form-group">
+            <label>Servidor do Painel</label>
+            <input type="text" id="side-server-url" value="${crmServerUrl}">
+          </div>
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="side-email" placeholder="vendedor@cleantech.com">
+          </div>
+          <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="side-password" placeholder="••••••••">
+          </div>
+          <button id="btn-side-login" class="btn-primary">Entrar no CRM</button>
+          <div id="side-login-error" style="color: #dc2626; font-size: 11px; margin-top: 8px; font-weight: bold; display: none;"></div>
         </div>
-        <div class="form-group">
-          <label>Senha</label>
-          <input type="password" id="side-password" placeholder="••••••••">
-        </div>
-        <button id="btn-side-login" class="btn-primary">Entrar no CRM</button>
-        <div id="side-login-error" style="color: #dc2626; font-size: 11px; margin-top: 8px; font-weight: bold; display: none;"></div>
-      </div>
-    `;
+      `;
+      shadowRoot.appendChild(sidebarElement);
+
+      // Bind login form events
+      shadowRoot.getElementById('btn-side-login').addEventListener('click', handleInlineLogin);
+
+      const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
+      if (appElement) {
+        appElement.style.setProperty('width', 'calc(100% - 410px)', 'important');
+      }
+      return;
+    }
+
     shadowRoot.appendChild(sidebarElement);
 
-    // Bind login form events
-    shadowRoot.getElementById('btn-side-login').addEventListener('click', handleInlineLogin);
-
-    const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
-    if (appElement) {
-      appElement.style.width = 'calc(100% - 410px)';
+    if (isKanbanViewActive) {
+      renderKanbanView();
+    } else {
+      renderSidebarView();
     }
-    return;
-  }
-
-  shadowRoot.appendChild(sidebarElement);
-
-  if (isKanbanViewActive) {
-    renderKanbanView();
-  } else {
-    renderSidebarView();
+  } catch (err) {
+    console.error('Error in initSidebar:', err);
   }
 }
 
@@ -450,7 +454,7 @@ function renderSidebarView() {
   // Adjust App width
   const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
   if (appElement) {
-    appElement.style.setProperty('width', 'calc(100% - 410px)', 'important'); // 350px sidebar + 60px left menu
+    appElement.style.setProperty('width', 'calc(100% - 410px)', 'important');
   }
 
   // Setup Event Listeners for Tabs
@@ -483,7 +487,7 @@ function renderSidebarView() {
   // Setup Quick Ticket submission
   shadowRoot.getElementById('quick-ticket-form').addEventListener('submit', handleSaveQuickTicket);
 
-  // Toggle Kanban view click listener
+  // Close Sidebar click listener
   shadowRoot.getElementById('btn-close-sidebar-drawer').addEventListener('click', () => {
     isSidebarVisible = false;
     removeSidebar();
@@ -497,59 +501,65 @@ function renderSidebarView() {
 
 // ---------------- KANBAN BOARD VIEW RENDERING ----------------
 function toggleKanbanMode(active) {
-  isKanbanViewActive = active;
-  const root = document.getElementById('crm-sidebar-root');
-  const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
-  
-  const leftPanel = document.querySelector('[data-testid="side"]') || document.querySelector('.two');
-  const rightPanel = leftPanel ? leftPanel.nextElementSibling : null;
+  try {
+    isKanbanViewActive = active;
+    const root = document.getElementById('crm-sidebar-root');
+    const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
+    
+    const sideElement = document.querySelector('[data-testid="side"]');
+    const leftPanel = sideElement ? (sideElement.closest('.two') || sideElement.parentElement) : document.querySelector('.two');
+    const rightPanel = leftPanel ? leftPanel.nextElementSibling : null;
 
-  if (active) {
-    // If sidebar root not initialized, create it
-    if (!root) {
-      initSidebar();
+    if (active) {
+      // If sidebar root not initialized, create it
+      if (!root) {
+        initSidebar();
+      } else {
+        root.style.display = 'block';
+      }
+
+      const expandedRoot = document.getElementById('crm-sidebar-root');
+      
+      // Hide/Offscreen WhatsApp central panel (preserving active inputs and click events)
+      if (rightPanel) {
+        rightPanel.style.setProperty('position', 'absolute', 'important');
+        rightPanel.style.setProperty('left', '-9999px', 'important');
+        rightPanel.style.setProperty('width', '1px', 'important');
+        rightPanel.style.setProperty('height', '1px', 'important');
+        rightPanel.style.setProperty('overflow', 'hidden', 'important');
+      }
+
+      const leftPanelWidth = leftPanel ? leftPanel.getBoundingClientRect().width : 400;
+
+      if (expandedRoot) {
+        expandedRoot.style.left = `${leftPanelWidth + 60}px`; // leftPanelWidth + 60px left menu
+        expandedRoot.style.width = `calc(100% - ${leftPanelWidth + 60}px)`;
+        expandedRoot.style.setProperty('display', 'block', 'important');
+      }
+      if (appElement) {
+        appElement.style.setProperty('width', `${leftPanelWidth}px`, 'important');
+      }
+
+      renderKanbanView();
     } else {
-      root.style.display = 'block';
-    }
+      // Hide the sidebar root completely
+      removeSidebar();
+      
+      // Restore whatsapp central panel
+      if (rightPanel) {
+        rightPanel.style.removeProperty('position');
+        rightPanel.style.removeProperty('left');
+        rightPanel.style.removeProperty('width');
+        rightPanel.style.removeProperty('height');
+        rightPanel.style.removeProperty('overflow');
+      }
 
-    const expandedRoot = document.getElementById('crm-sidebar-root');
-    
-    // Hide/Offscreen WhatsApp central panel (preserving active inputs and click events)
-    if (rightPanel) {
-      rightPanel.style.setProperty('position', 'absolute', 'important');
-      rightPanel.style.setProperty('left', '-9999px', 'important');
-      rightPanel.style.setProperty('width', '1px', 'important');
-      rightPanel.style.setProperty('height', '1px', 'important');
-      rightPanel.style.setProperty('overflow', 'hidden', 'important');
+      if (appElement) {
+        appElement.style.setProperty('width', 'calc(100% - 60px)', 'important');
+      }
     }
-
-    const leftPanelWidth = leftPanel ? leftPanel.getBoundingClientRect().width : 400;
-
-    if (expandedRoot) {
-      expandedRoot.style.left = `${leftPanelWidth + 60}px`; // leftPanelWidth + 60px left menu
-      expandedRoot.style.width = `calc(100% - ${leftPanelWidth + 60}px)`;
-    }
-    if (appElement) {
-      appElement.style.setProperty('width', `${leftPanelWidth}px`, 'important');
-    }
-
-    renderKanbanView();
-  } else {
-    // Hide the sidebar root completely
-    removeSidebar();
-    
-    // Restore whatsapp central panel
-    if (rightPanel) {
-      rightPanel.style.removeProperty('position');
-      rightPanel.style.removeProperty('left');
-      rightPanel.style.removeProperty('width');
-      rightPanel.style.removeProperty('height');
-      rightPanel.style.removeProperty('overflow');
-    }
-
-    if (appElement) {
-      appElement.style.setProperty('width', 'calc(100% - 60px)', 'important'); // just offset by 60px left menu
-    }
+  } catch (err) {
+    console.error('Error in toggleKanbanMode:', err);
   }
   updateLeftToolbarActiveStates();
 }
@@ -557,72 +567,81 @@ function toggleKanbanMode(active) {
 async function renderKanbanView() {
   if (!sidebarElement) return;
 
-  // Header showing seller filter and toggle back to chat button
-  let sellerFilterHtml = '';
-  if (crmUser && crmUser.role === 'gestor') {
-    sellerFilterHtml = `
-      <div style="display: flex; align-items: center; gap: 6px;">
-        <span style="font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase;">Filtrar:</span>
-        <select id="kanban-seller-filter" style="padding: 4px 8px; font-size: 11px; width: auto; height: 26px; border-radius: 6px; margin: 0;">
-          <option value="all">Todos</option>
-          ${sellersList.map(s => `<option value="${s.id}" ${selectedSeller == s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
-        </select>
-      </div>
-    `;
-  } else {
-    sellerFilterHtml = `<span style="font-size: 11px; color: #64748b; font-style: italic;">Leads de ${crmUser ? crmUser.name.split(' ')[0] : 'Vendedor'}</span>`;
-  }
+  try {
+    // Header showing seller filter and toggle back to chat button
+    let sellerFilterHtml = '';
+    let userName = 'Vendedor';
+    if (crmUser && crmUser.name) {
+      userName = crmUser.name.split(' ')[0];
+    }
 
-  sidebarElement.innerHTML = `
-    <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <h3 class="sidebar-title" style="font-size: 15px;">Funil de Vendas CRM</h3>
+    if (crmUser && crmUser.role === 'gestor') {
+      sellerFilterHtml = `
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase;">Filtrar:</span>
+          <select id="kanban-seller-filter" style="padding: 4px 8px; font-size: 11px; width: auto; height: 26px; border-radius: 6px; margin: 0;">
+            <option value="all">Todos</option>
+            ${sellersList.map(s => `<option value="${s.id}" ${selectedSeller == s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
+          </select>
+        </div>
+      `;
+    } else {
+      sellerFilterHtml = `<span style="font-size: 11px; color: #64748b; font-style: italic;">Leads de ${userName}</span>`;
+    }
+
+    sidebarElement.innerHTML = `
+      <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h3 class="sidebar-title" style="font-size: 15px;">Funil de Vendas CRM</h3>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 8px;">
+          ${sellerFilterHtml}
+          
+          <!-- Add Stage Column Button -->
+          <button id="btn-add-kanban-stage" style="padding: 4px 8px; font-size: 10px; font-weight: bold; background-color: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+            Nova Etapa
+          </button>
+
+          <button id="btn-toggle-chat" style="padding: 4px 8px; font-size: 10px; font-weight: bold; background-color: #475569; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Abrir Chat
+          </button>
+        </div>
       </div>
       
-      <div style="display: flex; align-items: center; gap: 8px;">
-        ${sellerFilterHtml}
-        
-        <!-- Add Stage Column Button -->
-        <button id="btn-add-kanban-stage" style="padding: 4px 8px; font-size: 10px; font-weight: bold; background-color: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
-          Nova Etapa
-        </button>
-
-        <button id="btn-toggle-chat" style="padding: 4px 8px; font-size: 10px; font-weight: bold; background-color: #475569; color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          Abrir Chat
-        </button>
+      <div class="kanban-board-container" id="kanban-columns-wrapper">
+        <!-- Loading state -->
+        <div style="margin: auto; text-align: center; color: #64748b; font-size: 13px; font-weight: bold;">
+          Carregando Quadro Funil...
+        </div>
       </div>
-    </div>
-    
-    <div class="kanban-board-container" id="kanban-columns-wrapper">
-      <!-- Loading state -->
-      <div style="margin: auto; text-align: center; color: #64748b; font-size: 13px; font-weight: bold;">
-        Carregando Quadro Funil...
-      </div>
-    </div>
 
-    <!-- Modals container inside Shadow DOM -->
-    <div id="extension-modal-container"></div>
-  `;
+      <!-- Modals container inside Shadow DOM -->
+      <div id="extension-modal-container"></div>
+    `;
 
-  // Bind Header actions
-  shadowRoot.getElementById('btn-toggle-chat').addEventListener('click', () => {
-    toggleKanbanMode(false);
-  });
-
-  shadowRoot.getElementById('btn-add-kanban-stage').addEventListener('click', openAddStageModal);
-
-  const sellerSelect = shadowRoot.getElementById('kanban-seller-filter');
-  if (sellerSelect) {
-    sellerSelect.addEventListener('change', (e) => {
-      selectedSeller = e.target.value;
-      loadKanbanLeads();
+    // Bind Header actions
+    shadowRoot.getElementById('btn-toggle-chat').addEventListener('click', () => {
+      toggleKanbanMode(false);
     });
-  }
 
-  // Load leads and populate board
-  loadKanbanLeads();
+    shadowRoot.getElementById('btn-add-kanban-stage').addEventListener('click', openAddStageModal);
+
+    const sellerSelect = shadowRoot.getElementById('kanban-seller-filter');
+    if (sellerSelect) {
+      sellerSelect.addEventListener('change', (e) => {
+        selectedSeller = e.target.value;
+        loadKanbanLeads();
+      });
+    }
+
+    // Load leads and populate board
+    loadKanbanLeads();
+  } catch (err) {
+    console.error('Error in renderKanbanView:', err);
+  }
 }
 
 async function loadKanbanLeads() {
@@ -670,7 +689,7 @@ async function loadKanbanLeads() {
 
         container.appendChild(colDiv);
 
-        // Bind Column Header drag & drop reordering
+        // Column Header drag reordering
         const colHeader = colDiv.querySelector('.kanban-column-header');
         colHeader.addEventListener('dragstart', (e) => {
           e.dataTransfer.setData('text/column-index', index);
@@ -749,12 +768,10 @@ async function loadKanbanLeads() {
             </div>
           `;
 
-          // Card Drag Events (leads reordering)
           card.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('text/plain', lead.phone);
           });
 
-          // Action Toolbar click listeners
           card.querySelector('.btn-action-reminder').addEventListener('click', (e) => {
             e.stopPropagation();
             openReminderModal(lead);
@@ -772,7 +789,6 @@ async function loadKanbanLeads() {
             openChatModal(lead);
           });
 
-          // Clicking the card body opens conversation overlay instantly! (WaSeller Print 03)
           card.addEventListener('click', (e) => {
             if (e.target.closest('.kanban-card-icon-btn')) return;
             openChatModal(lead);
@@ -781,7 +797,6 @@ async function loadKanbanLeads() {
           cardsContainer.appendChild(card);
         });
 
-        // Column drop listener for cards
         colDiv.addEventListener('dragover', (e) => {
           e.preventDefault();
         });
@@ -845,15 +860,11 @@ function sendWhatsAppMessage(text) {
   const inputBox = document.querySelector('#main footer div[contenteditable="true"]');
   if (inputBox) {
     inputBox.focus();
-    
-    // Insert text into the contenteditable element
     document.execCommand('insertText', false, text);
     
-    // Trigger input event
     const inputEvent = new Event('input', { bubbles: true });
     inputBox.dispatchEvent(inputEvent);
     
-    // Click the send button
     setTimeout(() => {
       const sendBtn = document.querySelector('#main footer button[data-testid="compose-btn-send"]') || 
                       document.querySelector('#main footer span[data-testid="send"]') || 
@@ -933,7 +944,6 @@ function openChatModal(lead) {
     if (!text) return;
     sendWhatsAppMessage(text);
     inputField.value = '';
-    // Immediate sync trigger
     setTimeout(syncChatMessages, 200);
   };
 
@@ -944,7 +954,6 @@ function openChatModal(lead) {
   });
   sendBtn.addEventListener('click', sendMessage);
 
-  // Periodically sync chat messages
   let lastMsgCount = 0;
   const syncChatMessages = () => {
     const messages = getActiveChatMessages();
@@ -956,7 +965,6 @@ function openChatModal(lead) {
       return;
     }
 
-    // Render message bubbles
     msgContainer.innerHTML = messages.map(msg => {
       const bg = msg.isIncoming ? '#ffffff' : '#e2f7cb';
       const align = msg.isIncoming ? 'flex-start' : 'flex-end';
@@ -970,19 +978,15 @@ function openChatModal(lead) {
       `;
     }).join('');
 
-    // Autoscroll to bottom if new messages arrived
     if (messages.length !== lastMsgCount) {
       lastMsgCount = messages.length;
       msgContainer.scrollTop = msgContainer.scrollHeight;
     }
   };
 
-  // Select chat and start polling
   selectChatInBackground(lead.phone);
   
-  // Fast sync interval (800ms)
   const chatSyncInterval = setInterval(syncChatMessages, 800);
-  // Run once immediately
   setTimeout(syncChatMessages, 400);
 }
 
@@ -1182,7 +1186,6 @@ function openReminderModal(lead) {
     btn.innerText = 'Criando...';
 
     try {
-      // 1. Update Lead return time
       const resContact = await fetch(`${crmServerUrl}/api/crm/contact`, {
         method: 'POST',
         headers: {
@@ -1197,7 +1200,6 @@ function openReminderModal(lead) {
 
       if (!resContact.ok) throw new Error('Erro ao salvar retorno no lead');
 
-      // 2. Create Task row
       const finalTitle = message ? `${title}: ${message}` : title;
       await fetch(`${crmServerUrl}/api/crm/tasks`, {
         method: 'POST',
@@ -1273,10 +1275,8 @@ function startChatObserver() {
   injectLeftToolbar();
   fetchLeadsAndRefresh();
   
-  // Refresh leads every 15 seconds to keep counts and tags updated in background
   setInterval(fetchLeadsAndRefresh, 15000);
   
-  // Real-time sync for active chat and chat list filters
   setInterval(() => {
     detectActiveChat();
     applyChatListFilter();
@@ -1312,7 +1312,6 @@ function detectActiveChat() {
   }
 
   if (!detectedPhone) {
-    // Look inside messages for data-id values containing JID
     const msg = document.querySelector('#main div[data-id*="@c.us"]');
     if (msg) {
       const dataId = msg.getAttribute('data-id') || '';
@@ -1368,7 +1367,6 @@ function injectHorizontalTabs() {
     tabsBar.id = 'crm-horizontal-filter-tabs';
     tabsBar.className = 'crm-horizontal-tabs';
     
-    // Position tabs fixed at the top of the browser viewport, offset by 60px left menu
     tabsBar.style.setProperty('position', 'fixed', 'important');
     tabsBar.style.setProperty('left', '60px', 'important');
     tabsBar.style.setProperty('top', '0', 'important');
@@ -1501,19 +1499,17 @@ function injectLeftToolbar() {
 
   document.body.appendChild(toolbar);
 
-  // Push the WhatsApp container to the right
   const app = document.getElementById('app') || document.querySelector('.app-wrapper');
   if (app) {
     app.style.setProperty('margin-left', '60px', 'important');
     app.style.setProperty('width', 'calc(100% - 60px)', 'important');
   }
 
-  // Bind actions
   toolbar.querySelector('#crm-left-btn-funnel').addEventListener('click', () => {
     if (isKanbanViewActive) {
       toggleKanbanMode(false);
     } else {
-      isSidebarVisible = false; // Hide sidebar drawer when entering Kanban
+      isSidebarVisible = false;
       toggleKanbanMode(true);
     }
   });
@@ -1523,7 +1519,7 @@ function injectLeftToolbar() {
       isSidebarVisible = false;
       removeSidebar();
     } else {
-      isKanbanViewActive = false; // Disable Kanban view when opening sidebar drawer
+      isKanbanViewActive = false;
       isSidebarVisible = true;
       toggleKanbanMode(false);
       removeSidebar();
@@ -1672,7 +1668,6 @@ function renderNotes(notes) {
 
   notes.forEach(note => {
     const formattedDate = new Date(note.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    
     container.innerHTML += `
       <div class="note-item">
         <div class="note-header">
@@ -1699,7 +1694,6 @@ function renderContracts(contracts) {
   contracts.forEach(c => {
     const startDate = new Date(c.start_date).toLocaleDateString('pt-BR');
     const badgeClass = c.status === 'Ativo' ? 'badge-active' : 'badge-pending';
-    
     container.innerHTML += `
       <div class="item-card">
         <div class="item-card-title flex justify-between">
@@ -1729,7 +1723,6 @@ function renderTickets(tickets) {
   tickets.forEach(t => {
     const ticketDate = t.scheduled_date ? new Date(t.scheduled_date).toLocaleDateString('pt-BR') : 'Sem data';
     const badgeClass = t.status === 'Aberto' ? 'badge-active' : (t.status === 'Concluído' ? 'badge-closed' : 'badge-pending');
-    
     container.innerHTML += `
       <div class="item-card">
         <div class="item-card-title flex justify-between">
@@ -1877,9 +1870,7 @@ async function handleSaveQuickTicket(e) {
       statusDiv.innerHTML = '✅ Chamado aberto com sucesso!';
       shadowRoot.getElementById('ticket-desc').value = '';
       shadowRoot.getElementById('ticket-date').value = '';
-      
       loadContactData(currentPhone, currentName);
-      
       setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
     } else {
       statusDiv.innerHTML = '❌ Erro ao salvar chamado.';
