@@ -1115,13 +1115,20 @@ function getAllChatsFromDom() {
 }
 
 function selectChatInBackground(phone) {
-  const chatListItem = document.querySelector(`[data-id*="${phone}"]`) || 
-                       document.querySelector(`div[data-id="${phone}@c.us"]`);
+  const cleaned = phone.replace(/\D/g, '');
+  const suffix = cleaned.slice(-8); // Get last 8 digits to match 9-digit variations
+  
+  const chatListItem = document.querySelector(`[data-id*="${suffix}"]`);
   if (chatListItem) {
     const clickable = chatListItem.querySelector('[role="button"]') || chatListItem;
     clickable.click();
   } else {
-    window.location.hash = `#/chat/${phone}@c.us`;
+    // fallback to setting hash with formatted number (with 55)
+    let formatted = cleaned;
+    if (cleaned.length === 10 || cleaned.length === 11) {
+      formatted = '55' + cleaned;
+    }
+    window.location.hash = `#/chat/${formatted}@c.us`;
   }
 }
 
@@ -1147,16 +1154,36 @@ function sendWhatsAppMessage(text) {
 
 function getActiveChatMessages() {
   const messages = [];
-  const messageNodes = document.querySelectorAll('#main div[data-id*="@c.us"]');
+  const messageNodes = document.querySelectorAll('#main .message-in, #main .message-out');
+  
   messageNodes.forEach(node => {
-    const textNode = node.querySelector('.selectable-text span') || node.querySelector('[class*="selectable-text"]');
+    const textNode = node.querySelector('.selectable-text span') || 
+                     node.querySelector('.copyable-text span') || 
+                     node.querySelector('[class*="copyable-text"]') ||
+                     node.querySelector('[class*="selectable-text"]');
+                     
     const text = textNode ? textNode.innerText : '';
-    const dataId = node.getAttribute('data-id') || '';
-    const isIncoming = dataId.startsWith('false_');
+    const isIncoming = node.classList.contains('message-in');
+    
     if (text) {
       messages.push({ text, isIncoming });
     }
   });
+  
+  // Fallback if class selector returned 0
+  if (messages.length === 0) {
+    const nodes = document.querySelectorAll('#main div[data-id*="@c.us"]');
+    nodes.forEach(node => {
+      const textNode = node.querySelector('.selectable-text span') || node.querySelector('[class*="selectable-text"]');
+      const text = textNode ? textNode.innerText : '';
+      const dataId = node.getAttribute('data-id') || '';
+      const isIncoming = dataId.startsWith('false_');
+      if (text) {
+        messages.push({ text, isIncoming });
+      }
+    });
+  }
+  
   return messages;
 }
 
