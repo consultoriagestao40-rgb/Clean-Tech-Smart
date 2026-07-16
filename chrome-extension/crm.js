@@ -51,7 +51,7 @@ chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url', 'crm_stages
 function initApp() {
   // Bind left sidebar navigation
   document.getElementById('btn-back-to-whatsapp').addEventListener('click', () => {
-    chrome.tabs.query({ url: "https://web.whatsapp.com/*" }, (tabs) => {
+    chrome.tabs.query({ url: "*://web.whatsapp.com/*" }, (tabs) => {
       if (tabs && tabs.length > 0) {
         chrome.tabs.update(tabs[0].id, { active: true });
       } else {
@@ -90,7 +90,7 @@ function initApp() {
 // Fetch active chat contacts from WhatsApp Web DOM
 async function loadWhatsAppChatsList() {
   return new Promise((resolve) => {
-    chrome.tabs.query({ url: "https://web.whatsapp.com/*" }, (tabs) => {
+    chrome.tabs.query({ url: "*://web.whatsapp.com/*" }, (tabs) => {
       if (tabs && tabs.length > 0) {
         chrome.tabs.sendMessage(tabs[0].id, { action: "getWhatsAppChats" }, (res) => {
           if (res && res.chats) {
@@ -217,19 +217,19 @@ function renderBoard() {
           <div class="kanban-card-toolbar">
             <!-- 5 Standard tool icons -->
             <button class="kanban-card-icon-btn btn-action-note" title="Adicionar Nota" data-phone="${chat.phone}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>
+              <svg class="icon-note" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
             </button>
             <button class="kanban-card-icon-btn btn-action-reminder" title="Agendar Retorno" data-phone="${chat.phone}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><circle cx="17" cy="17" r="5"/><path d="M17 15v2l1 1"/></svg>
+              <svg class="icon-reminder" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" x2="16" y1="2" x2="16" y2="6"/><line x1="8" x2="8" y1="2" x2="8" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><circle cx="16" cy="16" r="4"/><polyline points="16 14 16 16 17 17"/></svg>
             </button>
             <button class="kanban-card-icon-btn btn-action-chat" title="Abrir Conversa" data-phone="${chat.phone}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <svg class="icon-chat" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
             </button>
             <button class="kanban-card-icon-btn btn-action-value" title="Atualizar Valor" data-phone="${chat.phone}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M10 15h4"/></svg>
+              <svg class="icon-value" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M10 15h4"/></svg>
             </button>
             <button class="kanban-card-icon-btn btn-action-move" title="Definir Etapa / Etiqueta" data-phone="${chat.phone}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 4h9l5.5 8-5.5 8H5l5.5-8L5 4z"/></svg>
+              <svg class="icon-move" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12l4 6-4 6H4l4-6-4-6z"/></svg>
             </button>
           </div>
         </div>
@@ -388,19 +388,19 @@ function renderBoard() {
           <div class="kanban-card-toolbar">
             <!-- 5 Standard tool icons -->
             <button class="kanban-card-icon-btn btn-action-note" title="Adicionar Nota" data-phone="${lead.phone}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>
+              <svg class="icon-note" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
             </button>
             <button class="kanban-card-icon-btn btn-action-reminder" title="Agendar Retorno" data-phone="${lead.phone}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><circle cx="17" cy="17" r="5"/><path d="M17 15v2l1 1"/></svg>
+              <svg class="icon-reminder" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" x2="16" y1="2" x2="16" y2="6"/><line x1="8" x2="8" y1="2" x2="8" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><circle cx="16" cy="16" r="4"/><polyline points="16 14 16 16 17 17"/></svg>
             </button>
             <button class="kanban-card-icon-btn btn-action-chat" title="Abrir Conversa" data-phone="${lead.phone}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <svg class="icon-chat" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
             </button>
             <button class="kanban-card-icon-btn btn-action-value" title="Atualizar Valor" data-phone="${lead.phone}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M10 15h4"/></svg>
+              <svg class="icon-value" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M10 15h4"/></svg>
             </button>
             <button class="kanban-card-icon-btn btn-action-move" title="Definir Etapa / Etiqueta" data-phone="${lead.phone}">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 4h9l5.5 8-5.5 8H5l5.5-8L5 4z"/></svg>
+              <svg class="icon-move" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12l4 6-4 6H4l4-6-4-6z"/></svg>
             </button>
           </div>
         </div>
@@ -506,7 +506,7 @@ async function updateLeadLabel(phone, label) {
 // Communicating with WhatsApp Web active page
 async function sendToWhatsAppTab(message) {
   return new Promise((resolve) => {
-    chrome.tabs.query({ url: "https://web.whatsapp.com/*" }, (tabs) => {
+    chrome.tabs.query({ url: "*://web.whatsapp.com/*" }, (tabs) => {
       if (tabs && tabs.length > 0) {
         chrome.tabs.sendMessage(tabs[0].id, message, (res) => {
           resolve(res);

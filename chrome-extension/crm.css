@@ -410,19 +410,46 @@ body, html {
 .kanban-card-icon-btn {
   background: none;
   border: none;
-  padding: 5px;
-  color: #64748b;
+  padding: 6px;
   cursor: pointer;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: all 0.2s;
+}
+
+.kanban-card-icon-btn svg {
+  transition: transform 0.2s, stroke 0.2s, fill 0.2s;
+  stroke-width: 1.8px !important;
 }
 
 .kanban-card-icon-btn:hover {
-  color: #2563eb;
   background-color: #f1f5f9;
+}
+
+.kanban-card-icon-btn:hover svg {
+  transform: scale(1.2);
+}
+
+.kanban-card-icon-btn:hover .icon-note {
+  stroke: #0d9488 !important;
+}
+
+.kanban-card-icon-btn:hover .icon-reminder {
+  stroke: #2563eb !important;
+}
+
+.kanban-card-icon-btn:hover .icon-chat {
+  stroke: #16a34a !important;
+}
+
+.kanban-card-icon-btn:hover .icon-value {
+  stroke: #ea580c !important;
+}
+
+.kanban-card-icon-btn:hover .icon-move {
+  stroke: #8b5cf6 !important;
 }
 
 /* Custom Modals & Dialog overlays */

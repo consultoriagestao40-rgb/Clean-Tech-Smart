@@ -1072,25 +1072,45 @@ async function handleSaveQuickTicket(e) {
   }
 }
 
-// Extract active chat items from WhatsApp left pane DOM
+// Robust, multi-level fallback extractor for WhatsApp Web chat list
 function getAllChatsFromDom() {
   const chats = [];
-  const chatElements = document.querySelectorAll('[data-testid="chat-list-item"]');
-  chatElements.forEach(item => {
+  
+  // 1. Query standard list elements
+  let elements = document.querySelectorAll('[data-testid="chat-list-item"]');
+  
+  // 2. Try generic list item elements
+  if (elements.length === 0) {
+    elements = document.querySelectorAll('div[role="listitem"]');
+  }
+  
+  // 3. Fallback to any node with data-id (contains chat jid)
+  if (elements.length === 0) {
+    elements = document.querySelectorAll('div[data-id]');
+  }
+
+  elements.forEach(item => {
     const dataId = item.closest('[data-id]')?.getAttribute('data-id') || 
                    item.querySelector('[data-id]')?.getAttribute('data-id') || 
                    item.getAttribute('data-id') || '';
+                   
+    // Validate JID format (ends with @c.us and does not have group suffix)
+    if (!dataId.endsWith('@c.us')) return;
+    
     const phone = dataId.split('@')[0].replace(/\D/g, '');
+    if (!phone) return;
     
     const nameNode = item.querySelector('span[title]') || 
                      item.querySelector('div[title]') || 
                      item.querySelector('[class*="title"]');
-    const name = nameNode ? (nameNode.getAttribute('title') || nameNode.innerText) : '';
+    const name = nameNode ? (nameNode.getAttribute('title') || nameNode.innerText) : phone;
     
-    if (phone && name) {
+    // De-duplicate contacts
+    if (phone && name && !chats.some(c => c.phone === phone)) {
       chats.push({ name, phone });
     }
   });
+  
   return chats;
 }
 
