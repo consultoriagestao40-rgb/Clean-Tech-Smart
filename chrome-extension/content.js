@@ -15,41 +15,39 @@ let sidebarElement = null;
 
 // Initialize Session from Storage
 chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url'], (res) => {
-  if (res.crm_token && res.crm_user && res.crm_server_url) {
-    crmServerUrl = res.crm_server_url;
-    crmToken = res.crm_token;
-    crmUser = res.crm_user;
-    
-    // Inject sidebar and start checking for active chat
-    initSidebar();
+  crmServerUrl = res.crm_server_url || 'https://clean-tech-smart.vercel.app';
+  crmToken = res.crm_token || '';
+  crmUser = res.crm_user || null;
+  
+  initSidebar();
+  if (crmToken) {
     startChatObserver();
   } else {
-    // Show login reminder pill on WhatsApp screen
     injectLoginReminder();
   }
 });
 
 // Watch for storage changes (e.g. login/logout from popup)
 chrome.storage.onChanged.addListener((changes) => {
-  if (changes.crm_token || changes.crm_user || changes.crm_server_url) {
-    chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url'], (res) => {
-      if (res.crm_token && res.crm_user && res.crm_server_url) {
-        crmServerUrl = res.crm_server_url;
-        crmToken = res.crm_token;
-        crmUser = res.crm_user;
-        
-        // Remove login reminder if present
-        const reminder = document.getElementById('crm-login-reminder');
-        if (reminder) reminder.remove();
+  chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url'], (res) => {
+    crmServerUrl = res.crm_server_url || 'https://clean-tech-smart.vercel.app';
+    crmToken = res.crm_token || '';
+    crmUser = res.crm_user || null;
+    
+    // Remove login reminder if logged in
+    const reminder = document.getElementById('crm-login-reminder');
+    if (crmToken && reminder) {
+      reminder.remove();
+    } else if (!crmToken && !reminder) {
+      injectLoginReminder();
+    }
 
-        initSidebar();
-        startChatObserver();
-      } else {
-        removeSidebar();
-        injectLoginReminder();
-      }
-    });
-  }
+    removeSidebar();
+    initSidebar();
+    if (crmToken) {
+      startChatObserver();
+    }
+  });
 });
 
 function injectLoginReminder() {
@@ -69,8 +67,19 @@ function injectLoginReminder() {
   div.style.fontFamily = 'sans-serif';
   div.style.fontSize = '12px';
   div.style.fontWeight = 'bold';
-  div.innerHTML = '🔑 Clean Tech CRM: Faça login na extensão para começar';
+  div.style.cursor = 'pointer';
+  div.style.transition = 'transform 0.2s';
+  div.innerHTML = '🔑 Clean Tech CRM: Clique aqui para abrir a barra lateral';
   
+  div.addEventListener('click', () => {
+    const rootContainer = document.getElementById('crm-sidebar-root');
+    if (rootContainer) {
+      removeSidebar();
+    } else {
+      initSidebar();
+    }
+  });
+
   document.body.appendChild(div);
 }
 
@@ -114,6 +123,99 @@ function initSidebar() {
   // Injected HTML template
   sidebarElement = document.createElement('div');
   sidebarElement.className = 'sidebar-container';
+
+  if (!crmToken) {
+    sidebarElement.innerHTML = `
+      <div class="sidebar-header">
+        <h3 class="sidebar-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Clean Tech CRM
+        </h3>
+        <p class="sidebar-subtitle">Acesso ao CRM</p>
+      </div>
+      <div style="padding: 16px;">
+        <div class="form-group">
+          <label>Servidor do Painel</label>
+          <input type="text" id="side-server-url" value="${crmServerUrl}">
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="side-email" placeholder="vendedor@cleantech.com">
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="side-password" placeholder="••••••••">
+        </div>
+        <button id="btn-side-login" class="btn-primary">Entrar no CRM</button>
+        <div id="side-login-error" style="color: #dc2626; font-size: 11px; margin-top: 8px; font-weight: bold; display: none;"></div>
+      </div>
+    `;
+    shadowRoot.appendChild(sidebarElement);
+
+    // Bind login form events
+    shadowRoot.getElementById('btn-side-login').addEventListener('click', async () => {
+      const serverUrl = shadowRoot.getElementById('side-server-url').value.trim().replace(/\/$/, '');
+      const email = shadowRoot.getElementById('side-email').value.trim();
+      const password = shadowRoot.getElementById('side-password').value;
+      const errDiv = shadowRoot.getElementById('side-login-error');
+      errDiv.style.display = 'none';
+
+      if (!serverUrl || !email || !password) {
+        errDiv.innerText = 'Preencha todos os campos.';
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      const btn = shadowRoot.getElementById('btn-side-login');
+      btn.disabled = true;
+      btn.innerText = 'Conectando...';
+
+      try {
+        const response = await fetch(`${serverUrl}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          chrome.storage.local.set({
+            crm_token: data.token,
+            crm_user: data.user,
+            crm_server_url: serverUrl
+          }, () => {
+            crmServerUrl = serverUrl;
+            crmToken = data.token;
+            crmUser = data.user;
+
+            // Remove login reminder if present
+            const reminder = document.getElementById('crm-login-reminder');
+            if (reminder) reminder.remove();
+
+            removeSidebar();
+            initSidebar();
+            startChatObserver();
+          });
+        } else {
+          errDiv.innerText = data.error || 'Credenciais inválidas.';
+          errDiv.style.display = 'block';
+        }
+      } catch (err) {
+        console.error(err);
+        errDiv.innerText = 'Erro ao conectar ao servidor.';
+        errDiv.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Entrar no CRM';
+      }
+    });
+
+    const appElement = document.getElementById('app') || document.querySelector('.app-wrapper');
+    if (appElement) {
+      appElement.style.width = 'calc(100% - 350px)';
+    }
+    return;
+  }
+
   sidebarElement.innerHTML = `
     <div class="sidebar-header">
       <h3 class="sidebar-title">
