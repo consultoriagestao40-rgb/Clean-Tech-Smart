@@ -71,7 +71,7 @@ export default async function handler(req, res) {
 
           const insertRes = await dbClient.query(
             `INSERT INTO leads (phone, name, stage, value, assigned_to) 
-             VALUES ($1, $2, 'novo', 0.00, $3) 
+             VALUES ($1, $2, 'inbox', 0.00, $3) 
              RETURNING *`,
             [cleanPhone, initialName, currentUser.userId]
           );

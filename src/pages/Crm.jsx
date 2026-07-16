@@ -13,15 +13,21 @@ import {
   AlertCircle, 
   Loader2, 
   LogOut,
-  Lock
+  Lock,
+  ClipboardList,
+  ArrowRightLeft,
+  X,
+  Check
 } from 'lucide-react';
 
 const FUNNEL_STAGES = [
-  { key: 'novo', title: 'Novo', color: 'border-t-2 border-blue-500 bg-blue-50/20 text-blue-700' },
-  { key: 'contato', title: 'Contato', color: 'border-t-2 border-yellow-500 bg-yellow-50/20 text-yellow-700' },
-  { key: 'proposta', title: 'Proposta', color: 'border-t-2 border-purple-500 bg-purple-50/20 text-purple-700' },
-  { key: 'negociacao', title: 'Negociação', color: 'border-t-2 border-orange-500 bg-orange-50/20 text-orange-700' },
-  { key: 'fechado', title: 'Fechado', color: 'border-t-2 border-green-500 bg-green-50/20 text-green-700' },
+  { key: 'inbox', title: 'Inbox', color: 'border-t-2 border-slate-400 bg-slate-50/20 text-slate-700' },
+  { key: 'lead', title: 'Lead de Serviço', color: 'border-t-2 border-blue-500 bg-blue-50/20 text-blue-700' },
+  { key: 'tratar', title: 'Tratar', color: 'border-t-2 border-yellow-500 bg-yellow-50/20 text-yellow-700' },
+  { key: 'atendimento', title: 'Atendimento', color: 'border-t-2 border-cyan-500 bg-cyan-50/20 text-cyan-700' },
+  { key: 'programado', title: 'Programado', color: 'border-t-2 border-purple-500 bg-purple-50/20 text-purple-700' },
+  { key: 'a_faturar', title: 'A Faturar', color: 'border-t-2 border-orange-500 bg-orange-50/20 text-orange-700' },
+  { key: 'faturado', title: 'Fatura Enviada', color: 'border-t-2 border-green-500 bg-green-50/20 text-green-700' },
   { key: 'perdido', title: 'Perdido', color: 'border-t-2 border-red-500 bg-red-50/20 text-red-700' }
 ];
 
@@ -44,6 +50,17 @@ export default function Crm() {
   // Search
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Inline edit states for cards
+  const [activeNoteEditPhone, setActiveNoteEditPhone] = useState(null);
+  const [quickNoteContent, setQuickNoteContent] = useState('');
+  
+  const [activeReminderEditPhone, setActiveReminderEditPhone] = useState(null);
+  const [quickReminderDate, setQuickReminderDate] = useState('');
+
+  const [activeMoveEditPhone, setActiveMoveEditPhone] = useState(null);
+
+  const [isSavingQuick, setIsSavingQuick] = useState(false);
+
   // Stats
   const [stats, setStats] = useState({
     totalCount: 0,
@@ -60,7 +77,6 @@ export default function Crm() {
   }, [token, selectedSeller]);
 
   useEffect(() => {
-    // Calculate Stats
     let totalCount = leads.length;
     let activeValue = 0;
     let closedValue = 0;
@@ -68,7 +84,7 @@ export default function Crm() {
 
     leads.forEach(lead => {
       const val = parseFloat(lead.value) || 0;
-      if (lead.stage === 'fechado') {
+      if (lead.stage === 'faturado') {
         closedValue += val;
         closedCount += 1;
       } else if (lead.stage !== 'perdido') {
@@ -176,11 +192,15 @@ export default function Crm() {
     const leadPhone = e.dataTransfer.getData('text/plain');
     if (!leadPhone) return;
 
+    updateLeadStageDirectly(leadPhone, stageKey);
+  };
+
+  const updateLeadStageDirectly = async (leadPhone, newStage) => {
     const lead = leads.find(l => l.phone === leadPhone);
-    if (!lead || lead.stage === stageKey) return;
+    if (!lead || lead.stage === newStage) return;
 
     // Optimistic update
-    setLeads(prev => prev.map(l => l.phone === leadPhone ? { ...l, stage: stageKey } : l));
+    setLeads(prev => prev.map(l => l.phone === leadPhone ? { ...l, stage: newStage } : l));
 
     try {
       const res = await fetch('/api/crm/contact', {
@@ -191,12 +211,11 @@ export default function Crm() {
         },
         body: JSON.stringify({
           phone: leadPhone,
-          stage: stageKey
+          stage: newStage
         })
       });
 
       if (!res.ok) {
-        // Rollback on failure
         fetchLeads();
       }
     } catch (err) {
@@ -205,9 +224,80 @@ export default function Crm() {
     }
   };
 
+  // Inline Quick Actions
+  const handleSaveQuickNote = async (leadPhone) => {
+    if (!quickNoteContent.trim()) return;
+    setIsSavingQuick(true);
+    try {
+      const res = await fetch('/api/crm/notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          lead_phone: leadPhone,
+          content: quickNoteContent.trim()
+        })
+      });
+
+      if (res.ok) {
+        setActiveNoteEditPhone(null);
+        setQuickNoteContent('');
+        alert('Aotação salva com sucesso!');
+      } else {
+        alert('Erro ao salvar anotação.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro de conexão ao salvar.');
+    } finally {
+      setIsSavingQuick(false);
+    }
+  };
+
+  const handleSaveQuickReminder = async (leadPhone) => {
+    if (!quickReminderDate) return;
+    setIsSavingQuick(true);
+    try {
+      const res = await fetch('/api/crm/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          phone: leadPhone,
+          next_contact_at: quickReminderDate
+        })
+      });
+
+      if (res.ok) {
+        setActiveReminderEditPhone(null);
+        setQuickReminderDate('');
+        fetchLeads(); // Refresh to update date badge in UI
+      } else {
+        alert('Erro ao agendar lembrete.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro de conexão ao agendar.');
+    } finally {
+      setIsSavingQuick(false);
+    }
+  };
+
   // Format BRL Currency helper
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+  };
+
+  // Initials Avatar helper
+  const getInitials = (name) => {
+    if (!name) return 'LD';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
   // Filtered Leads list
@@ -401,27 +491,33 @@ export default function Crm() {
         <div className="flex space-x-6 overflow-x-auto pb-4 custom-scrollbar items-start">
           {FUNNEL_STAGES.map(stage => {
             const stageLeads = getLeadsInStage(stage.key);
+            const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
 
             return (
               <div
                 key={stage.key}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, stage.key)}
-                className="bg-gray-50/50 rounded-2xl border border-gray-200/60 p-4 space-y-4 min-w-[280px] w-[280px] shrink-0 min-h-[500px]"
+                className="bg-gray-50/40 rounded-2xl border border-gray-200/50 p-4 space-y-4 min-w-[290px] w-[290px] shrink-0 min-h-[550px]"
               >
                 {/* Stage Header */}
-                <div className={`p-3 rounded-xl flex justify-between items-center ${stage.color}`}>
-                  <span className="font-bold text-xs uppercase tracking-wider">{stage.title}</span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/80 shadow-sm">
-                    {stageLeads.length}
-                  </span>
+                <div className={`p-3 rounded-xl flex flex-col space-y-1.5 shadow-sm border ${stage.color}`}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-xs uppercase tracking-wider truncate">{stage.title}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/80 shadow-sm text-gray-700">
+                      {stageLeads.length}
+                    </span>
+                  </div>
+                  <div className="text-xs font-bold text-gray-500 text-left">
+                    {formatCurrency(stageValueSum)}
+                  </div>
                 </div>
 
                 {/* Cards Container */}
                 <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
                   {stageLeads.length === 0 ? (
-                    <div className="border border-dashed border-gray-200 rounded-xl py-8 text-center text-xs text-gray-400 italic">
-                      Nenhum lead aqui
+                    <div className="border-2 border-dashed border-gray-200 rounded-xl py-10 text-center text-xs text-gray-400 italic">
+                      Arraste chamados aqui
                     </div>
                   ) : (
                     stageLeads.map(lead => {
@@ -431,46 +527,165 @@ export default function Crm() {
                           key={lead.phone}
                           draggable
                           onDragStart={(e) => handleDragStart(e, lead.phone)}
-                          className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 transition-all space-y-3 text-left"
+                          className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 transition-all space-y-3 text-left relative"
                         >
-                          <div className="space-y-1">
-                            <h4 className="text-xs font-bold text-gray-900 leading-tight">{lead.name}</h4>
-                            <p className="text-[10px] text-gray-400 font-mono">{lead.phone}</p>
-                          </div>
-
-                          <div className="flex items-center justify-between text-[11px]">
-                            <div className="flex items-center text-gray-600 font-bold">
-                              <DollarSign className="w-3.5 h-3.5 text-green-500 mr-0.5" />
-                              <span>{formatCurrency(leadVal)}</span>
-                            </div>
-                            
-                            {lead.assigned_to_name && (
-                              <div className="text-[10px] text-gray-400 flex items-center">
-                                <User className="w-3.5 h-3.5 mr-0.5" />
-                                <span className="truncate max-w-[90px]">{lead.assigned_to_name.split(' ')[0]}</span>
+                          {/* Card Content Row */}
+                          <div className="flex items-start justify-between gap-2">
+                            {/* Initials Avatar and Details */}
+                            <div className="flex items-center space-x-2.5">
+                              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-100">
+                                {getInitials(lead.name)}
                               </div>
-                            )}
+                              <div>
+                                <h4 className="text-xs font-bold text-gray-900 leading-tight max-w-[130px] truncate" title={lead.name}>
+                                  {lead.name}
+                                </h4>
+                                <p className="text-[10px] text-gray-400 font-mono mt-0.5">{lead.phone}</p>
+                              </div>
+                            </div>
+
+                            {/* Value Display */}
+                            <div className="text-[11px] font-bold text-gray-800 text-right whitespace-nowrap">
+                              {formatCurrency(leadVal)}
+                            </div>
                           </div>
 
-                          {/* Next Contact schedule */}
+                          {/* Next Contact Reminder Badge */}
                           {lead.next_contact_at && (
-                            <div className="flex items-center text-[9px] font-bold text-orange-600 bg-orange-50 p-1.5 rounded-lg">
-                              <Calendar className="w-3 h-3 mr-1 text-orange-400" />
-                              <span>Retorno: {new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                            <div className="flex items-center text-[9px] font-bold text-orange-600 bg-orange-50/50 border border-orange-100 p-1.5 rounded-lg">
+                              <Calendar className="w-3.5 h-3.5 mr-1 text-orange-400 shrink-0" />
+                              <span className="truncate">Retorno: {new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                           )}
 
-                          {/* Card Footer WhatsApp Redirect */}
-                          <div className="pt-2 border-t border-gray-100 flex justify-end">
-                            <a
-                              href={`https://web.whatsapp.com/send?phone=${lead.phone.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center px-2 py-1 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg text-[10px] font-bold transition-all space-x-1 border border-green-200/50"
-                            >
-                              <MessageSquare className="w-3 h-3 text-green-600" />
-                              <span>Iniciar Chat</span>
-                            </a>
+                          {/* Quick Toolbar Inline Editors */}
+                          {activeNoteEditPhone === lead.phone && (
+                            <div className="p-2 bg-gray-50 rounded-lg border border-gray-200 space-y-2 mt-2">
+                              <textarea
+                                value={quickNoteContent}
+                                onChange={e => setQuickNoteContent(e.target.value)}
+                                placeholder="Escreva sua anotação..."
+                                rows="2"
+                                className="w-full p-1.5 border border-gray-300 rounded text-xs bg-white focus:outline-none"
+                              ></textarea>
+                              <div className="flex justify-end space-x-1">
+                                <button
+                                  onClick={() => { setActiveNoteEditPhone(null); setQuickNoteContent(''); }}
+                                  className="p-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleSaveQuickNote(lead.phone)}
+                                  disabled={isSavingQuick}
+                                  className="p-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                                >
+                                  <Check className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {activeReminderEditPhone === lead.phone && (
+                            <div className="p-2 bg-gray-50 rounded-lg border border-gray-200 space-y-2 mt-2">
+                              <input
+                                type="datetime-local"
+                                value={quickReminderDate}
+                                onChange={e => setQuickReminderDate(e.target.value)}
+                                className="w-full p-1.5 border border-gray-300 rounded text-xs bg-white focus:outline-none"
+                              />
+                              <div className="flex justify-end space-x-1">
+                                <button
+                                  onClick={() => { setActiveReminderEditPhone(null); setQuickReminderDate(''); }}
+                                  className="p-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleSaveQuickReminder(lead.phone)}
+                                  disabled={isSavingQuick}
+                                  className="p-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                                >
+                                  <Check className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {activeMoveEditPhone === lead.phone && (
+                            <div className="p-2 bg-gray-50 rounded-lg border border-gray-200 space-y-2 mt-2">
+                              <select
+                                value={lead.stage}
+                                onChange={e => { updateLeadStageDirectly(lead.phone, e.target.value); setActiveMoveEditPhone(null); }}
+                                className="w-full p-1 border border-gray-300 rounded text-xs bg-white"
+                              >
+                                {FUNNEL_STAGES.map(st => (
+                                  <option key={st.key} value={st.key}>{st.title}</option>
+                                ))}
+                              </select>
+                              <div className="flex justify-end">
+                                <button
+                                  onClick={() => setActiveMoveEditPhone(null)}
+                                  className="p-1 bg-gray-200 hover:bg-gray-300 rounded text-[10px] text-gray-700 font-bold"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Quick Toolbar Icons Row */}
+                          <div className="pt-2 border-t border-gray-100 flex justify-between items-center">
+                            {/* Seller name initials badge */}
+                            {lead.assigned_to_name ? (
+                              <div className="text-[9px] text-gray-400 font-semibold flex items-center bg-gray-50 px-1.5 py-0.5 rounded">
+                                <User className="w-2.5 h-2.5 mr-0.5" />
+                                <span>{lead.assigned_to_name.split(' ')[0]}</span>
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-gray-300 italic">Sem vendedor</span>
+                            )}
+
+                            {/* Toolbar Buttons */}
+                            <div className="flex space-x-1.5 items-center">
+                              {/* Schedule reminder icon */}
+                              <button
+                                onClick={() => { setActiveReminderEditPhone(lead.phone); setActiveNoteEditPhone(null); setActiveMoveEditPhone(null); }}
+                                className="p-1 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
+                                title="Agendar Retorno"
+                              >
+                                <Calendar className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Add Note icon */}
+                              <button
+                                onClick={() => { setActiveNoteEditPhone(lead.phone); setActiveReminderEditPhone(null); setActiveMoveEditPhone(null); }}
+                                className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
+                                title="Adicionar Nota"
+                              >
+                                <ClipboardList className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Move column shortcut dropdown */}
+                              <button
+                                onClick={() => { setActiveMoveEditPhone(lead.phone); setActiveNoteEditPhone(null); setActiveReminderEditPhone(null); }}
+                                className="p-1 text-gray-400 hover:text-purple-500 hover:bg-purple-50 rounded transition-all"
+                                title="Mover de Etapa"
+                              >
+                                <ArrowRightLeft className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* WhatsApp Chat link */}
+                              <a
+                                href={`https://web.whatsapp.com/send?phone=${lead.phone.replace(/\D/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded transition-all flex items-center"
+                                title="Iniciar Chat WhatsApp"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                              </a>
+                            </div>
                           </div>
                         </div>
                       );

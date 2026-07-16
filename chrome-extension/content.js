@@ -259,11 +259,13 @@ function initSidebar() {
           <div class="form-group">
             <label for="lead-stage">Etapa do Funil</label>
             <select id="lead-stage">
-              <option value="novo">Novo</option>
-              <option value="contato">Contato</option>
-              <option value="proposta">Proposta</option>
-              <option value="negociacao">Negociação</option>
-              <option value="fechado">Fechado</option>
+              <option value="inbox">Inbox</option>
+              <option value="lead">Lead de Serviço</option>
+              <option value="tratar">Tratar</option>
+              <option value="atendimento">Atendimento</option>
+              <option value="programado">Programado</option>
+              <option value="a_faturar">A Faturar</option>
+              <option value="faturado">Fatura Enviada</option>
               <option value="perdido">Perdido</option>
             </select>
           </div>
@@ -552,7 +554,7 @@ async function loadContactData(phone, name) {
 
       // 1. Fill CRM Form fields
       shadowRoot.getElementById('lead-name').value = data.lead.name || '';
-      shadowRoot.getElementById('lead-stage').value = data.lead.stage || 'novo';
+      shadowRoot.getElementById('lead-stage').value = data.lead.stage || 'inbox';
       shadowRoot.getElementById('lead-value').value = data.lead.value || 0;
       shadowRoot.getElementById('lead-seller').value = data.lead.assigned_to || '';
       
