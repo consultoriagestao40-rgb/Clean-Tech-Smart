@@ -129,13 +129,22 @@ async function loadWhatsAppChatsList() {
       chrome.tabs.query({ url: "*://web.whatsapp.com/*" }, (tabs) => {
         if (tabs && tabs.length > 0) {
           chrome.tabs.sendMessage(tabs[0].id, { action: "getWhatsAppChats" }, (res) => {
+            if (chrome.runtime.lastError) {
+              const errMsg = "Aba do WhatsApp desconectada da extensão. Por favor, RECARREGUE a aba do WhatsApp Web!";
+              chrome.storage.local.set({ crm_last_error: errMsg });
+              console.warn('[CRM] Erro ao obter conversas:', chrome.runtime.lastError.message);
+              resolve();
+              return;
+            }
             if (res && res.chats) {
               whatsAppChats = res.chats;
-              chrome.storage.local.set({ crm_whatsapp_chats: res.chats });
+              chrome.storage.local.set({ crm_whatsapp_chats: res.chats, crm_last_error: '' });
             }
             resolve();
           });
         } else {
+          const errMsg = "Nenhuma aba do WhatsApp Web aberta encontrada. Abra o WhatsApp Web!";
+          chrome.storage.local.set({ crm_last_error: errMsg });
           resolve();
         }
       });
@@ -553,7 +562,12 @@ async function sendToWhatsAppTab(message) {
     chrome.tabs.query({ url: "*://web.whatsapp.com/*" }, (tabs) => {
       if (tabs && tabs.length > 0) {
         chrome.tabs.sendMessage(tabs[0].id, message, (res) => {
-          resolve(res);
+          if (chrome.runtime.lastError) {
+            console.warn('[CRM] Erro no envio de mensagem para WhatsApp tab:', chrome.runtime.lastError.message);
+            resolve(null);
+          } else {
+            resolve(res);
+          }
         });
       } else {
         resolve(null);
