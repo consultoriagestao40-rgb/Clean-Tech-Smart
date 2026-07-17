@@ -1174,110 +1174,105 @@ async function handleSaveQuickTicket(e) {
   }
 }
 
-// Robust, multi-level fallback extractor for WhatsApp Web/Business Web chat list
+// Robust extractor for WhatsApp Business Web chat list
+// Confirmed DOM: [data-testid="chat-list"] > [aria-label="Lista de conversas"][role="grid"] > children (rows)
+// Each row contains: [data-testid="cell-frame-title"] for name, img for phone via URL
 function getAllChatsFromDom() {
   const chats = [];
 
-  // STRATEGY 1: Use the confirmed DOM structure from debug:
-  // #pane-side > div[data-tab] > div[data-testid="chat-list"] > div[aria-label="Lista de conversas"] > children
-  const chatListContainer = document.querySelector(
-    '[data-testid="chat-list"] [aria-label="Lista de conversas"], ' +
-    '[data-testid="chat-list"] [aria-label="Chat list"], ' +
-    '[data-testid="chat-list"] [aria-label*="conversa"], ' +
-    '[data-testid="chat-list"] [role="list"]'
+  // STRATEGY 1: Use confirmed structure - list-item-N rows inside chat-list
+  // testids_sample confirmed: "list-item-0", "cell-frame-container", "cell-frame-title", "cell-frame-primary-detail"
+  const listItems = document.querySelectorAll(
+    '[data-testid^="list-item-"], [data-testid="cell-frame-container"]'
   );
-
-  if (chatListContainer) {
-    // Each direct child is a chat row
-    Array.from(chatListContainer.children).forEach(row => {
+  
+  if (listItems.length > 0) {
+    listItems.forEach(item => {
+      const row = item.closest('[data-testid^="list-item-"]') || item;
       extractChatFromRow(row, chats);
     });
   }
 
-  // STRATEGY 2: Look for any child of the chat-list container (role-based)
+  // STRATEGY 2: Children of the grid container
   if (chats.length === 0) {
-    const chatList = document.querySelector('[data-testid="chat-list"]');
-    if (chatList) {
-      const rows = chatList.querySelectorAll('[role="listitem"], [role="row"], [tabindex="0"]');
-      rows.forEach(row => extractChatFromRow(row, chats));
+    const chatListContainer = document.querySelector(
+      '[data-testid="chat-list"] [aria-label="Lista de conversas"], ' +
+      '[data-testid="chat-list"] [aria-label="Chat list"], ' +
+      '[data-testid="chat-list"] [role="grid"]'
+    );
+    if (chatListContainer) {
+      Array.from(chatListContainer.children).forEach(row => extractChatFromRow(row, chats));
     }
   }
 
-  // STRATEGY 3: title attribute scan inside pane-side (broadest fallback)
+  // STRATEGY 3: Direct image URL scan (always captures phone if photo loads)
   if (chats.length === 0) {
-    const paneSide = document.getElementById('pane-side');
-    if (paneSide) {
-      const titleElements = paneSide.querySelectorAll('[title]');
-      titleElements.forEach(el => {
-        const name = (el.getAttribute('title') || '').trim();
-        if (!name || name.length < 2) return;
-        
-        const skipped = ['Menu', 'Nova conversa', 'Configurações', 'Perfil', 'Status', 'Canais', 'Comunidades', 'Novo grupo', 'Nova comunidade', 'Arquivadas', 'Favoritas', 'Mensagens favoritadas'];
-        if (skipped.some(s => name.toLowerCase().includes(s.toLowerCase()))) return;
-        
-        // Try to find JID via ancestor or profile image URL
-        const container = el.closest('[data-id]') || el.closest('[data-jid]') || el.parentElement;
-        let dataId = container ? (container.getAttribute('data-id') || container.getAttribute('data-jid') || '') : '';
-        
-        if (!dataId) {
-          const row = el.closest('div[role="row"]') || el.closest('div[role="listitem"]') || el.closest('[tabindex]') || el.parentElement;
-          if (row) {
-            const img = row.querySelector('img');
-            if (img && img.src && img.src.includes('u=')) {
-              const match = img.src.match(/u=(\d+)%40c\.us/);
-              if (match) dataId = match[1] + '@c.us';
-            }
-          }
-        }
-        
-        if (dataId && dataId.endsWith('@c.us')) {
-          const phone = dataId.split('@')[0].replace(/\D/g, '');
-          if (phone && !chats.some(c => c.phone === phone)) {
-            chats.push({ name, phone, lastMessage: '', unreadCount: 0 });
-          }
-        }
-      });
-    }
+    const imgs = document.querySelectorAll('#pane-side img[src*="u="][src*="%40c.us"]');
+    imgs.forEach(img => {
+      const match = img.src.match(/u=(\d+)%40c\.us/);
+      if (!match) return;
+      const phone = match[1];
+      if (chats.some(c => c.phone === phone)) return;
+      // Get name from nearest title
+      const row = img.closest('[data-testid^="list-item-"]') || img.parentElement?.parentElement;
+      const nameNode = row ? row.querySelector('[data-testid="cell-frame-title"]') : null;
+      const name = nameNode ? nameNode.innerText.trim() : phone;
+      if (name) chats.push({ name, phone, lastMessage: '', unreadCount: 0 });
+    });
   }
-  
+
   return chats;
 }
 
-// Helper: extract chat info from a row element
+// Helper: extract chat info from a row element (list-item-N)
 function extractChatFromRow(row, chats) {
-  // Try to get name from title attribute
-  const nameNode = row.querySelector('[title]');
-  const name = nameNode ? (nameNode.getAttribute('title') || nameNode.innerText || '').trim() : '';
+  // NAME: Try cell-frame-title first (WhatsApp Business), then [title] attr (WhatsApp personal)
+  const titleNode = row.querySelector('[data-testid="cell-frame-title"]');
+  const titleAttrNode = row.querySelector('[title]');
+  const name = (
+    (titleNode ? titleNode.innerText.trim() : '') ||
+    (titleAttrNode ? (titleAttrNode.getAttribute('title') || titleAttrNode.innerText || '').trim() : '') ||
+    (row.getAttribute('aria-label') || '').trim()
+  );
+
   if (!name || name.length < 2) return;
-  
+
   const skipped = ['Menu', 'Nova conversa', 'Configurações', 'Perfil', 'Status', 'Canais', 'Comunidades', 'Novo grupo', 'Arquivadas', 'Favoritas'];
   if (skipped.some(s => name.toLowerCase().includes(s.toLowerCase()))) return;
 
-  // Try to get phone from data-id or image URL
+  // PHONE: Try data-id first, then profile image URL
   let phone = '';
   const withDataId = row.querySelector('[data-id*="@c.us"]') || row.closest('[data-id*="@c.us"]');
   if (withDataId) {
     phone = (withDataId.getAttribute('data-id') || '').split('@')[0].replace(/\D/g, '');
   }
-  
+
   if (!phone) {
-    const img = row.querySelector('img[src*="u="]');
+    const img = row.querySelector('img[src*="%40c.us"], img[src*="u="]');
     if (img) {
-      const match = img.src.match(/u=(\d+)%40c\.us/);
-      if (match) phone = match[1];
+      const m = img.src.match(/u=(\d+)%40c\.us/);
+      if (m) phone = m[1];
     }
   }
 
-  if (!phone) return;
+  // If still no phone, use name as temporary key (for display only, can't link to CRM)
+  // We'll store with a placeholder so the UI shows the name at least
+  if (!phone) {
+    // Create a hash from name for deduplication
+    const tempKey = 'name_' + name.toLowerCase().replace(/\s+/g, '_').substring(0, 20);
+    if (chats.some(c => c.phone === tempKey)) return;
+    phone = tempKey;
+  }
 
   if (chats.some(c => c.phone === phone)) return;
 
-  const badgeNode = row.querySelector('[aria-label*="não lida"], [aria-label*="unread"], [class*="unread-count"], [class*="badge"]');
-  const unreadCount = badgeNode ? parseInt(badgeNode.innerText.replace(/\D/g, '')) || 0 : 0;
-
-  const lastMsgNode = row.querySelector('[data-testid="last-msg-status"]')?.parentElement?.querySelector('span') ||
+  const lastMsgNode = row.querySelector('[data-testid="cell-frame-primary-detail"]') ||
+                      row.querySelector('[data-testid="last-msg-status"]')?.parentElement?.querySelector('span') ||
                       row.querySelector('span[dir="auto"]');
   const lastMessage = lastMsgNode ? lastMsgNode.innerText.trim() : '';
+
+  const badgeNode = row.querySelector('[aria-label*="não lida"], [aria-label*="unread"], [class*="unread"]');
+  const unreadCount = badgeNode ? parseInt(badgeNode.innerText.replace(/\D/g, '')) || 0 : 0;
 
   chats.push({ name, phone, lastMessage, unreadCount });
 }
