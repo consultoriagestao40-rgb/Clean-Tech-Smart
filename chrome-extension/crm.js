@@ -101,12 +101,13 @@ function initApp() {
 
   // Debug listener to show DOM statistics at the bottom of the Kanban board
   setInterval(() => {
-    chrome.storage.local.get(['crm_dom_debug', 'crm_whatsapp_chats', 'crm_last_error'], (res) => {
+    chrome.storage.local.get(['crm_dom_debug', 'crm_whatsapp_chats', 'crm_last_error', 'crm_inbox_dom'], (res) => {
       const debugPre = document.getElementById('debug-pre');
       if (debugPre) {
         const stats = {
           storage_chats_count: res.crm_whatsapp_chats ? res.crm_whatsapp_chats.length : 0,
           last_error: res.crm_last_error || "Nenhum erro registrado",
+          inbox_dom: res.crm_inbox_dom || "Sem dados de DOM ainda",
           chats_sample: res.crm_whatsapp_chats ? res.crm_whatsapp_chats.slice(0, 3) : [],
           dom_debug: res.crm_dom_debug || "Sem dados coletados ainda"
         };
@@ -491,8 +492,19 @@ function renderBoard() {
         if (isStagesGrouping) await updateLeadStage(phone, st.key, name);
         else await updateLeadLabel(phone, st.key);
       }
+    });
   });
-});
+
+  // Dump DOM structure of INBOX for debugging
+  const inboxCol = document.querySelector('[data-stage="inbox"]');
+  if (inboxCol) {
+    const cardsContainer = inboxCol.querySelector('.kanban-cards-container');
+    const childCount = cardsContainer ? cardsContainer.children.length : 0;
+    const firstChildHtml = (cardsContainer && cardsContainer.children.length > 0) 
+      ? cardsContainer.children[0].outerHTML 
+      : 'Sem filhos';
+    chrome.storage.local.set({ crm_inbox_dom: `Filhos: ${childCount} | Primeiro: ${firstChildHtml}` });
+  }
 }
 
 async function deleteLeadFromServer(phone) {
