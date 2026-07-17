@@ -872,15 +872,15 @@ function safeSendMessage(message, callback) {
     if (chrome.runtime && chrome.runtime.id) {
       chrome.runtime.sendMessage(message, (response) => {
         if (chrome.runtime.lastError) {
-          console.warn('[CRM] safeSendMessage runtime error:', chrome.runtime.lastError.message);
+          console.log('[CRM] safeSendMessage runtime error:', chrome.runtime.lastError.message);
         }
         if (callback) callback(response);
       });
     } else {
-      console.warn('[CRM] Não foi possível enviar mensagem: Contexto de extensão inválido ou recarregado.');
+      console.log('[CRM] Não foi possível enviar mensagem: Contexto de extensão inválido ou recarregado.');
     }
   } catch (e) {
-    console.warn('[CRM] Erro capturado no envio de mensagem (contexto inválido):', e.message);
+    console.log('[CRM] Erro capturado no envio de mensagem (contexto inválido):', e.message);
   }
 }
 
