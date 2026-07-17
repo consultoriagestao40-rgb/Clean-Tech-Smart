@@ -866,6 +866,24 @@ function applyChatListFilter() {
   });
 }
 
+// Helper: Safely send message to extension background, catching context invalidation
+function safeSendMessage(message, callback) {
+  try {
+    if (chrome.runtime && chrome.runtime.id) {
+      chrome.runtime.sendMessage(message, (response) => {
+        if (chrome.runtime.lastError) {
+          console.warn('[CRM] safeSendMessage runtime error:', chrome.runtime.lastError.message);
+        }
+        if (callback) callback(response);
+      });
+    } else {
+      console.warn('[CRM] Não foi possível enviar mensagem: Contexto de extensão inválido ou recarregado.');
+    }
+  } catch (e) {
+    console.warn('[CRM] Erro capturado no envio de mensagem (contexto inválido):', e.message);
+  }
+}
+
 // Left vertical toolbar manager
 function injectLeftToolbar() {
   if (document.getElementById('crm-left-toolbar-root') || !crmToken) return;
@@ -900,7 +918,7 @@ function injectLeftToolbar() {
 
   // Opens the standalone crm.html page in a separate browser tab
   toolbar.querySelector('#crm-left-btn-funnel').addEventListener('click', () => {
-    chrome.runtime.sendMessage({ action: 'openKanbanTab' });
+    safeSendMessage({ action: 'openKanbanTab' });
   });
 
   toolbar.querySelector('#crm-left-btn-sidebar').addEventListener('click', () => {
@@ -1150,7 +1168,7 @@ async function handleSaveLead(e) {
       setTimeout(() => { statusDiv.innerText = ''; }, 3000);
 
       if (next_contact_at) {
-        chrome.runtime.sendMessage({
+        safeSendMessage({
           action: 'scheduleReminder',
           phone: currentPhone,
           name: name || currentPhone,

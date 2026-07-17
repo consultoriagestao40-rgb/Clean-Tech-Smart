@@ -506,7 +506,12 @@ function renderBoard() {
       const first = cardsContainer.children[0];
       const rect = first.getBoundingClientRect();
       const style = window.getComputedStyle(first);
-      layoutInfo = `display=${style.display}, visibility=${style.visibility}, clientSize=${rect.width}x${rect.height}, offsetSize=${first.offsetWidth}x${first.offsetHeight}, html=${first.outerHTML.substring(0, 300)}`;
+      const body = first.querySelector('.ws-card-body');
+      const toolbar = first.querySelector('.ws-card-toolbar');
+      const bodyStyle = body ? window.getComputedStyle(body) : null;
+      const toolbarStyle = toolbar ? window.getComputedStyle(toolbar) : null;
+      
+      layoutInfo = `display=${style.display}, vis=${style.visibility}, size=${rect.width}x${rect.height}, bodyDisplay=${bodyStyle ? bodyStyle.display : 'no-body'}, bodyH=${bodyStyle ? bodyStyle.height : '0'}, tbDisplay=${toolbarStyle ? toolbarStyle.display : 'no-tb'}, tbH=${toolbarStyle ? toolbarStyle.height : '0'}`;
     }
     
     chrome.storage.local.set({ crm_inbox_dom: `Filhos: ${childCount} | Layout: ${layoutInfo}` });
