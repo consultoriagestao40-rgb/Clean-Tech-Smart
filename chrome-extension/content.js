@@ -1502,6 +1502,26 @@ function sendWhatsAppMessage(text) {
 function getActiveChatMessages() {
   const messages = [];
 
+  // Diagnostic dump of message elements in WhatsApp Web DOM
+  try {
+    const allContainers = document.querySelectorAll('[data-testid="msg-container"], [data-testid="incoming-msg"], [data-testid="outgoing-msg"], .message-in, .message-out');
+    const msgDetails = [];
+    allContainers.forEach((c, idx) => {
+      if (idx < 3) {
+        msgDetails.push({
+          idx,
+          tag: c.tagName,
+          testid: c.getAttribute('data-testid'),
+          className: c.className,
+          text: c.innerText ? c.innerText.substring(0, 50).replace(/\n/g, ' ') : ''
+        });
+      }
+    });
+    chrome.storage.local.set({ crm_msg_dom_debug: `Containers: ${allContainers.length} | Top: ${JSON.stringify(msgDetails)}` });
+  } catch (e) {
+    console.log('[CRM] Erro ao gravar debug de mensagens:', e.message);
+  }
+
   // Strategy 1: Direct scan for WhatsApp message testids.
   // These testids ONLY appear in conversation panels, NEVER in the sidebar.
   // Safe to scan entire document.
