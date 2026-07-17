@@ -594,29 +594,54 @@ function startChatObserver() {
         }
       }
       
-      // Inspect #main area for message structure
+      // Inspect #main area for message structure (may not exist in Business Web)
       const mainEl = document.getElementById('main');
-      if (mainEl) {
-        debug.has_main = true;
-        const msgContainers = mainEl.querySelectorAll('[data-testid="msg-container"], [data-testid="incoming-msg"], [data-testid="outgoing-msg"]');
-        debug.msg_containers_count = msgContainers.length;
-        const msgRows = mainEl.querySelectorAll('[role="row"]');
-        debug.msg_rows_count = msgRows.length;
-        const msgLtr = mainEl.querySelectorAll('span[dir="ltr"]');
-        debug.msg_ltr_count = msgLtr.length;
-        const msgIn = mainEl.querySelectorAll('.message-in');
-        debug.msg_in_count = msgIn.length;
-        if (msgRows.length > 0) {
-          debug.first_msg_row_html = msgRows[0].outerHTML.substring(0, 300);
-        }
-        if (msgLtr.length > 0) {
-          debug.first_ltr_text = msgLtr[0].innerText.substring(0, 100);
-        }
-        // Check testids inside main
-        const mainTestIds = Array.from(mainEl.querySelectorAll('[data-testid]')).slice(0, 10).map(el => el.getAttribute('data-testid'));
-        debug.main_testids = [...new Set(mainTestIds)];
-      } else {
-        debug.has_main = false;
+      debug.has_main = !!mainEl;
+
+      // Search for conversation panel alternatives in WhatsApp Business Web
+      const convPanelCandidates = [
+        document.querySelector('[role="main"]'),
+        document.querySelector('[data-testid="conversation-panel-messages"]'),
+        document.querySelector('[data-testid="conversation-panel"]'),
+        document.querySelector('[data-testid="msg-list"]'),
+        document.querySelector('[aria-label="Lista de mensagens"]'),
+        document.querySelector('[aria-label="Message list"]'),
+        document.querySelector('[aria-label*="mensagen"]'),
+        document.querySelector('[aria-label*="message"]'),
+      ];
+      const foundConvPanel = convPanelCandidates.find(el => el !== null);
+      debug.conv_panel_found = !!foundConvPanel;
+      if (foundConvPanel) {
+        debug.conv_panel_tag = foundConvPanel.tagName;
+        debug.conv_panel_aria = foundConvPanel.getAttribute('aria-label');
+        debug.conv_panel_testid = foundConvPanel.getAttribute('data-testid');
+        debug.conv_panel_role = foundConvPanel.getAttribute('role');
+      }
+
+      // Scan full document for message-related testids (not just pane-side)
+      const globalMsgTestIds = Array.from(document.querySelectorAll('[data-testid]'))
+        .map(el => el.getAttribute('data-testid'))
+        .filter(id => id && (id.includes('msg') || id.includes('message') || id.includes('conversation') || id.includes('bubble')));
+      debug.global_msg_testids = [...new Set(globalMsgTestIds)].slice(0, 15);
+
+      // Find all data-tab elements (WhatsApp Business Web panels)
+      const dataTabs = Array.from(document.querySelectorAll('[data-tab]')).map(el => ({
+        tab: el.getAttribute('data-tab'),
+        testid: el.getAttribute('data-testid'),
+        id: el.id,
+        role: el.getAttribute('role'),
+        childrenCount: el.children.length
+      }));
+      debug.data_tabs = dataTabs.slice(0, 8);
+
+      // Check for large divs that might be the conversation panel
+      const appDiv = document.getElementById('app');
+      if (appDiv) {
+        const topChildren = Array.from(appDiv.children).map(c => ({
+          id: c.id, tag: c.tagName, role: c.getAttribute('role'),
+          testid: c.getAttribute('data-testid'), children: c.children.length
+        }));
+        debug.app_top_children = topChildren;
       }
 
       chrome.storage.local.set({ crm_dom_debug: debug });
