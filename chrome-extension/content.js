@@ -675,19 +675,35 @@ function detectActiveChat() {
     }
   }
 
-  // 2. Fetch name from DOM header
-  const headerNameElement = document.querySelector('#main header span[title]') || 
-                            document.querySelector('#main header div[title]') || 
-                            document.querySelector('[data-testid="conversation-info"] span[title]');
+  // 2. Fetch name from DOM header (multiple fallbacks for Business Web)
+  const headerNameElement = 
+    document.querySelector('#main header span[title]') || 
+    document.querySelector('#main header div[title]') || 
+    document.querySelector('[data-testid="conversation-info-header-chat-title"] span') ||
+    document.querySelector('[data-testid="conversation-header"] span[dir="auto"]') ||
+    document.querySelector('header span[dir="auto"]') ||
+    document.querySelector('[data-testid="conversation-info"] span[title]');
                             
-  const chatName = headerNameElement ? (headerNameElement.getAttribute('title') || headerNameElement.innerText) : '';
+  const chatName = headerNameElement ? (headerNameElement.getAttribute('title') || headerNameElement.innerText || '').trim() : '';
 
-  // Fallback DOM detection if hash is not present
+  // 3. Fallback DOM detection via selected list item (Business Web)
+  if (!detectedPhone) {
+    // Check the selected row in the chat list (aria-selected="true")
+    const selectedRow = document.querySelector('[data-testid^="list-item-"] [aria-selected="true"]')?.closest('[data-testid^="list-item-"]') ||
+                        document.querySelector('[aria-selected="true"]')?.closest('[data-testid^="list-item-"]');
+    if (selectedRow) {
+      const img = selectedRow.querySelector('img[src*="%40c.us"], img[src*="u="]');
+      if (img) {
+        const match = img.src.match(/u=(\d+)%40c\.us/);
+        if (match) detectedPhone = match[1];
+      }
+    }
+  }
+
+  // 4. Fallback via data-id (WhatsApp personal)
   if (!detectedPhone) {
     const selectedChatListItem = document.querySelector('[data-testid="chat-list-item"] [aria-selected="true"]') ||
-                                 document.querySelector('[data-testid="chat-list-item"] [class*="active"]') ||
                                  document.querySelector('div[data-id*="@c.us"]');
-                                 
     if (selectedChatListItem) {
       const dataId = selectedChatListItem.closest('[data-id]')?.getAttribute('data-id') || '';
       if (dataId.endsWith('@c.us')) {
@@ -700,10 +716,22 @@ function detectActiveChat() {
     detectedPhone = chatName.replace(/\D/g, '');
   }
 
+  // Always sync the active chat name for message matching
+  if (chatName && chatName !== currentName) {
+    try {
+      if (chrome.runtime?.id) {
+        chrome.storage.local.set({ crm_whatsapp_active_name: chatName.toLowerCase() });
+      }
+    } catch (e) {}
+  }
+
   if (detectedPhone && detectedPhone !== currentPhone) {
     currentPhone = detectedPhone;
     currentName = chatName || detectedPhone;
     loadContactData(currentPhone, currentName);
+  } else if (!detectedPhone && chatName && chatName !== currentName) {
+    // We have a name but no phone yet - still update currentName for message matching
+    currentName = chatName;
   }
 }
 
@@ -1333,7 +1361,14 @@ function extractChatFromRow(row, chats) {
   const badgeNode = row.querySelector('[aria-label*="não lida"], [aria-label*="unread"], [class*="unread"]');
   const unreadCount = badgeNode ? parseInt(badgeNode.innerText.replace(/\D/g, '')) || 0 : 0;
 
-  chats.push({ name, phone, lastMessage, unreadCount });
+  // PHOTO: Extract profile picture URL
+  let photo = '';
+  const imgEl = row.querySelector('img[src*="pps.whatsapp.net"], img[src*="whatsapp.net"], img[src*="media"]');
+  if (imgEl && imgEl.src && !imgEl.src.includes('undefined')) {
+    photo = imgEl.src;
+  }
+
+  chats.push({ name, phone, lastMessage, unreadCount, photo });
 }
 
 function selectChatInBackground(phone) {

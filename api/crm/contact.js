@@ -140,7 +140,7 @@ export default async function handler(req, res) {
         });
 
       } else if (req.method === 'POST') {
-        const { phone, stage, value, assigned_to, next_contact_at, name } = req.body || {};
+        const { phone, stage, value, assigned_to, next_contact_at, name, label } = req.body || {};
         if (!phone) {
           return res.status(400).json({ error: 'Número de telefone é obrigatório' });
         }
@@ -149,25 +149,39 @@ export default async function handler(req, res) {
 
         // Check if lead exists
         const checkRes = await dbClient.query('SELECT * FROM leads WHERE phone = $1', [cleanPhone]);
+
+        let currentLead;
         if (checkRes.rows.length === 0) {
-          return res.status(404).json({ error: 'Lead não encontrado' });
+          // UPSERT: Create lead if it doesn't exist (common for WhatsApp contacts dragged from INBOX)
+          const matchedClient = await findClientByPhone(dbClient, cleanPhone);
+          const initialName = name || (matchedClient ? matchedClient.name : `Lead (${cleanPhone})`);
+          const initialStage = stage || 'inbox';
+          const insertRes = await dbClient.query(
+            `INSERT INTO leads (phone, name, stage, value, assigned_to) 
+             VALUES ($1, $2, $3, 0.00, $4) 
+             RETURNING *`,
+            [cleanPhone, initialName, initialStage, currentUser.userId]
+          );
+          currentLead = insertRes.rows[0];
+          return res.status(200).json({ lead: currentLead });
         }
 
-        const currentLead = checkRes.rows[0];
+        currentLead = checkRes.rows[0];
 
         // Update fields if provided
         const updatedName = name !== undefined ? name : currentLead.name;
         const updatedStage = stage !== undefined ? stage : currentLead.stage;
+        const updatedLabel = label !== undefined ? label : currentLead.label;
         const updatedValue = value !== undefined ? (value === "" || value === null ? 0.00 : parseFloat(value)) : currentLead.value;
         const updatedAssigned = assigned_to !== undefined ? (assigned_to === "" || assigned_to === null ? null : Number(assigned_to)) : currentLead.assigned_to;
         const updatedNextContact = next_contact_at !== undefined ? (next_contact_at === "" || next_contact_at === null ? null : new Date(next_contact_at)) : currentLead.next_contact_at;
 
         const updateRes = await dbClient.query(
           `UPDATE leads 
-           SET name = $1, stage = $2, value = $3, assigned_to = $4, next_contact_at = $5, updated_at = NOW() 
-           WHERE phone = $6 
+           SET name = $1, stage = $2, value = $3, assigned_to = $4, next_contact_at = $5, label = $6, updated_at = NOW() 
+           WHERE phone = $7 
            RETURNING *`,
-          [updatedName, updatedStage, updatedValue, updatedAssigned, updatedNextContact, cleanPhone]
+          [updatedName, updatedStage, updatedValue, updatedAssigned, updatedNextContact, updatedLabel, cleanPhone]
         );
 
         return res.status(200).json({ lead: updateRes.rows[0] });

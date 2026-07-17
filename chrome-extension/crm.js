@@ -84,7 +84,19 @@ function initApp() {
   loadBoardData();
 
   // Fast interval to refresh chat lists in background
-  setInterval(loadWhatsAppChatsList, 10000);
+  // Also refresh board automatically every 15s to show new WhatsApp conversations
+  let lastChatsCount = 0;
+  setInterval(async () => {
+    await loadWhatsAppChatsList();
+    // If new chats arrived, re-render the board to show them in INBOX
+    if (whatsAppChats.length !== lastChatsCount) {
+      lastChatsCount = whatsAppChats.length;
+      renderBoard();
+    }
+  }, 10000);
+
+  // Full board refresh every 30s (includes server leads)
+  setInterval(loadBoardData, 30000);
 
   // Debug listener to show DOM statistics at the bottom of the Kanban board
   setInterval(() => {
@@ -341,11 +353,18 @@ function renderBoard() {
       card.className = 'kanban-card';
       card.draggable = true;
       card.setAttribute('data-phone', lead.phone);
+
+      // Profile photo: use WhatsApp photo if available, otherwise initials
+      const chatData = whatsAppChats.find(c => c.phone === lead.phone);
+      const photoUrl = (chatData && chatData.photo) ? chatData.photo : '';
+      const avatarHtml = photoUrl
+        ? `<img src="${photoUrl}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div class="kanban-card-avatar" style="display:none;">${initials}</div>`
+        : `<div class="kanban-card-avatar">${initials}</div>`;
       
       card.innerHTML = `
         <div class="kanban-card-top">
           <div class="kanban-card-avatar-wrapper">
-            <div class="kanban-card-avatar">${initials}</div>
+            ${avatarHtml}
             <div style="overflow: hidden; flex: 1;">
               <div class="kanban-card-name" title="${lead.name || lead.phone}">${lead.name || lead.phone}</div>
               <div class="kanban-card-message-preview">
@@ -653,9 +672,9 @@ function openChatOverlay(lead) {
   chrome.storage.local.set({ crm_pending_open_chat: lead.phone });
   sendToWhatsAppTab({ action: "openChat", phone: lead.phone });
 
-  // Polling sync - start after 1.5s to allow WhatsApp to load the new conversation
-  const chatSyncInterval = setInterval(syncChatMessages, 1000);
-  setTimeout(syncChatMessages, 1500);
+  // Polling sync - start after 3s to allow WhatsApp to fully load the conversation
+  const chatSyncInterval = setInterval(syncChatMessages, 1200);
+  setTimeout(syncChatMessages, 3000);
 }
 
 // ---------------- DIALOG MODALS ----------------
