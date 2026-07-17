@@ -500,10 +500,16 @@ function renderBoard() {
   if (inboxCol) {
     const cardsContainer = inboxCol.querySelector('.kanban-cards-container');
     const childCount = cardsContainer ? cardsContainer.children.length : 0;
-    const firstChildHtml = (cardsContainer && cardsContainer.children.length > 0) 
-      ? cardsContainer.children[0].outerHTML 
-      : 'Sem filhos';
-    chrome.storage.local.set({ crm_inbox_dom: `Filhos: ${childCount} | Primeiro: ${firstChildHtml}` });
+    
+    let layoutInfo = 'Sem filhos';
+    if (cardsContainer && cardsContainer.children.length > 0) {
+      const first = cardsContainer.children[0];
+      const rect = first.getBoundingClientRect();
+      const style = window.getComputedStyle(first);
+      layoutInfo = `display=${style.display}, visibility=${style.visibility}, clientSize=${rect.width}x${rect.height}, offsetSize=${first.offsetWidth}x${first.offsetHeight}, html=${first.outerHTML.substring(0, 300)}`;
+    }
+    
+    chrome.storage.local.set({ crm_inbox_dom: `Filhos: ${childCount} | Layout: ${layoutInfo}` });
   }
 }
 
