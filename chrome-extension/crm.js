@@ -325,73 +325,79 @@ function renderBoard() {
     stageLeads.forEach(lead => {
       const initials = getInitialsName(lead.name);
       const val = parseFloat(lead.value) || 0;
-      const formattedVal = val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const formattedVal = val > 0
+        ? (val >= 1000 ? `R$ ${(val/1000).toFixed(1)}K` : `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`)
+        : '';
       
-      let reminderBadge = '';
-      if (lead.next_contact_at) {
-        const dateStr = new Date(lead.next_contact_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-        reminderBadge = `
-          <div class="kanban-card-reminder">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-            <span>${dateStr}</span>
-          </div>
-        `;
-      }
+      const stageColors = {
+        inbox: '#64748b',
+        lead: '#0d9488',
+        tratar: '#f97316',
+        atendimento: '#2563eb',
+        programado: '#8b5cf6',
+        a_faturar: '#db2777',
+        faturado: '#10b981',
+        perdido: '#ef4444'
+      };
+      const borderColor = stageColors[st.key] || '#0d9488';
 
-      const card = document.createElement('div');
-      card.className = 'kanban-card';
-      card.draggable = true;
-      card.setAttribute('data-phone', lead.phone);
-
-      // Profile photo: use WhatsApp photo if available, otherwise initials
+      // Profile photo from WhatsApp
       const chatData = whatsAppChats.find(c => c.phone === lead.phone);
       const photoUrl = (chatData && chatData.photo) ? chatData.photo : '';
       const avatarHtml = photoUrl
-        ? `<img src="${photoUrl}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div class="kanban-card-avatar" style="display:none;">${initials}</div>`
-        : `<div class="kanban-card-avatar">${initials}</div>`;
+        ? `<img src="${photoUrl}" class="ws-card-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><div class="ws-card-initials" style="display:none;">${initials}</div>`
+        : `<div class="ws-card-initials">${initials}</div>`;
       
-      card.innerHTML = `
-        <div class="kanban-card-top">
-          <div class="kanban-card-avatar-wrapper">
-            ${avatarHtml}
-            <div style="overflow: hidden; flex: 1;">
-              <div class="kanban-card-name" title="${lead.name || lead.phone}">${lead.name || lead.phone}</div>
-              <div class="kanban-card-message-preview">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5" style="margin-right: 4px; flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span title="${lead.lastMessage}">${lead.lastMessage}</span>
-              </div>
-            </div>
-          </div>
-          <div class="kanban-card-value">R$ ${formattedVal}</div>
-        </div>
-        
-        ${reminderBadge}
+      const lastMsg = (chatData && chatData.lastMessage) ? chatData.lastMessage : (lead.lastMessage || '');
+      const unreadBadge = lead.unreadCount > 0 ? `<span class="ws-unread-badge">${lead.unreadCount}</span>` : '';
 
-        <div class="kanban-card-bottom">
-          <div class="kanban-card-toolbar">
-            <!-- 5 Standard tool icons -->
-            <button class="kanban-card-icon-btn btn-action-note" title="Adicionar Nota" data-phone="${lead.phone}">
-              <svg class="icon-note" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-            </button>
-            <button class="kanban-card-icon-btn btn-action-reminder" title="Agendar Retorno" data-phone="${lead.phone}">
-              <svg class="icon-reminder" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" x2="16" y1="2" x2="16" y2="6"/><line x1="8" x2="8" y1="2" x2="8" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><circle cx="16" cy="16" r="4"/><polyline points="16 14 16 16 17 17"/></svg>
-            </button>
-            <button class="kanban-card-icon-btn btn-action-chat" title="Abrir Conversa" data-phone="${lead.phone}" style="position: relative;">
-              <svg class="icon-chat" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              ${lead.unreadCount > 0 ? `<div class="kanban-card-unread-badge-icon">${lead.unreadCount}</div>` : ''}
-            </button>
-            <button class="kanban-card-icon-btn btn-action-value" title="Atualizar Valor" data-phone="${lead.phone}">
-              <svg class="icon-value" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M10 15h4"/></svg>
-            </button>
-            <button class="kanban-card-icon-btn btn-action-move" title="Definir Etapa / Etiqueta" data-phone="${lead.phone}">
-              <svg class="icon-move" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12l4 6-4 6H4l4-6-4-6z"/></svg>
-            </button>
-            
-            <!-- Quick delete button on far right -->
-            <button class="kanban-card-icon-btn btn-action-delete" title="Excluir Lead" data-phone="${lead.phone}" style="margin-left: auto;">
-              <svg class="icon-delete" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-            </button>
+      // Reminder badge
+      let reminderHtml = '';
+      if (lead.next_contact_at) {
+        const d = new Date(lead.next_contact_at);
+        const ds = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        reminderHtml = `<div class="ws-card-reminder">⏰ ${ds}</div>`;
+      }
+
+      const card = document.createElement('div');
+      card.className = 'ws-card';
+      card.draggable = true;
+      card.setAttribute('data-phone', lead.phone);
+      card.style.borderLeft = `3px solid ${borderColor}`;
+
+      card.innerHTML = `
+        <div class="ws-card-body">
+          <div class="ws-card-avatar-col">
+            ${avatarHtml}
+            ${unreadBadge}
           </div>
+          <div class="ws-card-info">
+            <div class="ws-card-name" title="${lead.name || lead.phone}">${lead.name || lead.phone}</div>
+            <div class="ws-card-preview">${lastMsg}</div>
+            ${reminderHtml}
+          </div>
+          ${formattedVal ? `<div class="ws-card-value">${formattedVal}</div>` : ''}
+        </div>
+        <div class="ws-card-toolbar">
+          <button class="ws-btn btn-action-note" title="Nota" data-phone="${lead.phone}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+          </button>
+          <button class="ws-btn btn-action-reminder" title="Agendar" data-phone="${lead.phone}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </button>
+          <button class="ws-btn btn-action-chat ws-btn-whatsapp" title="WhatsApp" data-phone="${lead.phone}" style="position:relative;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            ${lead.unreadCount > 0 ? `<span class="ws-btn-badge">${lead.unreadCount}</span>` : ''}
+          </button>
+          <button class="ws-btn btn-action-value" title="Valor" data-phone="${lead.phone}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </button>
+          <button class="ws-btn btn-action-move" title="Mover etapa" data-phone="${lead.phone}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button class="ws-btn btn-action-delete ws-btn-danger" title="Excluir" data-phone="${lead.phone}" style="margin-left:auto;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
         </div>
       `;
 
@@ -402,7 +408,10 @@ function renderBoard() {
         e.dataTransfer.setData('text/name', lead.name || '');
         card.style.opacity = '0.5';
       });
-      card.addEventListener('dragend', () => { isDragging = false; card.style.opacity = '1'; });
+      card.addEventListener('dragend', () => {
+        isDragging = false;
+        card.style.opacity = '1';
+      });
 
       card.querySelector('.btn-action-note').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -426,13 +435,13 @@ function renderBoard() {
       });
       card.querySelector('.btn-action-delete').addEventListener('click', (e) => {
         e.stopPropagation();
-        if (confirm(`Tem certeza que deseja excluir o lead "${lead.name || lead.phone}"?`)) {
+        if (confirm(`Excluir "${lead.name || lead.phone}"?`)) {
           deleteLeadFromServer(lead.phone);
         }
       });
 
       card.addEventListener('click', (e) => {
-        if (e.target.closest('.kanban-card-icon-btn')) return;
+        if (e.target.closest('.ws-btn')) return;
         openChatOverlay(lead);
       });
 
