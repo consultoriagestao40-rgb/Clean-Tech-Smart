@@ -519,11 +519,20 @@ function startChatObserver() {
       }
       
       // Sync current active chat messages
-      if (currentPhone) {
+      if (currentPhone || currentName) {
         const messages = getActiveChatMessages();
+        // Get the active conversation name from WhatsApp header for name-matching
+        const activeHeaderName = (
+          document.querySelector('[data-testid="conversation-info-header"] [data-testid="conversation-info-header-chat-title"] span') ||
+          document.querySelector('header [data-testid="chatlist-header"]') ||
+          document.querySelector('header span[title]') ||
+          document.querySelector('header span[dir="auto"]')
+        )?.innerText?.trim() || currentName || '';
+
         chrome.storage.local.set({
           crm_whatsapp_messages: messages,
-          crm_whatsapp_active_phone: currentPhone
+          crm_whatsapp_active_phone: currentPhone,
+          crm_whatsapp_active_name: activeHeaderName.toLowerCase()
         });
       }
 

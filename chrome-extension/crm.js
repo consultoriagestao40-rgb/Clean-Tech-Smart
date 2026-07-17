@@ -622,13 +622,26 @@ function openChatOverlay(lead) {
     } else {
       // Fallback to storage bridge messages cache
       const storageRes = await new Promise(resolve => {
-        chrome.storage.local.get(['crm_whatsapp_messages', 'crm_whatsapp_active_phone'], resolve);
+        chrome.storage.local.get(['crm_whatsapp_messages', 'crm_whatsapp_active_phone', 'crm_whatsapp_active_name'], resolve);
       });
       const activePhoneClean = (storageRes.crm_whatsapp_active_phone || '').replace(/\D/g, '');
       const leadPhoneClean = lead.phone.replace(/\D/g, '');
-      // For name-keyed chats (no real phone), always use the cached messages if the tab is active
+      const activeName = (storageRes.crm_whatsapp_active_name || '').toLowerCase();
+
+      // For name-keyed chats, match by name instead of phone
       const isNameKey = lead.phone && lead.phone.startsWith('name_');
-      const phoneMatch = isNameKey ? true : (leadPhoneClean.length > 0 && activePhoneClean.endsWith(leadPhoneClean.slice(-8)));
+      let phoneMatch = false;
+      if (isNameKey) {
+        // The lead name must match the currently active WhatsApp conversation name
+        const leadNameClean = (lead.name || '').toLowerCase();
+        // Partial match: first 8 chars of lead name in active name, or vice versa
+        phoneMatch = activeName.length > 0 && (
+          activeName.includes(leadNameClean.substring(0, 8)) ||
+          leadNameClean.includes(activeName.substring(0, 8))
+        );
+      } else {
+        phoneMatch = leadPhoneClean.length > 0 && activePhoneClean.endsWith(leadPhoneClean.slice(-8));
+      }
       if (storageRes.crm_whatsapp_messages && phoneMatch) {
         messages = storageRes.crm_whatsapp_messages;
       }
@@ -658,12 +671,14 @@ function openChatOverlay(lead) {
   };
 
   // Open Chat in background tab and trigger storage bridge
+  // First clear cached messages to avoid showing stale conversation
+  chrome.storage.local.set({ crm_whatsapp_messages: [], crm_whatsapp_active_name: '' });
   chrome.storage.local.set({ crm_pending_open_chat: lead.phone });
   sendToWhatsAppTab({ action: "openChat", phone: lead.phone });
 
-  // Polling sync
+  // Polling sync - start after 1.5s to allow WhatsApp to load the new conversation
   const chatSyncInterval = setInterval(syncChatMessages, 1000);
-  setTimeout(syncChatMessages, 500);
+  setTimeout(syncChatMessages, 1500);
 }
 
 // ---------------- DIALOG MODALS ----------------
