@@ -1,5 +1,17 @@
 // crm.js
 
+// Global error handlers to log and display errors in Kanban board
+window.onerror = function(message, source, lineno, colno, error) {
+  const errStr = `${message} at ${source}:${lineno}:${colno}`;
+  chrome.storage.local.set({ crm_last_error: errStr });
+  console.error('[CRM Global Error]', error || message);
+};
+window.addEventListener('unhandledrejection', function(event) {
+  const errStr = `Unhandled Promise Rejection: ${event.reason}`;
+  chrome.storage.local.set({ crm_last_error: errStr });
+  console.error('[CRM Promise Error]', event.reason);
+});
+
 let crmServerUrl = '';
 let crmToken = '';
 let crmUser = null;
@@ -89,11 +101,12 @@ function initApp() {
 
   // Debug listener to show DOM statistics at the bottom of the Kanban board
   setInterval(() => {
-    chrome.storage.local.get(['crm_dom_debug', 'crm_whatsapp_chats'], (res) => {
+    chrome.storage.local.get(['crm_dom_debug', 'crm_whatsapp_chats', 'crm_last_error'], (res) => {
       const debugPre = document.getElementById('debug-pre');
       if (debugPre) {
         const stats = {
           storage_chats_count: res.crm_whatsapp_chats ? res.crm_whatsapp_chats.length : 0,
+          last_error: res.crm_last_error || "Nenhum erro registrado",
           chats_sample: res.crm_whatsapp_chats ? res.crm_whatsapp_chats.slice(0, 3) : [],
           dom_debug: res.crm_dom_debug || "Sem dados coletados ainda"
         };
@@ -323,11 +336,12 @@ function renderBoard() {
     // Render cards inside column container
     const cardsContainer = colDiv.querySelector('.kanban-cards-container');
     stageLeads.forEach(lead => {
-      const initials = getInitialsName(lead.name);
-      const val = parseFloat(lead.value) || 0;
-      const formattedVal = val > 0
-        ? (val >= 1000 ? `R$ ${(val/1000).toFixed(1)}K` : `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`)
-        : '';
+      try {
+        const initials = getInitialsName(lead.name);
+        const val = parseFloat(lead.value) || 0;
+        const formattedVal = val > 0
+          ? (val >= 1000 ? `R$ ${(val/1000).toFixed(1)}K` : `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`)
+          : '';
       
       const stageColors = {
         inbox: '#64748b',
@@ -355,8 +369,10 @@ function renderBoard() {
       let reminderHtml = '';
       if (lead.next_contact_at) {
         const d = new Date(lead.next_contact_at);
-        const ds = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        reminderHtml = `<div class="ws-card-reminder">⏰ ${ds}</div>`;
+        if (!isNaN(d.getTime())) {
+          const ds = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          reminderHtml = `<div class="ws-card-reminder">⏰ ${ds}</div>`;
+        }
       }
 
       const card = document.createElement('div');
@@ -446,6 +462,9 @@ function renderBoard() {
       });
 
       cardsContainer.appendChild(card);
+      } catch (err) {
+        console.error('[CRM] Erro ao renderizar card do lead:', lead, err);
+      }
     });
 
     // Column drop zone with visual feedback
