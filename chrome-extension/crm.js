@@ -430,6 +430,7 @@ function renderBoard() {
 
       card.addEventListener('dragstart', (e) => {
         isDragging = true;
+        document.body.classList.add('dragging-active');
         e.dataTransfer.setData('text/plain', lead.phone);
         e.dataTransfer.setData('text/source', st.key);
         e.dataTransfer.setData('text/name', lead.name || '');
@@ -437,6 +438,7 @@ function renderBoard() {
       });
       card.addEventListener('dragend', () => {
         isDragging = false;
+        document.body.classList.remove('dragging-active');
         card.style.opacity = '1';
       });
 
@@ -485,6 +487,7 @@ function renderBoard() {
     colDiv.addEventListener('drop', async (e) => {
       e.preventDefault();
       isDragging = false;
+      document.body.classList.remove('dragging-active');
       colDiv.style.background = '';
       const phone = e.dataTransfer.getData('text/plain');
       const source = e.dataTransfer.getData('text/source');

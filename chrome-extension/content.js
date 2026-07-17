@@ -1363,11 +1363,23 @@ function extractChatFromRow(row, chats) {
   const skipped = ['Menu', 'Nova conversa', 'Configurações', 'Perfil', 'Status', 'Canais', 'Comunidades', 'Novo grupo', 'Arquivadas', 'Favoritas'];
   if (skipped.some(s => name.toLowerCase().includes(s.toLowerCase()))) return;
 
-  // PHONE: Try data-id first, then profile image URL
+  // PHONE: Try data-testid first (very reliable on both personal/business Web), then data-id, then profile image URL
   let phone = '';
-  const withDataId = row.querySelector('[data-id*="@c.us"]') || row.closest('[data-id*="@c.us"]');
-  if (withDataId) {
-    phone = (withDataId.getAttribute('data-id') || '').split('@')[0].replace(/\D/g, '');
+  const testid = row.getAttribute('data-testid') || '';
+  if (testid) {
+    if (testid.includes('@g.us') || testid.includes('-group')) {
+      return; // Skip groups
+    }
+    if (testid.includes('@c.us')) {
+      phone = testid.replace('list-item-', '').split('@')[0].replace(/\D/g, '');
+    }
+  }
+
+  if (!phone) {
+    const withDataId = row.querySelector('[data-id*="@c.us"]') || row.closest('[data-id*="@c.us"]');
+    if (withDataId) {
+      phone = (withDataId.getAttribute('data-id') || '').split('@')[0].replace(/\D/g, '');
+    }
   }
 
   if (!phone) {

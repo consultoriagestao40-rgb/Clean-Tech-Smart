@@ -485,6 +485,9 @@ body, html {
   transform: translateY(-1px);
 }
 .ws-card.dragging { opacity: 0.5; transform: rotate(1deg); }
+body.dragging-active .ws-card:not(.dragging) {
+  pointer-events: none;
+}
 
 .ws-card-body {
   display: flex;
