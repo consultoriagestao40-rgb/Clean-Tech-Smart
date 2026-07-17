@@ -473,6 +473,7 @@ function renderBoard() {
       cardsContainer.appendChild(card);
       } catch (err) {
         console.error('[CRM] Erro ao renderizar card do lead:', lead, err);
+        chrome.storage.local.set({ crm_last_error: `Render Card Error: ${err.message} \nStack: ${err.stack}` });
       }
     });
 
