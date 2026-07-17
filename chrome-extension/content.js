@@ -500,67 +500,78 @@ function startChatObserver() {
   setInterval(fetchLeadsAndRefresh, 15000);
   
   // Real-time state-sharing loop using local storage
-  setInterval(() => {
-    detectActiveChat();
-    applyChatListFilter();
-    injectHorizontalTabs();
-    
-    // Periodically sync chat list to local storage for crm.html to read
-    const chats = getAllChatsFromDom();
-    if (chats.length > 0) {
-      chrome.storage.local.set({ crm_whatsapp_chats: chats });
-    }
-    
-    // Sync current active chat messages
-    if (currentPhone) {
-      const messages = getActiveChatMessages();
-      chrome.storage.local.set({
-        crm_whatsapp_messages: messages,
-        crm_whatsapp_active_phone: currentPhone
-      });
+  const syncInterval = setInterval(() => {
+    // Guard: stop interval if extension context is no longer valid
+    if (!chrome.runtime?.id) {
+      clearInterval(syncInterval);
+      return;
     }
 
-    // Sync debug stats to local storage for crm.html to display
-    const debug = {};
-    const paneSide = document.getElementById('pane-side');
-    debug.has_pane_side = !!paneSide;
-    
-    if (paneSide) {
-      const elementsWithDataId = paneSide.querySelectorAll('[data-id]');
-      debug.data_id_count = elementsWithDataId.length;
-      if (elementsWithDataId.length > 0) {
-        debug.data_ids_sample = Array.from(elementsWithDataId).slice(0, 5).map(el => el.getAttribute('data-id'));
+    try {
+      detectActiveChat();
+      applyChatListFilter();
+      injectHorizontalTabs();
+      
+      // Periodically sync chat list to local storage for crm.html to read
+      const chats = getAllChatsFromDom();
+      if (chats.length > 0) {
+        chrome.storage.local.set({ crm_whatsapp_chats: chats });
       }
       
-      const elementsWithTestId = paneSide.querySelectorAll('[data-testid]');
-      debug.testid_count = elementsWithTestId.length;
-      if (elementsWithTestId.length > 0) {
-        debug.testids_sample = Array.from(elementsWithTestId).slice(0, 5).map(el => el.getAttribute('data-testid'));
-      }
-      
-      const elementsWithRole = paneSide.querySelectorAll('[role]');
-      debug.role_count = elementsWithRole.length;
-      if (elementsWithRole.length > 0) {
-        debug.roles_sample = Array.from(elementsWithRole).slice(0, 5).map(el => el.getAttribute('role'));
-      }
-
-      const children = paneSide.children;
-      debug.children_count = children.length;
-      if (children.length > 0) {
-        debug.children_tags = Array.from(children).slice(0, 3).map(c => {
-          return {
-            tagName: c.tagName,
-            className: c.className,
-            htmlSlice: c.outerHTML.substring(0, 200)
-          };
+      // Sync current active chat messages
+      if (currentPhone) {
+        const messages = getActiveChatMessages();
+        chrome.storage.local.set({
+          crm_whatsapp_messages: messages,
+          crm_whatsapp_active_phone: currentPhone
         });
       }
+
+      // Sync debug stats to local storage for crm.html to display
+      const debug = {};
+      const paneSide = document.getElementById('pane-side');
+      debug.has_pane_side = !!paneSide;
+      
+      if (paneSide) {
+        const elementsWithDataId = paneSide.querySelectorAll('[data-id]');
+        debug.data_id_count = elementsWithDataId.length;
+        if (elementsWithDataId.length > 0) {
+          debug.data_ids_sample = Array.from(elementsWithDataId).slice(0, 5).map(el => el.getAttribute('data-id'));
+        }
+        
+        const elementsWithTestId = paneSide.querySelectorAll('[data-testid]');
+        debug.testid_count = elementsWithTestId.length;
+        if (elementsWithTestId.length > 0) {
+          debug.testids_sample = Array.from(elementsWithTestId).slice(0, 5).map(el => el.getAttribute('data-testid'));
+        }
+        
+        const elementsWithRole = paneSide.querySelectorAll('[role]');
+        debug.role_count = elementsWithRole.length;
+        if (elementsWithRole.length > 0) {
+          debug.roles_sample = Array.from(elementsWithRole).slice(0, 5).map(el => el.getAttribute('role'));
+        }
+
+        const children = paneSide.children;
+        debug.children_count = children.length;
+        if (children.length > 0) {
+          debug.children_tags = Array.from(children).slice(0, 3).map(c => {
+            return {
+              tagName: c.tagName,
+              className: c.className,
+              htmlSlice: c.outerHTML.substring(0, 200)
+            };
+          });
+        }
+      }
+      
+      const listItems = document.querySelectorAll('[data-testid="chat-list-item"]');
+      debug.list_items_count = listItems.length;
+      
+      chrome.storage.local.set({ crm_dom_debug: debug });
+    } catch (e) {
+      // Extension context invalidated - stop the interval
+      clearInterval(syncInterval);
     }
-    
-    const listItems = document.querySelectorAll('[data-testid="chat-list-item"]');
-    debug.list_items_count = listItems.length;
-    
-    chrome.storage.local.set({ crm_dom_debug: debug });
   }, 2000);
 }
 
