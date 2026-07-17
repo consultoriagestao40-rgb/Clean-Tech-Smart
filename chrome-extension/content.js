@@ -1385,7 +1385,14 @@ function selectChatInBackground(phone) {
 }
 
 function sendWhatsAppMessage(text) {
-  const inputBox = document.querySelector('#main footer div[contenteditable="true"]');
+  // WhatsApp Business Web may not have #main - try multiple selectors
+  const inputBox = 
+    document.querySelector('#main footer div[contenteditable="true"]') ||
+    document.querySelector('[data-testid="conversation-compose-box-input"]') ||
+    document.querySelector('footer div[contenteditable="true"]') ||
+    document.querySelector('div[contenteditable="true"][data-tab]') ||
+    document.querySelector('div[contenteditable="true"]');
+
   if (inputBox) {
     inputBox.focus();
     document.execCommand('insertText', false, text);
@@ -1394,9 +1401,13 @@ function sendWhatsAppMessage(text) {
     inputBox.dispatchEvent(inputEvent);
     
     setTimeout(() => {
-      const sendBtn = document.querySelector('#main footer button[data-testid="compose-btn-send"]') || 
-                      document.querySelector('#main footer span[data-testid="send"]') || 
-                      document.querySelector('#main footer button');
+      const sendBtn = 
+        document.querySelector('[data-testid="compose-btn-send"]') ||
+        document.querySelector('[data-testid="send"]') ||
+        document.querySelector('#main footer button[data-testid="compose-btn-send"]') ||
+        document.querySelector('footer button[aria-label*="enviar"]') ||
+        document.querySelector('footer button[aria-label*="send"]') ||
+        document.querySelector('footer span[data-icon="send"]')?.closest('button');
       if (sendBtn) {
         sendBtn.click();
       }
@@ -1407,67 +1418,75 @@ function sendWhatsAppMessage(text) {
 function getActiveChatMessages() {
   const messages = [];
 
-  // STRATEGY 1: WhatsApp Business Web uses data-testid="msg-container" or "incoming-msg"
-  const msgContainers = document.querySelectorAll(
-    '#main [data-testid="msg-container"], ' +
-    '#main [data-testid="incoming-msg"], ' +
-    '#main [data-testid="outgoing-msg"]'
-  );
+  // Find the conversation panel - WhatsApp Business Web doesn't use #main
+  const panelEl = 
+    document.getElementById('main') ||
+    document.getElementById('pane-two') ||
+    document.querySelector('[role="main"]') ||
+    document.querySelector('[data-testid="conversation-panel-messages"]') ||
+    document.querySelector('[data-testid="conversation-panel"]') ||
+    document.querySelector('[aria-label="Lista de mensagens"]') ||
+    document.querySelector('[aria-label="Message list"]');
 
-  msgContainers.forEach(node => {
-    const textNode = node.querySelector('[data-testid="msg-text"]') ||
-                     node.querySelector('.selectable-text span') ||
-                     node.querySelector('[class*="copyable-text"] span') ||
-                     node.querySelector('span[dir="ltr"]') ||
-                     node.querySelector('span[dir="rtl"]');
-    const text = textNode ? textNode.innerText.trim() : '';
-    const isIncoming = node.getAttribute('data-testid') === 'incoming-msg' ||
-                       node.closest('[class*="message-in"]') !== null;
-    if (text) messages.push({ text, isIncoming });
-  });
+  // Helper to extract text messages from a container
+  const extractFromContainer = (container) => {
+    if (!container) return;
 
-  // STRATEGY 2: WhatsApp personal - class-based message bubbles
-  if (messages.length === 0) {
-    const messageNodes = document.querySelectorAll('#main .message-in, #main .message-out');
-    messageNodes.forEach(node => {
-      const textNode = node.querySelector('.selectable-text span') || 
-                       node.querySelector('.copyable-text span') || 
-                       node.querySelector('[class*="copyable-text"]') ||
-                       node.querySelector('[class*="selectable-text"]');
-      const text = textNode ? textNode.innerText : '';
-      const isIncoming = node.classList.contains('message-in');
+    // msg-container / incoming-msg / outgoing-msg
+    const msgContainers = container.querySelectorAll(
+      '[data-testid="msg-container"], [data-testid="incoming-msg"], [data-testid="outgoing-msg"]'
+    );
+    msgContainers.forEach(node => {
+      const textNode = node.querySelector('[data-testid="msg-text"]') ||
+                       node.querySelector('.selectable-text span') ||
+                       node.querySelector('span[dir="ltr"]') ||
+                       node.querySelector('span[dir="rtl"]');
+      const text = textNode ? textNode.innerText.trim() : '';
+      const isIncoming = node.getAttribute('data-testid') === 'incoming-msg';
       if (text) messages.push({ text, isIncoming });
     });
-  }
-  
-  // STRATEGY 3: Broad scan via data-id containing @c.us (any WhatsApp version)
-  if (messages.length === 0) {
-    const nodes = document.querySelectorAll('#main div[data-id*="@c.us"]');
-    nodes.forEach(node => {
-      const textNode = node.querySelector('.selectable-text span') ||
-                       node.querySelector('[data-testid="msg-text"]') ||
-                       node.querySelector('span[dir="ltr"]');
-      const text = textNode ? textNode.innerText : '';
-      const dataId = node.getAttribute('data-id') || '';
-      const isIncoming = dataId.startsWith('false_');
-      if (text) messages.push({ text, isIncoming });
-    });
-  }
 
-  // STRATEGY 4: Any span inside #main with dir attribute (WhatsApp Business broad fallback)
-  if (messages.length === 0) {
-    const rows = document.querySelectorAll('#main [role="row"]');
-    rows.forEach(row => {
-      const textSpan = row.querySelector('span[dir="ltr"], span[dir="rtl"], span[class*="selectable-text"]');
-      if (textSpan) {
-        const text = textSpan.innerText.trim();
-        if (text && text.length > 0) {
-          // Heuristic: out-messages are usually on the right (no incoming indicator)
-          const isIncoming = !!row.querySelector('[data-testid="msg-dblcheck"], [data-testid="msg-check"]') === false;
-          messages.push({ text, isIncoming });
+    // class-based bubbles (WhatsApp personal)
+    if (messages.length === 0) {
+      container.querySelectorAll('.message-in, .message-out').forEach(node => {
+        const textNode = node.querySelector('.selectable-text span') || node.querySelector('[class*="copyable-text"]');
+        const text = textNode ? textNode.innerText : '';
+        if (text) messages.push({ text, isIncoming: node.classList.contains('message-in') });
+      });
+    }
+
+    // data-id based (WhatsApp personal legacy)
+    if (messages.length === 0) {
+      container.querySelectorAll('div[data-id*="@c.us"]').forEach(node => {
+        const textNode = node.querySelector('.selectable-text span') || node.querySelector('span[dir="ltr"]');
+        const text = textNode ? textNode.innerText : '';
+        const dataId = node.getAttribute('data-id') || '';
+        if (text) messages.push({ text, isIncoming: dataId.startsWith('false_') });
+      });
+    }
+
+    // role="row" scan (WhatsApp Business - each message is a grid row)
+    if (messages.length === 0) {
+      container.querySelectorAll('[role="row"]').forEach(row => {
+        const textSpan = row.querySelector('span[dir="ltr"], span[dir="rtl"]');
+        if (textSpan) {
+          const text = textSpan.innerText.trim();
+          if (text) {
+            const hasTick = !!row.querySelector('[data-testid="msg-dblcheck"], [data-testid="msg-check"]');
+            messages.push({ text, isIncoming: !hasTick });
+          }
         }
-      }
-    });
+      });
+    }
+  };
+
+  if (panelEl) {
+    extractFromContainer(panelEl);
+  }
+
+  // Broadest fallback: scan entire document for message rows
+  if (messages.length === 0) {
+    extractFromContainer(document.body);
   }
   
   return messages;
