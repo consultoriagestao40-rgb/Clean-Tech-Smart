@@ -519,60 +519,71 @@ function startChatObserver() {
         crm_whatsapp_active_phone: currentPhone
       });
     }
+
+    // Sync debug stats to local storage for crm.html to display
+    const debug = {};
+    const paneSide = document.getElementById('pane-side');
+    debug.has_pane_side = !!paneSide;
+    const listItems = document.querySelectorAll('[data-testid="chat-list-item"]');
+    debug.list_items_count = listItems.length;
+    if (listItems.length > 0) {
+      let cur = listItems[0];
+      const path = [];
+      for (let j = 0; j < 4 && cur; j++) {
+        path.push({
+          tagName: cur.tagName,
+          attrs: Array.from(cur.attributes).reduce((acc, a) => { acc[a.name] = a.value; return acc; }, {})
+        });
+        cur = cur.parentElement;
+      }
+      debug.first_item_hierarchy = path;
+    }
+    chrome.storage.local.set({ crm_dom_debug: debug });
   }, 2000);
 }
 
 function detectActiveChat() {
   if (!crmToken) return;
 
+  let detectedPhone = '';
+  
+  // 1. Try URL hash first (instant and 100% reliable on WhatsApp Web)
+  const hash = window.location.hash || '';
+  if (hash.includes('/chat/')) {
+    const parts = hash.split('/chat/')[1];
+    if (parts && parts.includes('@c.us')) {
+      detectedPhone = parts.split('@')[0].replace(/\D/g, '');
+    }
+  }
+
+  // 2. Fetch name from DOM header
   const headerNameElement = document.querySelector('#main header span[title]') || 
                             document.querySelector('#main header div[title]') || 
                             document.querySelector('[data-testid="conversation-info"] span[title]');
                             
-  if (!headerNameElement) return;
+  const chatName = headerNameElement ? (headerNameElement.getAttribute('title') || headerNameElement.innerText) : '';
 
-  const chatName = headerNameElement.getAttribute('title') || headerNameElement.innerText;
-  let detectedPhone = '';
-  
-  const selectedChatListItem = document.querySelector('[data-testid="chat-list-item"] [aria-selected="true"]') ||
-                               document.querySelector('[data-testid="chat-list-item"] [class*="active"]') ||
-                               document.querySelector('div[data-id*="@c.us"]');
-                               
-  if (selectedChatListItem) {
-    const dataId = selectedChatListItem.closest('[data-id]')?.getAttribute('data-id') || '';
-    if (dataId.endsWith('@c.us')) {
-      detectedPhone = dataId.split('@')[0];
+  // Fallback DOM detection if hash is not present
+  if (!detectedPhone) {
+    const selectedChatListItem = document.querySelector('[data-testid="chat-list-item"] [aria-selected="true"]') ||
+                                 document.querySelector('[data-testid="chat-list-item"] [class*="active"]') ||
+                                 document.querySelector('div[data-id*="@c.us"]');
+                                 
+    if (selectedChatListItem) {
+      const dataId = selectedChatListItem.closest('[data-id]')?.getAttribute('data-id') || '';
+      if (dataId.endsWith('@c.us')) {
+        detectedPhone = dataId.split('@')[0];
+      }
     }
   }
 
-  if (!detectedPhone && /^\+?[\d\s\-()]{10,}$/.test(chatName)) {
+  if (!detectedPhone && chatName && /^\+?[\d\s\-()]{10,}$/.test(chatName)) {
     detectedPhone = chatName.replace(/\D/g, '');
-  }
-
-  if (!detectedPhone) {
-    const msg = document.querySelector('#main div[data-id*="@c.us"]');
-    if (msg) {
-      const dataId = msg.getAttribute('data-id') || '';
-      const match = dataId.match(/(?:true|false)_(\d+)@c\.us/);
-      if (match) {
-        detectedPhone = match[1];
-      }
-    }
-  }
-
-  if (!detectedPhone) {
-    const headerSubtextElement = document.querySelector('#main header span[class*="selectable-text"]');
-    if (headerSubtextElement) {
-      const txt = headerSubtextElement.innerText;
-      if (/^\+?[\d\s\-()]{10,}$/.test(txt)) {
-        detectedPhone = txt.replace(/\D/g, '');
-      }
-    }
   }
 
   if (detectedPhone && detectedPhone !== currentPhone) {
     currentPhone = detectedPhone;
-    currentName = chatName;
+    currentName = chatName || detectedPhone;
     loadContactData(currentPhone, currentName);
   }
 }
@@ -1108,9 +1119,7 @@ function getAllChatsFromDom() {
   const chats = [];
   
   // Query all chat row elements containing JIDs in the sidebar list (both standard Web and Business Web)
-  const elements = document.querySelectorAll('#pane-side div[data-id*="@c.us"]') || 
-                   document.querySelectorAll('[data-testid="chat-list"] div[data-id*="@c.us"]') ||
-                   document.querySelectorAll('div[data-id*="@c.us"]');
+  const elements = document.querySelectorAll('#pane-side div[data-id*="@c.us"], [data-testid="chat-list"] div[data-id*="@c.us"], div[data-id*="@c.us"]');
 
   elements.forEach(item => {
     const dataId = item.getAttribute('data-id') || '';
@@ -1143,11 +1152,11 @@ function getAllChatsFromDom() {
     }
   });
   
-  // Fallback if elements list is empty - also queries parent containers directly to bypass React virtual DOM recycling
+  // Fallback if elements list is empty - combined selector to avoid logical OR NodeList bug
   if (chats.length === 0) {
-    const listItems = document.querySelectorAll('[data-testid="chat-list-item"]') || document.querySelectorAll('div[role="listitem"]');
+    const listItems = document.querySelectorAll('[data-testid="chat-list-item"], div[role="listitem"]');
     listItems.forEach(item => {
-      const parent = item.closest('[data-id]') || item;
+      const parent = item.closest('[data-id]') || item.querySelector('[data-id]') || item;
       const dataId = parent.getAttribute('data-id') || '';
       if (!dataId.endsWith('@c.us')) return;
       

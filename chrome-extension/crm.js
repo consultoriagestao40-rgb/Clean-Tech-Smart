@@ -85,6 +85,21 @@ function initApp() {
 
   // Fast interval to refresh chat lists in background
   setInterval(loadWhatsAppChatsList, 10000);
+
+  // Debug listener to show DOM statistics at the bottom of the Kanban board
+  setInterval(() => {
+    chrome.storage.local.get(['crm_dom_debug', 'crm_whatsapp_chats'], (res) => {
+      const debugPre = document.getElementById('debug-pre');
+      if (debugPre) {
+        const stats = {
+          storage_chats_count: res.crm_whatsapp_chats ? res.crm_whatsapp_chats.length : 0,
+          chats_sample: res.crm_whatsapp_chats ? res.crm_whatsapp_chats.slice(0, 3) : [],
+          dom_debug: res.crm_dom_debug || "Sem dados coletados ainda"
+        };
+        debugPre.innerText = JSON.stringify(stats, null, 2);
+      }
+    });
+  }, 1000);
 }
 
 // Fetch active chat contacts from WhatsApp Web DOM
