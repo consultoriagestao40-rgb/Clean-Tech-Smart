@@ -541,7 +541,7 @@ function openChatOverlay(lead) {
             <div class="kanban-card-avatar" style="width: 40px; height: 40px; font-size: 14px;">${getInitialsName(lead.name)}</div>
             <div style="text-align: left;">
               <h4 class="crm-chat-header-title">${lead.name || lead.phone}</h4>
-              <span class="crm-chat-header-phone">${lead.phone}</span>
+              <span class="crm-chat-header-phone">${lead.phone && !lead.phone.startsWith('name_') ? lead.phone : ''}</span>
             </div>
           </div>
           
@@ -626,7 +626,10 @@ function openChatOverlay(lead) {
       });
       const activePhoneClean = (storageRes.crm_whatsapp_active_phone || '').replace(/\D/g, '');
       const leadPhoneClean = lead.phone.replace(/\D/g, '');
-      if (storageRes.crm_whatsapp_messages && activePhoneClean.endsWith(leadPhoneClean.slice(-8))) {
+      // For name-keyed chats (no real phone), always use the cached messages if the tab is active
+      const isNameKey = lead.phone && lead.phone.startsWith('name_');
+      const phoneMatch = isNameKey ? true : (leadPhoneClean.length > 0 && activePhoneClean.endsWith(leadPhoneClean.slice(-8)));
+      if (storageRes.crm_whatsapp_messages && phoneMatch) {
         messages = storageRes.crm_whatsapp_messages;
       }
     }
