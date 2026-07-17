@@ -1427,7 +1427,8 @@ function sendWhatsAppMessage(text) {
 function getActiveChatMessages() {
   const messages = [];
 
-  // Find the conversation panel - WhatsApp Business Web doesn't use #main
+  // Find the conversation panel
+  // NOTE: #main exists in WhatsApp when a conversation is open (even Business Web)
   const panelEl = 
     document.getElementById('main') ||
     document.getElementById('pane-two') ||
@@ -1437,67 +1438,64 @@ function getActiveChatMessages() {
     document.querySelector('[aria-label="Lista de mensagens"]') ||
     document.querySelector('[aria-label="Message list"]');
 
-  // Helper to extract text messages from a container
-  const extractFromContainer = (container) => {
-    if (!container) return;
+  // If no conversation panel found, return empty - don't scan document.body
+  // (document.body scan picks up sidebar chat list preview texts as messages!)
+  if (!panelEl) return messages;
 
-    // msg-container / incoming-msg / outgoing-msg
-    const msgContainers = container.querySelectorAll(
-      '[data-testid="msg-container"], [data-testid="incoming-msg"], [data-testid="outgoing-msg"]'
-    );
-    msgContainers.forEach(node => {
-      const textNode = node.querySelector('[data-testid="msg-text"]') ||
-                       node.querySelector('.selectable-text span') ||
-                       node.querySelector('span[dir="ltr"]') ||
-                       node.querySelector('span[dir="rtl"]');
-      const text = textNode ? textNode.innerText.trim() : '';
-      const isIncoming = node.getAttribute('data-testid') === 'incoming-msg';
-      if (text) messages.push({ text, isIncoming });
-    });
+  // msg-container / incoming-msg / outgoing-msg testid selectors
+  const msgContainers = panelEl.querySelectorAll(
+    '[data-testid="msg-container"], [data-testid="incoming-msg"], [data-testid="outgoing-msg"]'
+  );
+  msgContainers.forEach(node => {
+    const textNode = node.querySelector('[data-testid="msg-text"]') ||
+                     node.querySelector('.selectable-text span') ||
+                     node.querySelector('span[dir="ltr"]') ||
+                     node.querySelector('span[dir="rtl"]');
+    const text = textNode ? textNode.innerText.trim() : '';
+    const isIncoming = node.getAttribute('data-testid') === 'incoming-msg';
+    if (text) messages.push({ text, isIncoming });
+  });
 
-    // class-based bubbles (WhatsApp personal)
-    if (messages.length === 0) {
-      container.querySelectorAll('.message-in, .message-out').forEach(node => {
-        const textNode = node.querySelector('.selectable-text span') || node.querySelector('[class*="copyable-text"]');
-        const text = textNode ? textNode.innerText : '';
-        if (text) messages.push({ text, isIncoming: node.classList.contains('message-in') });
-      });
-    }
-
-    // data-id based (WhatsApp personal legacy)
-    if (messages.length === 0) {
-      container.querySelectorAll('div[data-id*="@c.us"]').forEach(node => {
-        const textNode = node.querySelector('.selectable-text span') || node.querySelector('span[dir="ltr"]');
-        const text = textNode ? textNode.innerText : '';
-        const dataId = node.getAttribute('data-id') || '';
-        if (text) messages.push({ text, isIncoming: dataId.startsWith('false_') });
-      });
-    }
-
-    // role="row" scan (WhatsApp Business - each message is a grid row)
-    if (messages.length === 0) {
-      container.querySelectorAll('[role="row"]').forEach(row => {
-        const textSpan = row.querySelector('span[dir="ltr"], span[dir="rtl"]');
-        if (textSpan) {
-          const text = textSpan.innerText.trim();
-          if (text) {
-            const hasTick = !!row.querySelector('[data-testid="msg-dblcheck"], [data-testid="msg-check"]');
-            messages.push({ text, isIncoming: !hasTick });
-          }
-        }
-      });
-    }
-  };
-
-  if (panelEl) {
-    extractFromContainer(panelEl);
-  }
-
-  // Broadest fallback: scan entire document for message rows
+  // class-based bubbles (WhatsApp personal)
   if (messages.length === 0) {
-    extractFromContainer(document.body);
+    panelEl.querySelectorAll('.message-in, .message-out').forEach(node => {
+      const textNode = node.querySelector('.selectable-text span') || node.querySelector('[class*="copyable-text"]');
+      const text = textNode ? textNode.innerText : '';
+      if (text) messages.push({ text, isIncoming: node.classList.contains('message-in') });
+    });
   }
-  
+
+  // data-id based (any WhatsApp version)
+  if (messages.length === 0) {
+    panelEl.querySelectorAll('div[data-id*="@c.us"]').forEach(node => {
+      const textNode = node.querySelector('.selectable-text span') || node.querySelector('span[dir="ltr"]');
+      const text = textNode ? textNode.innerText : '';
+      const dataId = node.getAttribute('data-id') || '';
+      if (text) messages.push({ text, isIncoming: dataId.startsWith('false_') });
+    });
+  }
+
+  // role="row" scan - ONLY inside the conversation panel, NOT sidebar
+  // The pane-side chat list also uses role="row" so we MUST scope to panelEl
+  if (messages.length === 0) {
+    const paneSide = document.getElementById('pane-side');
+    panelEl.querySelectorAll('[role="row"]').forEach(row => {
+      // Extra safety: skip if this row is somehow inside pane-side
+      if (paneSide && paneSide.contains(row)) return;
+      // Skip chat-list items (they have cell-frame-container testid)
+      if (row.querySelector('[data-testid="cell-frame-container"]')) return;
+      const textSpan = row.querySelector('span[dir="ltr"], span[dir="rtl"]');
+      if (textSpan) {
+        const text = textSpan.innerText.trim();
+        // Filter out very short single-emoji or date strings
+        if (text && text.length > 1) {
+          const hasTick = !!row.querySelector('[data-testid="msg-dblcheck"], [data-testid="msg-check"]');
+          messages.push({ text, isIncoming: !hasTick });
+        }
+      }
+    });
+  }
+
   return messages;
 }
 // Listen for messages from standalone crm.html page tab

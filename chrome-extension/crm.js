@@ -612,6 +612,7 @@ function openChatOverlay(lead) {
 
   let lastMsgCount = 0;
   const syncChatMessages = async () => {
+    // Always read live from WhatsApp DOM - no cache to avoid stale messages from other conversations
     const res = await sendToWhatsAppTab({ action: "getMessages" });
     const msgContainer = document.getElementById('chat-modal-messages');
     if (!msgContainer) return;
@@ -619,33 +620,9 @@ function openChatOverlay(lead) {
     let messages = [];
     if (res && res.messages && res.messages.length > 0) {
       messages = res.messages;
-    } else {
-      // Fallback to storage bridge messages cache
-      const storageRes = await new Promise(resolve => {
-        chrome.storage.local.get(['crm_whatsapp_messages', 'crm_whatsapp_active_phone', 'crm_whatsapp_active_name'], resolve);
-      });
-      const activePhoneClean = (storageRes.crm_whatsapp_active_phone || '').replace(/\D/g, '');
-      const leadPhoneClean = lead.phone.replace(/\D/g, '');
-      const activeName = (storageRes.crm_whatsapp_active_name || '').toLowerCase();
-
-      // For name-keyed chats, match by name instead of phone
-      const isNameKey = lead.phone && lead.phone.startsWith('name_');
-      let phoneMatch = false;
-      if (isNameKey) {
-        // The lead name must match the currently active WhatsApp conversation name
-        const leadNameClean = (lead.name || '').toLowerCase();
-        // Partial match: first 8 chars of lead name in active name, or vice versa
-        phoneMatch = activeName.length > 0 && (
-          activeName.includes(leadNameClean.substring(0, 8)) ||
-          leadNameClean.includes(activeName.substring(0, 8))
-        );
-      } else {
-        phoneMatch = leadPhoneClean.length > 0 && activePhoneClean.endsWith(leadPhoneClean.slice(-8));
-      }
-      if (storageRes.crm_whatsapp_messages && phoneMatch) {
-        messages = storageRes.crm_whatsapp_messages;
-      }
     }
+    // Note: no storage fallback - if WhatsApp tab hasn't loaded the conversation yet,
+    // we show "Carregando..." until it's ready. This prevents showing wrong conversations.
 
     if (messages.length === 0) {
       msgContainer.innerHTML = '<div style="margin: auto; color: #8696a0; font-size: 13px; font-style: italic;">Carregando histórico do WhatsApp...</div>';
