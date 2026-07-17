@@ -11,6 +11,7 @@ let sellersList = [];
 
 let currentFilterSeller = 'all';
 let currentGroupBy = 'stages'; // 'stages' or 'labels'
+let isDragging = false; // prevent board re-render while user drags
 
 const DEFAULT_STAGES = [
   { key: 'inbox', title: 'Inbox', color: 'border-bottom: 3px solid #64748b;' },
@@ -83,20 +84,8 @@ function initApp() {
   fetchSellersList();
   loadBoardData();
 
-  // Fast interval to refresh chat lists in background
-  // Also refresh board automatically every 15s to show new WhatsApp conversations
-  let lastChatsCount = 0;
-  setInterval(async () => {
-    await loadWhatsAppChatsList();
-    // If new chats arrived, re-render the board to show them in INBOX
-    if (whatsAppChats.length !== lastChatsCount) {
-      lastChatsCount = whatsAppChats.length;
-      renderBoard();
-    }
-  }, 10000);
-
-  // Full board refresh every 30s (includes server leads)
-  setInterval(loadBoardData, 30000);
+  // Background: sync WhatsApp chat list quietly every 15s (no board re-render)
+  setInterval(async () => { try { await loadWhatsAppChatsList(); } catch(e) {} }, 15000);
 
   // Debug listener to show DOM statistics at the bottom of the Kanban board
   setInterval(() => {
@@ -166,9 +155,9 @@ async function fetchSellersList() {
   }
 }
 
-async function loadBoardData() {
+async function loadBoardData(opts = {}) {
   const container = document.getElementById('kanban-columns-wrapper');
-  container.innerHTML = '<div class="loading-state">Atualizando quadro Kanban...</div>';
+  if (!opts.silent) container.innerHTML = '<div class="loading-state">Atualizando quadro Kanban...</div>';
 
   try {
     // 1. Get WhatsApp Active Chats from Dom
@@ -187,12 +176,12 @@ async function loadBoardData() {
       const data = await res.json();
       leadsList = data.leads || [];
       renderBoard();
-    } else {
+    } else if (!opts.silent) {
       container.innerHTML = '<div class="loading-state" style="color: #dc2626;">Erro ao obter leads do servidor.</div>';
     }
   } catch (err) {
     console.error(err);
-    container.innerHTML = '<div class="loading-state" style="color: #dc2626;">Falha na conexão com o servidor.</div>';
+    if (!opts.silent) container.innerHTML = '<div class="loading-state" style="color: #dc2626;">Falha na conexão com o servidor.</div>';
   }
 }
 
@@ -407,10 +396,13 @@ function renderBoard() {
       `;
 
       card.addEventListener('dragstart', (e) => {
+        isDragging = true;
         e.dataTransfer.setData('text/plain', lead.phone);
         e.dataTransfer.setData('text/source', st.key);
-        e.dataTransfer.setData('text/name', lead.name);
+        e.dataTransfer.setData('text/name', lead.name || '');
+        card.style.opacity = '0.5';
       });
+      card.addEventListener('dragend', () => { isDragging = false; card.style.opacity = '1'; });
 
       card.querySelector('.btn-action-note').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -447,20 +439,19 @@ function renderBoard() {
       cardsContainer.appendChild(card);
     });
 
-    // Column card drop listeners
-    colDiv.addEventListener('dragover', (e) => { e.preventDefault(); });
+    // Column drop zone with visual feedback
+    colDiv.addEventListener('dragover', (e) => { e.preventDefault(); colDiv.style.background = 'rgba(13,148,136,0.06)'; });
+    colDiv.addEventListener('dragleave', () => { colDiv.style.background = ''; });
     colDiv.addEventListener('drop', async (e) => {
       e.preventDefault();
+      isDragging = false;
+      colDiv.style.background = '';
       const phone = e.dataTransfer.getData('text/plain');
       const source = e.dataTransfer.getData('text/source');
       const name = e.dataTransfer.getData('text/name');
-      
       if (phone && source !== st.key) {
-        if (isStagesGrouping) {
-          await updateLeadStage(phone, st.key, name);
-        } else {
-          await updateLeadLabel(phone, st.key);
-        }
+        if (isStagesGrouping) await updateLeadStage(phone, st.key, name);
+        else await updateLeadLabel(phone, st.key);
       }
   });
 });

@@ -466,8 +466,160 @@ body, html {
   stroke: #b91c1c !important;
 }
 
+/* =====================================================
+   WaSeller-style Card Design (ws-card)
+   ===================================================== */
+.ws-card {
+  background: #fff;
+  border-radius: 8px;
+  border-left: 3px solid #0d9488; /* overridden per stage in JS */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+  overflow: hidden;
+}
+.ws-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.13);
+  transform: translateY(-1px);
+}
+.ws-card.dragging { opacity: 0.5; transform: rotate(1deg); }
+
+.ws-card-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 10px 6px 10px;
+}
+
+.ws-card-avatar-col {
+  position: relative;
+  flex-shrink: 0;
+}
+.ws-card-photo {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+.ws-card-initials {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0d9488, #2563eb);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+.ws-unread-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: #25d366;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 1.5px solid #fff;
+}
+
+.ws-card-info {
+  flex: 1;
+  min-width: 0;
+}
+.ws-card-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+.ws-card-preview {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.ws-card-reminder {
+  font-size: 10px;
+  color: #f97316;
+  margin-top: 4px;
+  font-weight: 500;
+}
+.ws-card-value {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0d9488;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+/* Toolbar */
+.ws-card-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px 6px 8px;
+  border-top: 1px solid #f1f5f9;
+}
+.ws-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 0;
+  position: relative;
+  transition: background 0.12s, color 0.12s;
+}
+.ws-btn:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+.ws-btn-whatsapp:hover { background: #dcfce7; color: #16a34a; }
+.ws-btn-danger:hover { background: #fee2e2; color: #dc2626; }
+.ws-btn-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: #25d366;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2px;
+}
+
 /* Custom Modals & Dialog overlays */
 .modal-overlay {
+
   position: fixed;
   top: 0;
   left: 0;
