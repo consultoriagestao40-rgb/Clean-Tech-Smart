@@ -47,7 +47,7 @@ chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url', 'crm_stages
   }
 });
 
-// Watch for storage changes (e.g. login/logout from popup)
+// Watch for storage changes (e.g. login/logout from popup, state requests from crm.js)
 chrome.storage.onChanged.addListener((changes) => {
   chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url', 'crm_stages'], (res) => {
     crmServerUrl = res.crm_server_url || 'https://clean-tech-smart.vercel.app';
@@ -73,6 +73,21 @@ chrome.storage.onChanged.addListener((changes) => {
       startChatObserver();
     }
   });
+
+  // State-bridge triggers
+  if (changes.crm_pending_open_chat && changes.crm_pending_open_chat.newValue) {
+    const phone = changes.crm_pending_open_chat.newValue;
+    selectChatInBackground(phone);
+    chrome.storage.local.remove('crm_pending_open_chat');
+  }
+  if (changes.crm_pending_send_message && changes.crm_pending_send_message.newValue) {
+    const { text, phone } = changes.crm_pending_send_message.newValue;
+    selectChatInBackground(phone);
+    setTimeout(() => {
+      sendWhatsAppMessage(text);
+    }, 400);
+    chrome.storage.local.remove('crm_pending_send_message');
+  }
 });
 
 function injectLoginReminder() {
@@ -484,11 +499,27 @@ function startChatObserver() {
   
   setInterval(fetchLeadsAndRefresh, 15000);
   
+  // Real-time state-sharing loop using local storage
   setInterval(() => {
     detectActiveChat();
     applyChatListFilter();
     injectHorizontalTabs();
-  }, 1500);
+    
+    // Periodically sync chat list to local storage for crm.html to read
+    const chats = getAllChatsFromDom();
+    if (chats.length > 0) {
+      chrome.storage.local.set({ crm_whatsapp_chats: chats });
+    }
+    
+    // Sync current active chat messages
+    if (currentPhone) {
+      const messages = getActiveChatMessages();
+      chrome.storage.local.set({
+        crm_whatsapp_messages: messages,
+        crm_whatsapp_active_phone: currentPhone
+      });
+    }
+  }, 2000);
 }
 
 function detectActiveChat() {
@@ -1112,7 +1143,7 @@ function getAllChatsFromDom() {
     }
   });
   
-  // Fallback if elements list is empty
+  // Fallback if elements list is empty - also queries parent containers directly to bypass React virtual DOM recycling
   if (chats.length === 0) {
     const listItems = document.querySelectorAll('[data-testid="chat-list-item"]') || document.querySelectorAll('div[role="listitem"]');
     listItems.forEach(item => {

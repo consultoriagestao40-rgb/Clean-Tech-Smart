@@ -181,6 +181,7 @@ body, html {
   flex: 1;
   overflow-x: auto;
   display: flex;
+  align-items: flex-start; /* Align columns to the top so they shrink vertically! */
   padding: 10px;
   box-sizing: border-box;
   background-color: #e2e8f0;
@@ -196,7 +197,7 @@ body, html {
   border: 1px solid #cbd5e1;
   display: flex;
   flex-direction: column;
-  max-height: 100%;
+  max-height: calc(100vh - 80px); /* Limit vertical expansion and scroll internally */
   box-sizing: border-box;
 }
 
@@ -263,7 +264,7 @@ body, html {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: 200px;
+  min-height: 30px; /* Small drop zone for empty columns */
   box-sizing: border-box;
 }
 

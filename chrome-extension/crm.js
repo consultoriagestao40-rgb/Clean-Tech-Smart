@@ -90,17 +90,26 @@ function initApp() {
 // Fetch active chat contacts from WhatsApp Web DOM
 async function loadWhatsAppChatsList() {
   return new Promise((resolve) => {
-    chrome.tabs.query({ url: "*://web.whatsapp.com/*" }, (tabs) => {
-      if (tabs && tabs.length > 0) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "getWhatsAppChats" }, (res) => {
-          if (res && res.chats) {
-            whatsAppChats = res.chats;
-          }
-          resolve();
-        });
-      } else {
-        resolve();
+    // 1. Get from storage cache first (instant load)
+    chrome.storage.local.get(['crm_whatsapp_chats'], (storageRes) => {
+      if (storageRes && storageRes.crm_whatsapp_chats) {
+        whatsAppChats = storageRes.crm_whatsapp_chats;
       }
+      
+      // 2. Query tab for live update
+      chrome.tabs.query({ url: "*://web.whatsapp.com/*" }, (tabs) => {
+        if (tabs && tabs.length > 0) {
+          chrome.tabs.sendMessage(tabs[0].id, { action: "getWhatsAppChats" }, (res) => {
+            if (res && res.chats) {
+              whatsAppChats = res.chats;
+              chrome.storage.local.set({ crm_whatsapp_chats: res.chats });
+            }
+            resolve();
+          });
+        } else {
+          resolve();
+        }
+      });
     });
   });
 }
@@ -592,12 +601,27 @@ function openChatOverlay(lead) {
     const msgContainer = document.getElementById('chat-modal-messages');
     if (!msgContainer) return;
 
-    if (!res || !res.messages || res.messages.length === 0) {
+    let messages = [];
+    if (res && res.messages && res.messages.length > 0) {
+      messages = res.messages;
+    } else {
+      // Fallback to storage bridge messages cache
+      const storageRes = await new Promise(resolve => {
+        chrome.storage.local.get(['crm_whatsapp_messages', 'crm_whatsapp_active_phone'], resolve);
+      });
+      const activePhoneClean = (storageRes.crm_whatsapp_active_phone || '').replace(/\D/g, '');
+      const leadPhoneClean = lead.phone.replace(/\D/g, '');
+      if (storageRes.crm_whatsapp_messages && activePhoneClean.endsWith(leadPhoneClean.slice(-8))) {
+        messages = storageRes.crm_whatsapp_messages;
+      }
+    }
+
+    if (messages.length === 0) {
       msgContainer.innerHTML = '<div style="margin: auto; color: #8696a0; font-size: 13px; font-style: italic;">Carregando histórico do WhatsApp...</div>';
       return;
     }
 
-    msgContainer.innerHTML = res.messages.map(msg => {
+    msgContainer.innerHTML = messages.map(msg => {
       const bg = msg.isIncoming ? '#ffffff' : '#d9fdd3';
       const align = msg.isIncoming ? 'flex-start' : 'flex-end';
       const borderRadius = msg.isIncoming ? '0 12px 12px 12px' : '12px 0 12px 12px';
@@ -609,13 +633,14 @@ function openChatOverlay(lead) {
       `;
     }).join('');
 
-    if (res.messages.length !== lastMsgCount) {
-      lastMsgCount = res.messages.length;
+    if (messages.length !== lastMsgCount) {
+      lastMsgCount = messages.length;
       msgContainer.scrollTop = msgContainer.scrollHeight;
     }
   };
 
-  // Open Chat in background tab
+  // Open Chat in background tab and trigger storage bridge
+  chrome.storage.local.set({ crm_pending_open_chat: lead.phone });
   sendToWhatsAppTab({ action: "openChat", phone: lead.phone });
 
   // Polling sync
