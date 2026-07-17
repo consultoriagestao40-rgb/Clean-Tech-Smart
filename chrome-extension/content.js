@@ -524,20 +524,42 @@ function startChatObserver() {
     const debug = {};
     const paneSide = document.getElementById('pane-side');
     debug.has_pane_side = !!paneSide;
+    
+    if (paneSide) {
+      const elementsWithDataId = paneSide.querySelectorAll('[data-id]');
+      debug.data_id_count = elementsWithDataId.length;
+      if (elementsWithDataId.length > 0) {
+        debug.data_ids_sample = Array.from(elementsWithDataId).slice(0, 5).map(el => el.getAttribute('data-id'));
+      }
+      
+      const elementsWithTestId = paneSide.querySelectorAll('[data-testid]');
+      debug.testid_count = elementsWithTestId.length;
+      if (elementsWithTestId.length > 0) {
+        debug.testids_sample = Array.from(elementsWithTestId).slice(0, 5).map(el => el.getAttribute('data-testid'));
+      }
+      
+      const elementsWithRole = paneSide.querySelectorAll('[role]');
+      debug.role_count = elementsWithRole.length;
+      if (elementsWithRole.length > 0) {
+        debug.roles_sample = Array.from(elementsWithRole).slice(0, 5).map(el => el.getAttribute('role'));
+      }
+
+      const children = paneSide.children;
+      debug.children_count = children.length;
+      if (children.length > 0) {
+        debug.children_tags = Array.from(children).slice(0, 3).map(c => {
+          return {
+            tagName: c.tagName,
+            className: c.className,
+            htmlSlice: c.outerHTML.substring(0, 200)
+          };
+        });
+      }
+    }
+    
     const listItems = document.querySelectorAll('[data-testid="chat-list-item"]');
     debug.list_items_count = listItems.length;
-    if (listItems.length > 0) {
-      let cur = listItems[0];
-      const path = [];
-      for (let j = 0; j < 4 && cur; j++) {
-        path.push({
-          tagName: cur.tagName,
-          attrs: Array.from(cur.attributes).reduce((acc, a) => { acc[a.name] = a.value; return acc; }, {})
-        });
-        cur = cur.parentElement;
-      }
-      debug.first_item_hierarchy = path;
-    }
+    
     chrome.storage.local.set({ crm_dom_debug: debug });
   }, 2000);
 }
@@ -1117,55 +1139,74 @@ async function handleSaveQuickTicket(e) {
 // Robust, multi-level fallback extractor for WhatsApp Web/Business Web chat list containing message preview and unread status
 function getAllChatsFromDom() {
   const chats = [];
-  
-  // Query all chat row elements containing JIDs in the sidebar list (both standard Web and Business Web)
-  const elements = document.querySelectorAll('#pane-side div[data-id*="@c.us"], [data-testid="chat-list"] div[data-id*="@c.us"], div[data-id*="@c.us"]');
+  const paneSide = document.getElementById('pane-side') || document.querySelector('[data-testid="chat-list"]');
+  if (!paneSide) return chats;
 
-  elements.forEach(item => {
-    const dataId = item.getAttribute('data-id') || '';
-    if (!dataId.endsWith('@c.us') || dataId.includes('_')) return; // Avoid matching internal message ids containing underscores
+  // Find all elements with a title attribute inside the chat sidebar (avatar elements or names spans)
+  const titleElements = paneSide.querySelectorAll('[title]');
+  titleElements.forEach(el => {
+    const name = (el.getAttribute('title') || '').trim();
+    if (!name || name.length < 2) return;
     
-    const phone = dataId.split('@')[0].replace(/\D/g, '');
-    if (!phone) return;
+    // Skip general buttons in the UI
+    const skipped = ['Menu', 'Nova conversa', 'Configurações', 'Perfil', 'Status', 'Canais', 'Comunidades', 'Novo grupo', 'Nova comunidade', 'Arquivadas', 'Favoritas', 'Mensagens favoritadas'];
+    if (skipped.some(s => name.toLowerCase().includes(s.toLowerCase()))) return;
     
-    const nameNode = item.querySelector('span[title]') || 
-                     item.querySelector('div[title]') || 
-                     item.querySelector('[class*="title"]');
-    const name = nameNode ? (nameNode.getAttribute('title') || nameNode.innerText) : phone;
+    // Attempt to locate a JID
+    const container = el.closest('[data-id]') || el.closest('[data-jid]') || el;
+    let dataId = container.getAttribute('data-id') || container.getAttribute('data-jid') || '';
     
-    // Capture unread badge count
-    const badgeNode = item.querySelector('[aria-label*="unread"]') || 
-                      item.querySelector('[aria-label*="não lida"]') || 
-                      item.querySelector('[class*="unread"]') || 
-                      item.querySelector('[class*="badge"]');
-    const unreadCount = badgeNode ? parseInt(badgeNode.innerText.replace(/\D/g, '')) || 0 : 0;
+    if (!dataId) {
+      const parent = el.closest('div[role="row"]') || el.closest('div[role="listitem"]') || el.closest('[data-testid="chat-list-item"]') || el.parentElement;
+      if (parent) {
+        dataId = parent.getAttribute('data-id') || parent.getAttribute('data-jid') || '';
+        
+        // Search inside parent for image profile picture containing phone query parameters
+        const img = parent.querySelector('img');
+        if (img && img.src && img.src.includes('u=')) {
+          const match = img.src.match(/u=(\d+)%40c\.us/);
+          if (match) {
+            dataId = match[1] + '@c.us';
+          }
+        }
+      }
+    }
+    
+    if (dataId && dataId.endsWith('@c.us')) {
+      const phone = dataId.split('@')[0].replace(/\D/g, '');
+      if (phone && !chats.some(c => c.phone === phone)) {
+        // Find closest row boundary to look up unread/msg states
+        const row = el.closest('div[role="row"]') || el.closest('div[role="listitem"]') || el.closest('[data-testid="chat-list-item"]') || container;
+        
+        const badgeNode = row.querySelector('[aria-label*="unread"]') || 
+                          row.querySelector('[aria-label*="não lida"]') || 
+                          row.querySelector('[class*="unread"]') || 
+                          row.querySelector('[class*="badge"]');
+        const unreadCount = badgeNode ? parseInt(badgeNode.innerText.replace(/\D/g, '')) || 0 : 0;
 
-    // Capture last message preview string
-    const lastMsgNode = item.querySelector('[data-testid="last-msg-status"]')?.parentElement?.querySelector('span') || 
-                        item.querySelector('.selectable-text') ||
-                        item.querySelector('[class*="last-msg"]') ||
-                        item.querySelector('span[dir="auto"]');
-    const lastMessage = lastMsgNode ? lastMsgNode.innerText : '';
+        const lastMsgNode = row.querySelector('[data-testid="last-msg-status"]')?.parentElement?.querySelector('span') || 
+                            row.querySelector('.selectable-text') ||
+                            row.querySelector('[class*="last-msg"]') ||
+                            row.querySelector('span[dir="auto"]');
+        const lastMessage = lastMsgNode ? lastMsgNode.innerText.trim() : '';
 
-    if (phone && name && !chats.some(c => c.phone === phone)) {
-      chats.push({ name, phone, lastMessage, unreadCount });
+        chats.push({ name, phone, lastMessage, unreadCount });
+      }
     }
   });
   
-  // Fallback if elements list is empty - combined selector to avoid logical OR NodeList bug
+  // Standard fallback query if title elements scan didn't capture chats
   if (chats.length === 0) {
-    const listItems = document.querySelectorAll('[data-testid="chat-list-item"], div[role="listitem"]');
-    listItems.forEach(item => {
-      const parent = item.closest('[data-id]') || item.querySelector('[data-id]') || item;
-      const dataId = parent.getAttribute('data-id') || '';
-      if (!dataId.endsWith('@c.us')) return;
-      
+    const elements = document.querySelectorAll('#pane-side div[data-id*="@c.us"], [data-testid="chat-list"] div[data-id*="@c.us"], div[data-id*="@c.us"]');
+    elements.forEach(item => {
+      const dataId = item.getAttribute('data-id') || '';
+      if (!dataId.endsWith('@c.us') || dataId.includes('_')) return;
       const phone = dataId.split('@')[0].replace(/\D/g, '');
       if (!phone) return;
       
-      const nameNode = item.querySelector('span[title]') || item.querySelector('div[title]');
+      const nameNode = item.querySelector('span[title]') || item.querySelector('div[title]') || item.querySelector('[class*="title"]');
       const name = nameNode ? (nameNode.getAttribute('title') || nameNode.innerText) : phone;
-      
+
       if (phone && name && !chats.some(c => c.phone === phone)) {
         chats.push({ name, phone, lastMessage: '', unreadCount: 0 });
       }
