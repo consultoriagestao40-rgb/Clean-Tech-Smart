@@ -276,28 +276,44 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     try {
                       if (contactStoreName && activeJids.length > 0) {
                         const contactStore = transaction.objectStore(contactStoreName);
-                        let loadedCount = 0;
                         
+                        const queries = [];
                         activeJids.forEach(jid => {
+                          queries.push({ orig: jid, queryKey: jid });
+                          const phone = jid.split('@')[0];
+                          if (phone) {
+                            queries.push({ orig: jid, queryKey: phone });
+                          }
+                          if (jid.includes('@c.us')) {
+                            queries.push({ orig: jid, queryKey: jid.replace('@c.us', '@s.whatsapp.net') });
+                          } else if (jid.includes('@s.whatsapp.net')) {
+                            queries.push({ orig: jid, queryKey: jid.replace('@s.whatsapp.net', '@c.us') });
+                          }
+                        });
+
+                        let loadedCount = 0;
+                        queries.forEach(q => {
                           try {
-                            const req = contactStore.get(jid);
+                            const req = contactStore.get(q.queryKey);
                             req.onsuccess = (e) => {
                               const c = e.target.result;
-                              if (c) contactsMap.set(jid, c);
+                              if (c) {
+                                contactsMap.set(q.orig, c);
+                              }
                               loadedCount++;
-                              if (loadedCount === activeJids.length) {
+                              if (loadedCount === queries.length) {
                                 onContactsLoaded();
                               }
                             };
                             req.onerror = () => {
                               loadedCount++;
-                              if (loadedCount === activeJids.length) {
+                              if (loadedCount === queries.length) {
                                 onContactsLoaded();
                               }
                             };
                           } catch (err) {
                             loadedCount++;
-                            if (loadedCount === activeJids.length) {
+                            if (loadedCount === queries.length) {
                               onContactsLoaded();
                             }
                           }
