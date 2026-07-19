@@ -581,10 +581,35 @@ function startChatObserver() {
       // to prevent it from hiding conversations while we're trying to open them
       injectHorizontalTabs();
       
-      // Periodically sync chat list to local storage for crm.html to read
-      const chats = getAllChatsFromDom();
-      if (chats.length > 0) {
-        safeStorageSet({ crm_whatsapp_chats: chats });
+      // Periodically sync and merge chat list to local storage to prevent virtualization loss
+      const visibleChats = getAllChatsFromDom();
+      if (visibleChats.length > 0) {
+        safeStorageGet(['crm_whatsapp_chats'], (res) => {
+          const existingChats = res.crm_whatsapp_chats || [];
+          const mergedMap = new Map();
+          existingChats.forEach(c => {
+            if (c.phone) mergedMap.set(c.phone.slice(-8), c);
+          });
+          visibleChats.forEach(c => {
+            if (c.phone) {
+              const suffix = c.phone.slice(-8);
+              // Merge: update lastMessage, unreadCount, photo if they are populated
+              const existing = mergedMap.get(suffix);
+              if (existing) {
+                mergedMap.set(suffix, {
+                  ...existing,
+                  name: c.name || existing.name,
+                  lastMessage: c.lastMessage || existing.lastMessage,
+                  unreadCount: typeof c.unreadCount === 'number' ? c.unreadCount : existing.unreadCount,
+                  photo: c.photo || existing.photo
+                });
+              } else {
+                mergedMap.set(suffix, c);
+              }
+            }
+          });
+          safeStorageSet({ crm_whatsapp_chats: Array.from(mergedMap.values()) });
+        });
       }
       
       // Sync current active chat messages
@@ -2037,28 +2062,58 @@ function selectChatInBackground(phone) {
 }
 
 function searchAndClickContact(query, saveCallback, realPhone) {
-  const searchBox = document.querySelector('[data-testid="chat-list-search"]') ||
-                    document.querySelector('[data-testid="search-input-container"] [role="textbox"]') ||
-                    document.querySelector('div[contenteditable="true"][data-tab="3"]') ||
-                    document.querySelector('[data-testid="chatlist-search"]');
-
-  if (!searchBox) return;
-
-  searchBox.focus();
-  searchBox.innerHTML = '';
-  document.execCommand('insertText', false, query);
-  searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+  // 1. Click search container to focus and activate React state
+  const searchContainer = document.querySelector('[data-testid="search-input-container"]') ||
+                          document.querySelector('[data-testid="chatlist-search-container"]') ||
+                          document.querySelector('.search-container');
+  if (searchContainer) {
+    simulateClick(searchContainer);
+  }
 
   setTimeout(() => {
-    const firstResult = document.querySelector('[data-testid^="list-item-"]') ||
-                        document.querySelector('[data-testid="chat-list-item"]');
-    if (firstResult) {
-      const btn = firstResult.querySelector('[role="button"]') || firstResult;
-      simulateClick(btn);
-      if (realPhone) currentPhone = realPhone;
-      setTimeout(() => saveCallback('', realPhone || ''), 1000);
+    // 2. Find search box
+    const searchBox = document.querySelector('[data-testid="chat-list-search"]') ||
+                      document.querySelector('[data-testid="search-input-container"] [role="textbox"]') ||
+                      document.querySelector('div[contenteditable="true"][data-tab="3"]') ||
+                      document.querySelector('[data-testid="chatlist-search"]');
+    if (!searchBox) {
+      console.error('[CRM] Search box not found!');
+      return;
     }
-  }, 1000);
+
+    searchBox.focus();
+    
+    // Select all and clear
+    document.execCommand('selectAll', false, null);
+    document.execCommand('delete', false, null);
+    
+    // Insert text
+    document.execCommand('insertText', false, query);
+    
+    // Dispatch input events
+    searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+    searchBox.dispatchEvent(new Event('change', { bubbles: true }));
+
+    // 3. Wait for search results
+    setTimeout(() => {
+      const firstResult = document.querySelector('[data-testid^="list-item-"]') ||
+                          document.querySelector('[data-testid="chat-list-item"]') ||
+                          document.querySelector('[role="row"][data-id]');
+      if (firstResult) {
+        const btn = firstResult.querySelector('[role="button"]') || firstResult;
+        simulateClick(btn);
+        
+        // Clear search input to restore regular sidebar view
+        const clearBtn = document.querySelector('[data-testid="chatlist-search-clear"]');
+        if (clearBtn) simulateClick(clearBtn);
+        
+        if (realPhone) currentPhone = realPhone;
+        setTimeout(() => saveCallback('', realPhone || ''), 1000);
+      } else {
+        console.warn('[CRM] Search returned no results for query:', query);
+      }
+    }, 1000);
+  }, 100);
 }
 
 
