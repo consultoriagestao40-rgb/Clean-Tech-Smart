@@ -1870,61 +1870,103 @@ async function handleSaveQuickTicket(e) {
 }
 
 // Reads all chats directly from WhatsApp Web local IndexedDB database (model-storage)
-// This captures all 400+ contacts instantly without needing to scroll the DOM sidebar
+// Injects a script tag to bypass the isolated world restriction of content scripts
 async function getChatsFromIndexedDB() {
   return new Promise((resolve) => {
-    try {
-      if (!window.indexedDB) { resolve([]); return; }
-      
-      // 1. List all local databases to find the dynamic model-storage DB name
-      window.indexedDB.databases().then((databases) => {
-        const dbInfo = databases.find(db => db.name && db.name.startsWith('model-storage'));
-        if (!dbInfo) { resolve([]); return; }
+    // Unique event name for communication
+    const eventName = 'crm_idb_chats_data_' + Math.random().toString(36).substring(2, 9);
+    
+    // Set up one-shot listener
+    const onReceived = (event) => {
+      window.removeEventListener(eventName, onReceived);
+      const data = event.detail || [];
+      resolve(data);
+    };
+    window.addEventListener(eventName, onReceived);
 
-        const request = window.indexedDB.open(dbInfo.name);
-        request.onerror = () => resolve([]);
-        request.onsuccess = (event) => {
-          const db = event.target.result;
-          if (!db.objectStoreNames.contains('chat')) {
-            db.close();
-            resolve([]);
-            return;
-          }
+    // Injected code to run in the WhatsApp Web Main World context
+    const mainWorldCode = `
+      (function() {
+        if (!window.indexedDB) {
+          window.dispatchEvent(new CustomEvent('${eventName}', { detail: [] }));
+          return;
+        }
 
-          try {
-            const transaction = db.transaction(['chat'], 'readonly');
-            const store = transaction.objectStore('chat');
-            const getAllReq = store.getAll();
-
-            getAllReq.onerror = () => { db.close(); resolve([]); };
-            getAllReq.onsuccess = () => {
-              const records = getAllReq.result || [];
-              const extracted = records
-                .filter(r => r.id && r.id.includes('@c.us'))
-                .map(r => {
-                  const phone = r.id.split('@')[0].replace(/\D/g, '');
-                  return {
-                    phone,
-                    name: r.name || phone,
-                    lastMessage: r.preview || '',
-                    unreadCount: r.unreadCount || 0,
-                    photo: r.avatar || ''
-                  };
-                });
+        const tryOpenDb = (dbName) => {
+          const request = window.indexedDB.open(dbName);
+          request.onerror = () => window.dispatchEvent(new CustomEvent('${eventName}', { detail: [] }));
+          request.onsuccess = (event) => {
+            const db = event.target.result;
+            // In WhatsApp Web, stores might be named 'chat' or 'chats'
+            const storeName = db.objectStoreNames.contains('chat') ? 'chat' : 
+                             (db.objectStoreNames.contains('chats') ? 'chats' : null);
+            if (!storeName) {
               db.close();
-              resolve(extracted);
-            };
-          } catch (e) {
-            db.close();
-            resolve([]);
-          }
+              window.dispatchEvent(new CustomEvent('${eventName}', { detail: [] }));
+              return;
+            }
+
+            try {
+              const transaction = db.transaction([storeName], 'readonly');
+              const store = transaction.objectStore(storeName);
+              const getAllReq = store.getAll();
+
+              getAllReq.onerror = () => { db.close(); window.dispatchEvent(new CustomEvent('${eventName}', { detail: [] })); };
+              getAllReq.onsuccess = () => {
+                const records = getAllReq.result || [];
+                const extracted = records
+                  .filter(r => r.id && r.id.includes('@c.us'))
+                  .map(r => {
+                    const phone = r.id.split('@')[0].replace(/\\D/g, '');
+                    return {
+                      phone,
+                      name: r.name || phone,
+                      lastMessage: r.preview || '',
+                      unreadCount: r.unreadCount || 0,
+                      photo: r.avatar || ''
+                    };
+                  });
+                db.close();
+                window.dispatchEvent(new CustomEvent('${eventName}', { detail: extracted }));
+              };
+            } catch (e) {
+              db.close();
+              window.dispatchEvent(new CustomEvent('${eventName}', { detail: [] }));
+            }
+          };
         };
-      }).catch(() => resolve([]));
-    } catch (err) {
+
+        // Try getting databases lists or fallback to known name
+        if (window.indexedDB.databases) {
+          window.indexedDB.databases().then((databases) => {
+            const dbInfo = databases.find(db => db.name && db.name.startsWith('model-storage'));
+            if (dbInfo) {
+              tryOpenDb(dbInfo.name);
+            } else {
+              // Try standard name
+              tryOpenDb('model-storage');
+            }
+          }).catch(() => tryOpenDb('model-storage'));
+        } else {
+          tryOpenDb('model-storage');
+        }
+      })();
+    `;
+
+    // Inject and execute
+    const script = document.createElement('script');
+    script.textContent = mainWorldCode;
+    (document.head || document.documentElement).appendChild(script);
+    script.remove();
+
+    // Timeout fallback after 2 seconds
+    setTimeout(() => {
+      window.removeEventListener(eventName, onReceived);
       resolve([]);
-    }
+    }, 2000);
   });
 }
+
 
 // Robust extractor for WhatsApp Business Web chat list
 // Confirmed DOM: [data-testid="chat-list"] > [aria-label="Lista de conversas"][role="grid"] > children (rows)
@@ -2156,11 +2198,33 @@ function searchAndClickContact(query, saveCallback, realPhone) {
   }
 
   setTimeout(() => {
-    // 2. Find search box
-    const searchBox = document.querySelector('[data-testid="chat-list-search"]') ||
-                      document.querySelector('[data-testid="search-input-container"] [role="textbox"]') ||
-                      document.querySelector('div[contenteditable="true"][data-tab="3"]') ||
-                      document.querySelector('[data-testid="chatlist-search"]');
+    // 2. Find search box using dynamic contenteditable scan (extremely robust)
+    let searchBox = null;
+    const editables = document.querySelectorAll('div[contenteditable="true"]');
+    for (const el of editables) {
+      const html = el.outerHTML || '';
+      const placeholder = el.getAttribute('placeholder') || '';
+      if (
+        html.includes('Pesquisar') || 
+        html.includes('Search') || 
+        placeholder.includes('Pesquisar') ||
+        placeholder.includes('Search') ||
+        el.getAttribute('data-tab') === '3' || 
+        el.closest('[data-testid="search-input-container"]')
+      ) {
+        searchBox = el;
+        break;
+      }
+    }
+
+    if (!searchBox) {
+      // Fallback to querySelector
+      searchBox = document.querySelector('[data-testid="chat-list-search"]') ||
+                  document.querySelector('[data-testid="search-input-container"] [role="textbox"]') ||
+                  document.querySelector('div[contenteditable="true"][data-tab="3"]') ||
+                  document.querySelector('[data-testid="chatlist-search"]');
+    }
+
     if (!searchBox) {
       console.error('[CRM] Search box not found!');
       return;
