@@ -277,47 +277,68 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                       if (contactStoreName && activeJids.length > 0) {
                         const contactStore = transaction.objectStore(contactStoreName);
                         
-                        const queries = [];
-                        activeJids.forEach(jid => {
-                          queries.push({ orig: jid, queryKey: jid });
-                          const phone = jid.split('@')[0];
-                          if (phone) {
-                            queries.push({ orig: jid, queryKey: phone });
-                          }
-                          if (jid.includes('@c.us')) {
-                            queries.push({ orig: jid, queryKey: jid.replace('@c.us', '@s.whatsapp.net') });
-                          } else if (jid.includes('@s.whatsapp.net')) {
-                            queries.push({ orig: jid, queryKey: jid.replace('@s.whatsapp.net', '@c.us') });
-                          }
-                        });
-
-                        let loadedCount = 0;
-                        queries.forEach(q => {
-                          try {
-                            const req = contactStore.get(q.queryKey);
-                            req.onsuccess = (e) => {
-                              const c = e.target.result;
-                              if (c) {
-                                contactsMap.set(q.orig, c);
-                              }
-                              loadedCount++;
-                              if (loadedCount === queries.length) {
-                                onContactsLoaded();
-                              }
-                            };
-                            req.onerror = () => {
-                              loadedCount++;
-                              if (loadedCount === queries.length) {
-                                onContactsLoaded();
-                              }
-                            };
-                          } catch (err) {
-                            loadedCount++;
-                            if (loadedCount === queries.length) {
-                              onContactsLoaded();
+                        const startContactsGet = () => {
+                          const queries = [];
+                          activeJids.forEach(jid => {
+                            queries.push({ orig: jid, queryKey: jid });
+                            const phone = jid.split('@')[0];
+                            if (phone) {
+                              queries.push({ orig: jid, queryKey: phone });
                             }
-                          }
-                        });
+                            if (jid.includes('@c.us')) {
+                              queries.push({ orig: jid, queryKey: jid.replace('@c.us', '@s.whatsapp.net') });
+                            } else if (jid.includes('@s.whatsapp.net')) {
+                              queries.push({ orig: jid, queryKey: jid.replace('@s.whatsapp.net', '@c.us') });
+                            }
+                          });
+
+                          let loadedCount = 0;
+                          queries.forEach(q => {
+                            try {
+                              const req = contactStore.get(q.queryKey);
+                              req.onsuccess = (e) => {
+                                const c = e.target.result;
+                                if (c) {
+                                  contactsMap.set(q.orig, c);
+                                }
+                                loadedCount++;
+                                if (loadedCount === queries.length) {
+                                  onContactsLoaded();
+                                }
+                              };
+                              req.onerror = () => {
+                                loadedCount++;
+                                if (loadedCount === queries.length) {
+                                  onContactsLoaded();
+                                }
+                              };
+                            } catch (err) {
+                              loadedCount++;
+                              if (loadedCount === queries.length) {
+                                onContactsLoaded();
+                              }
+                            }
+                          });
+                        };
+
+                        try {
+                          const keysReq = contactStore.getAllKeys(null, 3);
+                          keysReq.onsuccess = (e) => {
+                            const keys = e.target.result || [];
+                            contactSample = keys.map(k => ({
+                              id: typeof k === 'object' ? JSON.stringify(k) : String(k),
+                              keys: 'none',
+                              hasPic: 'none',
+                              picKeys: 'none'
+                            }));
+                            startContactsGet();
+                          };
+                          keysReq.onerror = () => {
+                            startContactsGet();
+                          };
+                        } catch (err) {
+                          startContactsGet();
+                        }
                       } else {
                         onContactsLoaded();
                       }
