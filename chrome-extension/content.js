@@ -1420,61 +1420,87 @@ function extractChatFromRow(row, chats) {
 }
 
 function selectChatInBackground(phone) {
-  // Handle name-based key (no real phone extracted yet)
-  if (phone && phone.startsWith('name_')) {
-    // Convert key back to approximate name to find in list
-    const approxName = phone.replace(/^name_/, '').replace(/_/g, ' ').toLowerCase();
-    
-    // Find the matching list-item row by cell-frame-title text
-    const allTitleNodes = document.querySelectorAll('[data-testid="cell-frame-title"]');
-    let found = false;
-    for (const node of allTitleNodes) {
-      const nodeText = node.innerText.toLowerCase();
-      if (nodeText.includes(approxName.substring(0, 10))) {
-        const row = node.closest('[data-testid^="list-item-"]') || node.closest('[role="row"]') || node.parentElement;
-        if (row) {
-          row.click();
-          found = true;
-          // After click, read URL to get real phone
-          setTimeout(() => {
-            const hash = window.location.hash || '';
-            if (hash.includes('/chat/') && hash.includes('@c.us')) {
-              const realPhone = hash.split('/chat/')[1].split('@')[0].replace(/\D/g, '');
-              if (realPhone && realPhone !== currentPhone) {
-                currentPhone = realPhone;
-                currentName = node.innerText.trim();
-                loadContactData(currentPhone, currentName);
-              }
-            }
-          }, 500);
-          break;
-        }
-      }
-    }
-    if (!found) {
-      // Try clicking by matching aria-label
-      const row = document.querySelector(`[aria-label*="${approxName.substring(0, 8)}"]`);
-      if (row) row.click();
-    }
-    return;
-  }
+  if (!phone) return;
 
+  // Helper: read messages from DOM and save to storage with active chat info
+  const saveMessagesToStorage = (chatName, chatPhone) => {
+    const messages = getActiveChatMessages();
+    const nameFromHeader = (
+      document.querySelector('[data-testid="conversation-info-header-chat-title"] span') ||
+      document.querySelector('header span[data-testid]') ||
+      document.querySelector('header span[title]') ||
+      document.querySelector('header span[dir="auto"]')
+    )?.innerText?.trim() || chatName || '';
+
+    chrome.storage.local.set({
+      crm_whatsapp_messages: messages,
+      crm_whatsapp_active_phone: chatPhone || '',
+      crm_whatsapp_active_name: nameFromHeader.toLowerCase()
+    });
+  };
+
+  // STRATEGY 1: If we have a real phone number, use hash navigation (100% reliable)
   const cleaned = phone.replace(/\D/g, '');
-  const suffix = cleaned.slice(-8); // Get last 8 digits to match 9-digit variations
-  
-  const chatListItem = document.querySelector(`[data-id*="${suffix}"]`);
-  if (chatListItem) {
-    const clickable = chatListItem.querySelector('[role="button"]') || chatListItem;
-    clickable.click();
-  } else {
-    // fallback to setting hash with formatted number (with 55)
+  if (cleaned && cleaned.length >= 8) {
     let formatted = cleaned;
+    // Add Brazil country code if missing
     if (cleaned.length === 10 || cleaned.length === 11) {
       formatted = '55' + cleaned;
     }
     window.location.hash = `#/chat/${formatted}@c.us`;
+    currentPhone = formatted;
+
+    // Save messages at 1s, 2.5s, and 5s after navigation
+    setTimeout(() => saveMessagesToStorage('', formatted), 1000);
+    setTimeout(() => saveMessagesToStorage('', formatted), 2500);
+    setTimeout(() => saveMessagesToStorage('', formatted), 5000);
+    return;
+  }
+
+  // STRATEGY 2: name-based key — find in visible list and click
+  const approxName = phone.replace(/^name_/, '').replace(/_/g, ' ').toLowerCase();
+  const allTitleNodes = document.querySelectorAll('[data-testid="cell-frame-title"]');
+  let found = false;
+  for (const node of allTitleNodes) {
+    const nodeText = (node.innerText || '').toLowerCase();
+    const searchTerm = approxName.substring(0, 10);
+    if (nodeText.includes(searchTerm) || (searchTerm.length > 4 && nodeText.length > 4 && nodeText.substring(0, 8) === approxName.substring(0, 8))) {
+      const row = node.closest('[data-testid^="list-item-"]') || node.closest('[role="row"]') || node.parentElement;
+      if (row) {
+        const clickable = row.querySelector('[role="button"]') || row;
+        clickable.click();
+        found = true;
+        currentName = node.innerText.trim();
+
+        // After clicking, read the URL hash to get the real phone number
+        setTimeout(() => {
+          const hash = window.location.hash || '';
+          if (hash.includes('/chat/') && hash.includes('@c.us')) {
+            const realPhone = hash.split('/chat/')[1].split('@')[0].replace(/\D/g, '');
+            if (realPhone) currentPhone = realPhone;
+          }
+          saveMessagesToStorage(currentName, currentPhone);
+        }, 1000);
+        setTimeout(() => saveMessagesToStorage(currentName, currentPhone), 2500);
+        setTimeout(() => saveMessagesToStorage(currentName, currentPhone), 5000);
+        break;
+      }
+    }
+  }
+
+  if (!found) {
+    // Try matching by aria-label as last resort
+    const row = document.querySelector(`[aria-label*="${approxName.substring(0, 8)}"]`);
+    if (row) {
+      const clickable = row.querySelector('[role="button"]') || row;
+      clickable.click();
+      setTimeout(() => saveMessagesToStorage(approxName, ''), 1000);
+      setTimeout(() => saveMessagesToStorage(approxName, ''), 2500);
+      setTimeout(() => saveMessagesToStorage(approxName, ''), 5000);
+    }
   }
 }
+
 
 function sendWhatsAppMessage(text) {
   // WhatsApp Business Web compose box is id="_r_a_" with role="textbox" and data-tab="3"

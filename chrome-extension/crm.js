@@ -692,50 +692,69 @@ function openChatOverlay(lead) {
 
   let lastMsgCount = 0;
   const syncChatMessages = async () => {
-    // Always read live from WhatsApp DOM - no cache to avoid stale messages from other conversations
-    const res = await sendToWhatsAppTab({ action: "getMessages" });
     const msgContainer = document.getElementById('chat-modal-messages');
     if (!msgContainer) return;
 
-    let messages = [];
-    if (res && res.messages && res.messages.length > 0) {
-      messages = res.messages;
-    }
-    // Note: no storage fallback - if WhatsApp tab hasn't loaded the conversation yet,
-    // we show "Carregando..." until it's ready. This prevents showing wrong conversations.
+    // PRIMARY: Read from chrome.storage.local where content.js saves messages every 2s
+    chrome.storage.local.get(['crm_whatsapp_messages', 'crm_whatsapp_active_phone', 'crm_whatsapp_active_name'], (stored) => {
+      if (!document.getElementById('chat-modal-messages')) return;
 
-    if (messages.length === 0) {
-      msgContainer.innerHTML = '<div style="margin: auto; color: #8696a0; font-size: 13px; font-style: italic;">Carregando histórico do WhatsApp...</div>';
-      return;
-    }
+      const storedMessages = stored.crm_whatsapp_messages || [];
+      const storedPhone = stored.crm_whatsapp_active_phone || '';
+      const storedName = (stored.crm_whatsapp_active_name || '').toLowerCase();
+      const leadPhone = lead.phone || '';
+      const leadName = (lead.name || '').toLowerCase().substring(0, 12);
 
-    msgContainer.innerHTML = messages.map(msg => {
-      const bg = msg.isIncoming ? '#ffffff' : '#d9fdd3';
-      const align = msg.isIncoming ? 'flex-start' : 'flex-end';
-      const borderRadius = msg.isIncoming ? '0 12px 12px 12px' : '12px 0 12px 12px';
-      
-      return `
-        <div style="align-self: ${align}; max-width: 65%; background-color: ${bg}; color: #111b21; padding: 8px 12px; border-radius: ${borderRadius}; font-size: 13.5px; line-height: 1.45; box-shadow: 0 1px 1px rgba(11,20,26,0.12); word-break: break-word; text-align: left; position: relative;">
-          ${msg.text}
-        </div>
-      `;
-    }).join('');
+      // Validate messages belong to this conversation
+      const phoneMatch = leadPhone && !leadPhone.startsWith('name_') && storedPhone && storedPhone.includes(leadPhone.slice(-8));
+      const nameMatch = leadName.length > 3 && storedName.includes(leadName.substring(0, 8));
+      const messagesAreValid = phoneMatch || nameMatch;
 
-    if (messages.length !== lastMsgCount) {
-      lastMsgCount = messages.length;
-      msgContainer.scrollTop = msgContainer.scrollHeight;
-    }
+      if (storedMessages.length > 0 && messagesAreValid) {
+        const messages = storedMessages;
+        msgContainer.innerHTML = messages.map(msg => {
+          const bg = msg.isIncoming ? '#ffffff' : '#d9fdd3';
+          const align = msg.isIncoming ? 'flex-start' : 'flex-end';
+          const borderRadius = msg.isIncoming ? '0 12px 12px 12px' : '12px 0 12px 12px';
+          return `<div style="align-self: ${align}; max-width: 65%; background-color: ${bg}; color: #111b21; padding: 8px 12px; border-radius: ${borderRadius}; font-size: 13.5px; line-height: 1.45; box-shadow: 0 1px 1px rgba(11,20,26,0.12); word-break: break-word; text-align: left;">${msg.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+        }).join('');
+        if (messages.length !== lastMsgCount) {
+          lastMsgCount = messages.length;
+          msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+      } else {
+        // FALLBACK: try live DOM reading via message passing
+        sendToWhatsAppTab({ action: "getMessages" }).then(res => {
+          if (!document.getElementById('chat-modal-messages')) return;
+          const msgs = (res && res.messages && res.messages.length > 0) ? res.messages : [];
+          if (msgs.length > 0) {
+            msgContainer.innerHTML = msgs.map(msg => {
+              const bg = msg.isIncoming ? '#ffffff' : '#d9fdd3';
+              const align = msg.isIncoming ? 'flex-start' : 'flex-end';
+              const borderRadius = msg.isIncoming ? '0 12px 12px 12px' : '12px 0 12px 12px';
+              return `<div style="align-self: ${align}; max-width: 65%; background-color: ${bg}; color: #111b21; padding: 8px 12px; border-radius: ${borderRadius}; font-size: 13.5px; line-height: 1.45; box-shadow: 0 1px 1px rgba(11,20,26,0.12); word-break: break-word; text-align: left;">${msg.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+            }).join('');
+            if (msgs.length !== lastMsgCount) {
+              lastMsgCount = msgs.length;
+              msgContainer.scrollTop = msgContainer.scrollHeight;
+            }
+          } else {
+            if (lastMsgCount === 0) {
+              msgContainer.innerHTML = '<div style="margin: auto; color: #8696a0; font-size: 13px; font-style: italic;">Aguardando WhatsApp abrir a conversa...</div>';
+            }
+          }
+        });
+      }
+    });
   };
 
-  // Open Chat in background tab and trigger storage bridge
-  // First clear cached messages to avoid showing stale conversation
-  chrome.storage.local.set({ crm_whatsapp_messages: [], crm_whatsapp_active_name: '' });
-  chrome.storage.local.set({ crm_pending_open_chat: lead.phone });
+  // Clear any stale messages and open the conversation in background WhatsApp tab
+  chrome.storage.local.set({ crm_whatsapp_messages: [], crm_whatsapp_active_name: '', crm_whatsapp_active_phone: '' });
   sendToWhatsAppTab({ action: "openChat", phone: lead.phone });
 
-  // Polling sync - start after 3s to allow WhatsApp to fully load the conversation
-  const chatSyncInterval = setInterval(syncChatMessages, 1200);
-  setTimeout(syncChatMessages, 3000);
+  // Start polling - first check at 2.5s, then every 1.5s
+  const chatSyncInterval = setInterval(syncChatMessages, 1500);
+  setTimeout(syncChatMessages, 2500);
 }
 
 // ---------------- DIALOG MODALS ----------------
