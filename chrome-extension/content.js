@@ -840,7 +840,12 @@ function injectHorizontalTabs() {
 function applyChatListFilter() {
   if (!crmToken) return;
 
-  const chatItems = document.querySelectorAll('[data-testid="chat-list-item"]');
+  // WhatsApp Business Web uses data-testid^="list-item-" for chat rows
+  // Personal WhatsApp Web uses data-testid="chat-list-item"
+  const chatItems = document.querySelectorAll(
+    '[data-testid^="list-item-"], [data-testid="chat-list-item"], [role="row"][data-id]'
+  );
+
   if (activeFilterStage === 'all') {
     chatItems.forEach(item => {
       item.style.removeProperty('display');
@@ -848,17 +853,36 @@ function applyChatListFilter() {
     return;
   }
 
-  const allowedPhones = leadsList
-    .filter(l => l.stage === activeFilterStage)
-    .map(l => l.phone);
+  const stageLeads = leadsList.filter(l => l.stage === activeFilterStage);
+  const allowedPhones = new Set(stageLeads.map(l => l.phone));
+  // Also build a set of last-8-digits for fuzzy matching
+  const allowedSuffixes = new Set(
+    stageLeads
+      .map(l => l.phone && !l.phone.startsWith('name_') ? l.phone.replace(/\D/g, '').slice(-8) : '')
+      .filter(s => s.length >= 8)
+  );
 
   chatItems.forEach(item => {
-    const dataId = item.closest('[data-id]')?.getAttribute('data-id') || 
-                   item.querySelector('[data-id]')?.getAttribute('data-id') || 
-                   item.getAttribute('data-id') || '';
-    const phone = dataId.split('@')[0].replace(/\D/g, '');
-    
-    if (phone && allowedPhones.includes(phone)) {
+    // Method 1: extract from data-testid="list-item-PHONE@c.us"
+    const testid = item.getAttribute('data-testid') || '';
+    let phone = '';
+    if (testid.includes('@c.us')) {
+      phone = testid.replace('list-item-', '').split('@')[0].replace(/\D/g, '');
+    }
+
+    // Method 2: extract from data-id
+    if (!phone) {
+      const dataId = item.closest('[data-id]')?.getAttribute('data-id') ||
+                     item.querySelector('[data-id]')?.getAttribute('data-id') ||
+                     item.getAttribute('data-id') || '';
+      if (dataId) phone = dataId.split('@')[0].replace(/\D/g, '');
+    }
+
+    const suffix = phone ? phone.slice(-8) : '';
+    const isAllowed = (phone && allowedPhones.has(phone)) ||
+                      (suffix && suffix.length >= 8 && allowedSuffixes.has(suffix));
+
+    if (isAllowed) {
       item.style.setProperty('display', 'flex', 'important');
     } else {
       item.style.setProperty('display', 'none', 'important');
@@ -1427,7 +1451,7 @@ function selectChatInBackground(phone) {
     const messages = getActiveChatMessages();
     const nameFromHeader = (
       document.querySelector('[data-testid="conversation-info-header-chat-title"] span') ||
-      document.querySelector('header span[data-testid]') ||
+      document.querySelector('[data-testid="conversation-info-header"] span[dir]') ||
       document.querySelector('header span[title]') ||
       document.querySelector('header span[dir="auto"]')
     )?.innerText?.trim() || chatName || '';
@@ -1437,27 +1461,54 @@ function selectChatInBackground(phone) {
       crm_whatsapp_active_phone: chatPhone || '',
       crm_whatsapp_active_name: nameFromHeader.toLowerCase()
     });
+    console.log('[CRM] saveMessagesToStorage:', messages.length, 'msgs for', chatPhone || chatName);
   };
 
-  // STRATEGY 1: If we have a real phone number, use hash navigation (100% reliable)
   const cleaned = phone.replace(/\D/g, '');
+
   if (cleaned && cleaned.length >= 8) {
+    const suffix = cleaned.slice(-8);
+
+    // STRATEGY 1A: Click on the list item that has data-testid containing the phone suffix
+    // WhatsApp Business Web: data-testid="list-item-5541985083658@c.us"
+    const listItemByTestid = document.querySelector(`[data-testid*="${suffix}@c.us"]`) ||
+                              document.querySelector(`[data-testid*="${suffix}@s.whatsapp.net"]`);
+    if (listItemByTestid) {
+      const clickable = listItemByTestid.querySelector('[role="button"]') || listItemByTestid;
+      clickable.click();
+      currentPhone = cleaned;
+      setTimeout(() => saveMessagesToStorage('', cleaned), 800);
+      setTimeout(() => saveMessagesToStorage('', cleaned), 2000);
+      setTimeout(() => saveMessagesToStorage('', cleaned), 4500);
+      return;
+    }
+
+    // STRATEGY 1B: Click on data-id element (personal WhatsApp Web)
+    const listItemByDataId = document.querySelector(`[data-id*="${suffix}"]`);
+    if (listItemByDataId) {
+      const clickable = listItemByDataId.querySelector('[role="button"]') || listItemByDataId;
+      clickable.click();
+      currentPhone = cleaned;
+      setTimeout(() => saveMessagesToStorage('', cleaned), 800);
+      setTimeout(() => saveMessagesToStorage('', cleaned), 2000);
+      setTimeout(() => saveMessagesToStorage('', cleaned), 4500);
+      return;
+    }
+
+    // STRATEGY 1C: Hash navigation fallback (works in personal WA Web)
     let formatted = cleaned;
-    // Add Brazil country code if missing
     if (cleaned.length === 10 || cleaned.length === 11) {
       formatted = '55' + cleaned;
     }
     window.location.hash = `#/chat/${formatted}@c.us`;
     currentPhone = formatted;
-
-    // Save messages at 1s, 2.5s, and 5s after navigation
-    setTimeout(() => saveMessagesToStorage('', formatted), 1000);
-    setTimeout(() => saveMessagesToStorage('', formatted), 2500);
-    setTimeout(() => saveMessagesToStorage('', formatted), 5000);
+    setTimeout(() => saveMessagesToStorage('', formatted), 1500);
+    setTimeout(() => saveMessagesToStorage('', formatted), 3000);
+    setTimeout(() => saveMessagesToStorage('', formatted), 6000);
     return;
   }
 
-  // STRATEGY 2: name-based key — find in visible list and click
+  // STRATEGY 2: name-based key — find in visible list and click by matching title text
   const approxName = phone.replace(/^name_/, '').replace(/_/g, ' ').toLowerCase();
   const allTitleNodes = document.querySelectorAll('[data-testid="cell-frame-title"]');
   let found = false;
