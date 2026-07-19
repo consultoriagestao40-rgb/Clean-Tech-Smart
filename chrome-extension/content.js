@@ -817,8 +817,8 @@ function startChatObserver() {
     });
   };
 
-  // Run first IndexedDB sync after 8 seconds (to let WhatsApp Web fully load safely)
-  setTimeout(syncIdb, 8000);
+  // Run first IndexedDB sync after 1.5 seconds (to let WhatsApp Web fully load safely)
+  setTimeout(syncIdb, 1500);
   // Run periodic IndexedDB sync every 45 seconds
   setInterval(syncIdb, 45000);
 
