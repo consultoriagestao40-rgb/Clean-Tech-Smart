@@ -292,6 +292,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             }
                           });
 
+                          if (queries.length === 0) {
+                            onContactsLoaded();
+                            return;
+                          }
+
                           let loadedCount = 0;
                           queries.forEach(q => {
                             try {
