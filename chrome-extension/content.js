@@ -771,6 +771,20 @@ function startChatObserver() {
         debug.app_top_children = topChildren;
       }
 
+      // Query IndexedDB databases list for visual debugging in the CRM footer
+      if (window.indexedDB && window.indexedDB.databases) {
+        window.indexedDB.databases().then(dbs => {
+          debug.indexed_dbs = dbs.map(d => d.name);
+          safeStorageSet({ crm_dom_debug: debug });
+        }).catch(e => {
+          debug.indexed_dbs_error = e.message;
+          safeStorageSet({ crm_dom_debug: debug });
+        });
+      } else {
+        debug.indexed_dbs = 'not_supported';
+        safeStorageSet({ crm_dom_debug: debug });
+      }
+
       safeStorageSet({ crm_dom_debug: debug });
     } catch (e) {
       // Extension context invalidated - stop the interval
