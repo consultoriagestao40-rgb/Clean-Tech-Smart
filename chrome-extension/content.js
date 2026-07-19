@@ -1012,6 +1012,43 @@ function renderCrmInPageBoard() {
                photo: chat ? chat.photo : '', unreadCount: chat ? chat.unreadCount : 0 };
     });
 
+    // Auto-inbox: include ALL WhatsApp chats that don't have an explicit lead in another stage
+    // This mirrors the original CRM behavior that shows 66+ contacts in Inbox
+    const leadedPhoneSuffixes = new Set(
+      leads
+        .filter(l => l.stage && l.stage !== 'inbox')
+        .map(l => l.phone ? l.phone.replace(/\D/g, '').slice(-8) : '')
+        .filter(s => s.length >= 8)
+    );
+    const explicitPhoneSuffixes = new Set(
+      leads.map(l => l.phone ? l.phone.replace(/\D/g, '').slice(-8) : '').filter(s => s.length >= 8)
+    );
+
+    const autoInboxChats = waChats
+      .filter(c => {
+        if (!c.phone) return false;
+        const suffix = c.phone.replace(/\D/g, '').slice(-8);
+        if (suffix.length < 8) return false;
+        // Skip if this chat belongs to a lead that's in a non-inbox stage
+        if (leadedPhoneSuffixes.has(suffix)) return false;
+        // Skip if this chat already has an explicit lead entry (avoids duplicates)
+        if (explicitPhoneSuffixes.has(suffix)) return false;
+        return true;
+      })
+      .map(c => ({
+        phone: c.phone,
+        name: c.name || c.phone,
+        stage: 'inbox',
+        lastMessage: c.lastMessage || '',
+        photo: c.photo || '',
+        unreadCount: c.unreadCount || 0,
+        value: 0,
+        _autoInbox: true
+      }));
+
+    // Merge: explicit leads + auto-inbox chats
+    const allLeads = [...enrichedLeads, ...autoInboxChats];
+
     const sellerOptions = sellers.length > 0
       ? `<option value="all">Todos os Vendedores</option>` + sellers.map(s => `<option value="${s.id}">${s.name}</option>`).join('')
       : `<option value="all">Todos os Vendedores</option>`;
@@ -1039,7 +1076,7 @@ function renderCrmInPageBoard() {
     // Render columns
     const boardArea = panel.querySelector('#crm-ip-board-area');
     stages.forEach(st => {
-      const stageLeads = enrichedLeads.filter(l => l.stage === st.key || (!l.stage && st.key === 'inbox'));
+      const stageLeads = allLeads.filter(l => l.stage === st.key || (!l.stage && st.key === 'inbox'));
       const colEl = document.createElement('div');
       colEl.className = 'crm-ip-col';
       const borderColor = (st.color || '').match(/#[0-9a-fA-F]{3,6}/)?.[0] || '#94a3b8';
