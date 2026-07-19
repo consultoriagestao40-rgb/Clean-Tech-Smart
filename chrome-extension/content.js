@@ -1870,100 +1870,26 @@ async function handleSaveQuickTicket(e) {
 }
 
 // Reads all chats directly from WhatsApp Web local IndexedDB database (model-storage)
-// Injects a script tag to bypass the isolated world restriction of content scripts
+// Resolves Content Security Policy (CSP) blocking by executing via Background scripting service worker
 async function getChatsFromIndexedDB() {
   return new Promise((resolve) => {
-    // Unique event name for communication
-    const eventName = 'crm_idb_chats_data_' + Math.random().toString(36).substring(2, 9);
-    
-    // Set up one-shot listener
-    const onReceived = (event) => {
-      window.removeEventListener(eventName, onReceived);
-      const data = event.detail || [];
-      resolve(data);
-    };
-    window.addEventListener(eventName, onReceived);
-
-    // Injected code to run in the WhatsApp Web Main World context
-    const mainWorldCode = `
-      (function() {
-        if (!window.indexedDB) {
-          window.dispatchEvent(new CustomEvent('${eventName}', { detail: [] }));
-          return;
-        }
-
-        const tryOpenDb = (dbName) => {
-          const request = window.indexedDB.open(dbName);
-          request.onerror = () => window.dispatchEvent(new CustomEvent('${eventName}', { detail: [] }));
-          request.onsuccess = (event) => {
-            const db = event.target.result;
-            // In WhatsApp Web, stores might be named 'chat' or 'chats'
-            const storeName = db.objectStoreNames.contains('chat') ? 'chat' : 
-                             (db.objectStoreNames.contains('chats') ? 'chats' : null);
-            if (!storeName) {
-              db.close();
-              window.dispatchEvent(new CustomEvent('${eventName}', { detail: [] }));
-              return;
-            }
-
-            try {
-              const transaction = db.transaction([storeName], 'readonly');
-              const store = transaction.objectStore(storeName);
-              const getAllReq = store.getAll();
-
-              getAllReq.onerror = () => { db.close(); window.dispatchEvent(new CustomEvent('${eventName}', { detail: [] })); };
-              getAllReq.onsuccess = () => {
-                const records = getAllReq.result || [];
-                const extracted = records
-                  .filter(r => r.id && r.id.includes('@c.us'))
-                  .map(r => {
-                    const phone = r.id.split('@')[0].replace(/\\D/g, '');
-                    return {
-                      phone,
-                      name: r.name || phone,
-                      lastMessage: r.preview || '',
-                      unreadCount: r.unreadCount || 0,
-                      photo: r.avatar || ''
-                    };
-                  });
-                db.close();
-                window.dispatchEvent(new CustomEvent('${eventName}', { detail: extracted }));
-              };
-            } catch (e) {
-              db.close();
-              window.dispatchEvent(new CustomEvent('${eventName}', { detail: [] }));
-            }
-          };
-        };
-
-        // Try getting databases lists or fallback to known name
-        if (window.indexedDB.databases) {
-          window.indexedDB.databases().then((databases) => {
-            const dbInfo = databases.find(db => db.name && db.name.startsWith('model-storage'));
-            if (dbInfo) {
-              tryOpenDb(dbInfo.name);
-            } else {
-              // Try standard name
-              tryOpenDb('model-storage');
-            }
-          }).catch(() => tryOpenDb('model-storage'));
-        } else {
-          tryOpenDb('model-storage');
-        }
-      })();
-    `;
-
-    // Inject and execute
-    const script = document.createElement('script');
-    script.textContent = mainWorldCode;
-    (document.head || document.documentElement).appendChild(script);
-    script.remove();
-
-    // Timeout fallback after 2 seconds
-    setTimeout(() => {
-      window.removeEventListener(eventName, onReceived);
+    if (!chrome.runtime?.id) {
       resolve([]);
-    }, 2000);
+      return;
+    }
+    try {
+      chrome.runtime.sendMessage({ action: 'readIndexedDB' }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.warn('[CRM] getChatsFromIndexedDB error:', chrome.runtime.lastError.message);
+          resolve([]);
+        } else {
+          resolve(response || []);
+        }
+      });
+    } catch (e) {
+      console.warn('[CRM] getChatsFromIndexedDB catch:', e.message);
+      resolve([]);
+    }
   });
 }
 

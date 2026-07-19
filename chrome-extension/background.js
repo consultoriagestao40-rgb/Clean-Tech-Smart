@@ -12,6 +12,88 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  // Reads IndexedDB from Main World using chrome.scripting to bypass CSP restrictions
+  if (request.action === 'readIndexedDB') {
+    if (!sender.tab || !sender.tab.id) {
+      sendResponse([]);
+      return;
+    }
+
+    const tabId = sender.tab.id;
+    chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      world: 'MAIN',
+      func: () => {
+        return new Promise((resolve) => {
+          if (!window.indexedDB) { resolve([]); return; }
+
+          const tryOpenDb = (dbName) => {
+            const request = window.indexedDB.open(dbName);
+            request.onerror = () => resolve([]);
+            request.onsuccess = (event) => {
+              const db = event.target.result;
+              const storeName = db.objectStoreNames.contains('chat') ? 'chat' : 
+                               (db.objectStoreNames.contains('chats') ? 'chats' : null);
+              if (!storeName) {
+                db.close();
+                resolve([]);
+                return;
+              }
+
+              try {
+                const transaction = db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                const getAllReq = store.getAll();
+
+                getAllReq.onerror = () => { db.close(); resolve([]); };
+                getAllReq.onsuccess = () => {
+                  const records = getAllReq.result || [];
+                  const extracted = records
+                    .filter(r => r.id && r.id.includes('@c.us'))
+                    .map(r => {
+                      const phone = r.id.split('@')[0].replace(/\D/g, '');
+                      return {
+                        phone,
+                        name: r.name || phone,
+                        lastMessage: r.preview || '',
+                        unreadCount: r.unreadCount || 0,
+                        photo: r.avatar || ''
+                      };
+                    });
+                  db.close();
+                  resolve(extracted);
+                };
+              } catch (e) {
+                db.close();
+                resolve([]);
+              }
+            };
+          };
+
+          if (window.indexedDB.databases) {
+            window.indexedDB.databases().then((databases) => {
+              const dbInfo = databases.find(db => db.name && db.name.startsWith('model-storage'));
+              if (dbInfo) {
+                tryOpenDb(dbInfo.name);
+              } else {
+                tryOpenDb('model-storage');
+              }
+            }).catch(() => tryOpenDb('model-storage'));
+          } else {
+            tryOpenDb('model-storage');
+          }
+        });
+      }
+    }).then((results) => {
+      const data = (results && results[0] && results[0].result) ? results[0].result : [];
+      sendResponse(data);
+    }).catch((err) => {
+      console.error('[CRM Background] executeScript error:', err);
+      sendResponse([]);
+    });
+    return true; // Keep message channel open for async response
+  }
+
   // When CRM opens a chat: briefly focus WhatsApp tab so Chrome renders it,
   // then return focus to CRM tab. This forces the conversation panel to render.
   if (request.action === 'focusWhatsAppForChat') {
