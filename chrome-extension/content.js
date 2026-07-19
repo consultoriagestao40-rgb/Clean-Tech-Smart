@@ -1305,9 +1305,9 @@ function renderCrmInPageBoard() {
         const miniSample = dbInfoObj.rawSample.slice(0, 2).map(s => `[ID:${s.idVal},ContactKeys:${s.contactKeys},PicKeys:${s.picKeys},RecordKeys:${s.recordKeys}]`).join(';');
         let contactSampleText = '';
         if (dbInfoObj.contactSample && dbInfoObj.contactSample.length > 0) {
-          contactSampleText = ' | Contatos: ' + dbInfoObj.contactSample.map(c => `[ID:${c.id},Keys:${c.keys},hasPic:${c.hasPic},picKeys:${c.picKeys}]`).join(';');
+          contactSampleText = ' | Contatos: ' + dbInfoObj.contactSample.map(c => `[ID:${c.id},Keys:${c.keys}]`).join(';');
         }
-        sampleText = ` | Amostra: ${miniSample.substring(0, 220)}${contactSampleText.substring(0, 220)}`;
+        sampleText = `${contactSampleText} | Amostra: ${miniSample.substring(0, 150)}`;
       }
       const cStores = dbInfoObj.storeNames ? dbInfoObj.storeNames.filter(name => name.startsWith('l') || name.startsWith('p') || name.startsWith('u') || name.startsWith('w')) : [];
       idbInfo = `[${dbInfoObj.timestamp ? dbInfoObj.timestamp.substring(11, 19) : 'nunca'}] ${sampleText} | Banco: ${dbInfoObj.selectedDb || 'nenhum'} (Lidos: ${dbInfoObj.recordsCount || 0}, Filtrados: ${dbInfoObj.extractedCount || 0}) | Stores(L/P/U/W): [${cStores.join(', ')}]${errText} | Bancos: [${listDbs}]`;
@@ -1498,9 +1498,12 @@ function renderCrmInPageBoard() {
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${crmToken}` },
               body: JSON.stringify({ phone, stage: st.key })
             });
-            // Update local leadsList
+            // Update local leadsList and persist to storage
             const lead = leadsList.find(l => l.phone === phone);
-            if (lead) lead.stage = st.key;
+            if (lead) {
+              lead.stage = st.key;
+              safeStorageSet({ crm_leads: leadsList });
+            }
             renderCrmInPageBoard();
           } catch(err) { console.error('[CRM Panel] drop error:', err); }
         }
@@ -2171,16 +2174,15 @@ function selectChatInBackground(phone) {
   });
 
   // Strategy 1: Check if visible in sidebar
-  const listItem = document.querySelector(`[data-testid*="${suffix}@c.us"]`) ||
-                   document.querySelector(`[data-testid*="${suffix}@s.whatsapp.net"]`) ||
-                   document.querySelector(`[data-id*="${suffix}"]`);
+  const listItem = document.querySelector(`[data-testid*="${suffix}"]`) ||
+                   document.querySelector(`[data-id*="${suffix}"]`) ||
+                   document.querySelector(`[data-testid*="${cleaned}"]`);
   if (listItem) {
     const clickable = listItem.querySelector('[role="button"]') || listItem;
     simulateClick(clickable);
     currentPhone = cleaned;
     setTimeout(() => saveMessagesToStorage('', cleaned), 800);
     setTimeout(() => saveMessagesToStorage('', cleaned), 2000);
-    setTimeout(() => saveMessagesToStorage('', cleaned), 4500);
     return;
   }
 
@@ -2190,22 +2192,26 @@ function selectChatInBackground(phone) {
     formatted = '55' + cleaned;
   }
   
-  // Clear hash first to force routing event trigger
+  let server = 'c.us';
+  if (cleaned.length >= 14) {
+    server = 'lid';
+  }
+
   window.location.hash = '';
   setTimeout(() => {
-    window.location.hash = `#/chat/${formatted}@c.us`;
+    window.location.hash = `#/chat/${formatted}@${server}`;
     currentPhone = formatted;
     setTimeout(() => saveMessagesToStorage('', formatted), 1000);
     setTimeout(() => saveMessagesToStorage('', formatted), 2500);
-    setTimeout(() => saveMessagesToStorage('', formatted), 5000);
   }, 50);
 
   // Strategy 3 (Fallback): Click search icon, type suffix/name and click result
   setTimeout(() => {
-    const activeHeader = document.querySelector('[data-testid="conversation-info-header"]');
+    const activeHeader = document.querySelector('[data-testid="conversation-info-header"]') ||
+                         document.querySelector('[data-testid="conversation-panel-messages"]');
     if (!activeHeader) {
       console.log('[CRM] Chat did not open via Hash. Falling back to search query...');
-      searchAndClickContact(suffix, saveMessagesToStorage, cleaned);
+      searchAndClickContact(cleaned, saveMessagesToStorage, cleaned);
     }
   }, 1500);
 }
