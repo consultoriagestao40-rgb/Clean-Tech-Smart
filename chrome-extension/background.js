@@ -82,20 +82,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const contactsMap = new Map();
                 let contactSample = [];
 
-                const parseChats = () => {
+                const chatStore = transaction.objectStore(storeName);
+                const getAllChatsReq = chatStore.getAll();
+
+                getAllChatsReq.onerror = (e) => {
+                  const errCode = e.target?.error?.name || 'unknown';
+                  db.close();
+                  resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `getAll chats error: ${errCode}`, recordsCount: 0 });
+                };
+
+                getAllChatsReq.onsuccess = () => {
                   try {
-                    const store = transaction.objectStore(storeName);
-                    const getAllReq = store.getAll();
+                    const records = getAllChatsReq.result || [];
+                    const activeJids = [];
 
-                    getAllReq.onerror = (e) => {
-                      const errCode = e.target?.error?.name || 'unknown';
-                      db.close();
-                      resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `getAll error: ${errCode}`, recordsCount: 0 });
-                    };
+                    for (const r of records) {
+                      if (!r) continue;
+                      let idStr = '';
+                      if (typeof r.id === 'string') {
+                        idStr = r.id;
+                      } else if (r.id && typeof r.id === 'object') {
+                        idStr = r.id._serialized || (r.id.user ? r.id.user + (r.id.server ? '@' + r.id.server : '@c.us') : '');
+                      }
+                      if (idStr && (idStr.includes('@c.us') || idStr.includes('@s.whatsapp.net') || idStr.includes('@lid'))) {
+                        activeJids.push(idStr);
+                      }
+                    }
 
-                    getAllReq.onsuccess = () => {
+                    const onContactsLoaded = () => {
                       try {
-                        const records = getAllReq.result || [];
                         const extracted = [];
                         const rawSample = records.filter(r => r.id && String(r.id).includes('@lid')).slice(0, 5).map(r => {
                           let idValStr = 'none';
@@ -118,10 +133,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                           };
                         });
 
+                        // Populate contactSample with first 3 matched contacts
+                        const sampleJids = activeJids.slice(0, 15);
+                        const sampleList = [];
+                        for (const jid of sampleJids) {
+                          const c = contactsMap.get(jid);
+                          if (c) {
+                            const keys = Object.keys(c).join(',');
+                            let hasPic = 'no';
+                            let picKeys = 'none';
+                            if (c.profilePicThumb) {
+                              hasPic = 'profilePicThumb';
+                              picKeys = Object.keys(c.profilePicThumb).join(',');
+                            }
+                            sampleList.push({
+                              id: jid,
+                              keys: keys.substring(0, 100),
+                              hasPic: hasPic,
+                              picKeys: picKeys
+                            });
+                            if (sampleList.length >= 3) break;
+                          }
+                        }
+                        contactSample = sampleList;
+
                         for (const r of records) {
                           if (!r) continue;
 
-                          // 1. Extract ID safely
                           let idStr = '';
                           if (typeof r.id === 'string') {
                             idStr = r.id;
@@ -135,7 +173,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             idStr = r.key._serialized || '';
                           }
 
-                          // Match both @c.us, @s.whatsapp.net, and @lid
                           if (!idStr || (!idStr.includes('@c.us') && !idStr.includes('@s.whatsapp.net') && !idStr.includes('@lid'))) {
                             continue;
                           }
@@ -143,10 +180,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                           const phone = idStr.split('@')[0].replace(/\D/g, '');
                           if (!phone) continue;
 
-                          // Look up contact info from contactsMap
                           const contactInfo = contactsMap.get(idStr) || {};
 
-                          // 2. Extract name safely (checking contactInfo first!)
                           let name = '';
                           if (typeof contactInfo.name === 'string' && contactInfo.name.trim()) {
                             name = contactInfo.name.trim();
@@ -174,7 +209,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             name = phone;
                           }
 
-                          // 3. Extract lastMessage/preview safely
                           let lastMessage = '';
                           if (typeof r.preview === 'string') {
                             lastMessage = r.preview;
@@ -186,7 +220,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             lastMessage = r.previewText;
                           }
 
-                          // 4. Extract unreadCount safely
                           let unreadCount = 0;
                           if (typeof r.unreadCount === 'number') {
                             unreadCount = r.unreadCount;
@@ -194,7 +227,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             unreadCount = parseInt(r.unreadCount, 10) || 0;
                           }
 
-                          // 5. Extract avatar/photo safely (checking contactInfo first!)
                           let photo = '';
                           if (contactInfo.profilePicThumb) {
                             const thumb = contactInfo.profilePicThumb;
@@ -240,63 +272,43 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `parse error: ${err.message}`, recordsCount: 0 });
                       }
                     };
+
+                    if (contactStoreName && activeJids.length > 0) {
+                      const contactStore = transaction.objectStore(contactStoreName);
+                      let loadedCount = 0;
+                      
+                      activeJids.forEach(jid => {
+                        try {
+                          const req = contactStore.get(jid);
+                          req.onsuccess = (e) => {
+                            const c = e.target.result;
+                            if (c) contactsMap.set(jid, c);
+                            loadedCount++;
+                            if (loadedCount === activeJids.length) {
+                              onContactsLoaded();
+                            }
+                          };
+                          req.onerror = () => {
+                            loadedCount++;
+                            if (loadedCount === activeJids.length) {
+                              onContactsLoaded();
+                            }
+                          };
+                        } catch (err) {
+                          loadedCount++;
+                          if (loadedCount === activeJids.length) {
+                            onContactsLoaded();
+                          }
+                        }
+                      });
+                    } else {
+                      onContactsLoaded();
+                    }
                   } catch (err) {
                     db.close();
-                    resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `parseStore error: ${err.message}`, recordsCount: 0 });
+                    resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `onsuccess error: ${err.message}`, recordsCount: 0 });
                   }
                 };
-
-                if (contactStoreName) {
-                  const contactStore = transaction.objectStore(contactStoreName);
-                  const getAllContactsReq = contactStore.getAll();
-                  getAllContactsReq.onerror = () => {
-                    parseChats();
-                  };
-                  getAllContactsReq.onsuccess = () => {
-                    try {
-                      const contactRecords = getAllContactsReq.result || [];
-                      contactSample = contactRecords.filter(c => c && c.id).slice(0, 3).map(c => {
-                        const keys = Object.keys(c).join(',');
-                        let hasPic = 'no';
-                        let picKeys = 'none';
-                        if (c.profilePicThumb) {
-                          hasPic = 'profilePicThumb';
-                          picKeys = Object.keys(c.profilePicThumb).join(',');
-                        } else if (c.avatar) {
-                          hasPic = 'avatar';
-                        }
-                        let idValStr = 'none';
-                        if (c.id) {
-                          idValStr = typeof c.id === 'object' ? c.id._serialized : String(c.id);
-                        }
-                        return {
-                          id: idValStr,
-                          keys: keys.substring(0, 100),
-                          hasPic: hasPic,
-                          picKeys: picKeys
-                        };
-                      });
-
-                      contactRecords.forEach(c => {
-                        if (!c) return;
-                        let jid = '';
-                        if (typeof c.id === 'string') {
-                          jid = c.id;
-                        } else if (c.id && typeof c.id === 'object') {
-                          jid = c.id._serialized || (c.id.user ? c.id.user + (c.id.server ? '@' + c.id.server : '@c.us') : '');
-                        }
-                        if (jid) {
-                          contactsMap.set(jid, c);
-                        }
-                      });
-                    } catch (e) {
-                      console.warn('[CRM Background] Error building contactsMap:', e.message);
-                    }
-                    parseChats();
-                  };
-                } else {
-                  parseChats();
-                }
               } catch (e) {
                 db.close();
                 resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `transaction error: ${e.message}`, recordsCount: 0 });
