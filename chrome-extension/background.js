@@ -273,36 +273,81 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                       }
                     };
 
-                    if (contactStoreName && activeJids.length > 0) {
-                      const contactStore = transaction.objectStore(contactStoreName);
-                      let loadedCount = 0;
-                      
-                      activeJids.forEach(jid => {
-                        try {
-                          const req = contactStore.get(jid);
-                          req.onsuccess = (e) => {
-                            const c = e.target.result;
-                            if (c) contactsMap.set(jid, c);
+                    const startContactsGet = () => {
+                      if (contactStoreName && activeJids.length > 0) {
+                        const contactStore = transaction.objectStore(contactStoreName);
+                        let loadedCount = 0;
+                        
+                        activeJids.forEach(jid => {
+                          try {
+                            const req = contactStore.get(jid);
+                            req.onsuccess = (e) => {
+                              const c = e.target.result;
+                              if (c) contactsMap.set(jid, c);
+                              loadedCount++;
+                              if (loadedCount === activeJids.length) {
+                                onContactsLoaded();
+                              }
+                            };
+                            req.onerror = () => {
+                              loadedCount++;
+                              if (loadedCount === activeJids.length) {
+                                onContactsLoaded();
+                              }
+                            };
+                          } catch (err) {
                             loadedCount++;
                             if (loadedCount === activeJids.length) {
                               onContactsLoaded();
                             }
-                          };
-                          req.onerror = () => {
-                            loadedCount++;
-                            if (loadedCount === activeJids.length) {
-                              onContactsLoaded();
-                            }
-                          };
-                        } catch (err) {
-                          loadedCount++;
-                          if (loadedCount === activeJids.length) {
-                            onContactsLoaded();
                           }
-                        }
-                      });
+                        });
+                      } else {
+                        onContactsLoaded();
+                      }
+                    };
+
+                    if (contactStoreName) {
+                      try {
+                        const contactStore = transaction.objectStore(contactStoreName);
+                        const cursorReq = contactStore.openCursor();
+                        let cursorCount = 0;
+                        const cursorSampleList = [];
+                        
+                        cursorReq.onsuccess = (e) => {
+                          const cursor = e.target.result;
+                          if (cursor && cursorCount < 3) {
+                            const c = cursor.value;
+                            if (c) {
+                              const keys = Object.keys(c).join(',');
+                              let idValStr = 'none';
+                              if (c.id) {
+                                idValStr = typeof c.id === 'object' ? c.id._serialized : String(c.id);
+                              }
+                              let hasPic = 'no';
+                              if (c.profilePicThumb) hasPic = 'profilePicThumb';
+                              cursorSampleList.push({
+                                id: idValStr,
+                                keys: keys.substring(0, 100),
+                                hasPic: hasPic,
+                                picKeys: c.profilePicThumb ? Object.keys(c.profilePicThumb).join(',') : 'none'
+                              });
+                            }
+                            cursorCount++;
+                            cursor.continue();
+                          } else {
+                            contactSample = cursorSampleList;
+                            startContactsGet();
+                          }
+                        };
+                        cursorReq.onerror = () => {
+                          startContactsGet();
+                        };
+                      } catch (err) {
+                        startContactsGet();
+                      }
                     } else {
-                      onContactsLoaded();
+                      startContactsGet();
                     }
                   } catch (err) {
                     db.close();
