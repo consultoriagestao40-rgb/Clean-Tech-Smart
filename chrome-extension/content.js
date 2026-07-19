@@ -1309,7 +1309,7 @@ function renderCrmInPageBoard() {
         }
         sampleText = ` | Amostra: ${miniSample.substring(0, 220)}${contactSampleText.substring(0, 220)}`;
       }
-      idbInfo = `Banco: ${dbInfoObj.selectedDb || 'nenhum'} (Lidos: ${dbInfoObj.recordsCount || 0}, Filtrados: ${dbInfoObj.extractedCount || 0})${errText}${sampleText} | Bancos: [${listDbs}]`;
+      idbInfo = `Banco: ${dbInfoObj.selectedDb || 'nenhum'} (Lidos: ${dbInfoObj.recordsCount || 0}, Filtrados: ${dbInfoObj.extractedCount || 0}) | Stores: [${dbInfoObj.storeNames ? dbInfoObj.storeNames.join(', ') : 'none'}]${errText}${sampleText} | Bancos: [${listDbs}]`;
     } else if (dbDebug.indexed_db_debug_error) {
       idbInfo = `Erro de execução: ${dbDebug.indexed_db_debug_error}`;
     }
