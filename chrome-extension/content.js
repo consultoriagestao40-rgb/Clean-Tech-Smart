@@ -581,19 +581,23 @@ function startChatObserver() {
       // to prevent it from hiding conversations while we're trying to open them
       injectHorizontalTabs();
       
-      // Periodically sync and merge chat list to local storage to prevent virtualization loss
-      const visibleChats = getAllChatsFromDom();
-      if (visibleChats.length > 0) {
+      // Periodically sync and merge chat list from BOTH DOM and local IndexedDB database
+      getChatsFromIndexedDB().then((idbChats) => {
+        const visibleChats = getAllChatsFromDom();
+        
         safeStorageGet(['crm_whatsapp_chats'], (res) => {
           const existingChats = res.crm_whatsapp_chats || [];
           const mergedMap = new Map();
+          
+          // 1. Populate map with existing chats
           existingChats.forEach(c => {
             if (c.phone) mergedMap.set(c.phone.slice(-8), c);
           });
-          visibleChats.forEach(c => {
+          
+          // 2. Merge IndexedDB chats (contains all historical chats!)
+          idbChats.forEach(c => {
             if (c.phone) {
               const suffix = c.phone.slice(-8);
-              // Merge: update lastMessage, unreadCount, photo if they are populated
               const existing = mergedMap.get(suffix);
               if (existing) {
                 mergedMap.set(suffix, {
@@ -608,9 +612,29 @@ function startChatObserver() {
               }
             }
           });
+          
+          // 3. Merge visible DOM chats (provides real-time dynamic updates)
+          visibleChats.forEach(c => {
+            if (c.phone) {
+              const suffix = c.phone.slice(-8);
+              const existing = mergedMap.get(suffix);
+              if (existing) {
+                mergedMap.set(suffix, {
+                  ...existing,
+                  name: c.name || existing.name,
+                  lastMessage: c.lastMessage || existing.lastMessage,
+                  unreadCount: typeof c.unreadCount === 'number' ? c.unreadCount : existing.unreadCount,
+                  photo: c.photo || existing.photo
+                });
+              } else {
+                mergedMap.set(suffix, c);
+              }
+            }
+          });
+          
           safeStorageSet({ crm_whatsapp_chats: Array.from(mergedMap.values()) });
         });
-      }
+      });
       
       // Sync current active chat messages
       if (currentPhone || currentName) {
@@ -1845,6 +1869,63 @@ async function handleSaveQuickTicket(e) {
   }
 }
 
+// Reads all chats directly from WhatsApp Web local IndexedDB database (model-storage)
+// This captures all 400+ contacts instantly without needing to scroll the DOM sidebar
+async function getChatsFromIndexedDB() {
+  return new Promise((resolve) => {
+    try {
+      if (!window.indexedDB) { resolve([]); return; }
+      
+      // 1. List all local databases to find the dynamic model-storage DB name
+      window.indexedDB.databases().then((databases) => {
+        const dbInfo = databases.find(db => db.name && db.name.startsWith('model-storage'));
+        if (!dbInfo) { resolve([]); return; }
+
+        const request = window.indexedDB.open(dbInfo.name);
+        request.onerror = () => resolve([]);
+        request.onsuccess = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('chat')) {
+            db.close();
+            resolve([]);
+            return;
+          }
+
+          try {
+            const transaction = db.transaction(['chat'], 'readonly');
+            const store = transaction.objectStore('chat');
+            const getAllReq = store.getAll();
+
+            getAllReq.onerror = () => { db.close(); resolve([]); };
+            getAllReq.onsuccess = () => {
+              const records = getAllReq.result || [];
+              const extracted = records
+                .filter(r => r.id && r.id.includes('@c.us'))
+                .map(r => {
+                  const phone = r.id.split('@')[0].replace(/\D/g, '');
+                  return {
+                    phone,
+                    name: r.name || phone,
+                    lastMessage: r.preview || '',
+                    unreadCount: r.unreadCount || 0,
+                    photo: r.avatar || ''
+                  };
+                });
+              db.close();
+              resolve(extracted);
+            };
+          } catch (e) {
+            db.close();
+            resolve([]);
+          }
+        };
+      }).catch(() => resolve([]));
+    } catch (err) {
+      resolve([]);
+    }
+  });
+}
+
 // Robust extractor for WhatsApp Business Web chat list
 // Confirmed DOM: [data-testid="chat-list"] > [aria-label="Lista de conversas"][role="grid"] > children (rows)
 // Each row contains: [data-testid="cell-frame-title"] for name, img for phone via URL
@@ -1895,6 +1976,7 @@ function getAllChatsFromDom() {
   return chats;
 }
 
+
 // Helper: extract chat info from a row element (list-item-N)
 function extractChatFromRow(row, chats) {
   // NAME: Try cell-frame-title first (WhatsApp Business), then [title] attr, then aria-label
@@ -1929,32 +2011,35 @@ function extractChatFromRow(row, chats) {
   const skipped = ['Menu', 'Nova conversa', 'Configurações', 'Perfil', 'Status', 'Canais', 'Comunidades', 'Novo grupo', 'Arquivadas', 'Favoritas'];
   if (skipped.some(s => name.toLowerCase().includes(s.toLowerCase()))) return;
 
-  // PHONE: Try data-testid first (very reliable on both personal/business Web), then data-id, then profile image URL
+  // PHONE: Try data-id directly on row, or its children, then fallback to testid/img
   let phone = '';
-  const testid = row.getAttribute('data-testid') || '';
-  if (testid) {
-    if (testid.includes('@g.us') || testid.includes('-group')) {
-      return; // Skip groups
-    }
-    if (testid.includes('@c.us')) {
-      phone = testid.replace('list-item-', '').split('@')[0].replace(/\D/g, '');
-    }
+  const dataId = row.getAttribute('data-id') || 
+                 row.querySelector('[data-id*="@c.us"]')?.getAttribute('data-id') ||
+                 row.closest('[data-id*="@c.us"]')?.getAttribute('data-id') || '';
+  if (dataId && dataId.includes('@c.us')) {
+    phone = dataId.split('@')[0].replace(/\D/g, '');
   }
 
   if (!phone) {
-    const withDataId = row.querySelector('[data-id*="@c.us"]') || row.closest('[data-id*="@c.us"]');
-    if (withDataId) {
-      phone = (withDataId.getAttribute('data-id') || '').split('@')[0].replace(/\D/g, '');
+    const testid = row.getAttribute('data-testid') || '';
+    if (testid) {
+      if (testid.includes('@g.us') || testid.includes('-group')) {
+        return; // Skip groups
+      }
+      if (testid.includes('@c.us')) {
+        phone = testid.replace('list-item-', '').split('@')[0].replace(/\D/g, '');
+      }
     }
   }
 
   if (!phone) {
     const img = row.querySelector('img[src*="%40c.us"], img[src*="u="]');
     if (img) {
-      const m = img.src.match(/u=(\d+)%40c\.us/);
+      const m = img.src.match(/u=(\d+)%40c\.us/) || img.src.match(/(\d+)%40c\.us/);
       if (m) phone = m[1];
     }
   }
+
 
   // If still no phone, use name as temporary key (for display only, can't link to CRM)
   // We'll store with a placeholder so the UI shows the name at least
