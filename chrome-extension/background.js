@@ -322,18 +322,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         };
 
                         try {
-                          const keysReq = contactStore.getAllKeys(null, 3);
-                          keysReq.onsuccess = (e) => {
-                            const keys = e.target.result || [];
-                            contactSample = keys.map(k => ({
-                              id: typeof k === 'object' ? JSON.stringify(k) : String(k),
-                              keys: 'none',
-                              hasPic: 'none',
-                              picKeys: 'none'
-                            }));
-                            startContactsGet();
+                          const countReq = contactStore.count();
+                          countReq.onsuccess = () => {
+                            const countVal = countReq.result || 0;
+                            try {
+                              const keysReq = contactStore.getAllKeys(null, 3);
+                              keysReq.onsuccess = (e) => {
+                                const keys = e.target.result || [];
+                                contactSample = [{
+                                  id: `Count:${countVal}`,
+                                  keys: keys.map(k => typeof k === 'object' ? JSON.stringify(k) : String(k)).join(','),
+                                  hasPic: 'none',
+                                  picKeys: 'none'
+                                }];
+                                startContactsGet();
+                              };
+                              keysReq.onerror = () => {
+                                contactSample = [{ id: `Count:${countVal}`, keys: 'error', hasPic: 'none', picKeys: 'none' }];
+                                startContactsGet();
+                              };
+                            } catch (e) {
+                              contactSample = [{ id: `Count:${countVal}`, keys: `err:${e.message}`, hasPic: 'none', picKeys: 'none' }];
+                              startContactsGet();
+                            }
                           };
-                          keysReq.onerror = () => {
+                          countReq.onerror = () => {
                             startContactsGet();
                           };
                         } catch (err) {

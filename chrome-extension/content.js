@@ -2421,6 +2421,16 @@ function getActiveChatMessages() {
 
   return messages;
 }
+// Listen for storage changes to update CRM UI in real-time
+if (chrome.storage?.onChanged) {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && changes.crm_dom_debug) {
+      if (typeof renderCrmInPageBoard === 'function' && crmPanelVisible) {
+        renderCrmInPageBoard();
+      }
+    }
+  });
+}
 // Listen for messages from standalone crm.html page tab
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'getWhatsAppChats') {
