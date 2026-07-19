@@ -1303,7 +1303,11 @@ function renderCrmInPageBoard() {
       let sampleText = '';
       if (dbInfoObj.rawSample && dbInfoObj.rawSample.length > 0) {
         const miniSample = dbInfoObj.rawSample.slice(0, 2).map(s => `[ID:${s.idVal},ContactKeys:${s.contactKeys},PicKeys:${s.picKeys},RecordKeys:${s.recordKeys}]`).join(';');
-        sampleText = ` | Amostra: ${miniSample.substring(0, 450)}`;
+        let contactSampleText = '';
+        if (dbInfoObj.contactSample && dbInfoObj.contactSample.length > 0) {
+          contactSampleText = ' | Contatos: ' + dbInfoObj.contactSample.map(c => `[ID:${c.id},Keys:${c.keys},hasPic:${c.hasPic},picKeys:${c.picKeys}]`).join(';');
+        }
+        sampleText = ` | Amostra: ${miniSample.substring(0, 220)}${contactSampleText.substring(0, 220)}`;
       }
       idbInfo = `Banco: ${dbInfoObj.selectedDb || 'nenhum'} (Lidos: ${dbInfoObj.recordsCount || 0}, Filtrados: ${dbInfoObj.extractedCount || 0})${errText}${sampleText} | Bancos: [${listDbs}]`;
     } else if (dbDebug.indexed_db_debug_error) {
@@ -1382,8 +1386,9 @@ function renderCrmInPageBoard() {
 
         card.innerHTML = `
           <div class="crm-ip-card-top">
-            <div class="crm-ip-avatar" style="background: linear-gradient(135deg, ${c1}, ${c2});">
-              ${lead.photo ? `<img src="${lead.photo}" alt="" onerror="this.style.display='none'">` : initials}
+            <div class="crm-ip-avatar" style="background: linear-gradient(135deg, ${c1}, ${c2}); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+              <span style="position: absolute; font-size: 14px; z-index: 1;">${initials}</span>
+              ${lead.photo ? `<img src="${lead.photo}" alt="" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 2;" onerror="this.style.display='none'">` : ''}
             </div>
             <div style="flex:1;min-width:0;">
               <div class="crm-ip-card-name">${lead.name || lead.phone}</div>

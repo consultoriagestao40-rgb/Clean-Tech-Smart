@@ -233,7 +233,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                           });
                         }
                         db.close();
-                        resolve({ chats: extracted, dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: null, recordsCount: records.length, rawSample });
+                        resolve({ chats: extracted, dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: null, recordsCount: records.length, rawSample, contactSample });
                       } catch (err) {
                         db.close();
                         resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `parse error: ${err.message}`, recordsCount: 0 });
@@ -245,6 +245,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                   }
                 };
 
+                let contactSample = [];
                 if (contactStoreName) {
                   const contactStore = transaction.objectStore(contactStoreName);
                   const getAllContactsReq = contactStore.getAll();
@@ -254,6 +255,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                   getAllContactsReq.onsuccess = () => {
                     try {
                       const contactRecords = getAllContactsReq.result || [];
+                      contactSample = contactRecords.filter(c => c && c.id && String(c.id).includes('@lid')).slice(0, 3).map(c => {
+                        const keys = Object.keys(c).join(',');
+                        let hasPic = 'no';
+                        let picKeys = 'none';
+                        if (c.profilePicThumb) {
+                          hasPic = 'profilePicThumb';
+                          picKeys = Object.keys(c.profilePicThumb).join(',');
+                        } else if (c.avatar) {
+                          hasPic = 'avatar';
+                        }
+                        let idValStr = 'none';
+                        if (c.id) {
+                          idValStr = typeof c.id === 'object' ? c.id._serialized : String(c.id);
+                        }
+                        return {
+                          id: idValStr,
+                          keys: keys.substring(0, 100),
+                          hasPic: hasPic,
+                          picKeys: picKeys
+                        };
+                      });
+
                       contactRecords.forEach(c => {
                         if (!c) return;
                         let jid = '';
@@ -298,6 +321,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           recordsCount: result.recordsCount,
           extractedCount: result.chats ? result.chats.length : 0,
           rawSample: result.rawSample,
+          contactSample: result.contactSample,
           timestamp: new Date().toISOString()
         };
         chrome.storage.local.set({ crm_dom_debug: debug });
