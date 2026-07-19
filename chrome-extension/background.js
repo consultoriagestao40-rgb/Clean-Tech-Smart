@@ -80,6 +80,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (contactStoreName) neededStores.push(contactStoreName);
                 const transaction = db.transaction(neededStores, 'readonly');
                 const contactsMap = new Map();
+                let contactSample = [];
 
                 const parseChats = () => {
                   try {
@@ -245,7 +246,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                   }
                 };
 
-                let contactSample = [];
                 if (contactStoreName) {
                   const contactStore = transaction.objectStore(contactStoreName);
                   const getAllContactsReq = contactStore.getAll();
