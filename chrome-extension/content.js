@@ -1145,7 +1145,7 @@ function renderCrmInPageBoard() {
   const panel = document.getElementById('crm-inpage-panel');
   if (!panel) return;
 
-  chrome.storage.local.get(['crm_leads', 'crm_stages', 'crm_sellers', 'crm_whatsapp_chats'], (stored) => {
+  safeStorageGet(['crm_leads', 'crm_stages', 'crm_sellers', 'crm_whatsapp_chats'], (stored) => {
     const leads = stored.crm_leads || leadsList || [];
     const stages = (stored.crm_stages && stored.crm_stages.length > 0) ? stored.crm_stages : funnelStages;
     const waChats = stored.crm_whatsapp_chats || [];
