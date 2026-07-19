@@ -994,6 +994,89 @@ function openChatFromPanel(lead) {
   }
 }
 
+// Custom clean Modal replacement for prompt()
+function showCrmInPageModal(title, fields, onSave) {
+  const existing = document.getElementById('crm-ip-custom-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'crm-ip-custom-modal';
+  modal.style = `
+    position: fixed;
+    inset: 0;
+    z-index: 100005;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  `;
+
+  let inputsHtml = '';
+  fields.forEach(f => {
+    if (f.type === 'textarea') {
+      inputsHtml += `
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase;">${f.label}</label>
+          <textarea id="modal-field-${f.id}" rows="4" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-size: 13px; outline: none; resize: none; box-sizing: border-box;" placeholder="${f.placeholder || ''}">${f.value || ''}</textarea>
+        </div>
+      `;
+    } else if (f.type === 'datetime-local') {
+      inputsHtml += `
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase;">${f.label}</label>
+          <input type="datetime-local" id="modal-field-${f.id}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-size: 13px; outline: none; box-sizing: border-box;" value="${f.value || ''}">
+        </div>
+      `;
+    }
+  });
+
+  modal.innerHTML = `
+    <div style="background: #ffffff; width: 90%; max-width: 400px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow: hidden; animation: crmModalFadeIn 0.2s ease-out; box-sizing: border-box;">
+      <div style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 13px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.3px;">${title}</span>
+        <button id="crm-ip-modal-close" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; padding: 4px; line-height: 1;">&times;</button>
+      </div>
+      <div style="padding: 20px; box-sizing: border-box;">
+        ${inputsHtml}
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px;">
+          <button id="crm-ip-modal-cancel" style="background: #f1f5f9; color: #475569; border: none; border-radius: 8px; padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer;">Cancelar</button>
+          <button id="crm-ip-modal-save" style="background: #0d9488; color: #ffffff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer;">Salvar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  if (!document.getElementById('crm-modal-animation-styles')) {
+    const style = document.createElement('style');
+    style.id = 'crm-modal-animation-styles';
+    style.innerHTML = `
+      @keyframes crmModalFadeIn {
+        from { transform: scale(0.96); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const closeModal = () => modal.remove();
+  modal.querySelector('#crm-ip-modal-close').addEventListener('click', closeModal);
+  modal.querySelector('#crm-ip-modal-cancel').addEventListener('click', closeModal);
+
+  modal.querySelector('#crm-ip-modal-save').addEventListener('click', () => {
+    const result = {};
+    fields.forEach(f => {
+      const el = modal.querySelector(`#modal-field-${f.id}`);
+      if (el) result[f.id] = el.value;
+    });
+    onSave(result, closeModal);
+  });
+}
+
+
 function renderCrmInPageBoard() {
   const panel = document.getElementById('crm-inpage-panel');
   if (!panel) return;
@@ -1135,33 +1218,53 @@ function renderCrmInPageBoard() {
           openChatFromPanel(lead);
         });
 
-        // Action buttons
+        // Action buttons (replaces standard ugly prompt windows)
         card.querySelector('[data-action="note"]').addEventListener('click', (e) => {
           e.stopPropagation();
-          const note = prompt(`Nota para ${lead.name || lead.phone}:`);
-          if (note && note.trim()) {
-            fetch(`${crmServerUrl}/api/crm/notes`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${crmToken}` },
-              body: JSON.stringify({ phone: lead.phone, name: lead.name, note: note.trim(), seller_id: crmUser?.id })
-            }).then(() => alert('✅ Nota salva!')).catch(() => alert('❌ Erro ao salvar nota'));
-          }
+          showCrmInPageModal(`Nota para ${lead.name || lead.phone}`, [
+            { id: 'noteText', type: 'textarea', label: 'Nova Anotação', placeholder: 'Escreva a anotação...' }
+          ], (data, close) => {
+            if (data.noteText && data.noteText.trim()) {
+              fetch(`${crmServerUrl}/api/crm/notes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${crmToken}` },
+                body: JSON.stringify({ phone: lead.phone, name: lead.name, note: data.noteText.trim(), seller_id: crmUser?.id })
+              }).then(() => {
+                alert('✅ Nota salva com sucesso!');
+                close();
+              }).catch(() => alert('❌ Erro ao salvar nota'));
+            } else {
+              alert('A nota não pode estar vazia.');
+            }
+          });
         });
 
         card.querySelector('[data-action="reminder"]').addEventListener('click', (e) => {
           e.stopPropagation();
-          const timeStr = prompt(`Lembrete para ${lead.name || lead.phone}\nData/Hora (AAAA-MM-DD HH:MM):`);
-          if (timeStr) {
-            const time = new Date(timeStr).toISOString();
-            safeSendMessage({ action: 'scheduleReminder', phone: lead.phone, name: lead.name, time });
-            alert('✅ Lembrete agendado!');
-          }
+          
+          // Pre-populate input box local timezone ISO string helper
+          const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+          const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, 16);
+
+          showCrmInPageModal(`Lembrete para ${lead.name || lead.phone}`, [
+            { id: 'timeStr', type: 'datetime-local', label: 'Data e Hora', value: localISOTime }
+          ], (data, close) => {
+            if (data.timeStr) {
+              const time = new Date(data.timeStr).toISOString();
+              safeSendMessage({ action: 'scheduleReminder', phone: lead.phone, name: lead.name, time });
+              alert('✅ Lembrete agendado com sucesso!');
+              close();
+            } else {
+              alert('Defina a data e hora.');
+            }
+          });
         });
 
         card.querySelector('[data-action="ticket"]').addEventListener('click', (e) => {
           e.stopPropagation();
-          alert('🎫 Para abrir ticket, use a sidebar do cliente ativo (ícone 💬 no toolbar)');
+          alert('🎫 Para abrir chamado, use a barra lateral do cliente ativo clicando no ícone de chat (💬) no menu esquerdo.');
         });
+
 
         // Drag & Drop
         card.addEventListener('dragstart', (ev) => {
@@ -1796,7 +1899,6 @@ function extractChatFromRow(row, chats) {
 function selectChatInBackground(phone) {
   if (!phone) return;
 
-  // Helper: read messages from DOM and save to storage with active chat info
   const saveMessagesToStorage = (chatName, chatPhone) => {
     const messages = getActiveChatMessages();
     const nameFromHeader = (
@@ -1811,101 +1913,87 @@ function selectChatInBackground(phone) {
       crm_whatsapp_active_phone: chatPhone || '',
       crm_whatsapp_active_name: nameFromHeader.toLowerCase()
     });
-    console.log('[CRM] saveMessagesToStorage:', messages.length, 'msgs for', chatPhone || chatName);
   };
 
   const cleaned = phone.replace(/\D/g, '');
-
-  if (cleaned && cleaned.length >= 8) {
-    const suffix = cleaned.slice(-8);
-
-    // Before clicking, make ALL chat items visible (remove any filter hiding)
-    document.querySelectorAll('[data-testid^="list-item-"], [data-testid="chat-list-item"]').forEach(el => {
-      el.style.removeProperty('display');
-    });
-
-    // STRATEGY 1A: Click on the list item that has data-testid containing the phone suffix
-    // WhatsApp Business Web: data-testid="list-item-5541985083658@c.us"
-    const listItemByTestid = document.querySelector(`[data-testid*="${suffix}@c.us"]`) ||
-                              document.querySelector(`[data-testid*="${suffix}@s.whatsapp.net"]`);
-    if (listItemByTestid) {
-      const clickable = listItemByTestid.querySelector('[role="button"]') || listItemByTestid;
-      clickable.click();
-      currentPhone = cleaned;
-      setTimeout(() => saveMessagesToStorage('', cleaned), 800);
-      setTimeout(() => saveMessagesToStorage('', cleaned), 2000);
-      setTimeout(() => saveMessagesToStorage('', cleaned), 4500);
-      return;
-    }
-
-    // STRATEGY 1B: Click on data-id element (personal WhatsApp Web)
-    const listItemByDataId = document.querySelector(`[data-id*="${suffix}"]`);
-    if (listItemByDataId) {
-      const clickable = listItemByDataId.querySelector('[role="button"]') || listItemByDataId;
-      clickable.click();
-      currentPhone = cleaned;
-      setTimeout(() => saveMessagesToStorage('', cleaned), 800);
-      setTimeout(() => saveMessagesToStorage('', cleaned), 2000);
-      setTimeout(() => saveMessagesToStorage('', cleaned), 4500);
-      return;
-    }
-
-    // STRATEGY 1C: Hash navigation fallback (works in personal WA Web)
-    let formatted = cleaned;
-    if (cleaned.length === 10 || cleaned.length === 11) {
-      formatted = '55' + cleaned;
-    }
-    window.location.hash = `#/chat/${formatted}@c.us`;
-    currentPhone = formatted;
-    setTimeout(() => saveMessagesToStorage('', formatted), 1500);
-    setTimeout(() => saveMessagesToStorage('', formatted), 3000);
-    setTimeout(() => saveMessagesToStorage('', formatted), 6000);
+  if (!cleaned || cleaned.length < 8) {
+    // If it's a name-based key (e.g. name_Ryan)
+    const approxName = phone.replace(/^name_/, '').replace(/_/g, ' ').toLowerCase();
+    searchAndClickContact(approxName, saveMessagesToStorage);
     return;
   }
 
-  // STRATEGY 2: name-based key — find in visible list and click by matching title text
-  const approxName = phone.replace(/^name_/, '').replace(/_/g, ' ').toLowerCase();
-  const allTitleNodes = document.querySelectorAll('[data-testid="cell-frame-title"]');
-  let found = false;
-  for (const node of allTitleNodes) {
-    const nodeText = (node.innerText || '').toLowerCase();
-    const searchTerm = approxName.substring(0, 10);
-    if (nodeText.includes(searchTerm) || (searchTerm.length > 4 && nodeText.length > 4 && nodeText.substring(0, 8) === approxName.substring(0, 8))) {
-      const row = node.closest('[data-testid^="list-item-"]') || node.closest('[role="row"]') || node.parentElement;
-      if (row) {
-        const clickable = row.querySelector('[role="button"]') || row;
-        clickable.click();
-        found = true;
-        currentName = node.innerText.trim();
+  const suffix = cleaned.slice(-8);
 
-        // After clicking, read the URL hash to get the real phone number
-        setTimeout(() => {
-          const hash = window.location.hash || '';
-          if (hash.includes('/chat/') && hash.includes('@c.us')) {
-            const realPhone = hash.split('/chat/')[1].split('@')[0].replace(/\D/g, '');
-            if (realPhone) currentPhone = realPhone;
-          }
-          saveMessagesToStorage(currentName, currentPhone);
-        }, 1000);
-        setTimeout(() => saveMessagesToStorage(currentName, currentPhone), 2500);
-        setTimeout(() => saveMessagesToStorage(currentName, currentPhone), 5000);
-        break;
-      }
-    }
+  // Before clicking, make ALL chat items visible (remove any filter hiding)
+  document.querySelectorAll('[data-testid^="list-item-"], [data-testid="chat-list-item"]').forEach(el => {
+    el.style.removeProperty('display');
+  });
+
+  // Strategy 1: Check if visible in sidebar
+  const listItem = document.querySelector(`[data-testid*="${suffix}@c.us"]`) ||
+                   document.querySelector(`[data-testid*="${suffix}@s.whatsapp.net"]`) ||
+                   document.querySelector(`[data-id*="${suffix}"]`);
+  if (listItem) {
+    const clickable = listItem.querySelector('[role="button"]') || listItem;
+    clickable.click();
+    currentPhone = cleaned;
+    setTimeout(() => saveMessagesToStorage('', cleaned), 800);
+    setTimeout(() => saveMessagesToStorage('', cleaned), 2000);
+    setTimeout(() => saveMessagesToStorage('', cleaned), 4500);
+    return;
   }
 
-  if (!found) {
-    // Try matching by aria-label as last resort
-    const row = document.querySelector(`[aria-label*="${approxName.substring(0, 8)}"]`);
-    if (row) {
-      const clickable = row.querySelector('[role="button"]') || row;
-      clickable.click();
-      setTimeout(() => saveMessagesToStorage(approxName, ''), 1000);
-      setTimeout(() => saveMessagesToStorage(approxName, ''), 2500);
-      setTimeout(() => saveMessagesToStorage(approxName, ''), 5000);
-    }
+  // Strategy 2: URL Hash navigation (forces SPA router reload by toggling first)
+  let formatted = cleaned;
+  if (cleaned.length === 10 || cleaned.length === 11) {
+    formatted = '55' + cleaned;
   }
+  
+  // Clear hash first to force routing event trigger
+  window.location.hash = '';
+  setTimeout(() => {
+    window.location.hash = `#/chat/${formatted}@c.us`;
+    currentPhone = formatted;
+    setTimeout(() => saveMessagesToStorage('', formatted), 1000);
+    setTimeout(() => saveMessagesToStorage('', formatted), 2500);
+    setTimeout(() => saveMessagesToStorage('', formatted), 5000);
+  }, 50);
+
+  // Strategy 3 (Fallback): Click search icon, type suffix/name and click result
+  setTimeout(() => {
+    const activeHeader = document.querySelector('[data-testid="conversation-info-header"]');
+    if (!activeHeader) {
+      console.log('[CRM] Chat did not open via Hash. Falling back to search query...');
+      searchAndClickContact(suffix, saveMessagesToStorage, cleaned);
+    }
+  }, 1500);
 }
+
+function searchAndClickContact(query, saveCallback, realPhone) {
+  const searchBox = document.querySelector('[data-testid="chat-list-search"]') ||
+                    document.querySelector('[data-testid="search-input-container"] [role="textbox"]') ||
+                    document.querySelector('div[contenteditable="true"][data-tab="3"]') ||
+                    document.querySelector('[data-testid="chatlist-search"]');
+  if (!searchBox) return;
+
+  searchBox.focus();
+  searchBox.innerHTML = '';
+  document.execCommand('insertText', false, query);
+  searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+
+  setTimeout(() => {
+    const firstResult = document.querySelector('[data-testid^="list-item-"]') ||
+                        document.querySelector('[data-testid="chat-list-item"]');
+    if (firstResult) {
+      const btn = firstResult.querySelector('[role="button"]') || firstResult;
+      btn.click();
+      if (realPhone) currentPhone = realPhone;
+      setTimeout(() => saveCallback('', realPhone || ''), 1000);
+    }
+  }, 1000);
+}
+
 
 
 function sendWhatsAppMessage(text) {

@@ -984,10 +984,15 @@ body.crm-dragging-active .crm-ip-card:not(.dragging) {
 
 .crm-ip-card-actions {
   display: none;
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  gap: 4px;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 6px;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 6px;
+}
+
+.crm-ip-card:hover .crm-ip-card-footer {
+  display: none;
 }
 
 .crm-ip-card:hover .crm-ip-card-actions {
@@ -995,18 +1000,19 @@ body.crm-dragging-active .crm-ip-card:not(.dragging) {
 }
 
 .crm-ip-action-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  color: #64748b;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 13px;
   transition: all 0.15s;
+  box-sizing: border-box;
 }
 
 .crm-ip-action-btn:hover {
@@ -1015,28 +1021,15 @@ body.crm-dragging-active .crm-ip-card:not(.dragging) {
   border-color: #ef4444;
 }
 
-.crm-ip-action-btn.note:hover { background: #0d9488; border-color: #0d9488; }
-.crm-ip-action-btn.reminder:hover { background: #f97316; border-color: #f97316; }
-.crm-ip-action-btn.ticket:hover { background: #8b5cf6; border-color: #8b5cf6; }
+.crm-ip-action-btn.note:hover { background: #0d9488; border-color: #0d9488; color: #fff; }
+.crm-ip-action-btn.reminder:hover { background: #f97316; border-color: #f97316; color: #fff; }
+.crm-ip-action-btn.ticket:hover { background: #8b5cf6; border-color: #8b5cf6; color: #fff; }
 
-/* Open conversation indicator */
+/* Open conversation indicator (clean and simple, no absolute overlap) */
 .crm-ip-open-chat-hint {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: #0d9488;
-  color: white;
-  font-size: 9px;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 2px 8px;
-  opacity: 0;
-  transition: opacity 0.2s;
+  display: none;
 }
 
-.crm-ip-card:hover .crm-ip-open-chat-hint {
-  opacity: 1;
-}
 
 /* Empty column placeholder */
 .crm-ip-empty {
