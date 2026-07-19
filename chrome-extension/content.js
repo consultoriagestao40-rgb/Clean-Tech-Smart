@@ -509,7 +509,8 @@ function startChatObserver() {
 
     try {
       detectActiveChat();
-      applyChatListFilter();
+      // Note: applyChatListFilter() is NOT called here automatically - only on explicit tab click
+      // to prevent it from hiding conversations while we're trying to open them
       injectHorizontalTabs();
       
       // Periodically sync chat list to local storage for crm.html to read
@@ -659,6 +660,45 @@ function startChatObserver() {
       clearInterval(syncInterval);
     }
   }, 2000);
+
+  // MutationObserver: save messages to storage immediately when conversation panel DOM changes
+  // This handles the case where messages render AFTER our polling attempts
+  let msgObserverDebounce = null;
+  const msgObserver = new MutationObserver(() => {
+    if (!chrome.runtime?.id) { msgObserver.disconnect(); return; }
+    clearTimeout(msgObserverDebounce);
+    msgObserverDebounce = setTimeout(() => {
+      if (!(currentPhone || currentName)) return;
+      const messages = getActiveChatMessages();
+      if (messages.length > 0) {
+        const activeHeaderName = (
+          document.querySelector('[data-testid="conversation-info-header-chat-title"] span') ||
+          document.querySelector('[data-testid="conversation-info-header"] span[dir]') ||
+          document.querySelector('header span[title]') ||
+          document.querySelector('header span[dir="auto"]')
+        )?.innerText?.trim() || currentName || '';
+        chrome.storage.local.set({
+          crm_whatsapp_messages: messages,
+          crm_whatsapp_active_phone: currentPhone || '',
+          crm_whatsapp_active_name: activeHeaderName.toLowerCase()
+        });
+      }
+    }, 300);
+  });
+
+  // Start observing once the main panel exists (retry every second until found)
+  const startObserving = () => {
+    const mainPanel = document.getElementById('main') ||
+                      document.querySelector('[role="main"]') ||
+                      document.querySelector('[data-testid="conversation-panel"]');
+    if (mainPanel) {
+      msgObserver.observe(mainPanel, { childList: true, subtree: true });
+      console.log('[CRM] MutationObserver attached to conversation panel');
+    } else {
+      setTimeout(startObserving, 1000);
+    }
+  };
+  setTimeout(startObserving, 2000);
 }
 
 function detectActiveChat() {
@@ -1468,6 +1508,11 @@ function selectChatInBackground(phone) {
 
   if (cleaned && cleaned.length >= 8) {
     const suffix = cleaned.slice(-8);
+
+    // Before clicking, make ALL chat items visible (remove any filter hiding)
+    document.querySelectorAll('[data-testid^="list-item-"], [data-testid="chat-list-item"]').forEach(el => {
+      el.style.removeProperty('display');
+    });
 
     // STRATEGY 1A: Click on the list item that has data-testid containing the phone suffix
     // WhatsApp Business Web: data-testid="list-item-5541985083658@c.us"
