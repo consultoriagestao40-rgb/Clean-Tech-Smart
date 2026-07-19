@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Clean Tech Smart CRM",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Integração do WhatsApp Web com o painel Clean Tech Smart CRM.",
   "permissions": [
     "storage",

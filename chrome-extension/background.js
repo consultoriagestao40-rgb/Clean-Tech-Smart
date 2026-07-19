@@ -78,8 +78,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               try {
                 const neededStores = [storeName];
                 if (contactStoreName) neededStores.push(contactStoreName);
+                const lidPnStoreName = storeNames.includes('lid-pn-mapping') ? 'lid-pn-mapping' : null;
+                const lidNameStoreName = storeNames.includes('lid-display-name-mapping') ? 'lid-display-name-mapping' : null;
+                if (lidPnStoreName) neededStores.push(lidPnStoreName);
+                if (lidNameStoreName) neededStores.push(lidNameStoreName);
+
                 const transaction = db.transaction(neededStores, 'readonly');
                 const contactsMap = new Map();
+                const lidToPnMap = new Map();
+                const lidToNameMap = new Map();
                 let contactSample = [];
 
                 const chatStore = transaction.objectStore(storeName);
@@ -94,275 +101,343 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 getAllChatsReq.onsuccess = () => {
                   try {
                     const records = getAllChatsReq.result || [];
-                    const activeJids = [];
 
-                    for (const r of records) {
-                      if (!r) continue;
-                      let idStr = '';
-                      if (typeof r.id === 'string') {
-                        idStr = r.id;
-                      } else if (r.id && typeof r.id === 'object') {
-                        idStr = r.id._serialized || (r.id.user ? r.id.user + (r.id.server ? '@' + r.id.server : '@c.us') : '');
-                      }
-                      if (idStr && (idStr.includes('@c.us') || idStr.includes('@s.whatsapp.net') || idStr.includes('@lid'))) {
-                        activeJids.push(idStr);
-                      }
-                    }
+                    const loadLidMappings = (cb) => {
+                      let pending = 0;
+                      const checkDone = () => {
+                        pending--;
+                        if (pending <= 0) cb();
+                      };
 
-                    const onContactsLoaded = () => {
-                      try {
-                        const extracted = [];
-                        const rawSample = records.filter(r => r.id && String(r.id).includes('@lid')).slice(0, 5).map(r => {
-                          let idValStr = 'none';
-                          if (r.id) {
-                            if (typeof r.id === 'string') {
-                              idValStr = r.id;
-                            } else if (typeof r.id === 'object') {
-                              idValStr = `{_serialized:${r.id._serialized || 'none'},user:${r.id.user || 'none'},server:${r.id.server || 'none'}`;
-                            }
-                          }
-                          const recordKeys = Object.keys(r).join(',');
-                          const contactKeys = r.contact ? Object.keys(r.contact).join(',') : 'none';
-                          const picKeys = (r.contact && r.contact.profilePicThumb) ? Object.keys(r.contact.profilePicThumb).join(',') : 'none';
-                          return {
-                            idType: typeof r.id,
-                            idVal: idValStr,
-                            contactKeys: contactKeys.substring(0, 100),
-                            picKeys: picKeys.substring(0, 100),
-                            recordKeys: recordKeys.substring(0, 120)
-                          };
-                        });
-
-                        // Populate contactSample with first 3 matched contacts
-                        const sampleJids = activeJids.slice(0, 15);
-                        const sampleList = [];
-                        for (const jid of sampleJids) {
-                          const c = contactsMap.get(jid);
-                          if (c) {
-                            const keys = Object.keys(c).join(',');
-                            let hasPic = 'no';
-                            let picKeys = 'none';
-                            if (c.profilePicThumb) {
-                              hasPic = 'profilePicThumb';
-                              picKeys = Object.keys(c.profilePicThumb).join(',');
-                            }
-                            sampleList.push({
-                              id: jid,
-                              keys: keys.substring(0, 100),
-                              hasPic: hasPic,
-                              picKeys: picKeys
+                      if (lidPnStoreName) {
+                        pending++;
+                        try {
+                          const store = transaction.objectStore(lidPnStoreName);
+                          const req = store.getAll();
+                          req.onsuccess = () => {
+                            const results = req.result || [];
+                            results.forEach(r => {
+                              if (!r) return;
+                              let lidStr = '';
+                              if (typeof r.id === 'string') lidStr = r.id;
+                              else if (r.id && typeof r.id === 'object') lidStr = r.id._serialized;
+                              
+                              let pnStr = '';
+                              if (typeof r.pn === 'string') pnStr = r.pn;
+                              else if (r.pn && typeof r.pn === 'object') pnStr = r.pn._serialized;
+                              else if (typeof r.value === 'string') pnStr = r.value;
+                              else if (r.value && typeof r.value === 'object') pnStr = r.value._serialized;
+                              
+                              if (lidStr && pnStr) {
+                                lidToPnMap.set(lidStr, pnStr);
+                              }
                             });
-                            if (sampleList.length >= 3) break;
-                          }
+                            checkDone();
+                          };
+                          req.onerror = () => checkDone();
+                        } catch (e) {
+                          checkDone();
                         }
-                        contactSample = sampleList;
+                      }
 
-                        for (const r of records) {
-                          if (!r) continue;
-
-                          let idStr = '';
-                          if (typeof r.id === 'string') {
-                            idStr = r.id;
-                          } else if (r.id && typeof r.id === 'object') {
-                            idStr = r.id._serialized || (r.id.user ? r.id.user + (r.id.server ? '@' + r.id.server : '@c.us') : '');
-                          }
-
-                          if (!idStr && typeof r.key === 'string') {
-                            idStr = r.key;
-                          } else if (r.key && typeof r.key === 'object') {
-                            idStr = r.key._serialized || '';
-                          }
-
-                          if (!idStr || (!idStr.includes('@c.us') && !idStr.includes('@s.whatsapp.net') && !idStr.includes('@lid'))) {
-                            continue;
-                          }
-
-                          const phone = idStr.split('@')[0].replace(/\D/g, '');
-                          if (!phone) continue;
-
-                          const contactInfo = contactsMap.get(idStr) || {};
-
-                          let name = '';
-                          if (typeof contactInfo.name === 'string' && contactInfo.name.trim()) {
-                            name = contactInfo.name.trim();
-                          } else if (typeof contactInfo.formattedName === 'string' && contactInfo.formattedName.trim()) {
-                            name = contactInfo.formattedName.trim();
-                          } else if (typeof contactInfo.pushname === 'string' && contactInfo.pushname.trim()) {
-                            name = contactInfo.pushname.trim();
-                          } else if (typeof r.name === 'string' && r.name.trim()) {
-                            name = r.name.trim();
-                          } else if (r.contact && typeof r.contact.name === 'string' && r.contact.name.trim()) {
-                            name = r.contact.name.trim();
-                          } else if (r.contact && typeof r.contact.pushname === 'string' && r.contact.pushname.trim()) {
-                            name = r.contact.pushname.trim();
-                          } else if (r.contact && typeof r.contact.formattedName === 'string' && r.contact.formattedName.trim()) {
-                            name = r.contact.formattedName.trim();
-                          } else if (typeof r.formattedTitle === 'string' && r.formattedTitle.trim()) {
-                            name = r.formattedTitle.trim();
-                          } else if (typeof r.title === 'string' && r.title.trim()) {
-                            name = r.title.trim();
-                          } else if (typeof r.displayName === 'string' && r.displayName.trim()) {
-                            name = r.displayName.trim();
-                          } else if (typeof r.pushname === 'string' && r.pushname.trim()) {
-                            name = r.pushname.trim();
-                          } else {
-                            name = phone;
-                          }
-
-                          let lastMessage = '';
-                          if (typeof r.preview === 'string') {
-                            lastMessage = r.preview;
-                          } else if (r.lastMsg && typeof r.lastMsg.body === 'string') {
-                            lastMessage = r.lastMsg.body;
-                          } else if (r.lastMessage && typeof r.lastMessage.body === 'string') {
-                            lastMessage = r.lastMessage.body;
-                          } else if (typeof r.previewText === 'string') {
-                            lastMessage = r.previewText;
-                          }
-
-                          let unreadCount = 0;
-                          if (typeof r.unreadCount === 'number') {
-                            unreadCount = r.unreadCount;
-                          } else if (typeof r.unreadCount === 'string') {
-                            unreadCount = parseInt(r.unreadCount, 10) || 0;
-                          }
-
-                          let photo = '';
-                          if (contactInfo.profilePicThumb) {
-                            const thumb = contactInfo.profilePicThumb;
-                            if (typeof thumb.img === 'string' && thumb.img.trim()) {
-                              photo = thumb.img.trim();
-                            } else if (typeof thumb.imgFull === 'string' && thumb.imgFull.trim()) {
-                              photo = thumb.imgFull.trim();
-                            }
-                          }
-                          if (!photo && typeof r.avatar === 'string' && r.avatar.trim()) {
-                            photo = r.avatar.trim();
-                          } else if (!photo && typeof r.avatarUrl === 'string' && r.avatarUrl.trim()) {
-                            photo = r.avatarUrl.trim();
-                          }
-
-                          if (!photo && r.contact && r.contact.profilePicThumb) {
-                            const thumb = r.contact.profilePicThumb;
-                            if (typeof thumb.img === 'string' && thumb.img.trim()) {
-                              photo = thumb.img.trim();
-                            } else if (typeof thumb.imgFull === 'string' && thumb.imgFull.trim()) {
-                              photo = thumb.imgFull.trim();
-                            }
-                          }
-                          if (!photo && r.profilePicThumb) {
-                            const thumb = r.profilePicThumb;
-                            if (typeof thumb.img === 'string' && thumb.img.trim()) {
-                              photo = thumb.img.trim();
-                            }
-                          }
-
-                          extracted.push({
-                            phone,
-                            name,
-                            lastMessage,
-                            unreadCount,
-                            photo
-                          });
+                      if (lidNameStoreName) {
+                        pending++;
+                        try {
+                          const store = transaction.objectStore(lidNameStoreName);
+                          const req = store.getAll();
+                          req.onsuccess = () => {
+                            const results = req.result || [];
+                            results.forEach(r => {
+                              if (!r) return;
+                              let lidStr = '';
+                              if (typeof r.id === 'string') lidStr = r.id;
+                              else if (r.id && typeof r.id === 'object') lidStr = r.id._serialized;
+                              
+                              let nameStr = '';
+                              if (typeof r.displayName === 'string') nameStr = r.displayName;
+                              else if (typeof r.value === 'string') nameStr = r.value;
+                              else if (r.value && typeof r.value.displayName === 'string') nameStr = r.value.displayName;
+                              
+                              if (lidStr && nameStr) {
+                                lidToNameMap.set(lidStr, nameStr);
+                              }
+                            });
+                            checkDone();
+                          };
+                          req.onerror = () => checkDone();
+                        } catch (e) {
+                          checkDone();
                         }
-                        db.close();
-                        resolve({ chats: extracted, dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: null, recordsCount: records.length, rawSample, contactSample });
-                      } catch (err) {
-                        db.close();
-                        resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `parse error: ${err.message}`, recordsCount: 0 });
+                      }
+
+                      if (pending === 0) {
+                        cb();
                       }
                     };
 
-                    try {
-                      if (contactStoreName && activeJids.length > 0) {
-                        const contactStore = transaction.objectStore(contactStoreName);
-                        
-                        const startContactsGet = () => {
-                          const queries = [];
-                          activeJids.forEach(jid => {
-                            queries.push({ orig: jid, queryKey: jid });
-                            const phone = jid.split('@')[0];
-                            if (phone) {
-                              queries.push({ orig: jid, queryKey: phone });
+                    loadLidMappings(() => {
+                      const activeJids = [];
+                      for (const r of records) {
+                        if (!r) continue;
+                        let idStr = '';
+                        if (typeof r.id === 'string') {
+                          idStr = r.id;
+                        } else if (r.id && typeof r.id === 'object') {
+                          idStr = r.id._serialized || (r.id.user ? r.id.user + (r.id.server ? '@' + r.id.server : '@c.us') : '');
+                        }
+                        if (idStr && (idStr.includes('@c.us') || idStr.includes('@s.whatsapp.net') || idStr.includes('@lid'))) {
+                          activeJids.push(idStr);
+                          if (idStr.includes('@lid')) {
+                            const mappedPn = lidToPnMap.get(idStr);
+                            if (mappedPn) {
+                              activeJids.push(mappedPn);
                             }
-                            if (jid.includes('@c.us')) {
-                              queries.push({ orig: jid, queryKey: jid.replace('@c.us', '@s.whatsapp.net') });
-                            } else if (jid.includes('@s.whatsapp.net')) {
-                              queries.push({ orig: jid, queryKey: jid.replace('@s.whatsapp.net', '@c.us') });
-                            }
-                          });
-
-                          if (queries.length === 0) {
-                            onContactsLoaded();
-                            return;
                           }
+                        }
+                      }
 
-                          let loadedCount = 0;
-                          queries.forEach(q => {
-                            try {
-                              const req = contactStore.get(q.queryKey);
-                              req.onsuccess = (e) => {
-                                const c = e.target.result;
-                                if (c) {
-                                  contactsMap.set(q.orig, c);
-                                }
-                                loadedCount++;
-                                if (loadedCount === queries.length) {
-                                  onContactsLoaded();
-                                }
-                              };
-                              req.onerror = () => {
-                                loadedCount++;
-                                if (loadedCount === queries.length) {
-                                  onContactsLoaded();
-                                }
-                              };
-                            } catch (err) {
-                              loadedCount++;
-                              if (loadedCount === queries.length) {
-                                onContactsLoaded();
+                      const onContactsLoaded = () => {
+                        try {
+                          const extracted = [];
+                          const rawSample = records.filter(r => r.id && String(r.id).includes('@lid')).slice(0, 5).map(r => {
+                            let idValStr = 'none';
+                            if (r.id) {
+                              if (typeof r.id === 'string') {
+                                idValStr = r.id;
+                              } else if (typeof r.id === 'object') {
+                                idValStr = `{_serialized:${r.id._serialized || 'none'},user:${r.id.user || 'none'},server:${r.id.server || 'none'}`;
                               }
                             }
+                            const recordKeys = Object.keys(r).join(',');
+                            const contactKeys = r.contact ? Object.keys(r.contact).join(',') : 'none';
+                            const picKeys = (r.contact && r.contact.profilePicThumb) ? Object.keys(r.contact.profilePicThumb).join(',') : 'none';
+                            return {
+                              idType: typeof r.id,
+                              idVal: idValStr,
+                              contactKeys: contactKeys.substring(0, 100),
+                              picKeys: picKeys.substring(0, 100),
+                              recordKeys: recordKeys.substring(0, 120)
+                            };
                           });
-                        };
 
-                        try {
-                          const countReq = contactStore.count();
-                          countReq.onsuccess = () => {
-                            const countVal = countReq.result || 0;
-                            try {
-                              const keysReq = contactStore.getAllKeys(null, 3);
-                              keysReq.onsuccess = (e) => {
-                                const keys = e.target.result || [];
-                                contactSample = [{
-                                  id: `Count:${countVal}`,
-                                  keys: keys.map(k => typeof k === 'object' ? JSON.stringify(k) : String(k)).join(','),
-                                  hasPic: 'none',
-                                  picKeys: 'none'
-                                }];
-                                startContactsGet();
-                              };
-                              keysReq.onerror = () => {
-                                contactSample = [{ id: `Count:${countVal}`, keys: 'error', hasPic: 'none', picKeys: 'none' }];
-                                startContactsGet();
-                              };
-                            } catch (e) {
-                              contactSample = [{ id: `Count:${countVal}`, keys: `err:${e.message}`, hasPic: 'none', picKeys: 'none' }];
-                              startContactsGet();
+                          for (const r of records) {
+                            if (!r) continue;
+
+                            let idStr = '';
+                            if (typeof r.id === 'string') {
+                              idStr = r.id;
+                            } else if (r.id && typeof r.id === 'object') {
+                              idStr = r.id._serialized || (r.id.user ? r.id.user + (r.id.server ? '@' + r.id.server : '@c.us') : '');
                             }
-                          };
-                          countReq.onerror = () => {
-                            startContactsGet();
-                          };
+
+                            if (!idStr && typeof r.key === 'string') {
+                              idStr = r.key;
+                            } else if (r.key && typeof r.key === 'object') {
+                              idStr = r.key._serialized || '';
+                            }
+
+                            if (!idStr || (!idStr.includes('@c.us') && !idStr.includes('@s.whatsapp.net') && !idStr.includes('@lid'))) {
+                              continue;
+                            }
+
+                            const phone = idStr.split('@')[0].replace(/\D/g, '');
+                            if (!phone) continue;
+
+                            let contactInfo = contactsMap.get(idStr) || {};
+                            if (idStr.includes('@lid')) {
+                              const mappedPn = lidToPnMap.get(idStr);
+                              if (mappedPn) {
+                                contactInfo = contactsMap.get(mappedPn) || contactInfo;
+                              }
+                            }
+
+                            let name = '';
+                            if (idStr.includes('@lid')) {
+                              name = lidToNameMap.get(idStr) || '';
+                            }
+                            if (!name) {
+                              if (typeof contactInfo.name === 'string' && contactInfo.name.trim()) {
+                                name = contactInfo.name.trim();
+                              } else if (typeof contactInfo.formattedName === 'string' && contactInfo.formattedName.trim()) {
+                                name = contactInfo.formattedName.trim();
+                              } else if (typeof contactInfo.pushname === 'string' && contactInfo.pushname.trim()) {
+                                name = contactInfo.pushname.trim();
+                              } else if (typeof r.name === 'string' && r.name.trim()) {
+                                name = r.name.trim();
+                              } else if (r.contact && typeof r.contact.name === 'string' && r.contact.name.trim()) {
+                                name = r.contact.name.trim();
+                              } else if (r.contact && typeof r.contact.pushname === 'string' && r.contact.pushname.trim()) {
+                                name = r.contact.pushname.trim();
+                              } else if (r.contact && typeof r.contact.formattedName === 'string' && r.contact.formattedName.trim()) {
+                                name = r.contact.formattedName.trim();
+                              } else if (typeof r.formattedTitle === 'string' && r.formattedTitle.trim()) {
+                                name = r.formattedTitle.trim();
+                              } else if (typeof r.title === 'string' && r.title.trim()) {
+                                name = r.title.trim();
+                              } else if (typeof r.displayName === 'string' && r.displayName.trim()) {
+                                name = r.displayName.trim();
+                              } else if (typeof r.pushname === 'string' && r.pushname.trim()) {
+                                name = r.pushname.trim();
+                              } else {
+                                name = phone;
+                              }
+                            }
+
+                            let lastMessage = '';
+                            if (typeof r.preview === 'string') {
+                              lastMessage = r.preview;
+                            } else if (r.lastMsg && typeof r.lastMsg.body === 'string') {
+                              lastMessage = r.lastMsg.body;
+                            } else if (r.lastMessage && typeof r.lastMessage.body === 'string') {
+                              lastMessage = r.lastMessage.body;
+                            } else if (typeof r.previewText === 'string') {
+                              lastMessage = r.previewText;
+                            }
+
+                            let unreadCount = 0;
+                            if (typeof r.unreadCount === 'number') {
+                              unreadCount = r.unreadCount;
+                            } else if (typeof r.unreadCount === 'string') {
+                              unreadCount = parseInt(r.unreadCount, 10) || 0;
+                            }
+
+                            let photo = '';
+                            if (contactInfo.profilePicThumb) {
+                              const thumb = contactInfo.profilePicThumb;
+                              if (typeof thumb.img === 'string' && thumb.img.trim()) {
+                                photo = thumb.img.trim();
+                              } else if (typeof thumb.imgFull === 'string' && thumb.imgFull.trim()) {
+                                photo = thumb.imgFull.trim();
+                              }
+                            }
+                            if (!photo && typeof r.avatar === 'string' && r.avatar.trim()) {
+                              photo = r.avatar.trim();
+                            } else if (!photo && typeof r.avatarUrl === 'string' && r.avatarUrl.trim()) {
+                              photo = r.avatarUrl.trim();
+                            }
+
+                            if (!photo && r.contact && r.contact.profilePicThumb) {
+                              const thumb = r.contact.profilePicThumb;
+                              if (typeof thumb.img === 'string' && thumb.img.trim()) {
+                                photo = thumb.img.trim();
+                              } else if (typeof thumb.imgFull === 'string' && thumb.imgFull.trim()) {
+                                photo = thumb.imgFull.trim();
+                              }
+                            }
+                            if (!photo && r.profilePicThumb) {
+                              const thumb = r.profilePicThumb;
+                              if (typeof thumb.img === 'string' && thumb.img.trim()) {
+                                photo = thumb.img.trim();
+                              }
+                            }
+
+                            extracted.push({
+                              phone,
+                              name,
+                              lastMessage,
+                              unreadCount,
+                              photo
+                            });
+                          }
+                          db.close();
+                          resolve({ chats: extracted, dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: null, recordsCount: records.length, rawSample, contactSample });
                         } catch (err) {
-                          startContactsGet();
+                          db.close();
+                          resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `parse error: ${err.message}`, recordsCount: 0 });
                         }
-                      } else {
+                      };
+
+                      try {
+                        if (contactStoreName && activeJids.length > 0) {
+                          const contactStore = transaction.objectStore(contactStoreName);
+                          
+                          const startContactsGet = () => {
+                            const queries = [];
+                            activeJids.forEach(jid => {
+                              queries.push({ orig: jid, queryKey: jid });
+                              const phone = jid.split('@')[0];
+                              if (phone) {
+                                queries.push({ orig: jid, queryKey: phone });
+                              }
+                              if (jid.includes('@c.us')) {
+                                queries.push({ orig: jid, queryKey: jid.replace('@c.us', '@s.whatsapp.net') });
+                              } else if (jid.includes('@s.whatsapp.net')) {
+                                queries.push({ orig: jid, queryKey: jid.replace('@s.whatsapp.net', '@c.us') });
+                              }
+                            });
+
+                            if (queries.length === 0) {
+                              onContactsLoaded();
+                              return;
+                            }
+
+                            let loadedCount = 0;
+                            queries.forEach(q => {
+                              try {
+                                const req = contactStore.get(q.queryKey);
+                                req.onsuccess = (e) => {
+                                  const c = e.target.result;
+                                  if (c) {
+                                    contactsMap.set(q.orig, c);
+                                  }
+                                  loadedCount++;
+                                  if (loadedCount === queries.length) {
+                                    onContactsLoaded();
+                                  }
+                                };
+                                req.onerror = () => {
+                                  loadedCount++;
+                                  if (loadedCount === queries.length) {
+                                    onContactsLoaded();
+                                  }
+                                };
+                              } catch (err) {
+                                loadedCount++;
+                                if (loadedCount === queries.length) {
+                                  onContactsLoaded();
+                                }
+                              }
+                            });
+                          };
+
+                          try {
+                            const countReq = contactStore.count();
+                            countReq.onsuccess = () => {
+                              const countVal = countReq.result || 0;
+                              try {
+                                const keysReq = contactStore.getAllKeys(null, 3);
+                                keysReq.onsuccess = (e) => {
+                                  const keys = e.target.result || [];
+                                  contactSample = [{
+                                    id: `Count:${countVal}`,
+                                    keys: keys.map(k => typeof k === 'object' ? JSON.stringify(k) : String(k)).join(','),
+                                    hasPic: 'none',
+                                    picKeys: 'none'
+                                  }];
+                                  startContactsGet();
+                                };
+                                keysReq.onerror = () => {
+                                  contactSample = [{ id: `Count:${countVal}`, keys: 'error', hasPic: 'none', picKeys: 'none' }];
+                                  startContactsGet();
+                                };
+                              } catch (e) {
+                                contactSample = [{ id: `Count:${countVal}`, keys: `err:${e.message}`, hasPic: 'none', picKeys: 'none' }];
+                                startContactsGet();
+                              }
+                            };
+                            countReq.onerror = () => {
+                              startContactsGet();
+                            };
+                          } catch (err) {
+                            startContactsGet();
+                          }
+                        } else {
+                          onContactsLoaded();
+                        }
+                      } catch (err) {
                         onContactsLoaded();
                       }
-                    } catch (err) {
-                      onContactsLoaded();
-                    }
+                    });
                   } catch (err) {
                     db.close();
                     resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `onsuccess error: ${err.message}`, recordsCount: 0 });
