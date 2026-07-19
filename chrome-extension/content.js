@@ -1499,11 +1499,23 @@ function renderCrmInPageBoard() {
               body: JSON.stringify({ phone, stage: st.key })
             });
             // Update local leadsList and persist to storage
-            const lead = leadsList.find(l => l.phone === phone);
+            let lead = leadsList.find(l => l.phone === phone);
             if (lead) {
               lead.stage = st.key;
-              safeStorageSet({ crm_leads: leadsList });
+            } else {
+              // Create new lead object for this autoInboxChat
+              const chat = waChats.find(c => c.phone === phone || (c.phone && c.phone.slice(-8) === phone.slice(-8)));
+              lead = {
+                phone: phone,
+                name: chat ? chat.name : phone,
+                stage: st.key,
+                value: 0,
+                notes: '',
+                seller_id: crmUser?.id || null
+              };
+              leadsList.push(lead);
             }
+            safeStorageSet({ crm_leads: leadsList });
             renderCrmInPageBoard();
           } catch(err) { console.error('[CRM Panel] drop error:', err); }
         }
@@ -2259,17 +2271,17 @@ function searchAndClickContact(query, saveCallback, realPhone) {
     }
 
     searchBox.focus();
+    searchBox.innerHTML = '';
+    const textNode = document.createTextNode(query);
+    searchBox.appendChild(textNode);
     
-    // Select all and clear
-    document.execCommand('selectAll', false, null);
-    document.execCommand('delete', false, null);
-    
-    // Insert text
-    document.execCommand('insertText', false, query);
-    
-    // Dispatch input events
-    searchBox.dispatchEvent(new Event('input', { bubbles: true }));
-    searchBox.dispatchEvent(new Event('change', { bubbles: true }));
+    const inputEv = new InputEvent('input', {
+      bubbles: true,
+      cancelable: true,
+      inputType: 'insertText',
+      data: query
+    });
+    searchBox.dispatchEvent(inputEv);
 
     // 3. Wait for search results
     setTimeout(() => {
