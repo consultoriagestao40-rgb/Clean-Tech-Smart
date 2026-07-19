@@ -1,5 +1,69 @@
 // content.js
 
+// Safe wrappers to prevent "Extension context invalidated" errors
+function safeStorageSet(data, callback) {
+  if (!chrome.runtime?.id) return;
+  try {
+    chrome.storage.local.set(data, () => {
+      if (chrome.runtime.lastError) {
+        console.warn('[CRM] safeStorageSet warning:', chrome.runtime.lastError.message);
+      } else if (callback) {
+        callback();
+      }
+    });
+  } catch (e) {
+    console.warn('[CRM] safeStorageSet catch:', e.message);
+  }
+}
+
+function safeStorageGet(keys, callback) {
+  if (!chrome.runtime?.id) {
+    if (callback) callback({});
+    return;
+  }
+  try {
+    chrome.storage.local.get(keys, (res) => {
+      if (chrome.runtime.lastError) {
+        console.warn('[CRM] safeStorageGet warning:', chrome.runtime.lastError.message);
+        if (callback) callback({});
+      } else if (callback) {
+        callback(res || {});
+      }
+    });
+  } catch (e) {
+    console.warn('[CRM] safeStorageGet catch:', e.message);
+    if (callback) callback({});
+  }
+}
+
+function safeStorageRemove(keys, callback) {
+  if (!chrome.runtime?.id) return;
+  try {
+    chrome.storage.local.remove(keys, () => {
+      if (chrome.runtime.lastError) {
+        console.warn('[CRM] safeStorageRemove warning:', chrome.runtime.lastError.message);
+      } else if (callback) {
+        callback();
+      }
+    });
+  } catch (e) {
+    console.warn('[CRM] safeStorageRemove catch:', e.message);
+  }
+}
+
+function simulateClick(element) {
+  if (!element) return;
+  const mouseEvents = ['mousedown', 'mouseup', 'click'];
+  mouseEvents.forEach(eventType => {
+    const event = new MouseEvent(eventType, {
+      view: window,
+      bubbles: true,
+      cancelable: true
+    });
+    element.dispatchEvent(event);
+  });
+}
+
 let crmServerUrl = '';
 let crmToken = '';
 let crmUser = null;
@@ -30,7 +94,7 @@ let shadowRoot = null;
 let sidebarElement = null;
 
 // Initialize Session from Storage
-chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url', 'crm_stages'], (res) => {
+safeStorageGet(['crm_token', 'crm_user', 'crm_server_url', 'crm_stages'], (res) => {
   crmServerUrl = res.crm_server_url || 'https://clean-tech-smart.vercel.app';
   crmToken = res.crm_token || '';
   crmUser = res.crm_user || null;
@@ -48,37 +112,39 @@ chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url', 'crm_stages
 });
 
 // Watch for storage changes (e.g. login/logout from popup, state requests from crm.js)
-chrome.storage.onChanged.addListener((changes) => {
-  chrome.storage.local.get(['crm_token', 'crm_user', 'crm_server_url', 'crm_stages'], (res) => {
-    crmServerUrl = res.crm_server_url || 'https://clean-tech-smart.vercel.app';
-    crmToken = res.crm_token || '';
-    crmUser = res.crm_user || null;
-    if (res.crm_stages && res.crm_stages.length > 0) {
-      funnelStages = res.crm_stages;
-    }
-    
-    // Remove login reminder if logged in
-    const reminder = document.getElementById('crm-login-reminder');
-    if (crmToken && reminder) {
-      reminder.remove();
-    } else if (!crmToken && !reminder) {
-      injectLoginReminder();
-    }
+if (chrome.storage?.onChanged) {
+  chrome.storage.onChanged.addListener((changes) => {
+    safeStorageGet(['crm_token', 'crm_user', 'crm_server_url', 'crm_stages'], (res) => {
+      crmServerUrl = res.crm_server_url || 'https://clean-tech-smart.vercel.app';
+      crmToken = res.crm_token || '';
+      crmUser = res.crm_user || null;
+      if (res.crm_stages && res.crm_stages.length > 0) {
+        funnelStages = res.crm_stages;
+      }
+      
+      // Remove login reminder if logged in
+      const reminder = document.getElementById('crm-login-reminder');
+      if (crmToken && reminder) {
+        reminder.remove();
+      } else if (!crmToken && !reminder) {
+        injectLoginReminder();
+      }
 
-    removeSidebar();
-    if (!crmToken) {
-      isSidebarVisible = true;
-      initSidebar();
-    } else {
-      startChatObserver();
-    }
-  });
+      removeSidebar();
+      if (!crmToken) {
+        isSidebarVisible = true;
+        initSidebar();
+      } else {
+        startChatObserver();
+      }
+    });
+
 
   // State-bridge triggers
   if (changes.crm_pending_open_chat && changes.crm_pending_open_chat.newValue) {
     const phone = changes.crm_pending_open_chat.newValue;
     selectChatInBackground(phone);
-    chrome.storage.local.remove('crm_pending_open_chat');
+    safeStorageRemove('crm_pending_open_chat');
   }
   if (changes.crm_pending_send_message && changes.crm_pending_send_message.newValue) {
     const { text, phone } = changes.crm_pending_send_message.newValue;
@@ -86,9 +152,11 @@ chrome.storage.onChanged.addListener((changes) => {
     setTimeout(() => {
       sendWhatsAppMessage(text);
     }, 400);
-    chrome.storage.local.remove('crm_pending_send_message');
+    safeStorageRemove('crm_pending_send_message');
   }
-});
+  });
+}
+
 
 function injectLoginReminder() {
   if (document.getElementById('crm-login-reminder')) return;
@@ -234,7 +302,7 @@ async function handleInlineLogin() {
     });
     const data = await response.json();
     if (response.ok) {
-      chrome.storage.local.set({
+      safeStorageSet({
         crm_token: data.token,
         crm_user: data.user,
         crm_server_url: serverUrl
@@ -516,7 +584,7 @@ function startChatObserver() {
       // Periodically sync chat list to local storage for crm.html to read
       const chats = getAllChatsFromDom();
       if (chats.length > 0) {
-        chrome.storage.local.set({ crm_whatsapp_chats: chats });
+        safeStorageSet({ crm_whatsapp_chats: chats });
       }
       
       // Sync current active chat messages
@@ -530,7 +598,7 @@ function startChatObserver() {
           document.querySelector('header span[dir="auto"]')
         )?.innerText?.trim() || currentName || '';
 
-        chrome.storage.local.set({
+        safeStorageSet({
           crm_whatsapp_messages: messages,
           crm_whatsapp_active_phone: currentPhone,
           crm_whatsapp_active_name: activeHeaderName.toLowerCase()
@@ -654,7 +722,7 @@ function startChatObserver() {
         debug.app_top_children = topChildren;
       }
 
-      chrome.storage.local.set({ crm_dom_debug: debug });
+      safeStorageSet({ crm_dom_debug: debug });
     } catch (e) {
       // Extension context invalidated - stop the interval
       clearInterval(syncInterval);
@@ -677,7 +745,7 @@ function startChatObserver() {
           document.querySelector('header span[title]') ||
           document.querySelector('header span[dir="auto"]')
         )?.innerText?.trim() || currentName || '';
-        chrome.storage.local.set({
+        safeStorageSet({
           crm_whatsapp_messages: messages,
           crm_whatsapp_active_phone: currentPhone || '',
           crm_whatsapp_active_name: activeHeaderName.toLowerCase()
@@ -758,11 +826,7 @@ function detectActiveChat() {
 
   // Always sync the active chat name for message matching
   if (chatName && chatName !== currentName) {
-    try {
-      if (chrome.runtime?.id) {
-        chrome.storage.local.set({ crm_whatsapp_active_name: chatName.toLowerCase() });
-      }
-    } catch (e) {}
+    safeStorageSet({ crm_whatsapp_active_name: chatName.toLowerCase() });
   }
 
   if (detectedPhone && detectedPhone !== currentPhone) {
@@ -786,7 +850,7 @@ async function fetchLeadsAndRefresh() {
       const data = await res.json();
       leadsList = data.leads || [];
       // Save to storage so in-page CRM panel can read them
-      chrome.storage.local.set({ crm_leads: leadsList, crm_stages: funnelStages });
+      safeStorageSet({ crm_leads: leadsList, crm_stages: funnelStages });
       injectHorizontalTabs();
       applyChatListFilter();
       // Refresh in-page panel if visible
@@ -1886,12 +1950,13 @@ function extractChatFromRow(row, chats) {
   const badgeNode = row.querySelector('[aria-label*="não lida"], [aria-label*="unread"], [class*="unread"]');
   const unreadCount = badgeNode ? parseInt(badgeNode.innerText.replace(/\D/g, '')) || 0 : 0;
 
-  // PHOTO: Extract profile picture URL
+  // PHOTO: Extract profile picture URL (WhatsApp Business Web lists avatars in img tags)
   let photo = '';
-  const imgEl = row.querySelector('img[src*="pps.whatsapp.net"], img[src*="whatsapp.net"], img[src*="media"]');
-  if (imgEl && imgEl.src && !imgEl.src.includes('undefined')) {
+  const imgEl = row.querySelector('img');
+  if (imgEl && imgEl.src && imgEl.src.startsWith('http') && !imgEl.src.includes('emoji')) {
     photo = imgEl.src;
   }
+
 
   chats.push({ name, phone, lastMessage, unreadCount, photo });
 }
@@ -1908,12 +1973,13 @@ function selectChatInBackground(phone) {
       document.querySelector('header span[dir="auto"]')
     )?.innerText?.trim() || chatName || '';
 
-    chrome.storage.local.set({
+    safeStorageSet({
       crm_whatsapp_messages: messages,
       crm_whatsapp_active_phone: chatPhone || '',
       crm_whatsapp_active_name: nameFromHeader.toLowerCase()
     });
   };
+
 
   const cleaned = phone.replace(/\D/g, '');
   if (!cleaned || cleaned.length < 8) {
@@ -1936,7 +2002,7 @@ function selectChatInBackground(phone) {
                    document.querySelector(`[data-id*="${suffix}"]`);
   if (listItem) {
     const clickable = listItem.querySelector('[role="button"]') || listItem;
-    clickable.click();
+    simulateClick(clickable);
     currentPhone = cleaned;
     setTimeout(() => saveMessagesToStorage('', cleaned), 800);
     setTimeout(() => saveMessagesToStorage('', cleaned), 2000);
@@ -1975,6 +2041,7 @@ function searchAndClickContact(query, saveCallback, realPhone) {
                     document.querySelector('[data-testid="search-input-container"] [role="textbox"]') ||
                     document.querySelector('div[contenteditable="true"][data-tab="3"]') ||
                     document.querySelector('[data-testid="chatlist-search"]');
+
   if (!searchBox) return;
 
   searchBox.focus();
@@ -1987,7 +2054,7 @@ function searchAndClickContact(query, saveCallback, realPhone) {
                         document.querySelector('[data-testid="chat-list-item"]');
     if (firstResult) {
       const btn = firstResult.querySelector('[role="button"]') || firstResult;
-      btn.click();
+      simulateClick(btn);
       if (realPhone) currentPhone = realPhone;
       setTimeout(() => saveCallback('', realPhone || ''), 1000);
     }
