@@ -581,10 +581,9 @@ function startChatObserver() {
       // to prevent it from hiding conversations while we're trying to open them
       injectHorizontalTabs();
       
-      // Periodically sync and merge chat list from BOTH DOM and local IndexedDB database
-      getChatsFromIndexedDB().then((idbChats) => {
-        const visibleChats = getAllChatsFromDom();
-        
+      // Merge visible DOM chats (provides real-time dynamic updates)
+      const visibleChats = getAllChatsFromDom();
+      if (visibleChats.length > 0) {
         safeStorageGet(['crm_whatsapp_chats'], (res) => {
           const existingChats = res.crm_whatsapp_chats || [];
           const mergedMap = new Map();
@@ -594,26 +593,7 @@ function startChatObserver() {
             if (c.phone) mergedMap.set(c.phone.slice(-8), c);
           });
           
-          // 2. Merge IndexedDB chats (contains all historical chats!)
-          idbChats.forEach(c => {
-            if (c.phone) {
-              const suffix = c.phone.slice(-8);
-              const existing = mergedMap.get(suffix);
-              if (existing) {
-                mergedMap.set(suffix, {
-                  ...existing,
-                  name: c.name || existing.name,
-                  lastMessage: c.lastMessage || existing.lastMessage,
-                  unreadCount: typeof c.unreadCount === 'number' ? c.unreadCount : existing.unreadCount,
-                  photo: c.photo || existing.photo
-                });
-              } else {
-                mergedMap.set(suffix, c);
-              }
-            }
-          });
-          
-          // 3. Merge visible DOM chats (provides real-time dynamic updates)
+          // 2. Merge visible DOM chats (provides real-time dynamic updates)
           visibleChats.forEach(c => {
             if (c.phone) {
               const suffix = c.phone.slice(-8);
@@ -634,7 +614,7 @@ function startChatObserver() {
           
           safeStorageSet({ crm_whatsapp_chats: Array.from(mergedMap.values()) });
         });
-      });
+      }
       
       // Sync current active chat messages
       if (currentPhone || currentName) {
@@ -655,142 +635,195 @@ function startChatObserver() {
       }
 
       // Sync debug stats to local storage for crm.html to display
-      const debug = {};
-      const paneSide = document.getElementById('pane-side');
-      debug.has_pane_side = !!paneSide;
-      
-      if (paneSide) {
-        const elementsWithDataId = paneSide.querySelectorAll('[data-id]');
-        debug.data_id_count = elementsWithDataId.length;
-        if (elementsWithDataId.length > 0) {
-          debug.data_ids_sample = Array.from(elementsWithDataId).slice(0, 5).map(el => el.getAttribute('data-id'));
+      safeStorageGet(['crm_dom_debug'], (storedRes) => {
+        const debug = storedRes.crm_dom_debug || {};
+        const paneSide = document.getElementById('pane-side');
+        debug.has_pane_side = !!paneSide;
+        
+        if (paneSide) {
+          const elementsWithDataId = paneSide.querySelectorAll('[data-id]');
+          debug.data_id_count = elementsWithDataId.length;
+          if (elementsWithDataId.length > 0) {
+            debug.data_ids_sample = Array.from(elementsWithDataId).slice(0, 5).map(el => el.getAttribute('data-id'));
+          }
+          
+          const elementsWithTestId = paneSide.querySelectorAll('[data-testid]');
+          debug.testid_count = elementsWithTestId.length;
+          if (elementsWithTestId.length > 0) {
+            debug.testids_sample = Array.from(elementsWithTestId).slice(0, 5).map(el => el.getAttribute('data-testid'));
+          }
+          
+          const elementsWithRole = paneSide.querySelectorAll('[role]');
+          debug.role_count = elementsWithRole.length;
+          if (elementsWithRole.length > 0) {
+            debug.roles_sample = Array.from(elementsWithRole).slice(0, 5).map(el => el.getAttribute('role'));
+          }
+
+          const children = paneSide.children;
+          debug.children_count = children.length;
+          if (children.length > 0) {
+            debug.children_tags = Array.from(children).slice(0, 3).map(c => {
+              return {
+                tagName: c.tagName,
+                className: c.className,
+                htmlSlice: c.outerHTML.substring(0, 200)
+              };
+            });
+          }
         }
         
-        const elementsWithTestId = paneSide.querySelectorAll('[data-testid]');
-        debug.testid_count = elementsWithTestId.length;
-        if (elementsWithTestId.length > 0) {
-          debug.testids_sample = Array.from(elementsWithTestId).slice(0, 5).map(el => el.getAttribute('data-testid'));
+        const listItems = document.querySelectorAll('[data-testid="chat-list-item"]');
+        debug.list_items_count = listItems.length;
+
+        // Inspect the confirmed chat list container
+        const chatListContainer = document.querySelector(
+          '[data-testid="chat-list"] [aria-label="Lista de conversas"], ' +
+          '[data-testid="chat-list"] [aria-label="Chat list"], ' +
+          '[data-testid="chat-list"] [aria-label*="conversa"], ' +
+          '[data-testid="chat-list"] [role="list"]'
+        );
+        debug.chat_list_container_found = !!chatListContainer;
+        if (chatListContainer) {
+          debug.chat_list_children_count = chatListContainer.children.length;
+          debug.chat_list_aria = chatListContainer.getAttribute('aria-label');
+          debug.chat_list_role = chatListContainer.getAttribute('role');
+          if (chatListContainer.children.length > 0) {
+            const firstChild = chatListContainer.children[0];
+            debug.first_chat_row_html = firstChild.outerHTML.substring(0, 400);
+          }
+        } else {
+          // Show all aria-labels inside chat-list to find correct container
+          const chatList = document.querySelector('[data-testid="chat-list"]');
+          if (chatList) {
+            const allAriaLabels = Array.from(chatList.querySelectorAll('[aria-label]')).slice(0, 10).map(el => ({
+              tag: el.tagName, aria: el.getAttribute('aria-label'), role: el.getAttribute('role')
+            }));
+            debug.chat_list_aria_labels = allAriaLabels;
+          }
         }
         
-        const elementsWithRole = paneSide.querySelectorAll('[role]');
-        debug.role_count = elementsWithRole.length;
-        if (elementsWithRole.length > 0) {
-          debug.roles_sample = Array.from(elementsWithRole).slice(0, 5).map(el => el.getAttribute('role'));
+        // Inspect #main area for message structure (may not exist in Business Web)
+        const mainEl = document.getElementById('main');
+        debug.has_main = !!mainEl;
+
+        // Search for conversation panel alternatives in WhatsApp Business Web
+        const convPanelCandidates = [
+          document.querySelector('[role="main"]'),
+          document.querySelector('[data-testid="conversation-panel-messages"]'),
+          document.querySelector('[data-testid="conversation-panel"]'),
+          document.querySelector('[data-testid="msg-list"]'),
+          document.querySelector('[aria-label="Lista de mensagens"]'),
+          document.querySelector('[aria-label="Message list"]'),
+          document.querySelector('[aria-label*="mensagen"]'),
+          document.querySelector('[aria-label*="message"]'),
+        ];
+        const foundConvPanel = convPanelCandidates.find(el => el !== null);
+        debug.conv_panel_found = !!foundConvPanel;
+        if (foundConvPanel) {
+          debug.conv_panel_tag = foundConvPanel.tagName;
+          debug.conv_panel_aria = foundConvPanel.getAttribute('aria-label');
+          debug.conv_panel_testid = foundConvPanel.getAttribute('data-testid');
+          debug.conv_panel_role = foundConvPanel.getAttribute('role');
         }
 
-        const children = paneSide.children;
-        debug.children_count = children.length;
-        if (children.length > 0) {
-          debug.children_tags = Array.from(children).slice(0, 3).map(c => {
-            return {
-              tagName: c.tagName,
-              className: c.className,
-              htmlSlice: c.outerHTML.substring(0, 200)
-            };
-          });
-        }
-      }
-      
-      const listItems = document.querySelectorAll('[data-testid="chat-list-item"]');
-      debug.list_items_count = listItems.length;
+        // Scan full document for message-related testids (not just pane-side)
+        const globalMsgTestIds = Array.from(document.querySelectorAll('[data-testid]'))
+          .map(el => el.getAttribute('data-testid'))
+          .filter(id => id && (id.includes('msg') || id.includes('message') || id.includes('conversation') || id.includes('bubble')));
+        debug.global_msg_testids = [...new Set(globalMsgTestIds)].slice(0, 15);
 
-      // Inspect the confirmed chat list container
-      const chatListContainer = document.querySelector(
-        '[data-testid="chat-list"] [aria-label="Lista de conversas"], ' +
-        '[data-testid="chat-list"] [aria-label="Chat list"], ' +
-        '[data-testid="chat-list"] [aria-label*="conversa"], ' +
-        '[data-testid="chat-list"] [role="list"]'
-      );
-      debug.chat_list_container_found = !!chatListContainer;
-      if (chatListContainer) {
-        debug.chat_list_children_count = chatListContainer.children.length;
-        debug.chat_list_aria = chatListContainer.getAttribute('aria-label');
-        debug.chat_list_role = chatListContainer.getAttribute('role');
-        if (chatListContainer.children.length > 0) {
-          const firstChild = chatListContainer.children[0];
-          debug.first_chat_row_html = firstChild.outerHTML.substring(0, 400);
-        }
-      } else {
-        // Show all aria-labels inside chat-list to find correct container
-        const chatList = document.querySelector('[data-testid="chat-list"]');
-        if (chatList) {
-          const allAriaLabels = Array.from(chatList.querySelectorAll('[aria-label]')).slice(0, 10).map(el => ({
-            tag: el.tagName, aria: el.getAttribute('aria-label'), role: el.getAttribute('role')
-          }));
-          debug.chat_list_aria_labels = allAriaLabels;
-        }
-      }
-      
-      // Inspect #main area for message structure (may not exist in Business Web)
-      const mainEl = document.getElementById('main');
-      debug.has_main = !!mainEl;
-
-      // Search for conversation panel alternatives in WhatsApp Business Web
-      const convPanelCandidates = [
-        document.querySelector('[role="main"]'),
-        document.querySelector('[data-testid="conversation-panel-messages"]'),
-        document.querySelector('[data-testid="conversation-panel"]'),
-        document.querySelector('[data-testid="msg-list"]'),
-        document.querySelector('[aria-label="Lista de mensagens"]'),
-        document.querySelector('[aria-label="Message list"]'),
-        document.querySelector('[aria-label*="mensagen"]'),
-        document.querySelector('[aria-label*="message"]'),
-      ];
-      const foundConvPanel = convPanelCandidates.find(el => el !== null);
-      debug.conv_panel_found = !!foundConvPanel;
-      if (foundConvPanel) {
-        debug.conv_panel_tag = foundConvPanel.tagName;
-        debug.conv_panel_aria = foundConvPanel.getAttribute('aria-label');
-        debug.conv_panel_testid = foundConvPanel.getAttribute('data-testid');
-        debug.conv_panel_role = foundConvPanel.getAttribute('role');
-      }
-
-      // Scan full document for message-related testids (not just pane-side)
-      const globalMsgTestIds = Array.from(document.querySelectorAll('[data-testid]'))
-        .map(el => el.getAttribute('data-testid'))
-        .filter(id => id && (id.includes('msg') || id.includes('message') || id.includes('conversation') || id.includes('bubble')));
-      debug.global_msg_testids = [...new Set(globalMsgTestIds)].slice(0, 15);
-
-      // Find all data-tab elements (WhatsApp Business Web panels)
-      const dataTabs = Array.from(document.querySelectorAll('[data-tab]')).map(el => ({
-        tab: el.getAttribute('data-tab'),
-        testid: el.getAttribute('data-testid'),
-        id: el.id,
-        role: el.getAttribute('role'),
-        childrenCount: el.children.length
-      }));
-      debug.data_tabs = dataTabs.slice(0, 8);
-
-      // Check for large divs that might be the conversation panel
-      const appDiv = document.getElementById('app');
-      if (appDiv) {
-        const topChildren = Array.from(appDiv.children).map(c => ({
-          id: c.id, tag: c.tagName, role: c.getAttribute('role'),
-          testid: c.getAttribute('data-testid'), children: c.children.length
+        // Find all data-tab elements (WhatsApp Business Web panels)
+        const dataTabs = Array.from(document.querySelectorAll('[data-tab]')).map(el => ({
+          tab: el.getAttribute('data-tab'),
+          testid: el.getAttribute('data-testid'),
+          id: el.id,
+          role: el.getAttribute('role'),
+          childrenCount: el.children.length
         }));
-        debug.app_top_children = topChildren;
-      }
+        debug.data_tabs = dataTabs.slice(0, 8);
 
-      // Query IndexedDB databases list for visual debugging in the CRM footer
-      if (window.indexedDB && window.indexedDB.databases) {
-        window.indexedDB.databases().then(dbs => {
-          debug.indexed_dbs = dbs.map(d => d.name);
+        // Check for large divs that might be the conversation panel
+        const appDiv = document.getElementById('app');
+        if (appDiv) {
+          const topChildren = Array.from(appDiv.children).map(c => ({
+            id: c.id, tag: c.tagName, role: c.getAttribute('role'),
+            testid: c.getAttribute('data-testid'), children: c.children.length
+          }));
+          debug.app_top_children = topChildren;
+        }
+
+        // Query IndexedDB databases list for visual debugging in the CRM footer
+        if (window.indexedDB && window.indexedDB.databases) {
+          window.indexedDB.databases().then(dbs => {
+            debug.indexed_dbs = dbs.map(d => d.name);
+            safeStorageSet({ crm_dom_debug: debug });
+          }).catch(e => {
+            debug.indexed_dbs_error = e.message;
+            safeStorageSet({ crm_dom_debug: debug });
+          });
+        } else {
+          debug.indexed_dbs = 'not_supported';
           safeStorageSet({ crm_dom_debug: debug });
-        }).catch(e => {
-          debug.indexed_dbs_error = e.message;
-          safeStorageSet({ crm_dom_debug: debug });
-        });
-      } else {
-        debug.indexed_dbs = 'not_supported';
+        }
+
         safeStorageSet({ crm_dom_debug: debug });
-      }
-
-      safeStorageSet({ crm_dom_debug: debug });
+      });
     } catch (e) {
       // Extension context invalidated - stop the interval
       clearInterval(syncInterval);
     }
   }, 2000);
+
+  const syncIdb = () => {
+    if (!chrome.runtime?.id) return;
+    console.log('[CRM] Executando sincronização de banco de dados IndexedDB...');
+    getChatsFromIndexedDB().then((idbChats) => {
+      if (!idbChats || idbChats.length === 0) {
+        console.log('[CRM] Nenhum chat retornado do IndexedDB.');
+        return;
+      }
+      console.log(`[CRM] Sincronizando ${idbChats.length} conversas do banco de dados...`);
+      safeStorageGet(['crm_whatsapp_chats'], (res) => {
+        const existingChats = res.crm_whatsapp_chats || [];
+        const mergedMap = new Map();
+        
+        // 1. Populate map with existing chats
+        existingChats.forEach(c => {
+          if (c.phone) mergedMap.set(c.phone.slice(-8), c);
+        });
+        
+        // 2. Merge IndexedDB chats (contains all historical chats!)
+        idbChats.forEach(c => {
+          if (c.phone) {
+            const suffix = c.phone.slice(-8);
+            const existing = mergedMap.get(suffix);
+            if (existing) {
+              mergedMap.set(suffix, {
+                ...existing,
+                name: c.name || existing.name,
+                lastMessage: c.lastMessage || existing.lastMessage,
+                unreadCount: typeof c.unreadCount === 'number' ? c.unreadCount : existing.unreadCount,
+                photo: c.photo || existing.photo
+              });
+            } else {
+              mergedMap.set(suffix, c);
+            }
+          }
+        });
+        
+        safeStorageSet({ crm_whatsapp_chats: Array.from(mergedMap.values()) });
+        if (crmPanelVisible) renderCrmInPageBoard();
+      });
+    });
+  };
+
+  // Run first IndexedDB sync after 8 seconds (to let WhatsApp Web fully load safely)
+  setTimeout(syncIdb, 8000);
+  // Run periodic IndexedDB sync every 45 seconds
+  setInterval(syncIdb, 45000);
+
+  // Expose syncIdb to window so we can trigger it from message listeners
+  window._crmSyncIdb = syncIdb;
 
   // MutationObserver: save messages to storage immediately when conversation panel DOM changes
   // This handles the case where messages render AFTER our polling attempts
@@ -1085,19 +1118,21 @@ let crmPanelVisible = false;
 let crmPanelDragPhone = null;
 
 function getInitialsIP(name) {
-  if (!name) return '?';
-  const parts = name.trim().split(' ').filter(Boolean);
+  const nameStr = String(name || '');
+  if (!nameStr) return '?';
+  const parts = nameStr.trim().split(' ').filter(Boolean);
   if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 function getAvatarColorIP(name) {
+  const nameStr = String(name || '');
   const colors = [
     ['#0d9488','#0891b2'],['#7c3aed','#6366f1'],['#db2777','#e11d48'],
     ['#ea580c','#d97706'],['#16a34a','#0d9488'],['#0369a1','#0284c7']
   ];
   let hash = 0;
-  for (let i = 0; i < (name || '').length; i++) hash = (hash + name.charCodeAt(i)) % colors.length;
+  for (let i = 0; i < nameStr.length; i++) hash = (hash + nameStr.charCodeAt(i)) % colors.length;
   return colors[Math.abs(hash) % colors.length];
 }
 
@@ -1208,7 +1243,7 @@ function renderCrmInPageBoard() {
   const panel = document.getElementById('crm-inpage-panel');
   if (!panel) return;
 
-  safeStorageGet(['crm_leads', 'crm_stages', 'crm_sellers', 'crm_whatsapp_chats'], (stored) => {
+  safeStorageGet(['crm_leads', 'crm_stages', 'crm_sellers', 'crm_whatsapp_chats', 'crm_dom_debug'], (stored) => {
     const leads = stored.crm_leads || leadsList || [];
     const stages = (stored.crm_stages && stored.crm_stages.length > 0) ? stored.crm_stages : funnelStages;
     const waChats = stored.crm_whatsapp_chats || [];
@@ -1259,9 +1294,35 @@ function renderCrmInPageBoard() {
     // Merge: explicit leads + auto-inbox chats
     const allLeads = [...enrichedLeads, ...autoInboxChats];
 
+    const dbDebug = stored.crm_dom_debug || {};
+    const dbInfoObj = dbDebug.indexed_db_debug;
+    let idbInfo = 'Carregando diagnósticos do banco...';
+    if (dbInfoObj) {
+      const errText = dbInfoObj.error ? ` | Erro: ${dbInfoObj.error}` : '';
+      const listDbs = dbInfoObj.dbs ? dbInfoObj.dbs.join(', ') : 'nenhum';
+      let sampleText = '';
+      if (dbInfoObj.rawSample && dbInfoObj.rawSample.length > 0) {
+        const miniSample = dbInfoObj.rawSample.slice(0, 2).map(s => `[ID:${s.idVal},ContactKeys:${s.contactKeys},PicKeys:${s.picKeys},RecordKeys:${s.recordKeys}]`).join(';');
+        sampleText = ` | Amostra: ${miniSample.substring(0, 450)}`;
+      }
+      idbInfo = `Banco: ${dbInfoObj.selectedDb || 'nenhum'} (Lidos: ${dbInfoObj.recordsCount || 0}, Filtrados: ${dbInfoObj.extractedCount || 0})${errText}${sampleText} | Bancos: [${listDbs}]`;
+    } else if (dbDebug.indexed_db_debug_error) {
+      idbInfo = `Erro de execução: ${dbDebug.indexed_db_debug_error}`;
+    }
+
     const sellerOptions = sellers.length > 0
       ? `<option value="all">Todos os Vendedores</option>` + sellers.map(s => `<option value="${s.id}">${s.name}</option>`).join('')
       : `<option value="all">Todos os Vendedores</option>`;
+
+    // Save scroll positions of all cards containers
+    const scrollPositions = {};
+    const crmIpCards = panel.querySelectorAll('.crm-ip-cards');
+    crmIpCards.forEach(el => {
+      const stage = el.dataset.stage;
+      if (stage) {
+        scrollPositions[stage] = el.scrollTop;
+      }
+    });
 
     panel.innerHTML = `
       <div class="crm-ip-topbar">
@@ -1281,6 +1342,9 @@ function renderCrmInPageBoard() {
         </button>
       </div>
       <div class="crm-ip-board" id="crm-ip-board-area"></div>
+      <div class="crm-ip-debug-footer" style="padding: 8px 16px; background: #1e293b; color: #38bdf8; border-top: 1px solid #334155; font-family: monospace; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
+        🔍 <strong>Diag:</strong> ${idbInfo}
+      </div>
     `;
 
     // Render columns
@@ -1439,6 +1503,15 @@ function renderCrmInPageBoard() {
       boardArea.appendChild(colEl);
     });
 
+    // Restore scroll positions of all cards containers
+    const newCrmIpCards = panel.querySelectorAll('.crm-ip-cards');
+    newCrmIpCards.forEach(el => {
+      const stage = el.dataset.stage;
+      if (stage && scrollPositions[stage] !== undefined) {
+        el.scrollTop = scrollPositions[stage];
+      }
+    });
+
     // Go to WhatsApp button
     panel.querySelector('#crm-ip-go-whatsapp').addEventListener('click', () => {
       toggleCrmPanel();
@@ -1475,6 +1548,9 @@ function toggleCrmPanel(forceShow) {
   if (forceShow === true || !crmPanelVisible) {
     // Show CRM panel
     crmPanelVisible = true;
+    if (typeof window._crmSyncIdb === 'function') {
+      window._crmSyncIdb();
+    }
     renderCrmInPageBoard();
     panel.classList.add('visible');
     if (backBtn) backBtn.classList.remove('visible');
@@ -2342,8 +2418,16 @@ function getActiveChatMessages() {
 // Listen for messages from standalone crm.html page tab
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'getWhatsAppChats') {
-    const chats = getAllChatsFromDom();
-    sendResponse({ chats });
+    if (typeof window._crmSyncIdb === 'function') {
+      window._crmSyncIdb();
+    }
+    safeStorageGet(['crm_whatsapp_chats'], (res) => {
+      let chats = res.crm_whatsapp_chats || [];
+      if (chats.length === 0) {
+        chats = getAllChatsFromDom();
+      }
+      sendResponse({ chats });
+    });
     return true;
   }
   if (message.action === 'openChat') {

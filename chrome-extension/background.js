@@ -25,70 +25,292 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       world: 'MAIN',
       func: () => {
         return new Promise((resolve) => {
-          if (!window.indexedDB) { resolve([]); return; }
+          if (!window.indexedDB) {
+            resolve({ chats: [], dbs: [], selectedDb: '', storeNames: [], error: 'IndexedDB not supported', recordsCount: 0 });
+            return;
+          }
 
-          const tryOpenDb = (dbName) => {
-            const request = window.indexedDB.open(dbName);
-            request.onerror = () => resolve([]);
+          const getDbNames = () => {
+            if (window.indexedDB.databases) {
+              return window.indexedDB.databases().then(list => list.map(d => d.name)).catch(e => ['Error listing dbs: ' + e.message]);
+            }
+            return Promise.resolve(['databases() not supported']);
+          };
+
+          getDbNames().then((dbNames) => {
+            const dbName = dbNames.find(name => name && name.startsWith('model-storage')) || 'model-storage';
+            
+            let request;
+            let timeoutId = setTimeout(() => {
+              resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: [], error: 'Database open timeout', recordsCount: 0 });
+            }, 3000);
+
+            try {
+              request = window.indexedDB.open(dbName);
+            } catch (err) {
+              clearTimeout(timeoutId);
+              resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: [], error: 'open throw: ' + err.message, recordsCount: 0 });
+              return;
+            }
+
+            request.onerror = (event) => {
+              clearTimeout(timeoutId);
+              const errCode = event.target?.error?.name || 'unknown';
+              const errMsg = event.target?.error?.message || '';
+              resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: [], error: `open error: ${errCode} - ${errMsg}`, recordsCount: 0 });
+            };
+
             request.onsuccess = (event) => {
+              clearTimeout(timeoutId);
               const db = event.target.result;
-              const storeName = db.objectStoreNames.contains('chat') ? 'chat' : 
-                               (db.objectStoreNames.contains('chats') ? 'chats' : null);
+              const storeNames = Array.from(db.objectStoreNames);
+              const storeName = storeNames.includes('chat') ? 'chat' : 
+                               (storeNames.includes('chats') ? 'chats' : null);
+              const contactStoreName = storeNames.includes('contact') ? 'contact' : 
+                                      (storeNames.includes('contacts') ? 'contacts' : null);
+
               if (!storeName) {
                 db.close();
-                resolve([]);
+                resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: 'Store chat/chats not found', recordsCount: 0 });
                 return;
               }
 
               try {
-                const transaction = db.transaction([storeName], 'readonly');
-                const store = transaction.objectStore(storeName);
-                const getAllReq = store.getAll();
+                const neededStores = [storeName];
+                if (contactStoreName) neededStores.push(contactStoreName);
+                const transaction = db.transaction(neededStores, 'readonly');
+                const contactsMap = new Map();
 
-                getAllReq.onerror = () => { db.close(); resolve([]); };
-                getAllReq.onsuccess = () => {
-                  const records = getAllReq.result || [];
-                  const extracted = records
-                    .filter(r => r.id && r.id.includes('@c.us'))
-                    .map(r => {
-                      const phone = r.id.split('@')[0].replace(/\D/g, '');
-                      return {
-                        phone,
-                        name: r.name || phone,
-                        lastMessage: r.preview || '',
-                        unreadCount: r.unreadCount || 0,
-                        photo: r.avatar || ''
-                      };
-                    });
-                  db.close();
-                  resolve(extracted);
+                const parseChats = () => {
+                  try {
+                    const store = transaction.objectStore(storeName);
+                    const getAllReq = store.getAll();
+
+                    getAllReq.onerror = (e) => {
+                      const errCode = e.target?.error?.name || 'unknown';
+                      db.close();
+                      resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `getAll error: ${errCode}`, recordsCount: 0 });
+                    };
+
+                    getAllReq.onsuccess = () => {
+                      try {
+                        const records = getAllReq.result || [];
+                        const extracted = [];
+                        const rawSample = records.filter(r => r.id && String(r.id).includes('@lid')).slice(0, 5).map(r => {
+                          let idValStr = 'none';
+                          if (r.id) {
+                            if (typeof r.id === 'string') {
+                              idValStr = r.id;
+                            } else if (typeof r.id === 'object') {
+                              idValStr = `{_serialized:${r.id._serialized || 'none'},user:${r.id.user || 'none'},server:${r.id.server || 'none'}`;
+                            }
+                          }
+                          const recordKeys = Object.keys(r).join(',');
+                          const contactKeys = r.contact ? Object.keys(r.contact).join(',') : 'none';
+                          const picKeys = (r.contact && r.contact.profilePicThumb) ? Object.keys(r.contact.profilePicThumb).join(',') : 'none';
+                          return {
+                            idType: typeof r.id,
+                            idVal: idValStr,
+                            contactKeys: contactKeys.substring(0, 100),
+                            picKeys: picKeys.substring(0, 100),
+                            recordKeys: recordKeys.substring(0, 120)
+                          };
+                        });
+
+                        for (const r of records) {
+                          if (!r) continue;
+
+                          // 1. Extract ID safely
+                          let idStr = '';
+                          if (typeof r.id === 'string') {
+                            idStr = r.id;
+                          } else if (r.id && typeof r.id === 'object') {
+                            idStr = r.id._serialized || (r.id.user ? r.id.user + (r.id.server ? '@' + r.id.server : '@c.us') : '');
+                          }
+
+                          if (!idStr && typeof r.key === 'string') {
+                            idStr = r.key;
+                          } else if (r.key && typeof r.key === 'object') {
+                            idStr = r.key._serialized || '';
+                          }
+
+                          // Match both @c.us, @s.whatsapp.net, and @lid
+                          if (!idStr || (!idStr.includes('@c.us') && !idStr.includes('@s.whatsapp.net') && !idStr.includes('@lid'))) {
+                            continue;
+                          }
+
+                          const phone = idStr.split('@')[0].replace(/\D/g, '');
+                          if (!phone) continue;
+
+                          // Look up contact info from contactsMap
+                          const contactInfo = contactsMap.get(idStr) || {};
+
+                          // 2. Extract name safely (checking contactInfo first!)
+                          let name = '';
+                          if (typeof contactInfo.name === 'string' && contactInfo.name.trim()) {
+                            name = contactInfo.name.trim();
+                          } else if (typeof contactInfo.formattedName === 'string' && contactInfo.formattedName.trim()) {
+                            name = contactInfo.formattedName.trim();
+                          } else if (typeof contactInfo.pushname === 'string' && contactInfo.pushname.trim()) {
+                            name = contactInfo.pushname.trim();
+                          } else if (typeof r.name === 'string' && r.name.trim()) {
+                            name = r.name.trim();
+                          } else if (r.contact && typeof r.contact.name === 'string' && r.contact.name.trim()) {
+                            name = r.contact.name.trim();
+                          } else if (r.contact && typeof r.contact.pushname === 'string' && r.contact.pushname.trim()) {
+                            name = r.contact.pushname.trim();
+                          } else if (r.contact && typeof r.contact.formattedName === 'string' && r.contact.formattedName.trim()) {
+                            name = r.contact.formattedName.trim();
+                          } else if (typeof r.formattedTitle === 'string' && r.formattedTitle.trim()) {
+                            name = r.formattedTitle.trim();
+                          } else if (typeof r.title === 'string' && r.title.trim()) {
+                            name = r.title.trim();
+                          } else if (typeof r.displayName === 'string' && r.displayName.trim()) {
+                            name = r.displayName.trim();
+                          } else if (typeof r.pushname === 'string' && r.pushname.trim()) {
+                            name = r.pushname.trim();
+                          } else {
+                            name = phone;
+                          }
+
+                          // 3. Extract lastMessage/preview safely
+                          let lastMessage = '';
+                          if (typeof r.preview === 'string') {
+                            lastMessage = r.preview;
+                          } else if (r.lastMsg && typeof r.lastMsg.body === 'string') {
+                            lastMessage = r.lastMsg.body;
+                          } else if (r.lastMessage && typeof r.lastMessage.body === 'string') {
+                            lastMessage = r.lastMessage.body;
+                          } else if (typeof r.previewText === 'string') {
+                            lastMessage = r.previewText;
+                          }
+
+                          // 4. Extract unreadCount safely
+                          let unreadCount = 0;
+                          if (typeof r.unreadCount === 'number') {
+                            unreadCount = r.unreadCount;
+                          } else if (typeof r.unreadCount === 'string') {
+                            unreadCount = parseInt(r.unreadCount, 10) || 0;
+                          }
+
+                          // 5. Extract avatar/photo safely (checking contactInfo first!)
+                          let photo = '';
+                          if (contactInfo.profilePicThumb) {
+                            const thumb = contactInfo.profilePicThumb;
+                            if (typeof thumb.img === 'string' && thumb.img.trim()) {
+                              photo = thumb.img.trim();
+                            } else if (typeof thumb.imgFull === 'string' && thumb.imgFull.trim()) {
+                              photo = thumb.imgFull.trim();
+                            }
+                          }
+                          if (!photo && typeof r.avatar === 'string' && r.avatar.trim()) {
+                            photo = r.avatar.trim();
+                          } else if (!photo && typeof r.avatarUrl === 'string' && r.avatarUrl.trim()) {
+                            photo = r.avatarUrl.trim();
+                          }
+
+                          if (!photo && r.contact && r.contact.profilePicThumb) {
+                            const thumb = r.contact.profilePicThumb;
+                            if (typeof thumb.img === 'string' && thumb.img.trim()) {
+                              photo = thumb.img.trim();
+                            } else if (typeof thumb.imgFull === 'string' && thumb.imgFull.trim()) {
+                              photo = thumb.imgFull.trim();
+                            }
+                          }
+                          if (!photo && r.profilePicThumb) {
+                            const thumb = r.profilePicThumb;
+                            if (typeof thumb.img === 'string' && thumb.img.trim()) {
+                              photo = thumb.img.trim();
+                            }
+                          }
+
+                          extracted.push({
+                            phone,
+                            name,
+                            lastMessage,
+                            unreadCount,
+                            photo
+                          });
+                        }
+                        db.close();
+                        resolve({ chats: extracted, dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: null, recordsCount: records.length, rawSample });
+                      } catch (err) {
+                        db.close();
+                        resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `parse error: ${err.message}`, recordsCount: 0 });
+                      }
+                    };
+                  } catch (err) {
+                    db.close();
+                    resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `parseStore error: ${err.message}`, recordsCount: 0 });
+                  }
                 };
+
+                if (contactStoreName) {
+                  const contactStore = transaction.objectStore(contactStoreName);
+                  const getAllContactsReq = contactStore.getAll();
+                  getAllContactsReq.onerror = () => {
+                    parseChats();
+                  };
+                  getAllContactsReq.onsuccess = () => {
+                    try {
+                      const contactRecords = getAllContactsReq.result || [];
+                      contactRecords.forEach(c => {
+                        if (!c) return;
+                        let jid = '';
+                        if (typeof c.id === 'string') {
+                          jid = c.id;
+                        } else if (c.id && typeof c.id === 'object') {
+                          jid = c.id._serialized || (c.id.user ? c.id.user + (c.id.server ? '@' + c.id.server : '@c.us') : '');
+                        }
+                        if (jid) {
+                          contactsMap.set(jid, c);
+                        }
+                      });
+                    } catch (e) {
+                      console.warn('[CRM Background] Error building contactsMap:', e.message);
+                    }
+                    parseChats();
+                  };
+                } else {
+                  parseChats();
+                }
               } catch (e) {
                 db.close();
-                resolve([]);
+                resolve({ chats: [], dbs: dbNames, selectedDb: dbName, storeNames: storeNames, error: `transaction error: ${e.message}`, recordsCount: 0 });
               }
             };
-          };
-
-          if (window.indexedDB.databases) {
-            window.indexedDB.databases().then((databases) => {
-              const dbInfo = databases.find(db => db.name && db.name.startsWith('model-storage'));
-              if (dbInfo) {
-                tryOpenDb(dbInfo.name);
-              } else {
-                tryOpenDb('model-storage');
-              }
-            }).catch(() => tryOpenDb('model-storage'));
-          } else {
-            tryOpenDb('model-storage');
-          }
+          }).catch(e => {
+            resolve({ chats: [], dbs: [], selectedDb: '', storeNames: [], error: `dbNames promise error: ${e.message}`, recordsCount: 0 });
+          });
         });
       }
     }).then((results) => {
-      const data = (results && results[0] && results[0].result) ? results[0].result : [];
-      sendResponse(data);
+      const result = (results && results[0] && results[0].result) ? results[0].result : { chats: [], dbs: [], selectedDb: '', storeNames: [], error: 'executeScript no result', recordsCount: 0 };
+      
+      // Save debug statistics to crm_dom_debug in chrome.storage.local
+      chrome.storage.local.get(['crm_dom_debug'], (stored) => {
+        const debug = stored.crm_dom_debug || {};
+        debug.indexed_db_debug = {
+          dbs: result.dbs,
+          selectedDb: result.selectedDb,
+          storeNames: result.storeNames,
+          error: result.error,
+          recordsCount: result.recordsCount,
+          extractedCount: result.chats ? result.chats.length : 0,
+          rawSample: result.rawSample,
+          timestamp: new Date().toISOString()
+        };
+        chrome.storage.local.set({ crm_dom_debug: debug });
+      });
+
+      sendResponse(result.chats || []);
     }).catch((err) => {
       console.error('[CRM Background] executeScript error:', err);
+      chrome.storage.local.get(['crm_dom_debug'], (stored) => {
+        const debug = stored.crm_dom_debug || {};
+        debug.indexed_db_debug_error = err.message;
+        chrome.storage.local.set({ crm_dom_debug: debug });
+      });
       sendResponse([]);
     });
     return true; // Keep message channel open for async response
