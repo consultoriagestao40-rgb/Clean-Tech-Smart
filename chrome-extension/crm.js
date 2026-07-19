@@ -750,11 +750,22 @@ function openChatOverlay(lead) {
 
   // Clear any stale messages and open the conversation in background WhatsApp tab
   chrome.storage.local.set({ crm_whatsapp_messages: [], crm_whatsapp_active_name: '', crm_whatsapp_active_phone: '' });
+  
+  // Step 1: navigate to the conversation in the WhatsApp tab
   sendToWhatsAppTab({ action: "openChat", phone: lead.phone });
+  
+  // Step 2: briefly focus WhatsApp tab so Chrome fully renders the conversation,
+  // then automatically returns focus here after 2 seconds
+  chrome.runtime.sendMessage({ action: 'focusWhatsAppForChat' }, (res) => {
+    if (chrome.runtime.lastError) {
+      console.log('[CRM] focusWhatsAppForChat error:', chrome.runtime.lastError.message);
+    }
+  });
 
-  // Start polling - first check at 2.5s, then every 1.5s
+  // Start polling - try at 2s (while WA is focused), then every 1.5s after we return
   const chatSyncInterval = setInterval(syncChatMessages, 1500);
-  setTimeout(syncChatMessages, 2500);
+  setTimeout(syncChatMessages, 2000);
+  setTimeout(syncChatMessages, 4000);
 }
 
 // ---------------- DIALOG MODALS ----------------

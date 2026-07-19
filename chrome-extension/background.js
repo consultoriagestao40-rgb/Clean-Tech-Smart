@@ -12,6 +12,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  // When CRM opens a chat: briefly focus WhatsApp tab so Chrome renders it,
+  // then return focus to CRM tab. This forces the conversation panel to render.
+  if (request.action === 'focusWhatsAppForChat') {
+    const crmTabId = sender.tab ? sender.tab.id : null;
+    chrome.tabs.query({ url: '*://web.whatsapp.com/*' }, (tabs) => {
+      if (!tabs || tabs.length === 0) {
+        sendResponse({ success: false, error: 'Aba do WhatsApp não encontrada' });
+        return;
+      }
+      const waTab = tabs[0];
+      const waWindowId = waTab.windowId;
+
+      // Focus the WhatsApp tab
+      chrome.tabs.update(waTab.id, { active: true }, () => {
+        if (waWindowId) chrome.windows.update(waWindowId, { focused: true });
+
+        // After 2 seconds, return focus to CRM tab
+        setTimeout(() => {
+          if (crmTabId) {
+            chrome.tabs.get(crmTabId, (crmTab) => {
+              if (chrome.runtime.lastError || !crmTab) return;
+              chrome.tabs.update(crmTabId, { active: true });
+              if (crmTab.windowId) chrome.windows.update(crmTab.windowId, { focused: true });
+            });
+          }
+        }, 2000);
+      });
+      sendResponse({ success: true, waTabId: waTab.id });
+    });
+    return true;
+  }
+
   if (request.action === 'scheduleReminder') {
     const { phone, name, time } = request;
     const alarmTime = new Date(time).getTime();
@@ -34,6 +66,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep message channel open for async response
   }
 });
+
 
 // Listener for alarms
 chrome.alarms.onAlarm.addListener((alarm) => {
