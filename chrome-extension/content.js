@@ -785,8 +785,12 @@ async function fetchLeadsAndRefresh() {
     if (res.ok) {
       const data = await res.json();
       leadsList = data.leads || [];
+      // Save to storage so in-page CRM panel can read them
+      chrome.storage.local.set({ crm_leads: leadsList, crm_stages: funnelStages });
       injectHorizontalTabs();
       applyChatListFilter();
+      // Refresh in-page panel if visible
+      if (crmPanelVisible) renderCrmInPageBoard();
     }
   } catch (err) {
     console.error(err);
@@ -949,6 +953,274 @@ function safeSendMessage(message, callback) {
 }
 
 // Left vertical toolbar manager
+// ===== CRM IN-PAGE FULL-SCREEN PANEL =====
+let crmPanelVisible = false;
+let crmPanelDragPhone = null;
+
+function getInitialsIP(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function getAvatarColorIP(name) {
+  const colors = [
+    ['#0d9488','#0891b2'],['#7c3aed','#6366f1'],['#db2777','#e11d48'],
+    ['#ea580c','#d97706'],['#16a34a','#0d9488'],['#0369a1','#0284c7']
+  ];
+  let hash = 0;
+  for (let i = 0; i < (name || '').length; i++) hash = (hash + name.charCodeAt(i)) % colors.length;
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function openChatFromPanel(lead) {
+  // Switch to WhatsApp mode and open that conversation
+  const panel = document.getElementById('crm-inpage-panel');
+  if (panel) { panel.classList.remove('visible'); }
+  crmPanelVisible = false;
+
+  // Show the "← CRM" back button
+  const backBtn = document.getElementById('crm-back-to-crm-btn');
+  if (backBtn) { backBtn.classList.add('visible'); }
+
+  // Update toolbar button
+  const funnelBtn = document.getElementById('crm-left-btn-funnel');
+  if (funnelBtn) funnelBtn.classList.remove('crm-mode-active');
+
+  // Click the conversation in WhatsApp sidebar
+  if (lead.phone) {
+    selectChatInBackground(lead.phone);
+  }
+}
+
+function renderCrmInPageBoard() {
+  const panel = document.getElementById('crm-inpage-panel');
+  if (!panel) return;
+
+  chrome.storage.local.get(['crm_leads', 'crm_stages', 'crm_sellers', 'crm_whatsapp_chats'], (stored) => {
+    const leads = stored.crm_leads || leadsList || [];
+    const stages = (stored.crm_stages && stored.crm_stages.length > 0) ? stored.crm_stages : funnelStages;
+    const waChats = stored.crm_whatsapp_chats || [];
+    const sellers = stored.crm_sellers || sellersList || [];
+
+    // Enrich leads with WhatsApp data
+    const enrichedLeads = leads.map(l => {
+      const chat = waChats.find(c => c.phone === l.phone || 
+        (c.phone && l.phone && c.phone.slice(-8) === l.phone.slice(-8)));
+      return { ...l, lastMessage: chat ? chat.lastMessage : (l.lastMessage || ''), 
+               photo: chat ? chat.photo : '', unreadCount: chat ? chat.unreadCount : 0 };
+    });
+
+    const sellerOptions = sellers.length > 0
+      ? `<option value="all">Todos os Vendedores</option>` + sellers.map(s => `<option value="${s.id}">${s.name}</option>`).join('')
+      : `<option value="all">Todos os Vendedores</option>`;
+
+    panel.innerHTML = `
+      <div class="crm-ip-topbar">
+        <div class="crm-ip-topbar-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Clean Tech Smart CRM
+        </div>
+        <span class="crm-ip-title">Funil de Vendas</span>
+        <div class="crm-ip-topbar-spacer"></div>
+        <div class="crm-ip-filter-group">
+          <span class="crm-ip-filter-label">Vendedor:</span>
+          <select class="crm-ip-filter-select" id="crm-ip-seller-filter">${sellerOptions}</select>
+        </div>
+        <button class="crm-ip-btn-whatsapp" id="crm-ip-go-whatsapp">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Ir para WhatsApp
+        </button>
+      </div>
+      <div class="crm-ip-board" id="crm-ip-board-area"></div>
+    `;
+
+    // Render columns
+    const boardArea = panel.querySelector('#crm-ip-board-area');
+    stages.forEach(st => {
+      const stageLeads = enrichedLeads.filter(l => l.stage === st.key || (!l.stage && st.key === 'inbox'));
+      const colEl = document.createElement('div');
+      colEl.className = 'crm-ip-col';
+      const borderColor = (st.color || '').match(/#[0-9a-fA-F]{3,6}/)?.[0] || '#94a3b8';
+      colEl.style.borderTopColor = borderColor;
+      colEl.innerHTML = `
+        <div class="crm-ip-col-header">
+          <span class="crm-ip-col-title">${st.title}</span>
+          <span class="crm-ip-col-count">${stageLeads.length}</span>
+        </div>
+        <div class="crm-ip-cards" data-stage="${st.key}"></div>
+      `;
+
+      const cardsContainer = colEl.querySelector('.crm-ip-cards');
+
+      if (stageLeads.length === 0) {
+        cardsContainer.innerHTML = '<div class="crm-ip-empty">Sem contatos</div>';
+      }
+
+      stageLeads.forEach(lead => {
+        const card = document.createElement('div');
+        card.className = 'crm-ip-card';
+        card.draggable = true;
+        card.dataset.phone = lead.phone;
+
+        const [c1, c2] = getAvatarColorIP(lead.name || lead.phone);
+        const initials = getInitialsIP(lead.name || lead.phone);
+        const displayPhone = lead.phone && !lead.phone.startsWith('name_') ? lead.phone : '';
+        const preview = lead.lastMessage ? lead.lastMessage.substring(0, 40) : (lead.notes ? lead.notes.substring(0, 40) : '');
+
+        card.innerHTML = `
+          <div class="crm-ip-card-top">
+            <div class="crm-ip-avatar" style="background: linear-gradient(135deg, ${c1}, ${c2});">
+              ${lead.photo ? `<img src="${lead.photo}" alt="" onerror="this.style.display='none'">` : initials}
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div class="crm-ip-card-name">${lead.name || lead.phone}</div>
+              ${displayPhone ? `<div class="crm-ip-card-phone">${displayPhone}</div>` : ''}
+            </div>
+            ${lead.unreadCount > 0 ? `<span style="background:#ef4444;color:#fff;font-size:9px;font-weight:800;border-radius:999px;padding:2px 6px;">${lead.unreadCount}</span>` : ''}
+          </div>
+          ${preview ? `<div class="crm-ip-card-preview">${preview}</div>` : ''}
+          <div class="crm-ip-card-footer">
+            ${lead.value > 0 ? `<span class="crm-ip-card-badge">R$ ${Number(lead.value).toLocaleString('pt-BR')}</span>` : ''}
+          </div>
+          <div class="crm-ip-card-actions">
+            <button class="crm-ip-action-btn note" title="Nota" data-action="note">📝</button>
+            <button class="crm-ip-action-btn reminder" title="Lembrete" data-action="reminder">⏰</button>
+            <button class="crm-ip-action-btn ticket" title="Ticket" data-action="ticket">🎫</button>
+          </div>
+          <span class="crm-ip-open-chat-hint">💬 Abrir</span>
+        `;
+
+        // Click card → open conversation
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.crm-ip-action-btn')) return;
+          openChatFromPanel(lead);
+        });
+
+        // Action buttons
+        card.querySelector('[data-action="note"]').addEventListener('click', (e) => {
+          e.stopPropagation();
+          const note = prompt(`Nota para ${lead.name || lead.phone}:`);
+          if (note && note.trim()) {
+            fetch(`${crmServerUrl}/api/crm/notes`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${crmToken}` },
+              body: JSON.stringify({ phone: lead.phone, name: lead.name, note: note.trim(), seller_id: crmUser?.id })
+            }).then(() => alert('✅ Nota salva!')).catch(() => alert('❌ Erro ao salvar nota'));
+          }
+        });
+
+        card.querySelector('[data-action="reminder"]').addEventListener('click', (e) => {
+          e.stopPropagation();
+          const timeStr = prompt(`Lembrete para ${lead.name || lead.phone}\nData/Hora (AAAA-MM-DD HH:MM):`);
+          if (timeStr) {
+            const time = new Date(timeStr).toISOString();
+            safeSendMessage({ action: 'scheduleReminder', phone: lead.phone, name: lead.name, time });
+            alert('✅ Lembrete agendado!');
+          }
+        });
+
+        card.querySelector('[data-action="ticket"]').addEventListener('click', (e) => {
+          e.stopPropagation();
+          alert('🎫 Para abrir ticket, use a sidebar do cliente ativo (ícone 💬 no toolbar)');
+        });
+
+        // Drag & Drop
+        card.addEventListener('dragstart', (ev) => {
+          crmPanelDragPhone = lead.phone;
+          ev.dataTransfer.setData('text/plain', lead.phone);
+          ev.dataTransfer.setData('text/stage', st.key);
+          document.body.classList.add('crm-dragging-active');
+          card.classList.add('dragging');
+        });
+        card.addEventListener('dragend', () => {
+          document.body.classList.remove('crm-dragging-active');
+          card.classList.remove('dragging');
+        });
+
+        cardsContainer.appendChild(card);
+      });
+
+      // Column drop zone
+      colEl.addEventListener('dragover', (ev) => {
+        ev.preventDefault();
+        colEl.classList.add('drag-over');
+      });
+      colEl.addEventListener('dragleave', () => colEl.classList.remove('drag-over'));
+      colEl.addEventListener('drop', async (ev) => {
+        ev.preventDefault();
+        colEl.classList.remove('drag-over');
+        document.body.classList.remove('crm-dragging-active');
+        const phone = ev.dataTransfer.getData('text/plain');
+        const sourceStage = ev.dataTransfer.getData('text/stage');
+        if (phone && sourceStage !== st.key) {
+          try {
+            await fetch(`${crmServerUrl}/api/crm/lead-stage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${crmToken}` },
+              body: JSON.stringify({ phone, stage: st.key })
+            });
+            // Update local leadsList
+            const lead = leadsList.find(l => l.phone === phone);
+            if (lead) lead.stage = st.key;
+            renderCrmInPageBoard();
+          } catch(err) { console.error('[CRM Panel] drop error:', err); }
+        }
+      });
+
+      boardArea.appendChild(colEl);
+    });
+
+    // Go to WhatsApp button
+    panel.querySelector('#crm-ip-go-whatsapp').addEventListener('click', () => {
+      toggleCrmPanel();
+    });
+  });
+}
+
+function injectCrmPanel() {
+  if (document.getElementById('crm-inpage-panel')) return;
+
+  const panel = document.createElement('div');
+  panel.id = 'crm-inpage-panel';
+  document.body.appendChild(panel);
+
+  // Back to CRM button (shown when in WhatsApp mode)
+  const backBtn = document.createElement('button');
+  backBtn.id = 'crm-back-to-crm-btn';
+  backBtn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    ← CRM
+  `;
+  backBtn.addEventListener('click', () => {
+    toggleCrmPanel(true);
+  });
+  document.body.appendChild(backBtn);
+}
+
+function toggleCrmPanel(forceShow) {
+  const panel = document.getElementById('crm-inpage-panel');
+  const backBtn = document.getElementById('crm-back-to-crm-btn');
+  const funnelBtn = document.getElementById('crm-left-btn-funnel');
+  if (!panel) { injectCrmPanel(); return; }
+
+  if (forceShow === true || !crmPanelVisible) {
+    // Show CRM panel
+    crmPanelVisible = true;
+    renderCrmInPageBoard();
+    panel.classList.add('visible');
+    if (backBtn) backBtn.classList.remove('visible');
+    if (funnelBtn) funnelBtn.classList.add('crm-mode-active');
+  } else {
+    // Hide CRM panel (go to WhatsApp)
+    crmPanelVisible = false;
+    panel.classList.remove('visible');
+    if (backBtn) backBtn.classList.add('visible');
+    if (funnelBtn) funnelBtn.classList.remove('crm-mode-active');
+  }
+}
+
 function injectLeftToolbar() {
   if (document.getElementById('crm-left-toolbar-root') || !crmToken) return;
 
@@ -980,9 +1252,10 @@ function injectLeftToolbar() {
     app.style.setProperty('width', 'calc(100% - 60px)', 'important');
   }
 
-  // Opens the standalone crm.html page in a separate browser tab
+  // Opens the in-page CRM panel (full-screen toggle)
   toolbar.querySelector('#crm-left-btn-funnel').addEventListener('click', () => {
-    safeSendMessage({ action: 'openKanbanTab' });
+    if (!document.getElementById('crm-inpage-panel')) injectCrmPanel();
+    toggleCrmPanel();
   });
 
   toolbar.querySelector('#crm-left-btn-sidebar').addEventListener('click', () => {
