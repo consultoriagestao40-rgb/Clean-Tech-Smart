@@ -255,7 +255,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                   getAllContactsReq.onsuccess = () => {
                     try {
                       const contactRecords = getAllContactsReq.result || [];
-                      contactSample = contactRecords.filter(c => c && c.id && String(c.id).includes('@lid')).slice(0, 3).map(c => {
+                      contactSample = contactRecords.filter(c => c && c.id).slice(0, 3).map(c => {
                         const keys = Object.keys(c).join(',');
                         let hasPic = 'no';
                         let picKeys = 'none';
