@@ -125,6 +125,7 @@ export default function Dashboard() {
     const companyCnpj = localStorage.getItem('app_company_cnpj') || '00.000.000/0001-00';
     const companyAddress = localStorage.getItem('app_company_address') || 'Curitiba - PR';
     const companyPhone = localStorage.getItem('app_company_phone') || '41984042835';
+    const companyEmail = localStorage.getItem('app_company_email') || 'financeiro@grupojvsserv.com.br';
 
     const laborRows = laborItems.length === 0
       ? `<tr><td colspan="4" class="empty">Nenhuma hora técnica cobrada.</td></tr>`
@@ -216,49 +217,59 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
   <button class="btn-print" onclick="window.print()">⬇️&nbsp; Salvar / Imprimir como PDF</button>
 </div>
 <div class="page">
-  <div class="header" style="align-items: center;">
-    <div>
-      ${companyLogo ? 
-        `<img src="${companyLogo}" alt="Logo" style="max-height: 80px; max-width: 320px; object-fit: contain; display: block; margin-bottom: 6px;" />` : 
-        `<div class="co-name">${companyName}</div>`
-      }
-      <div class="co-sub">${companySub}</div>
-      <div class="co-sub" style="font-size: 10px; color: #64748b; margin-top: 4px;">
-        CNPJ: ${companyCnpj} | ${companyAddress} | Tel: ${companyPhone}
-      </div>
+  <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #1e3a8a; padding-bottom: 20px; margin-bottom: 25px;">
+    ${companyLogo ? `<div style="width: 120px; display: block;"></div>` : ''}
+    <div style="flex: 1; text-align: center;">
+      <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">${companyName}</h1>
+      <div style="font-size: 11px; font-weight: bold; color: #1e293b; margin-top: 4px;">CNPJ: ${companyCnpj}</div>
+      <div style="font-size: 10px; color: #475569; margin-top: 2px;">${companyAddress}</div>
+      <div style="font-size: 10px; color: #475569; margin-top: 2px;">Telefone: ${companyPhone}</div>
+      ${companyEmail ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">Email: ${companyEmail}</div>` : ''}
     </div>
-    <div>
-      <div class="doc-label">Proposta Técnica</div>
-      <div class="doc-num">#${String(budget.id).padStart(4,'0')}</div>
-      <div class="doc-date">Emitido em ${emissao}</div>
+    ${companyLogo ? `
+      <div style="width: 120px; display: flex; justify-content: flex-end;">
+        <img src="${companyLogo}" alt="Logo" style="max-height: 70px; max-width: 120px; object-fit: contain;" />
+      </div>
+    ` : ''}
+  </div>
+
+  <div style="text-align: center; margin-bottom: 25px;">
+    <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin: 0 0 4px 0; letter-spacing: 0.5px;">Proposta Comercial de Prestação de Serviços</h2>
+    <div style="font-size: 11px; font-weight: bold; color: #475569;">Proposta nº #${String(budget.id).padStart(4,'0')}</div>
+    <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Data: ${emissao}</div>
+  </div>
+
+  <div class="box" style="margin-bottom: 20px; border-left: 4px solid #1e3a8a; border-radius: 4px; padding: 15px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-left-width: 4px; text-align: left;">
+    <div class="box-title" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-align: left; letter-spacing: 0.5px;">Dados do Cliente</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 30px;">
+      <div class="row"><b>Cliente:</b> ${budget.client_name || budget.client_id || 'Não informado'}</div>
+      <div class="row"><b>CNPJ/CPF:</b> ${budget.client_document || '&mdash;'}</div>
+      <div class="row"><b>Endereço:</b> ${budget.client_address || '&mdash;'}</div>
+      <div class="row"><b>Contato:</b> ${budget.contact_name || '&mdash;'}</div>
+      <div class="row"><b>Telefone:</b> ${budget.contact_info || '&mdash;'}</div>
+      <div class="row"><b>Serviço:</b> <span style="text-transform:capitalize">${budget.service_type}</span></div>
     </div>
   </div>
 
-  <div class="grid3">
-    <div class="box">
-      <div class="box-title">Dados do Cliente</div>
-      <div class="row"><b>Cliente:</b>${budget.client_name || budget.client_id || 'Não informado'}</div>
-      <div class="row"><b>Documento:</b>${budget.client_document || '&mdash;'}</div>
-      <div class="row"><b>Endereço:</b>${budget.client_address || '&mdash;'}</div>
-    </div>
-    <div class="box">
-      <div class="box-title">Ativo / Equipamento</div>
-      ${budget.equipment_name ? `
-        <div class="row"><b>Nome:</b>${budget.equipment_name}</div>
-        <div class="row"><b>Marca/Mod:</b>${budget.equipment_brand || '&mdash;'} ${budget.equipment_model ? `/ ${budget.equipment_model}` : ''}</div>
-        <div class="row"><b>Nº Série:</b>${budget.equipment_serial_number || '&mdash;'}</div>
-      ` : `
-        <div class="row" style="color:#94a3b8;font-style:italic;">Nenhum equipamento associado</div>
-      `}
-    </div>
-    <div class="box">
-      <div class="box-title">Detalhes da Proposta</div>
-      <div class="row"><b>Solicitante:</b>${budget.contact_name || '&mdash;'}</div>
-      <div class="row"><b>Contato:</b>${budget.contact_info || '&mdash;'}</div>
-      <div class="row"><b>Serviço:</b><span style="text-transform:capitalize">${budget.service_type}</span></div>
-      <div class="row"><b>Status:</b><span class="badge">${budget.status || 'Pendente'}</span></div>
-    </div>
-  </div>
+  <div class="sec">Dados do Equipamento</div>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+    <thead>
+      <tr style="background: #1e3a8a; color: #fff;">
+        <th style="padding: 8px 12px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; text-align: left;">Equipamento / Ativo</th>
+        <th style="padding: 8px 12px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; text-align: left;">Marca</th>
+        <th style="padding: 8px 12px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; text-align: left;">Modelo</th>
+        <th style="padding: 8px 12px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; text-align: left;">Nº de Série</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+        <td style="padding: 8px 12px; font-size: 11px; color: #334155; font-weight: 600;">${budget.equipment_name || 'Nenhum equipamento associado'}</td>
+        <td style="padding: 8px 12px; font-size: 11px; color: #334155;">${budget.equipment_brand || '&mdash;'}</td>
+        <td style="padding: 8px 12px; font-size: 11px; color: #334155;">${budget.equipment_model || '&mdash;'}</td>
+        <td style="padding: 8px 12px; font-size: 11px; color: #334155; font-weight: 600;">${budget.equipment_serial_number || '&mdash;'}</td>
+      </tr>
+    </tbody>
+  </table>
 
   <div class="sec">Mão de Obra</div>
   <table>
