@@ -21,6 +21,8 @@ export default function NovoContrato() {
   const [dbModalities, setDbModalities] = useState([]);
   const [dbServices, setDbServices] = useState([]);
   const [dbClients, setDbClients] = useState([]);
+  const [proposals, setProposals] = useState([]);
+  const [selectedProposalId, setSelectedProposalId] = useState('');
 
   // Estados dos modais (Formulários)
   const [eqForm, setEqForm] = useState({ equipment_id: '', modality_id: '', prev_entrega: '', prev_retirada: '', horimetro_saida: 0, horimetro_retorno: 0, price: '' });
@@ -36,21 +38,24 @@ export default function NovoContrato() {
 
   async function fetchCatalogs() {
     try {
-      const [eqRes, modRes, svcRes, cliRes] = await Promise.all([
+      const [eqRes, modRes, svcRes, cliRes, propRes] = await Promise.all([
         fetch('/api/get-equipments'),
         fetch('/api/get-modalities'),
         fetch('/api/get-services'),
-        fetch('/api/get-clients')
+        fetch('/api/get-clients'),
+        fetch('/api/get-rental-proposals')
       ]);
       const eqData = await eqRes.json();
       const modData = await modRes.json();
       const svcData = await svcRes.json();
       const cliData = await cliRes.json();
+      const propData = await propRes.json();
       
       if (eqData.equipments) setDbEquipments(eqData.equipments);
       if (modData.modalities) setDbModalities(modData.modalities);
       if (svcData.services) setDbServices(svcData.services);
       if (cliData.clients) setDbClients(cliData.clients);
+      if (propData.proposals) setProposals(propData.proposals);
     } catch (error) {
       console.error('Erro ao buscar catálogos:', error);
     }
@@ -379,6 +384,75 @@ export default function NovoContrato() {
     }
   };
 
+  const handleImportFromProposal = async (proposalId) => {
+    if (!proposalId) return;
+    try {
+      const res = await fetch(`/api/get-rental-proposal-details?id=${proposalId}`);
+      const data = await res.json();
+      if (!data.proposal) {
+        alert('Erro ao carregar detalhes da proposta.');
+        return;
+      }
+      
+      const p = data.proposal;
+      
+      // Calculate end date based on period
+      const dtStart = new Date();
+      const dtEnd = new Date(dtStart);
+      const m = Number(p.period_months || 12);
+      if (m === 1) dtEnd.setDate(dtEnd.getDate() + 1);
+      else if (m === 7) dtEnd.setDate(dtEnd.getDate() + 7);
+      else if (m === 15) dtEnd.setDate(dtEnd.getDate() + 15);
+      else if (m === 30) dtEnd.setMonth(dtEnd.getMonth() + 1);
+      else dtEnd.setMonth(dtEnd.getMonth() + m);
+
+      // Build equipment list row
+      const equipments = [{
+        equipment_id: p.machine_model_id,
+        modality_id: 1, // standard modality
+        price: p.monthly_value || 0,
+        prev_entrega: dtStart.toISOString().split('T')[0],
+        prev_retirada: dtEnd.toISOString().split('T')[0],
+        horimetro_saida: 0,
+        horimetro_retorno: 0
+      }];
+
+      const newContract = {
+        id: null,
+        client_id: p.client_id,
+        client_name: p.client_name,
+        start_date: dtStart.toISOString().split('T')[0],
+        status: 'Reserva',
+        equipments,
+        services: [],
+        total_rental_value: p.monthly_value || 0,
+        total_services_value: 0,
+        total_venal_value: p.rental_list_price || 0, // list price is loaded from api query
+        observations: `Gerado a partir da Proposta de Locação nº ${p.id}`
+      };
+
+      // Save to database
+      const saveRes = await fetch('/api/save-contract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newContract)
+      });
+
+      if (saveRes.ok) {
+        const saveResult = await saveRes.json();
+        alert(`Contrato criado com sucesso a partir da proposta de ${p.client_name}!`);
+        navigate(`/contratos/editar/${saveResult.contract.id}`);
+        window.location.reload(); // reload to fetch new details
+      } else {
+        const error = await saveRes.json();
+        alert('Erro ao criar contrato: ' + (error.error || 'Erro desconhecido'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao importar proposta.');
+    }
+  };
+
   const saveGeneralInfo = () => {
     const updatedContract = {
       ...displayContract,
@@ -479,6 +553,38 @@ export default function NovoContrato() {
   return (
     <div className="font-sans text-gray-800 max-w-5xl mx-auto space-y-6 pb-20">
       
+      {/* SELECIONAR PROPOSTA PARA NOVO CONTRATO */}
+      {!id && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-orange-950 mb-1">Criar Contrato a partir de Proposta Comercial</h2>
+          <p className="text-sm text-orange-800 mb-4">
+            Selecione uma proposta de locação aprovada para importar todos os dados do cliente, máquina, vigência e valores automaticamente.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-3 max-w-xl">
+            <select 
+              value={selectedProposalId}
+              onChange={e => setSelectedProposalId(e.target.value)}
+              className="flex-1 px-3 py-2 border border-orange-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+            >
+              <option value="">Selecione uma Proposta de Locação...</option>
+              {proposals.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.client_name} - {p.machine_name} (R$ {Number(p.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês)
+                </option>
+              ))}
+            </select>
+            <button 
+              onClick={() => handleImportFromProposal(selectedProposalId)}
+              disabled={!selectedProposalId}
+              className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg text-sm transition-colors shadow-sm disabled:opacity-50"
+            >
+              Importar e Gerar Contrato
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* HEADER DE AÇÕES */}
       <header className="flex items-center justify-between mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
         <div className="flex items-center space-x-4">
