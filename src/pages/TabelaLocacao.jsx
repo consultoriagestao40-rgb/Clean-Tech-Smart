@@ -186,17 +186,17 @@ export default function TabelaLocacao() {
           <table className="w-full text-left text-xs text-gray-600 border-collapse">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3.5 font-bold text-gray-700">Cód.</th>
-                <th className="px-4 py-3.5 font-bold text-gray-700">Tipo</th>
-                <th className="px-4 py-3.5 font-bold text-gray-700 min-w-[200px]">Descrição Completa</th>
-                <th className="px-3 py-3.5 font-bold text-gray-700 text-right">Lista (c/ Imp)</th>
-                <th className="px-3 py-3.5 font-bold text-gray-700 text-right">Distribuidor</th>
-                <th className="px-3 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30">12 M</th>
-                <th className="px-3 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30">24 M</th>
-                <th className="px-3 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30">36 M</th>
-                <th className="px-3 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30">48 M</th>
-                <th className="px-3 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30">60 M</th>
-                <th className="px-4 py-3.5 font-bold text-gray-700 text-right">Ações</th>
+                <th className="px-4 py-3.5 font-bold text-gray-700 whitespace-nowrap">Cód.</th>
+                <th className="px-4 py-3.5 font-bold text-gray-700 whitespace-nowrap">Tipo</th>
+                <th className="px-4 py-3.5 font-bold text-gray-700 whitespace-nowrap min-w-[200px]">Descrição Completa</th>
+                <th className="px-3 py-3.5 font-bold text-gray-700 text-right whitespace-nowrap">Lista (c/ Imp)</th>
+                <th className="px-3 py-3.5 font-bold text-gray-700 text-right whitespace-nowrap">Distribuidor</th>
+                <th className="px-3 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30 whitespace-nowrap">12 M</th>
+                <th className="px-3 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30 whitespace-nowrap">24 M</th>
+                <th className="px-3 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30 whitespace-nowrap">36 M</th>
+                <th className="px-3 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30 whitespace-nowrap">48 M</th>
+                <th className="px-3 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30 whitespace-nowrap">60 M</th>
+                <th className="px-4 py-3.5 font-bold text-gray-700 text-right whitespace-nowrap">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -216,16 +216,16 @@ export default function TabelaLocacao() {
               ) : (
                 filtered.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-gray-900">{item.code}</td>
+                    <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{item.code}</td>
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{item.type}</td>
-                    <td className="px-4 py-3 text-gray-700 font-medium">{item.description}</td>
-                    <td className="px-3 py-3 text-right text-gray-600 font-medium">R$ {formatBRL(item.list_price)}</td>
-                    <td className="px-3 py-3 text-right text-green-700 font-semibold">R$ {formatBRL(item.distributor_price)}</td>
-                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10">R$ {formatBRL(item.price_12)}</td>
-                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10">R$ {formatBRL(item.price_24)}</td>
-                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10">R$ {formatBRL(item.price_36)}</td>
-                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10">R$ {formatBRL(item.price_48)}</td>
-                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10">R$ {formatBRL(item.price_60)}</td>
+                    <td className="px-4 py-3 text-gray-700 font-medium whitespace-nowrap">{item.description}</td>
+                    <td className="px-3 py-3 text-right text-gray-600 font-medium whitespace-nowrap">R$ {formatBRL(item.list_price)}</td>
+                    <td className="px-3 py-3 text-right text-green-700 font-semibold whitespace-nowrap">R$ {formatBRL(item.distributor_price)}</td>
+                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10 whitespace-nowrap">R$ {formatBRL(item.price_12)}</td>
+                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10 whitespace-nowrap">R$ {formatBRL(item.price_24)}</td>
+                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10 whitespace-nowrap">R$ {formatBRL(item.price_36)}</td>
+                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10 whitespace-nowrap">R$ {formatBRL(item.price_48)}</td>
+                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10 whitespace-nowrap">R$ {formatBRL(item.price_60)}</td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <div className="flex justify-end space-x-1">
                         <button onClick={() => handleEdit(item)} className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Editar">

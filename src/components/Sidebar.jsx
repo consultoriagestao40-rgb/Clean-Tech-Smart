@@ -19,13 +19,18 @@ import {
   ClipboardList,
   Kanban,
   Settings,
-  Coins
+  Coins,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 export default function Sidebar() {
   const location = useLocation();
   const [logo, setLogo] = useState(localStorage.getItem('app_company_logo') || '');
   const [zoom, setZoom] = useState(parseInt(localStorage.getItem('app_company_logo_zoom') || '100', 10));
+  
+  // Collapse State
+  const [isCollapsed, setIsCollapsed] = useState(localStorage.getItem('sidebar_collapsed') === 'true');
 
   useEffect(() => {
     const handleLogoChange = () => {
@@ -35,6 +40,13 @@ export default function Sidebar() {
     window.addEventListener('logoChanged', handleLogoChange);
     return () => window.removeEventListener('logoChanged', handleLogoChange);
   }, []);
+
+  const toggleCollapse = () => {
+    const nextState = !isCollapsed;
+    setIsCollapsed(nextState);
+    localStorage.setItem('sidebar_collapsed', String(nextState));
+    window.dispatchEvent(new Event('sidebarCollapsedChanged'));
+  };
 
   const menuPrincipal = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
@@ -67,30 +79,56 @@ export default function Sidebar() {
         <Link 
           key={link.name} 
           to={link.path}
-          className={`flex items-center px-4 py-2.5 rounded-lg mb-1 transition-colors ${
+          className={`flex items-center px-4 py-2.5 rounded-lg mb-1 transition-all ${
+            isCollapsed ? 'justify-center' : ''
+          } ${
             isActive 
               ? 'bg-blue-50 text-blue-600 font-medium' 
               : 'text-blue-500 hover:bg-gray-50'
           }`}
+          title={isCollapsed ? link.name : ''}
         >
-          <span className={`mr-3 ${isActive ? 'text-blue-600' : 'text-blue-400'}`}>
+          <span className={`${isCollapsed ? 'mr-0' : 'mr-3'} ${isActive ? 'text-blue-600' : 'text-blue-400'} transition-all`}>
             {link.icon}
           </span>
-          {link.name}
+          {!isCollapsed && <span className="truncate text-sm">{link.name}</span>}
         </Link>
       );
     });
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0 overflow-y-auto custom-scrollbar">
+    <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0 overflow-y-auto custom-scrollbar transition-all duration-300 z-40`}>
+      
+      {/* Collapse Toggle Button */}
+      <button 
+        onClick={toggleCollapse}
+        className="absolute top-6 -right-3 bg-white border border-gray-300 rounded-full p-1 cursor-pointer hover:bg-gray-100 shadow-sm text-gray-500 hover:text-gray-700 z-50 transition-transform duration-200"
+      >
+        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
+
       {/* Logo Area */}
-      <div className="px-4 py-4 min-h-[96px] flex items-center justify-center border-b border-gray-100 mb-4">
+      <div className="px-4 py-4 min-h-[96px] flex items-center justify-center border-b border-gray-100 mb-4 overflow-hidden">
         {logo ? (
-          <img src={logo} alt="Logo" className="max-h-16 w-auto max-w-full object-contain" style={{ transform: `scale(${zoom / 100})`, transition: 'transform 0.1s' }} />
+          <img 
+            src={logo} 
+            alt="Logo" 
+            className="max-h-16 w-auto max-w-full object-contain transition-all" 
+            style={{ 
+              transform: `scale(${(isCollapsed ? 0.7 : 1) * (zoom / 100)})`, 
+              transition: 'transform 0.1s' 
+            }} 
+          />
         ) : (
-          <h2 className="text-2xl font-bold text-gray-800 tracking-tight text-center w-full">
-            <span className="text-blue-600">Clean Tech</span> Smart
+          <h2 className="text-2xl font-bold text-gray-800 tracking-tight text-center w-full transition-all">
+            {isCollapsed ? (
+              <span className="text-blue-600 font-extrabold text-xl">CT</span>
+            ) : (
+              <>
+                <span className="text-blue-600">Clean Tech</span> Smart
+              </>
+            )}
           </h2>
         )}
       </div>
@@ -98,9 +136,13 @@ export default function Sidebar() {
       {/* Menu Principal */}
       <div className="flex-1 px-4">
         <div className="mb-6">
-          <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-            Menu Principal
-          </p>
+          {isCollapsed ? (
+            <div className="border-t border-gray-100 my-4" />
+          ) : (
+            <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Menu Principal
+            </p>
+          )}
           <nav>
             {renderLinks(menuPrincipal)}
           </nav>
@@ -108,9 +150,13 @@ export default function Sidebar() {
 
         {/* Administração */}
         <div className="mb-6 border-t border-gray-100 pt-6">
-          <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-            Administração
-          </p>
+          {isCollapsed ? (
+            <div className="border-t border-gray-100 my-4" />
+          ) : (
+            <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Administração
+            </p>
+          )}
           <nav>
             {renderLinks(administracao)}
           </nav>
@@ -119,13 +165,14 @@ export default function Sidebar() {
 
       {/* User Footer */}
       <div className="border-t border-gray-200 p-4 bg-gray-50 mt-auto">
-        <div className="flex items-center text-blue-500 px-4 py-2 hover:bg-gray-100 rounded-lg cursor-pointer mb-2 transition-colors">
-          <User size={20} className="mr-3 text-blue-400" />
-          <span className="text-sm font-medium truncate">Cristiano Magalhães da Sil...</span>
+        <div className={`flex items-center text-blue-500 px-4 py-2 hover:bg-gray-100 rounded-lg cursor-pointer mb-2 transition-colors ${isCollapsed ? 'justify-center' : ''}`} title={isCollapsed ? 'Cristiano Magalhães da Silva' : ''}>
+          <User size={20} className={`${isCollapsed ? 'mr-0' : 'mr-3'} text-blue-400`} />
+          {!isCollapsed && <span className="text-sm font-medium truncate">Cristiano Magalhães...</span>}
         </div>
-        <button className="w-full flex items-center text-gray-600 px-4 py-2 hover:bg-gray-100 rounded-lg transition-colors">
-          <LogOut size={20} className="mr-3 text-gray-500" />
-          <span className="text-sm font-medium">Sair</span>
+        
+        <button className={`w-full flex items-center text-gray-600 px-4 py-2 hover:bg-gray-100 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`} title={isCollapsed ? 'Sair' : ''}>
+          <LogOut size={20} className={`${isCollapsed ? 'mr-0' : 'mr-3'} text-gray-500`} />
+          {!isCollapsed && <span className="text-sm font-medium">Sair</span>}
         </button>
       </div>
     </aside>
