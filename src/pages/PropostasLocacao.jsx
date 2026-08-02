@@ -36,6 +36,27 @@ export default function PropostasLocacao() {
     tributos_percent: 8
   });
 
+  // Minuta de Locação Modal state
+  const [isMinutaModalOpen, setIsMinutaModalOpen] = useState(false);
+  const [minutaData, setMinutaData] = useState({
+    locadoraName: '',
+    locadoraCnpj: '',
+    locadoraIe: '',
+    locadoraAddress: '',
+    clientName: '',
+    clientCnpj: '',
+    clientIe: '',
+    clientAddress: '',
+    clientPhone: '',
+    clientContact: '',
+    clientEmail: '',
+    machineName: '',
+    localUtilizacao: '',
+    startDate: '',
+    periodMonths: 12,
+    monthlyValue: ''
+  });
+
   useEffect(() => {
     fetchProposals();
     loadFormDependencies();
@@ -265,6 +286,218 @@ export default function PropostasLocacao() {
     if (m === 15) return 'Quinzenal (15 dias)';
     if (m === 30) return 'Mensal Avulso';
     return `${m} Meses`;
+  };
+
+  const handleOpenMinutaModal = async (proposalId) => {
+    try {
+      const res = await fetch(`/api/get-rental-proposal-details?id=${proposalId}`);
+      const data = await res.json();
+      if (!data.proposal) {
+        alert('Erro ao carregar detalhes da proposta.');
+        return;
+      }
+      
+      const p = data.proposal;
+      
+      // Locadora fields
+      const locadoraName = localStorage.getItem('app_company_name') || 'CLEAN TECH PRO';
+      const locadoraCnpj = localStorage.getItem('app_company_cnpj') || '43.158.052/0001-01';
+      const locadoraIe = localStorage.getItem('app_company_ie') || '91101403-36';
+      const locadoraAddress = localStorage.getItem('app_company_address') || 'Avenida Maringá, 1273 – Emiliano Perneta Pinhais/PR, CEP 83325-212';
+      
+      setMinutaData({
+        locadoraName,
+        locadoraCnpj,
+        locadoraIe,
+        locadoraAddress,
+        clientName: p.client_name || '',
+        clientCnpj: p.client_document || '',
+        clientIe: 'Isento',
+        clientAddress: p.client_address || '',
+        clientPhone: p.client_phone || '',
+        clientContact: '',
+        clientEmail: p.client_email || '',
+        machineName: p.machine_name || '',
+        localUtilizacao: p.client_address || '',
+        startDate: new Date().toISOString().split('T')[0],
+        periodMonths: p.period_months || 12,
+        monthlyValue: p.monthly_value || ''
+      });
+      setIsMinutaModalOpen(true);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handlePrintMinuta = () => {
+    const dtInicio = new Date(minutaData.startDate);
+    const startDateFormatted = dtInicio.toLocaleDateString('pt-BR');
+    
+    const dtFim = new Date(dtInicio);
+    const m = Number(minutaData.periodMonths);
+    if (m === 1) dtFim.setDate(dtFim.getDate() + 1);
+    else if (m === 7) dtFim.setDate(dtFim.getDate() + 7);
+    else if (m === 15) dtFim.setDate(dtFim.getDate() + 15);
+    else if (m === 30) dtFim.setMonth(dtFim.getMonth() + 1);
+    else dtFim.setMonth(dtFim.getMonth() + m);
+    const endDateFormatted = dtFim.toLocaleDateString('pt-BR');
+
+    const periodText = formatPeriod(minutaData.periodMonths);
+    const monthlyValueFormatted = Number(minutaData.monthlyValue).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Minuta de Locação</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #1e293b;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 40px;
+    background: #fff;
+  }
+  .bold { font-weight: bold; color: #0f172a; }
+  .uppercase { text-transform: uppercase; }
+  .section-title {
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 22px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .grid-table {
+    width: 100%;
+    margin-bottom: 20px;
+    border-collapse: collapse;
+  }
+  .grid-table td {
+    padding: 4px 0;
+    vertical-align: top;
+  }
+  .label-col {
+    width: 160px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+  .signature-section {
+    margin-top: 60px;
+    display: flex;
+    justify-content: space-between;
+    page-break-inside: avoid;
+  }
+  .signature-box {
+    width: 45%;
+    text-align: center;
+    border-top: 1.5px solid #cbd5e1;
+    padding-top: 12px;
+    font-size: 11px;
+    color: #64748b;
+  }
+  @media print {
+    body { margin: 20px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+  <table class="grid-table">
+    <tr>
+      <td class="label-col">LOCADORA</td>
+      <td class="bold">: ${minutaData.locadoraName.toUpperCase()}, denominada neste ato LOCADORA.</td>
+    </tr>
+    <tr>
+      <td class="label-col">CNPJ</td>
+      <td>: ${minutaData.locadoraCnpj}</td>
+    </tr>
+    <tr>
+      <td class="label-col">INSC. ESTADUAL</td>
+      <td>: ${minutaData.locadoraIe}</td>
+    </tr>
+    <tr>
+      <td class="label-col">ENDEREÇO</td>
+      <td>: ${minutaData.locadoraAddress}</td>
+    </tr>
+  </table>
+
+  <div style="border-top: 1px dashed #e2e8f0; margin: 15px 0;"></div>
+
+  <table class="grid-table">
+    <tr>
+      <td class="label-col">LOCATÁRIA</td>
+      <td class="bold">: ${minutaData.clientName.toUpperCase()} denominada neste ato LOCATÁRIA.</td>
+    </tr>
+    <tr>
+      <td class="label-col">CNPJ</td>
+      <td>: ${minutaData.clientCnpj}</td>
+    </tr>
+    <tr>
+      <td class="label-col">INSC. ESTADUAL</td>
+      <td>: ${minutaData.clientIe || 'Isento'}</td>
+    </tr>
+    <tr>
+      <td class="label-col">ENDEREÇO</td>
+      <td>: ${minutaData.clientAddress}</td>
+    </tr>
+    <tr>
+      <td class="label-col">TELEFONE</td>
+      <td>: ${minutaData.clientPhone || '—'}</td>
+    </tr>
+    <tr>
+      <td class="label-col">CONTATO</td>
+      <td>: ${minutaData.clientContact || '—'}</td>
+    </tr>
+    <tr>
+      <td class="label-col">E-MAIL</td>
+      <td>: ${minutaData.clientEmail || '—'}</td>
+    </tr>
+  </table>
+
+  <div style="border-top: 2px solid #0f172a; margin: 20px 0;"></div>
+
+  <div class="section-title">1. Objeto: <span style="font-weight: normal; color: #334155;">Locação de 01 ${minutaData.machineName}.</span></div>
+
+  <div class="section-title">2. Local de utilização dos bens locados:</div>
+  <div style="margin-left: 20px; color: #334155;">
+    <p class="bold" style="margin-bottom: 4px;">Máquina 01: ${minutaData.machineName.toUpperCase()}</p>
+    <p>${minutaData.localUtilizacao}</p>
+  </div>
+
+  <div class="section-title">3. Vigência: <span style="font-weight: normal; color: #334155;">${periodText}, contadas a partir da data de entrega dos bens, conforme assinatura no documento fiscal de remessa de locação. Tendo como combinado a entrega do item no dia ${startDateFormatted} à ${endDateFormatted}.</span></div>
+
+  <div class="section-title">4. Preço mensal: <span style="font-weight: normal; color: #334155;"><u>R$ ${monthlyValueFormatted}</u> e/ou conforme anexo I, a ser pago 05 (cinco) dias após a emissão da fatura de locação.</span></div>
+
+  <div class="section-title">5. Rescisão: <span style="font-weight: normal; color: #334155;">Multa por rompimento imotivado: 10% (dez por cento) da soma dos aluguéis vincendos.</span></div>
+
+  <div class="section-title">5.1: <span style="font-weight: normal; color: #334155;">A <span class="bold">LOCATÁRIA</span> não será responsável por multa rescisória caso o contrato seja rescindido em razão de descumprimento contratual pela LOCADORA, especialmente quanto à manutenção e prazos de atendimento.</span></div>
+
+  <div class="signature-section">
+    <div class="signature-box">
+      <span class="bold" style="font-size: 11px;">${minutaData.locadoraName.toUpperCase()}</span><br/>
+      Representante Legal
+    </div>
+    <div class="signature-box">
+      <span class="bold" style="font-size: 11px;">${minutaData.clientName.toUpperCase()}</span><br/>
+      Representante Legal
+    </div>
+  </div>
+
+</body>
+</html>`;
+
+    const printWin = window.open('', '_blank');
+    printWin.document.write(html);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => {
+      printWin.print();
+    }, 500);
   };
 
   const handleGeneratePDF = async (proposalId) => {
@@ -694,6 +927,13 @@ body{padding-top:60px}
                           Gerar PDF
                         </button>
                         <button 
+                          onClick={() => handleOpenMinutaModal(p.id)}
+                          className="flex items-center px-3 py-1.5 bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg text-xs font-semibold transition-colors"
+                        >
+                          <FileText className="w-3.5 h-3.5 mr-1" />
+                          Gerar Minuta
+                        </button>
+                        <button 
                           onClick={() => handleEdit(p)}
                           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                         >
@@ -991,6 +1231,216 @@ body{padding-top:60px}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Minuta de Locação Modal */}
+      {isMinutaModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center">
+                <FileText className="w-5 h-5 mr-2 text-orange-600" />
+                Gerar Minuta Padrão de Locação
+              </h2>
+              <button onClick={() => setIsMinutaModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              {/* LOCADORA (Clean Tech) Info */}
+              <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100/50 space-y-3">
+                <h3 className="text-xs font-bold text-blue-900 uppercase tracking-wider">Dados da Locadora (Clean Tech)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Razão Social / Nome</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.locadoraName} 
+                      onChange={e => setMinutaData({...minutaData, locadoraName: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">CNPJ</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.locadoraCnpj} 
+                      onChange={e => setMinutaData({...minutaData, locadoraCnpj: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Inscrição Estadual</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.locadoraIe} 
+                      onChange={e => setMinutaData({...minutaData, locadoraIe: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Endereço Completo</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.locadoraAddress} 
+                      onChange={e => setMinutaData({...minutaData, locadoraAddress: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* LOCATÁRIA (Cliente) Info */}
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
+                <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Dados da Locatária (Cliente)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Nome do Cliente</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.clientName} 
+                      onChange={e => setMinutaData({...minutaData, clientName: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">CNPJ / CPF</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.clientCnpj} 
+                      onChange={e => setMinutaData({...minutaData, clientCnpj: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Inscrição Estadual</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.clientIe} 
+                      onChange={e => setMinutaData({...minutaData, clientIe: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                      placeholder="Isento"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Endereço do Cliente</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.clientAddress} 
+                      onChange={e => setMinutaData({...minutaData, clientAddress: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Telefone</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.clientPhone} 
+                      onChange={e => setMinutaData({...minutaData, clientPhone: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Representante de Contato</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.clientContact} 
+                      onChange={e => setMinutaData({...minutaData, clientContact: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                      placeholder="Nome do contato comercial"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">E-mail</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.clientEmail} 
+                      onChange={e => setMinutaData({...minutaData, clientEmail: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Objeto e Condições */}
+              <div className="bg-orange-50/20 p-4 rounded-xl border border-orange-100/50 space-y-3">
+                <h3 className="text-xs font-bold text-orange-900 uppercase tracking-wider">Objeto, Vigência e Local de Uso</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Equipamento (Objeto)</label>
+                    <input 
+                      type="text" 
+                      value={minutaData.machineName} 
+                      onChange={e => setMinutaData({...minutaData, machineName: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Data de Início da Vigência</label>
+                    <input 
+                      type="date" 
+                      value={minutaData.startDate} 
+                      onChange={e => setMinutaData({...minutaData, startDate: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Período (Meses / Dias)</label>
+                    <select 
+                      value={minutaData.periodMonths} 
+                      onChange={e => setMinutaData({...minutaData, periodMonths: Number(e.target.value)})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white"
+                    >
+                      <option value={1}>Diário (1 dia)</option>
+                      <option value={7}>Semanal (7 dias)</option>
+                      <option value={15}>Quinzenal (15 dias)</option>
+                      <option value={30}>Mensal Avulso</option>
+                      <option value={12}>12 Meses</option>
+                      <option value={24}>24 Meses</option>
+                      <option value={36}>36 Meses</option>
+                      <option value={48}>48 Meses</option>
+                      <option value={60}>60 Meses</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Valor Mensal (R$)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      value={minutaData.monthlyValue} 
+                      onChange={e => setMinutaData({...minutaData, monthlyValue: e.target.value})}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-bold text-blue-600"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Local de Utilização dos Bens Locados</label>
+                    <textarea 
+                      value={minutaData.localUtilizacao} 
+                      onChange={e => setMinutaData({...minutaData, localUtilizacao: e.target.value})}
+                      rows={2}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs"
+                      placeholder="Endereço onde a máquina operará"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 flex justify-end space-x-3 border-t border-gray-100 bg-gray-50">
+              <button type="button" onClick={() => setIsMinutaModalOpen(false)} className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors text-sm">
+                Cancelar
+              </button>
+              <button 
+                onClick={handlePrintMinuta}
+                className="px-4 py-2 text-white bg-orange-600 hover:bg-orange-700 rounded-lg font-medium transition-colors flex items-center text-sm shadow-sm"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Imprimir Minuta
+              </button>
+            </div>
           </div>
         </div>
       )}
