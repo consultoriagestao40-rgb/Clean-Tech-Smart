@@ -80,7 +80,13 @@ export default function PropostasLocacao() {
 
     let baseCost = 0;
     const period = Number(formData.period_months);
-    if (period === 12) baseCost = Number(selectedPriceRow.price_12 || 0);
+    const p12 = Number(selectedPriceRow.price_12 || 0);
+
+    if (period === 1) baseCost = p12 > 0 ? (p12 * 2) / 22 : 0;
+    else if (period === 7) baseCost = p12 > 0 ? ((p12 * 2) / 22) * 7 : 0;
+    else if (period === 15) baseCost = p12 > 0 ? ((p12 * 1.75) / 22) * 15 : 0;
+    else if (period === 30) baseCost = p12 * 1.5;
+    else if (period === 12) baseCost = p12;
     else if (period === 24) baseCost = Number(selectedPriceRow.price_24 || 0);
     else if (period === 36) baseCost = Number(selectedPriceRow.price_36 || 0);
     else if (period === 48) baseCost = Number(selectedPriceRow.price_48 || 0);
@@ -250,6 +256,15 @@ export default function PropostasLocacao() {
       console.error(error);
       alert('Erro de rede ao excluir.');
     }
+  };
+
+  const formatPeriod = (months) => {
+    const m = Number(months);
+    if (m === 1) return 'Diário (1 dia)';
+    if (m === 7) return 'Semanal (7 dias)';
+    if (m === 15) return 'Quinzenal (15 dias)';
+    if (m === 30) return 'Mensal Avulso';
+    return `${m} Meses`;
   };
 
   const handleGeneratePDF = async (proposalId) => {
@@ -495,8 +510,8 @@ body{padding-top:60px}
       <td class="value-col" style="font-weight: 700;">${p.contract_type}</td>
     </tr>
     <tr>
-      <td class="label-col">Período (Meses)</td>
-      <td class="value-col">${p.period_months} Meses</td>
+      <td class="label-col">Período de Locação</td>
+      <td class="value-col">${formatPeriod(p.period_months)}</td>
     </tr>
     <tr>
       <td class="label-col">Horas/Mês</td>
@@ -666,7 +681,7 @@ body{padding-top:60px}
                   <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4 font-semibold text-gray-900">{p.client_name}</td>
                     <td className="px-6 py-4 text-gray-600">{p.machine_name || 'Desconhecida'}</td>
-                    <td className="px-6 py-4 text-gray-600 font-medium">{p.period_months} Meses</td>
+                    <td className="px-6 py-4 text-gray-600 font-medium">{formatPeriod(p.period_months)}</td>
                     <td className="px-6 py-4 text-right font-bold text-blue-600">R$ {Number(p.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                     <td className="px-6 py-4 text-gray-500 text-xs">{p.contract_type}</td>
                     <td className="px-6 py-4 text-right">
@@ -766,9 +781,12 @@ body{padding-top:60px}
                         const finalVal = Number(val) * (1 + totalMarkup / 100);
                         return 'R$ ' + finalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                       };
+                      const p12Val = Number(r.price_12 || 0);
+                      const dailyVal = p12Val > 0 ? (p12Val * 2 / 22).toFixed(2) : null;
+                      const monthlyAvulsoVal = p12Val > 0 ? (p12Val * 1.5).toFixed(2) : null;
                       return (
                         <option key={r.id} value={r.id}>
-                          {r.code} - {r.description} (12M: {calc(r.price_12)} / 36M: {calc(r.price_36)})
+                          {r.code} - {r.description} (Diário: {calc(dailyVal)} / Mensal: {calc(monthlyAvulsoVal)} / 12M: {calc(r.price_12)} / 36M: {calc(r.price_36)})
                         </option>
                       );
                     })}
@@ -784,6 +802,10 @@ body{padding-top:60px}
                     onChange={e => setFormData({...formData, period_months: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white"
                   >
+                    <option value={1}>Diário (1 dia)</option>
+                    <option value={7}>Semanal (7 dias)</option>
+                    <option value={15}>Quinzenal (15 dias)</option>
+                    <option value={30}>Mensal Avulso</option>
                     <option value={12}>12 Meses</option>
                     <option value={24}>24 Meses</option>
                     <option value={36}>36 Meses</option>
