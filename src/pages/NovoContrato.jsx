@@ -1099,6 +1099,7 @@ export default function NovoContrato() {
               <button onClick={handleSaveNewClient} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Salvar e Utilizar</button>
             </div>
           </div>
+        </div>
       )}
 
       {/* MODAL SELEÇÃO DE MINUTA / TEMPLATE */}
