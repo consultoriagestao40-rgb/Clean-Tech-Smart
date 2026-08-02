@@ -16,6 +16,7 @@ import Crm from './pages/Crm';
 import Configuracoes from './pages/Configuracoes';
 import TabelaLocacao from './pages/TabelaLocacao';
 import ModelosMaquinas from './pages/ModelosMaquinas';
+import PropostasLocacao from './pages/PropostasLocacao';
 
 function Placeholder({ title }) {
   return (
@@ -50,6 +51,7 @@ function App() {
           <Route path="configuracoes" element={<Configuracoes />} />
           <Route path="tabela-locacao" element={<TabelaLocacao />} />
           <Route path="modelos-maquinas" element={<ModelosMaquinas />} />
+          <Route path="proposta-locacao" element={<PropostasLocacao />} />
           
           {/* Outras Rotas (Placeholders) */}
           <Route path="disponibilidade" element={<Placeholder title="Disponibilidade" />} />
