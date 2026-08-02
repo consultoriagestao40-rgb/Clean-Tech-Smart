@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Loader2, Edit, X, Trash2, ShieldAlert } from 'lucide-react';
+import { Plus, Search, Loader2, Edit, X, Trash2, Upload } from 'lucide-react';
 
 export default function TabelaLocacao() {
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('Todos');
+  const [isImporting, setIsImporting] = useState(false);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -116,6 +117,133 @@ export default function TabelaLocacao() {
     }
   };
 
+  const loadXLSX = () => {
+    return new Promise((resolve) => {
+      if (window.XLSX) {
+        resolve(window.XLSX);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      script.onload = () => resolve(window.XLSX);
+      document.head.appendChild(script);
+    });
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const XLSX = await loadXLSX();
+      const reader = new FileReader();
+      
+      reader.onload = async (event) => {
+        try {
+          const data = new Uint8Array(event.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          if (rows.length < 2) {
+            alert('❌ Planilha vazia ou sem dados.');
+            setIsImporting(false);
+            return;
+          }
+
+          const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
+          
+          const getIndex = (possibleNames) => {
+            return headers.findIndex(h => possibleNames.some(p => h.includes(p)));
+          };
+
+          const codeIdx = getIndex(['code', 'cód', 'cod']);
+          const typeIdx = getIndex(['tipo', 'type']);
+          const descIdx = getIndex(['descri', 'description']);
+          const listIdx = getIndex(['lista', 'list']);
+          const distIdx = getIndex(['distribuidor', 'dist']);
+          const p12Idx = getIndex(['12']);
+          const p24Idx = getIndex(['24']);
+          const p36Idx = getIndex(['36']);
+          const p48Idx = getIndex(['48']);
+          const p60Idx = getIndex(['60']);
+
+          const itemsToSave = [];
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length === 0) continue;
+
+            const code = String(row[codeIdx !== -1 ? codeIdx : 0] || '').trim();
+            if (!code) continue;
+
+            const type = String(row[typeIdx !== -1 ? typeIdx : 1] || '').trim();
+            const description = String(row[descIdx !== -1 ? descIdx : 2] || '').trim();
+
+            const parseNum = (val) => {
+              if (val === undefined || val === null || val === '') return null;
+              if (typeof val === 'number') return val;
+              const cleaned = String(val).replace(/R\$\s?/gi, '').replace(/\./g, '').replace(/,/g, '.').trim();
+              const num = parseFloat(cleaned);
+              return isNaN(num) ? null : num;
+            };
+
+            const list_price = parseNum(row[listIdx !== -1 ? listIdx : 3]);
+            const distributor_price = parseNum(row[distIdx !== -1 ? distIdx : 4]);
+            const price_12 = parseNum(row[p12Idx !== -1 ? p12Idx : 5]);
+            const price_24 = parseNum(row[p24Idx !== -1 ? p24Idx : 6]);
+            const price_36 = parseNum(row[p36Idx !== -1 ? p36Idx : 7]);
+            const price_48 = parseNum(row[p48Idx !== -1 ? p48Idx : 8]);
+            const price_60 = parseNum(row[p60Idx !== -1 ? p60Idx : 9]);
+
+            itemsToSave.push({
+              code, type, description, list_price, distributor_price,
+              price_12, price_24, price_36, price_48, price_60
+            });
+          }
+
+          if (itemsToSave.length === 0) {
+            alert('❌ Nenhum item válido encontrado para importação.');
+            setIsImporting(false);
+            return;
+          }
+
+          // Send to API
+          const response = await fetch('/api/bulk-save-rental-prices', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: itemsToSave })
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            alert(`✅ Sucesso! ${result.count} preços de locação importados/atualizados.`);
+            fetchItems();
+          } else {
+            const err = await response.json();
+            alert('❌ Erro na importação: ' + (err.error || 'Erro desconhecido'));
+          }
+
+        } catch (err) {
+          console.error(err);
+          alert('❌ Erro ao processar arquivo Excel.');
+        } finally {
+          setIsImporting(false);
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      console.error(err);
+      alert('❌ Erro ao carregar biblioteca de leitura de Excel.');
+      setIsImporting(false);
+    }
+    
+    // Clear value to allow selecting same file again
+    e.target.value = '';
+  };
+
   // Get unique machine types for filtering
   const types = ['Todos', ...new Set(items.map(item => item.type).filter(Boolean))];
 
@@ -146,13 +274,34 @@ export default function TabelaLocacao() {
           </h1>
           <p className="text-sm text-gray-500 mt-1">Gerencie a tabela oficial de locação, preços de lista, distribuidor e mensalidades (12 a 60 meses)</p>
         </div>
-        <button 
-          onClick={openNewItem}
-          className="mt-4 md:mt-0 flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Adicionar Equipamento
-        </button>
+        
+        <div className="flex space-x-3 mt-4 md:mt-0">
+          {/* Import Excel button */}
+          <div className="relative">
+            <button 
+              disabled={isImporting}
+              className="flex items-center px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"
+            >
+              {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+              {isImporting ? 'Importando...' : 'Importar Excel'}
+            </button>
+            <input 
+              type="file" 
+              accept=".xlsx, .xls, .csv" 
+              onChange={handleFileUpload}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              disabled={isImporting}
+            />
+          </div>
+
+          <button 
+            onClick={openNewItem}
+            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Adicionar Equipamento
+          </button>
+        </div>
       </header>
 
       {/* Filter and Search Section */}
