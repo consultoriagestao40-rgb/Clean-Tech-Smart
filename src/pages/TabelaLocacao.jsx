@@ -147,39 +147,72 @@ export default function TabelaLocacao() {
           const worksheet = workbook.Sheets[firstSheetName];
           const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-          if (rows.length < 2) {
+          if (rows.length < 1) {
             alert('❌ Planilha vazia ou sem dados.');
             setIsImporting(false);
             return;
           }
 
-          const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
-          
-          const getIndex = (possibleNames) => {
-            return headers.findIndex(h => possibleNames.some(p => h.includes(p)));
-          };
+          // Scan first 15 rows to find header row containing code/cód and descrição
+          let headerRowIndex = -1;
+          let codeIdx = -1, typeIdx = -1, descIdx = -1, listIdx = -1, distIdx = -1;
+          let p12Idx = -1, p24Idx = -1, p36Idx = -1, p48Idx = -1, p60Idx = -1;
 
-          const codeIdx = getIndex(['code', 'cód', 'cod']);
-          const typeIdx = getIndex(['tipo', 'type']);
-          const descIdx = getIndex(['descri', 'description']);
-          const listIdx = getIndex(['lista', 'list']);
-          const distIdx = getIndex(['distribuidor', 'dist']);
-          const p12Idx = getIndex(['12']);
-          const p24Idx = getIndex(['24']);
-          const p36Idx = getIndex(['36']);
-          const p48Idx = getIndex(['48']);
-          const p60Idx = getIndex(['60']);
+          for (let i = 0; i < Math.min(rows.length, 15); i++) {
+            const row = rows[i];
+            if (!row || !Array.isArray(row)) continue;
+
+            const possibleHeaders = row.map(h => String(h || '').trim().toLowerCase());
+            
+            const findInRow = (possibleNames) => {
+              return possibleHeaders.findIndex(h => possibleNames.some(p => h.includes(p)));
+            };
+
+            const tempCode = findInRow(['code', 'cód', 'cod']);
+            const tempDesc = findInRow(['descri', 'description']);
+
+            if (tempCode !== -1 && tempDesc !== -1) {
+              headerRowIndex = i;
+              codeIdx = tempCode;
+              descIdx = tempDesc;
+              typeIdx = findInRow(['tipo', 'type']);
+              listIdx = findInRow(['lista', 'list']);
+              distIdx = findInRow(['distribuidor', 'dist']);
+              p12Idx = findInRow(['12']);
+              p24Idx = findInRow(['24']);
+              p36Idx = findInRow(['36']);
+              p48Idx = findInRow(['48']);
+              p60Idx = findInRow(['60']);
+              break;
+            }
+          }
+
+          // Fallback if no header row found
+          if (headerRowIndex === -1) {
+            headerRowIndex = 0; // assume row 0 is header row
+            codeIdx = 0;
+            typeIdx = 1;
+            descIdx = 2;
+            listIdx = 3;
+            distIdx = 4;
+            p12Idx = 5;
+            p24Idx = 6;
+            p36Idx = 7;
+            p48Idx = 8;
+            p60Idx = 9;
+          }
 
           const itemsToSave = [];
-          for (let i = 1; i < rows.length; i++) {
+          for (let i = headerRowIndex + 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row || row.length === 0) continue;
 
-            const code = String(row[codeIdx !== -1 ? codeIdx : 0] || '').trim();
-            if (!code) continue;
+            const code = String(row[codeIdx] || '').trim();
+            // Skip header value row if it repeats
+            if (!code || code.toLowerCase() === 'code' || code.toLowerCase() === 'cód' || code.toLowerCase() === 'código') continue;
 
-            const type = String(row[typeIdx !== -1 ? typeIdx : 1] || '').trim();
-            const description = String(row[descIdx !== -1 ? descIdx : 2] || '').trim();
+            const type = String(row[typeIdx] || '').trim();
+            const description = String(row[descIdx] || '').trim();
 
             const parseNum = (val) => {
               if (val === undefined || val === null || val === '') return null;
@@ -189,13 +222,13 @@ export default function TabelaLocacao() {
               return isNaN(num) ? null : num;
             };
 
-            const list_price = parseNum(row[listIdx !== -1 ? listIdx : 3]);
-            const distributor_price = parseNum(row[distIdx !== -1 ? distIdx : 4]);
-            const price_12 = parseNum(row[p12Idx !== -1 ? p12Idx : 5]);
-            const price_24 = parseNum(row[p24Idx !== -1 ? p24Idx : 6]);
-            const price_36 = parseNum(row[p36Idx !== -1 ? p36Idx : 7]);
-            const price_48 = parseNum(row[p48Idx !== -1 ? p48Idx : 8]);
-            const price_60 = parseNum(row[p60Idx !== -1 ? p60Idx : 9]);
+            const list_price = parseNum(row[listIdx]);
+            const distributor_price = parseNum(row[distIdx]);
+            const price_12 = parseNum(row[p12Idx]);
+            const price_24 = parseNum(row[p24Idx]);
+            const price_36 = parseNum(row[p36Idx]);
+            const price_48 = parseNum(row[p48Idx]);
+            const price_60 = parseNum(row[p60Idx]);
 
             itemsToSave.push({
               code, type, description, list_price, distributor_price,
@@ -204,7 +237,7 @@ export default function TabelaLocacao() {
           }
 
           if (itemsToSave.length === 0) {
-            alert('❌ Nenhum item válido encontrado para importação.');
+            alert(`❌ Nenhum item válido encontrado.\n\nLinhas lidas: ${rows.length}\nLinha do cabeçalho detectada: ${headerRowIndex !== -1 ? headerRowIndex : 'Não detectado'}\nColuna de Código (Índice): ${codeIdx}`);
             setIsImporting(false);
             return;
           }
