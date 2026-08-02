@@ -86,6 +86,10 @@ export default function NovoContrato() {
   const handleEmitContract = async () => {
     setIsGeneratingPDF(true);
     const companyLogo = localStorage.getItem('app_company_logo') || '';
+    const companyName = localStorage.getItem('app_company_name') || 'Clean Tech Pro';
+    const companyCnpj = localStorage.getItem('app_company_cnpj') || '00.000.000/0001-00';
+    const companyAddress = localStorage.getItem('app_company_address') || 'Curitiba - PR';
+    const companyPhone = localStorage.getItem('app_company_phone') || '41984042835';
     try {
       // 1. Buscar o template padrão
       const res = await fetch('/api/get-templates');
@@ -162,11 +166,11 @@ export default function NovoContrato() {
           <div style="text-align: center; margin-bottom: 20px;">
             ${companyLogo ? 
               `<img src="${companyLogo}" alt="Logo" style="max-height: 80px; max-width: 320px; object-fit: contain; display: block; margin: 0 auto 10px;" />` : 
-              `<h1 style="font-size: 22px; font-weight: bold; margin: 0;">Clean Tech Pro</h1>`
+              `<h1 style="font-size: 22px; font-weight: bold; margin: 0;">${companyName}</h1>`
             }
-            <p style="margin: 2px 0; font-size: 11px;">CNPJ: 00.000.000/0001-00</p>
-            <p style="margin: 2px 0; font-size: 11px;">Curitiba - PR</p>
-            <p style="margin: 2px 0; font-size: 11px;">Telefone: 41984042835</p>
+            <p style="margin: 2px 0; font-size: 11px;">CNPJ: ${companyCnpj}</p>
+            <p style="margin: 2px 0; font-size: 11px;">${companyAddress}</p>
+            <p style="margin: 2px 0; font-size: 11px;">Telefone: ${companyPhone}</p>
           </div>
           
           <hr style="border: 0; border-top: 2px solid #000; margin-bottom: 20px;" />

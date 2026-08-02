@@ -120,6 +120,11 @@ export default function Dashboard() {
   const handleGeneratePDF = (budgetData) => {
     const { budget, laborItems, partsItems } = budgetData;
     const companyLogo = localStorage.getItem('app_company_logo') || '';
+    const companyName = localStorage.getItem('app_company_name') || 'Clean Tech Smart';
+    const companySub = localStorage.getItem('app_company_subtitle') || 'Soluções Inteligentes em Higiene e Limpeza';
+    const companyCnpj = localStorage.getItem('app_company_cnpj') || '00.000.000/0001-00';
+    const companyAddress = localStorage.getItem('app_company_address') || 'Curitiba - PR';
+    const companyPhone = localStorage.getItem('app_company_phone') || '41984042835';
 
     const laborRows = laborItems.length === 0
       ? `<tr><td colspan="4" class="empty">Nenhuma hora técnica cobrada.</td></tr>`
@@ -215,9 +220,12 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
     <div>
       ${companyLogo ? 
         `<img src="${companyLogo}" alt="Logo" style="max-height: 80px; max-width: 320px; object-fit: contain; display: block; margin-bottom: 6px;" />` : 
-        `<div class="co-name">Clean Tech Smart</div>`
+        `<div class="co-name">${companyName}</div>`
       }
-      <div class="co-sub">Soluções Inteligentes em Higiene e Limpeza</div>
+      <div class="co-sub">${companySub}</div>
+      <div class="co-sub" style="font-size: 10px; color: #64748b; margin-top: 4px;">
+        CNPJ: ${companyCnpj} | ${companyAddress} | Tel: ${companyPhone}
+      </div>
     </div>
     <div>
       <div class="doc-label">Proposta Técnica</div>
@@ -309,7 +317,7 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
 
   <div class="footer">
     <div>
-      <div>Clean Tech Smart &mdash; Soluções Inteligentes em Higiene e Limpeza</div>
+      <div>${companyName} &mdash; ${companySub}</div>
       <div>Gerado em ${geradoEm}</div>
     </div>
     <div class="sig">
