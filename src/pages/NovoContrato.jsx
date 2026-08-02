@@ -37,27 +37,62 @@ export default function NovoContrato() {
   }, [id]);
 
   async function fetchCatalogs() {
+    // 1. Equipamentos
     try {
-      const [eqRes, modRes, svcRes, cliRes, propRes] = await Promise.all([
-        fetch('/api/get-equipments'),
-        fetch('/api/get-modalities'),
-        fetch('/api/get-services'),
-        fetch('/api/get-clients'),
-        fetch('/api/get-rental-proposals')
-      ]);
-      const eqData = await eqRes.json();
-      const modData = await modRes.json();
-      const svcData = await svcRes.json();
-      const cliData = await cliRes.json();
-      const propData = await propRes.json();
-      
-      if (eqData.equipments) setDbEquipments(eqData.equipments);
-      if (modData.modalities) setDbModalities(modData.modalities);
-      if (svcData.services) setDbServices(svcData.services);
-      if (cliData.clients) setDbClients(cliData.clients);
-      if (propData.proposals) setProposals(propData.proposals);
-    } catch (error) {
-      console.error('Erro ao buscar catálogos:', error);
+      const res = await fetch('/api/get-equipments');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.equipments) setDbEquipments(data.equipments);
+      }
+    } catch (e) {
+      console.error('Erro ao buscar equipamentos:', e);
+    }
+
+    // 2. Modalidades
+    try {
+      const res = await fetch('/api/get-modalities');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.modalities) setDbModalities(data.modalities);
+      }
+    } catch (e) {
+      console.error('Erro ao buscar modalidades:', e);
+    }
+
+    // 3. Clientes
+    try {
+      const res = await fetch('/api/get-clients');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.clients) setDbClients(data.clients);
+      }
+    } catch (e) {
+      console.error('Erro ao buscar clientes:', e);
+    }
+
+    // 4. Propostas
+    try {
+      const res = await fetch('/api/get-rental-proposals');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.proposals) setProposals(data.proposals);
+      }
+    } catch (e) {
+      console.error('Erro ao buscar propostas:', e);
+    }
+
+    // 5. Serviços (Fallback para vazio)
+    try {
+      const res = await fetch('/api/get-services');
+      if (res.ok) {
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await res.json();
+          if (data.services) setDbServices(data.services);
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao buscar serviços:', e);
     }
   }
 
