@@ -1332,24 +1332,15 @@ function renderCrmInPageBoard() {
 
     panel.innerHTML = `
       <div class="crm-ip-topbar">
-        <div class="crm-ip-topbar-logo" id="crm-ip-logo-container" style="position: relative; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 4px; transition: background 0.2s;">
+        <div class="crm-ip-topbar-logo" id="crm-ip-logo-container" style="cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.1); transition: all 0.2s; max-height: 42px;" title="Clique para enviar/alterar logotipo da empresa">
           ${companyLogo ? 
-            `<img src="${companyLogo}" alt="Logo" style="max-height: 28px; max-width: 140px; object-fit: contain;" />` : 
-            `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-             <span id="crm-ip-logo-text" style="font-weight: 700; color: #f8fafc; font-size: 13.5px;">Clean Tech Smart CRM</span>`
+            `<img src="${companyLogo}" alt="Logo" style="max-height: 30px; max-width: 140px; object-fit: contain;" />` : 
+            `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+             <span id="crm-ip-logo-text" style="font-weight: 700; color: #f8fafc; font-size: 13px;">Enviar Logotipo</span>`
           }
-          <div class="crm-logo-hover-overlay" style="position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9); display: none; align-items: center; justify-content: center; gap: 12px; border-radius: 4px; z-index: 10;">
-            <span class="crm-logo-action-upload" title="Alterar Logo" style="color: #38bdf8; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Upload
-            </span>
-            ${companyLogo ? `
-              <span class="crm-logo-action-reset" title="Remover Logo" style="color: #ef4444; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                Limpar
-              </span>
-            ` : ''}
-          </div>
+          ${companyLogo ? `
+            <span id="crm-ip-logo-reset" title="Remover logotipo" style="color: #ef4444; font-size: 13px; font-weight: bold; cursor: pointer; padding: 2px 6px; border-radius: 4px; background: rgba(239, 68, 68, 0.15); margin-left: 6px; transition: background 0.2s; display: flex; align-items: center; justify-content: center; height: 20px; width: 20px;">✕</span>
+          ` : ''}
           <input type="file" id="crm-logo-file-input" accept="image/*" style="display: none;" />
         </div>
         <span class="crm-ip-title">Funil de Vendas</span>
@@ -1552,29 +1543,17 @@ function renderCrmInPageBoard() {
 
     // Logo Upload & Reset Event Listeners
     const logoContainer = panel.querySelector('#crm-ip-logo-container');
-    const hoverOverlay = panel.querySelector('.crm-logo-hover-overlay');
     const fileInput = panel.querySelector('#crm-logo-file-input');
     
-    if (logoContainer && hoverOverlay && fileInput) {
-      logoContainer.addEventListener('mouseenter', () => {
-        hoverOverlay.style.display = 'flex';
-      });
-      logoContainer.addEventListener('mouseleave', () => {
-        hoverOverlay.style.display = 'none';
+    if (logoContainer && fileInput) {
+      logoContainer.addEventListener('click', () => {
+        fileInput.click();
       });
       
-      const uploadAction = panel.querySelector('.crm-logo-action-upload');
-      if (uploadAction) {
-        uploadAction.addEventListener('click', (e) => {
-          e.stopPropagation();
-          fileInput.click();
-        });
-      }
-      
-      const resetAction = panel.querySelector('.crm-logo-action-reset');
+      const resetAction = panel.querySelector('#crm-ip-logo-reset');
       if (resetAction) {
         resetAction.addEventListener('click', (e) => {
-          e.stopPropagation();
+          e.stopPropagation(); // prevent triggering logoContainer click!
           if (confirm('Deseja remover o logotipo personalizado?')) {
             safeStorageSet({ crm_company_logo: '' });
             renderCrmInPageBoard();
