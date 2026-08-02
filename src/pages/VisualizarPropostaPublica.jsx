@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { 
   FileText, Loader2, CheckCircle2, XCircle, Printer, Clock, 
   HelpCircle, Shield, Check, FileCheck, ArrowRight, MessageSquare, 
-  ChevronRight, Play, Info, Briefcase, FileSignature 
+  ChevronRight, ChevronLeft, Play, Info, Briefcase, FileSignature 
 } from 'lucide-react';
 
 export default function VisualizarPropostaPublica() {
