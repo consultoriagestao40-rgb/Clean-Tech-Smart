@@ -19,6 +19,7 @@ export default function Configuracoes() {
   const [companyAddress, setCompanyAddress] = useState(localStorage.getItem('app_company_address') || 'Curitiba - PR');
   const [companyPhone, setCompanyPhone] = useState(localStorage.getItem('app_company_phone') || '41984042835');
   const [companyEmail, setCompanyEmail] = useState(localStorage.getItem('app_company_email') || 'financeiro@grupojvsserv.com.br');
+  const [companyIe, setCompanyIe] = useState(localStorage.getItem('app_company_ie') || '91101403-36');
 
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -128,6 +129,7 @@ export default function Configuracoes() {
     localStorage.setItem('app_company_name', companyName);
     localStorage.setItem('app_company_subtitle', companySub);
     localStorage.setItem('app_company_cnpj', companyCnpj);
+    localStorage.setItem('app_company_ie', companyIe);
     localStorage.setItem('app_company_address', companyAddress);
     localStorage.setItem('app_company_phone', companyPhone);
     localStorage.setItem('app_company_email', companyEmail);
@@ -341,6 +343,19 @@ export default function Configuracoes() {
                   onChange={(e) => setCompanyCnpj(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   placeholder="Ex: 00.000.000/0001-00"
+                  required
+                />
+              </div>
+
+              {/* Inscrição Estadual */}
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">Inscrição Estadual</label>
+                <input
+                  type="text"
+                  value={companyIe}
+                  onChange={(e) => setCompanyIe(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ex: 91101403-36"
                   required
                 />
               </div>
