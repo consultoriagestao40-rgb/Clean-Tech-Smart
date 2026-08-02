@@ -280,6 +280,46 @@ export default function PropostasLocacao() {
     }
   };
 
+  const handleDragStart = (e, proposalId) => {
+    e.dataTransfer.setData('text/plain', proposalId);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e, targetStatus) => {
+    const proposalId = e.dataTransfer.getData('text/plain');
+    if (!proposalId) return;
+    
+    const prop = proposals.find(p => String(p.id) === String(proposalId));
+    if (!prop) return;
+    
+    const updatedProposals = proposals.map(p => {
+      if (String(p.id) === String(proposalId)) {
+        return { ...p, status: targetStatus };
+      }
+      return p;
+    });
+    setProposals(updatedProposals);
+
+    try {
+      const payload = { ...prop, status: targetStatus };
+      const response = await fetch('/api/save-rental-proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        throw new Error('Falha ao salvar status da proposta');
+      }
+      fetchProposals();
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      fetchProposals();
+    }
+  };
+
   const formatPeriod = (months) => {
     const m = Number(months);
     if (m === 1) return 'Diário (1 dia)';
