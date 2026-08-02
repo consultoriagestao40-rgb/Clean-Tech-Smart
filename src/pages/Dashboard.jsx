@@ -127,7 +127,7 @@ export default function Dashboard() {
     const companyPhone = localStorage.getItem('app_company_phone') || '41984042835';
     
     // Theme Colors for PDF
-    const pdfColor = localStorage.getItem('app_pdf_theme_color') || '#007ea7';
+    const pdfColor = localStorage.getItem('app_pdf_theme_color') || '#009AC7';
     const adjustColorBrightness = (hex, percent) => {
       let R = parseInt(hex.substring(1, 3), 16);
       let G = parseInt(hex.substring(3, 5), 16);

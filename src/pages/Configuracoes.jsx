@@ -10,7 +10,7 @@ export default function Configuracoes() {
   const [zoom, setZoom] = useState(parseInt(localStorage.getItem('app_company_logo_zoom') || '100', 10));
 
   // PDF Document Color Theme State
-  const [pdfThemeColor, setPdfThemeColor] = useState(localStorage.getItem('app_pdf_theme_color') || '#1e3a8a');
+  const [pdfThemeColor, setPdfThemeColor] = useState(localStorage.getItem('app_pdf_theme_color') || '#009AC7');
 
   // Company Details State
   const [companyName, setCompanyName] = useState(localStorage.getItem('app_company_name') || 'Clean Tech Smart');
@@ -99,7 +99,7 @@ export default function Configuracoes() {
       setRemoveBg(false);
       setTolerance(30);
       setZoom(100);
-      setPdfThemeColor('#1e3a8a');
+      setPdfThemeColor('#009AC7');
       window.dispatchEvent(new Event('logoChanged'));
     }
   };
