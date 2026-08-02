@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Loader2, ArrowLeft, Edit, ChevronDown, ChevronRight, Package } from 'lucide-react';
+import { Plus, Loader2, ArrowLeft, Edit, ChevronDown, ChevronRight, Package, Printer, Play, Square, CheckCircle, Ban } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function Contratos() {
   const [contracts, setContracts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedRows, setExpandedRows] = useState({});
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(null);
   
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [clientSearch, setClientSearch] = useState('');
@@ -37,6 +38,232 @@ export default function Contratos() {
     setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const handlePrintContract = async (ctr) => {
+    setIsGeneratingPDF(ctr.id);
+    const companyLogo = localStorage.getItem('app_company_logo') || '';
+    const companyName = localStorage.getItem('app_company_name') || 'Clean Tech Pro';
+    const companyCnpj = localStorage.getItem('app_company_cnpj') || '00.000.000/0001-00';
+    const companyAddress = localStorage.getItem('app_company_address') || 'Curitiba - PR';
+    const companyPhone = localStorage.getItem('app_company_phone') || '41984042835';
+    try {
+      // 1. Fetch default template
+      const res = await fetch('/api/get-templates');
+      const data = await res.json();
+      let defaultTemplate = data.templates?.find(t => t.is_default);
+      
+      if (!defaultTemplate && data.templates?.length > 0) {
+        defaultTemplate = data.templates[0];
+      }
+
+      if (!defaultTemplate) {
+        alert('Nenhum Template cadastrado. Vá em Templates e crie um novo.');
+        setIsGeneratingPDF(null);
+        return;
+      }
+
+      // Fetch client list
+      const cliRes = await fetch('/api/get-clients');
+      const cliData = await cliRes.json();
+      const client = cliData.clients?.find(c => String(c.id) === String(ctr.client_id)) || {};
+
+      // Get modalities and equipments to show details
+      const eqRes = await fetch('/api/get-equipments');
+      const eqData = await eqRes.json();
+      const dbEquipments = eqData.equipments || [];
+
+      const modRes = await fetch('/api/get-modalities');
+      const modData = await modRes.json();
+      const dbModalities = modData.modalities || [];
+
+      // 2. Build the HTML clauses
+      const clauses = typeof defaultTemplate.clauses === 'string' ? JSON.parse(defaultTemplate.clauses) : defaultTemplate.clauses;
+      
+      const clausesHtml = clauses.map(clause => {
+        let content = clause.content || '';
+        // Substitutions
+        content = content.replace(/{{CLIENT_NAME}}/g, ctr.client_name);
+        content = content.replace(/{{CONTRACT_CODE}}/g, ctr.code);
+        content = content.replace(/{{START_DATE}}/g, formatDate(ctr.start_date));
+        content = content.replace(/{{TOTAL_VALUE}}/g, formatCurrency(parseFloat(ctr.total_rental_value) + parseFloat(ctr.total_services_value)));
+        
+        return `
+          <p style="font-weight: bold; margin-top: 15px; margin-bottom: 5px; text-transform: uppercase;">${clause.title}:</p>
+          <p style="margin-top: 0; margin-bottom: 10px;">${content.replace(/\n/g, '<br/>')}</p>
+        `;
+      }).join('');
+
+      // Equipments table HTML
+      const parsedEquipments = typeof ctr.equipments === 'string' ? JSON.parse(ctr.equipments) : ctr.equipments || [];
+      const equipmentsHtml = parsedEquipments.map(eq => {
+         const foundEq = dbEquipments.find(e => String(e.id) === String(eq.equipment_id)) || {};
+         const foundMod = dbModalities.find(m => String(m.id) === String(eq.modality_id)) || {};
+         return `
+          <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 8px 5px;">${foundEq.name || 'Desconhecido'}</td>
+            <td style="padding: 8px 5px; text-align: right;">${formatCurrency(foundEq.list_price || 0)}</td>
+            <td style="padding: 8px 5px;">${foundEq.serial_number || '-'}</td>
+            <td style="padding: 8px 5px;">${foundMod.name || '-'}</td>
+            <td style="padding: 8px 5px; text-align: right;">1,00</td>
+            <td style="padding: 8px 5px; text-align: right;">${formatCurrency(eq.price)}</td>
+            <td style="padding: 8px 5px;">${formatDate(eq.prev_retirada)}</td>
+          </tr>
+         `;
+      }).join('');
+
+      const parsedServices = typeof ctr.services === 'string' ? JSON.parse(ctr.services) : ctr.services || [];
+      const servicesHtml = parsedServices.map(svc => `
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+          <td style="padding: 8px 5px;">${svc.description || 'Serviço'}</td>
+          <td style="padding: 8px 5px; text-align: right;">${formatCurrency(svc.price)}</td>
+        </tr>
+      `).join('');
+
+      const printHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Contrato ${ctr.code}</title>
+  <style>
+    body { font-family: sans-serif; font-size: 12px; color: #374151; line-height: 1.5; margin: 40px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 20px; }
+    .logo { max-height: 60px; }
+    .company-details { text-align: right; font-size: 11px; color: #6b7280; }
+    .title { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 20px; color: #111827; text-transform: uppercase; }
+    .info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .info-table td { padding: 5px; border: 1px solid #e5e7eb; }
+    .label { font-weight: bold; color: #4b5563; background: #f9fafb; width: 150px; }
+    .table-title { font-weight: bold; font-size: 12px; border-bottom: 1px solid #374151; padding-bottom: 3px; margin: 20px 0 10px 0; color: #111827; text-transform: uppercase; }
+    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .items-table th { background: #f3f4f6; padding: 6px 5px; border-bottom: 2px solid #e5e7eb; text-align: left; font-size: 11px; }
+    .items-table td { padding: 6px 5px; border-bottom: 1px solid #e5e7eb; }
+    .signature-row { display: flex; justify-content: space-between; margin-top: 50px; page-break-inside: avoid; }
+    .signature-box { width: 45%; border-top: 1px solid #9ca3af; text-align: center; padding-top: 10px; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      ${companyLogo ? `<img src="${companyLogo}" class="logo" />` : `<h2 style="margin: 0; color: #2563eb;">${companyName}</h2>`}
+    </div>
+    <div class="company-details">
+      <strong>${companyName}</strong><br/>
+      CNPJ: ${companyCnpj}<br/>
+      Endereço: ${companyAddress}<br/>
+      Tel: ${companyPhone}
+    </div>
+  </div>
+
+  <div class="title">Instrumento Particular de Contrato de Locação e Outros Pactos</div>
+
+  <table class="info-table">
+    <tr>
+      <td class="label">Contrato Nº</td>
+      <td><strong>${ctr.code}</strong></td>
+      <td class="label">Data de Início</td>
+      <td>${formatDate(ctr.start_date)}</td>
+    </tr>
+    <tr>
+      <td class="label">Locatário</td>
+      <td colspan="3"><strong style="text-transform: uppercase;">${ctr.client_name}</strong></td>
+    </tr>
+    <tr>
+      <td class="label">CNPJ/CPF</td>
+      <td>${client.document || '-'}</td>
+      <td class="label">Telefone</td>
+      <td>${client.phone || '-'}</td>
+    </tr>
+    <tr>
+      <td class="label">Endereço</td>
+      <td colspan="3">${client.address || '-'}</td>
+    </tr>
+  </table>
+
+  <div class="table-title">Equipamentos Locados</div>
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th>Descrição do Equipamento</th>
+        <th style="text-align: right;">Valor de Tabela</th>
+        <th>Nº de Série</th>
+        <th>Modalidade</th>
+        <th style="text-align: right;">Qtd</th>
+        <th style="text-align: right;">Valor Aluguel</th>
+        <th>Previsão Devolução</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${equipmentsHtml}
+    </tbody>
+  </table>
+
+  ${parsedServices.length > 0 ? `
+    <div class="table-title">Serviços Contratados</div>
+    <table class="items-table" style="width: 50%;">
+      <thead>
+        <tr>
+          <th>Descrição do Serviço</th>
+          <th style="text-align: right;">Valor Mensal</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${servicesHtml}
+      </tbody>
+    </table>
+  ` : ''}
+
+  <div class="table-title">Condições Contratuais / Cláusulas</div>
+  <div style="text-align: justify; font-size: 11px;">
+    ${clausesHtml}
+  </div>
+
+  <div class="signature-row">
+    <div class="signature-box">
+      <strong>${companyName.toUpperCase()}</strong><br/>
+      Locadora
+    </div>
+    <div class="signature-box">
+      <strong>${ctr.client_name.toUpperCase()}</strong><br/>
+      Locatário
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const win = window.open('', '_blank');
+      win.document.write(printHtml);
+      win.document.close();
+      win.focus();
+      setTimeout(() => {
+        win.print();
+      }, 500);
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao gerar impressão do contrato.');
+    } finally {
+      setIsGeneratingPDF(null);
+    }
+  };
+
+  const handleUpdateStatus = async (id, newStatus) => {
+    if (!confirm(`Deseja alterar o status deste contrato para "${newStatus}"?`)) return;
+    try {
+      const response = await fetch('/api/update-contract-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus })
+      });
+      if (response.ok) {
+        fetchContracts();
+      } else {
+        const error = await response.json();
+        alert('Erro ao alterar status: ' + (error.error || 'Erro desconhecido'));
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de rede.');
+    }
+  };
+
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
   };
@@ -59,8 +286,8 @@ export default function Contratos() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Lista de Contratos</h1>
-          <p className="text-sm text-gray-500">{filteredContracts.length} contrato(s) registrado(s)</p>
+          <h1 className="text-2xl font-bold text-gray-900">Gestão de Contratos e Minutas</h1>
+          <p className="text-sm text-gray-500">Gerencie os contratos de locação ativos, reservas e encerramentos, além de emitir as minutas correspondentes</p>
         </div>
         <button 
           onClick={() => navigate('/contratos/novo')}
@@ -163,7 +390,11 @@ export default function Contratos() {
                       <td className="px-4 py-4 font-medium text-gray-800 uppercase">{ctr.client_name}</td>
                       <td className="px-4 py-4 text-gray-500">{formatDate(ctr.start_date)}</td>
                       <td className="px-4 py-4">
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                          ctr.status === 'Ativo' ? 'bg-green-100 text-green-800' :
+                          ctr.status === 'Reserva' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
                           {ctr.status}
                         </span>
                       </td>
@@ -171,13 +402,45 @@ export default function Contratos() {
                       <td className="px-4 py-4 text-right text-blue-400 font-medium">{formatCurrency(ctr.total_services_value)}</td>
                       <td className="px-4 py-4 text-right text-gray-500 font-medium">{formatCurrency(ctr.total_venal_value)}</td>
                       <td className="px-4 py-4 text-center">
-                        <button 
-                          onClick={() => navigate(`/contratos/editar/${ctr.id}`)}
-                          className="p-2 text-gray-400 hover:bg-blue-600 hover:text-white rounded-lg transition-colors inline-flex" 
-                          title="Editar Contrato"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
+                        <div className="flex justify-center items-center space-x-1">
+                          <button 
+                            onClick={() => handlePrintContract(ctr)}
+                            disabled={isGeneratingPDF === ctr.id}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" 
+                            title="Imprimir Contrato (Gerar Minuta)"
+                          >
+                            {isGeneratingPDF === ctr.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                            ) : (
+                              <Printer className="w-4 h-4" />
+                            )}
+                          </button>
+                          {ctr.status === 'Reserva' && (
+                            <button 
+                              onClick={() => handleUpdateStatus(ctr.id, 'Ativo')}
+                              className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors" 
+                              title="Ativar Contrato"
+                            >
+                              <Play className="w-4 h-4" />
+                            </button>
+                          )}
+                          {ctr.status === 'Ativo' && (
+                            <button 
+                              onClick={() => handleUpdateStatus(ctr.id, 'Encerrado')}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" 
+                              title="Encerrar Contrato"
+                            >
+                              <Ban className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => navigate(`/contratos/editar/${ctr.id}`)}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" 
+                            title="Editar Contrato"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     

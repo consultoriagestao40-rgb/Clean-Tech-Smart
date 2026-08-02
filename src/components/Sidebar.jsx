@@ -51,7 +51,7 @@ export default function Sidebar() {
 
   const menuPrincipal = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: 'Contratos', path: '/contratos', icon: <FileText size={20} /> },
+    { name: 'Gestão de Contratos', path: '/contratos', icon: <FileText size={20} /> },
     { name: 'Proposta Locação', path: '/proposta-locacao', icon: <FileText size={20} /> },
     { name: 'CRM', path: '/crm', icon: <Kanban size={20} /> },
     { name: 'Faturas', path: '/faturas', icon: <DollarSign size={20} /> },
