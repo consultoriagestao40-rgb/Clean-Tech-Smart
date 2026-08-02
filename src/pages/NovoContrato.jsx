@@ -651,7 +651,7 @@ export default function NovoContrato() {
                     className="w-full h-11 px-4 py-2 border border-orange-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all appearance-none pr-10 text-gray-700 font-semibold shadow-sm"
                   >
                     <option value="">Selecione uma Proposta de Locação...</option>
-                    {proposals.map(p => (
+                    {proposals.filter(p => p.status === 'Fechada').map(p => (
                       <option key={p.id} value={p.id}>
                         {p.client_name} — {p.machine_name} (R$ {Number(p.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês)
                       </option>
