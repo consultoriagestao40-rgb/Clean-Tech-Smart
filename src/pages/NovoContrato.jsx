@@ -399,7 +399,7 @@ export default function NovoContrato() {
   // Mock dados caso seja novo (para não quebrar a tela)
   const displayContract = contract || {
     id: null, code: 'Novo', start_date: new Date(), client_id: '', client_name: 'Selecione um cliente...', total_rental_value: 0, total_services_value: 0, total_venal_value: 0, status: 'Reserva',
-    equipments: [], services: []
+    equipments: [], services: [], expiry_date: '', readjustment_date: '', cost_value: 0, tax_cost_percent: 8
   };
 
   const handleSaveContract = async (updatedContract) => {
@@ -407,14 +407,18 @@ export default function NovoContrato() {
       const payload = {
         id: updatedContract.id,
         client_id: updatedContract.client_id,
-        client_name: updatedContract.client_name, // Passar o nome atualizado para salvar
+        client_name: updatedContract.client_name,
         start_date: updatedContract.start_date,
         status: updatedContract.status,
         equipments: updatedContract.equipments,
         services: updatedContract.services,
         total_rental_value: updatedContract.total_rental_value,
         total_services_value: updatedContract.total_services_value,
-        total_venal_value: updatedContract.total_venal_value
+        total_venal_value: updatedContract.total_venal_value,
+        expiry_date: updatedContract.expiry_date,
+        readjustment_date: updatedContract.readjustment_date,
+        cost_value: updatedContract.cost_value,
+        tax_cost_percent: updatedContract.tax_cost_percent
       };
       
       const res = await fetch('/api/save-contract', {
@@ -454,6 +458,16 @@ export default function NovoContrato() {
       else if (m === 30) dtEnd.setMonth(dtEnd.getMonth() + 1);
       else dtEnd.setMonth(dtEnd.getMonth() + m);
 
+      // Calculate next readjustment date (1 year from start)
+      const dtReadjust = new Date(dtStart);
+      dtReadjust.setFullYear(dtReadjust.getFullYear() + 1);
+
+      // Calculate cost value using proposal premissas (insumos + manutenção)
+      const monthlyVal = parseFloat(p.monthly_value || 0);
+      const costPct = parseFloat(p.insumos_percent || 0) + parseFloat(p.manutencao_percent || 0);
+      const calculatedCost = monthlyVal * (costPct / 100);
+      const taxPct = parseFloat(p.tributos_percent || 8);
+
       // Build equipment list row
       const equipments = [{
         equipment_id: p.machine_model_id,
@@ -475,7 +489,11 @@ export default function NovoContrato() {
         services: [],
         total_rental_value: p.monthly_value || 0,
         total_services_value: 0,
-        total_venal_value: p.rental_list_price || 0, // list price is loaded from api query
+        total_venal_value: p.rental_list_price || 0,
+        expiry_date: dtEnd.toISOString().split('T')[0],
+        readjustment_date: dtReadjust.toISOString().split('T')[0],
+        cost_value: calculatedCost,
+        tax_cost_percent: taxPct,
         observations: `Gerado a partir da Proposta de Locação nº ${p.id}`
       };
 
@@ -506,7 +524,11 @@ export default function NovoContrato() {
       ...displayContract,
       start_date: generalForm.start_date || displayContract.start_date,
       client_name: generalForm.client_name || displayContract.client_name,
-      client_id: generalForm.client_id || displayContract.client_id
+      client_id: generalForm.client_id || displayContract.client_id,
+      expiry_date: generalForm.expiry_date || displayContract.expiry_date,
+      readjustment_date: generalForm.readjustment_date || displayContract.readjustment_date,
+      cost_value: parseFloat(generalForm.cost_value || 0),
+      tax_cost_percent: parseFloat(generalForm.tax_cost_percent || 0)
     };
     setContract(updatedContract);
     handleSaveContract(updatedContract);
@@ -598,6 +620,13 @@ export default function NovoContrato() {
     setSvcForm({ service_id: '', price: '', description: '' });
   };
 
+  const rentalVal = parseFloat(displayContract.total_rental_value || 0);
+  const costVal = parseFloat(displayContract.cost_value || 0);
+  const taxPct = parseFloat(displayContract.tax_cost_percent || 0);
+  const taxVal = rentalVal * (taxPct / 100);
+  const grossMarginVal = rentalVal - costVal - taxVal;
+  const grossMarginPct = rentalVal > 0 ? (grossMarginVal / rentalVal) * 100 : 0;
+
   return (
     <div className="font-sans text-gray-800 max-w-5xl mx-auto space-y-6 pb-20">
       
@@ -665,7 +694,11 @@ export default function NovoContrato() {
             setGeneralForm({ 
               start_date: displayContract.start_date ? new Date(displayContract.start_date).toISOString().split('T')[0] : '', 
               client_name: displayContract.client_name,
-              client_id: displayContract.client_id
+              client_id: displayContract.client_id,
+              expiry_date: displayContract.expiry_date ? new Date(displayContract.expiry_date).toISOString().split('T')[0] : '',
+              readjustment_date: displayContract.readjustment_date ? new Date(displayContract.readjustment_date).toISOString().split('T')[0] : '',
+              cost_value: displayContract.cost_value || 0,
+              tax_cost_percent: displayContract.tax_cost_percent || 0
             });
             setIsGeneralModalOpen(true);
           }} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
@@ -686,33 +719,43 @@ export default function NovoContrato() {
         <h2 className="text-lg font-bold text-gray-900 mb-1">Informações Gerais</h2>
         <p className="text-sm text-gray-500 mb-6">Dados principais do contrato</p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1 flex items-center"><Calendar className="w-4 h-4 mr-1"/> Data do Contrato</p>
-            <p className="text-sm text-gray-900 font-medium">{formatDate(displayContract.start_date)}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center"><Calendar className="w-4 h-4 mr-1"/> Data de Início</p>
+            <p className="text-sm text-gray-900 font-semibold">{formatDate(displayContract.start_date)}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1">Cliente</p>
-            <p className="text-sm text-gray-900 font-medium">{displayContract.client_name}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Cliente</p>
+            <p className="text-sm text-gray-900 font-semibold">{displayContract.client_name}</p>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Fim de Vigência (Vence)</p>
+            <p className="text-sm text-red-600 font-bold">{formatDate(displayContract.expiry_date)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Próximo Reajuste</p>
+            <p className="text-sm text-orange-600 font-bold">{formatDate(displayContract.readjustment_date)}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-6 border-t border-gray-100">
           <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1">Valor Total Locação</p>
+            <p className="text-xs font-semibold text-gray-500 mb-1">Valor Mensal Locação</p>
             <p className="text-2xl font-bold text-blue-600">{formatCurrency(displayContract.total_rental_value)}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1">Valor Total Serviços</p>
-            <p className="text-2xl font-bold text-blue-400">{formatCurrency(displayContract.total_services_value)}</p>
+            <p className="text-xs font-semibold text-gray-500 mb-1">Custo de Operação (Pago)</p>
+            <p className="text-2xl font-bold text-red-500">{formatCurrency(displayContract.cost_value)}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1">Valor Total Venal</p>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(displayContract.total_venal_value)}</p>
+            <p className="text-xs font-semibold text-gray-500 mb-1">Custo de Imposto ({displayContract.tax_cost_percent}%)</p>
+            <p className="text-2xl font-bold text-amber-500">{formatCurrency(taxVal)}</p>
           </div>
-          <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100">
-            <p className="text-xs font-bold text-blue-800 mb-1">TOTAL MENSAL</p>
-            <p className="text-2xl font-black text-blue-700">{formatCurrency(parseFloat(displayContract.total_rental_value || 0) + parseFloat(displayContract.total_services_value || 0))}</p>
+          <div className={`p-3 rounded-lg border ${grossMarginVal >= 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
+            <p className={`text-xs font-bold mb-1 ${grossMarginVal >= 0 ? 'text-emerald-800' : 'text-red-800'}`}>MARGEM BRUTA MENSAL</p>
+            <p className={`text-2xl font-black ${grossMarginVal >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+              {formatCurrency(grossMarginVal)} <span className="text-xs font-semibold">({grossMarginPct.toFixed(1)}%)</span>
+            </p>
           </div>
         </div>
       </div>
@@ -987,7 +1030,7 @@ export default function NovoContrato() {
                       const sel = dbClients.find(c => String(c.id) === String(e.target.value));
                       setGeneralForm({...generalForm, client_id: e.target.value, client_name: sel ? sel.name : ''});
                     }}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border rounded-lg bg-white"
                   >
                     <option value="">Selecione um cliente...</option>
                     {dbClients.map(c => (
@@ -997,6 +1040,48 @@ export default function NovoContrato() {
                   <button onClick={() => setIsNewClientModalOpen(true)} className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium whitespace-nowrap transition-colors">
                     + Novo
                   </button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Fim de Vigência (Vence)</label>
+                  <input 
+                    type="date" 
+                    value={generalForm.expiry_date} 
+                    onChange={e => setGeneralForm({...generalForm, expiry_date: e.target.value})} 
+                    className="w-full px-3 py-2 border rounded-lg" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Próximo Reajuste</label>
+                  <input 
+                    type="date" 
+                    value={generalForm.readjustment_date} 
+                    onChange={e => setGeneralForm({...generalForm, readjustment_date: e.target.value})} 
+                    className="w-full px-3 py-2 border rounded-lg" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Custo de Operação (R$)</label>
+                  <input 
+                    type="number" step="0.01"
+                    value={generalForm.cost_value} 
+                    onChange={e => setGeneralForm({...generalForm, cost_value: e.target.value})} 
+                    className="w-full px-3 py-2 border rounded-lg" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Imposto Médio (%)</label>
+                  <input 
+                    type="number" step="0.1"
+                    value={generalForm.tax_cost_percent} 
+                    onChange={e => setGeneralForm({...generalForm, tax_cost_percent: e.target.value})} 
+                    className="w-full px-3 py-2 border rounded-lg" 
+                  />
                 </div>
               </div>
             </div>

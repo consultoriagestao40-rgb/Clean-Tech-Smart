@@ -15,7 +15,11 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
-    const { id, client_id, start_date, status, equipments, services, observations, total_rental_value, total_services_value, total_venal_value } = req.body;
+    const { 
+      id, client_id, start_date, status, equipments, services, observations, 
+      total_rental_value, total_services_value, total_venal_value,
+      expiry_date, readjustment_date, cost_value, tax_cost_percent
+    } = req.body;
     
     if (!client_id || !start_date) {
       return res.status(400).json({ error: 'Cliente e Data são obrigatórios.' });
@@ -29,10 +33,17 @@ export default async function handler(req, res) {
     if (id) {
       result = await client.query(`
         UPDATE contracts 
-        SET client_id = $1, start_date = $2, status = $3, equipments = $4::jsonb, services = $5::jsonb, observations = $6, total_rental_value = $7, total_services_value = $8, total_venal_value = $9
-        WHERE id = $10
+        SET client_id = $1, start_date = $2, status = $3, equipments = $4::jsonb, services = $5::jsonb, 
+            observations = $6, total_rental_value = $7, total_services_value = $8, total_venal_value = $9,
+            expiry_date = $10, readjustment_date = $11, cost_value = $12, tax_cost_percent = $13
+        WHERE id = $14
         RETURNING *;
-      `, [client_id, start_date, status || 'Reserva', equipmentsJson, servicesJson, observations, total_rental_value, total_services_value, total_venal_value, id]);
+      `, [
+        client_id, start_date, status || 'Reserva', equipmentsJson, servicesJson, 
+        observations, total_rental_value, total_services_value, total_venal_value,
+        expiry_date || null, readjustment_date || null, cost_value || 0, tax_cost_percent || 0,
+        id
+      ]);
 
       await client.query(`
         INSERT INTO contract_history (contract_id, action, status) VALUES ($1, $2, $3)
@@ -45,10 +56,18 @@ export default async function handler(req, res) {
       const code = `CTR-${String(nextId).padStart(4, '0')}`;
 
       result = await client.query(`
-        INSERT INTO contracts (code, client_id, start_date, status, equipments, services, observations, total_rental_value, total_services_value, total_venal_value)
-        VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8, $9, $10)
+        INSERT INTO contracts (
+          code, client_id, start_date, status, equipments, services, observations, 
+          total_rental_value, total_services_value, total_venal_value,
+          expiry_date, readjustment_date, cost_value, tax_cost_percent
+        )
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING *;
-      `, [code, client_id, start_date, status || 'Reserva', equipmentsJson, servicesJson, observations, total_rental_value, total_services_value, total_venal_value]);
+      `, [
+        code, client_id, start_date, status || 'Reserva', equipmentsJson, servicesJson, 
+        observations, total_rental_value, total_services_value, total_venal_value,
+        expiry_date || null, readjustment_date || null, cost_value || 0, tax_cost_percent || 0
+      ]);
 
       await client.query(`
         INSERT INTO contract_history (contract_id, action, status) VALUES ($1, $2, $3)

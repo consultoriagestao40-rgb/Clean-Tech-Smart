@@ -379,8 +379,8 @@ export default function Contratos() {
                 <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider">Data</th>
                 <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider">Status</th>
                 <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider text-right">Valor Locação</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider text-right">Valor Serviços</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider text-right">Valor Venal</th>
+                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider text-right">Margem Bruta</th>
+                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider text-right">Vencimento</th>
                 <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider text-center">Ações</th>
               </tr>
             </thead>
@@ -398,29 +398,38 @@ export default function Contratos() {
                   </td>
                 </tr>
               ) : (
-                filteredContracts.map((ctr) => (
-                  <React.Fragment key={ctr.id}>
-                    <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors bg-white">
-                      <td className="px-4 py-4 text-gray-400 text-center">
-                        <button onClick={() => toggleRow(ctr.id)} className="p-1 hover:bg-gray-200 rounded transition-colors">
-                          {expandedRows[ctr.id] ? <ChevronDown className="w-4 h-4 text-gray-600" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-                        </button>
-                      </td>
-                      <td className="px-4 py-4 font-bold text-gray-900">{ctr.code}</td>
-                      <td className="px-4 py-4 font-medium text-gray-800 uppercase">{ctr.client_name}</td>
-                      <td className="px-4 py-4 text-gray-500">{formatDate(ctr.start_date)}</td>
-                      <td className="px-4 py-4">
-                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                          ctr.status === 'Ativo' ? 'bg-green-100 text-green-800' :
-                          ctr.status === 'Reserva' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {ctr.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-right text-blue-600 font-bold">{formatCurrency(ctr.total_rental_value)}</td>
-                      <td className="px-4 py-4 text-right text-blue-400 font-medium">{formatCurrency(ctr.total_services_value)}</td>
-                      <td className="px-4 py-4 text-right text-gray-500 font-medium">{formatCurrency(ctr.total_venal_value)}</td>
+                filteredContracts.map((ctr) => {
+                  const rVal = parseFloat(ctr.total_rental_value || 0);
+                  const cVal = parseFloat(ctr.cost_value || 0);
+                  const tPct = parseFloat(ctr.tax_cost_percent || 0);
+                  const margVal = rVal - cVal - (rVal * tPct / 100);
+                  const margPct = rVal > 0 ? (margVal / rVal) * 100 : 0;
+
+                  return (
+                    <React.Fragment key={ctr.id}>
+                      <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors bg-white">
+                        <td className="px-4 py-4 text-gray-400 text-center">
+                          <button onClick={() => toggleRow(ctr.id)} className="p-1 hover:bg-gray-200 rounded transition-colors">
+                            {expandedRows[ctr.id] ? <ChevronDown className="w-4 h-4 text-gray-600" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+                          </button>
+                        </td>
+                        <td className="px-4 py-4 font-bold text-gray-900">{ctr.code}</td>
+                        <td className="px-4 py-4 font-medium text-gray-800 uppercase">{ctr.client_name}</td>
+                        <td className="px-4 py-4 text-gray-500">{formatDate(ctr.start_date)}</td>
+                        <td className="px-4 py-4">
+                          <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                            ctr.status === 'Ativo' ? 'bg-green-100 text-green-800' :
+                            ctr.status === 'Reserva' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {ctr.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-right text-blue-600 font-bold">{formatCurrency(ctr.total_rental_value)}</td>
+                        <td className={`px-4 py-4 text-right font-bold ${margVal >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                          {formatCurrency(margVal)} <span className="text-xs font-semibold">({margPct.toFixed(0)}%)</span>
+                        </td>
+                        <td className="px-4 py-4 text-right font-semibold text-gray-700">{formatDate(ctr.expiry_date)}</td>
                       <td className="px-4 py-4 text-center">
                         <div className="flex justify-center items-center space-x-1">
                           <button 
@@ -475,33 +484,76 @@ export default function Contratos() {
                     {expandedRows[ctr.id] && (
                       <tr className="bg-gray-50/50">
                         <td colSpan="9" className="px-8 py-6 border-b border-gray-100">
-                          <h4 className="text-sm font-bold text-gray-700 mb-3">Equipamentos do Contrato:</h4>
-                          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            
+                            {/* Bloco 1: Equipamentos */}
                             <div>
-                              <p className="font-bold text-gray-900 text-sm">A Gás (GLP)</p>
-                              <p className="text-xs text-gray-500 mt-1">Nº Série: 0000012522256 • Tipo: empilhadeira</p>
-                              <p className="text-sm text-blue-600 font-semibold mt-2">Locação: {formatCurrency(ctr.total_rental_value)}</p>
+                              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Equipamentos da Locação</h4>
+                              <div className="space-y-3">
+                                {(!ctr.equipments || ctr.equipments.length === 0) ? (
+                                  <p className="text-sm text-gray-400">Nenhum equipamento vinculado.</p>
+                                ) : (
+                                  ctr.equipments.map((eq, i) => (
+                                    <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex justify-between items-center">
+                                      <div>
+                                        <p className="font-bold text-gray-900 text-sm">Preço de Locação: {formatCurrency(eq.price)}</p>
+                                        <p className="text-xs text-gray-500 mt-1">Prev. Entrega: {formatDate(eq.prev_entrega)} • Prev. Retirada: {formatDate(eq.prev_retirada)}</p>
+                                      </div>
+                                      <span className="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full text-xs font-semibold">Ativo</span>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
                             </div>
-                            <div className="text-right flex flex-col items-end">
-                              <span className="text-blue-500 text-xs font-medium mb-2">Anual</span>
-                              <p className="text-xs text-gray-500">Prev. Entrega: {formatDate(ctr.start_date)}</p>
-                              <p className="text-xs text-gray-500">Prev. Retirada: -</p>
+                            
+                            {/* Bloco 2: Resumo Financeiro & Margem */}
+                            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+                              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 border-b pb-2">Painel Financeiro & Margem Bruta</h4>
+                              
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <p className="text-xs text-gray-400 font-medium">Vencimento do Contrato</p>
+                                  <p className="font-semibold text-red-600 mt-0.5">{formatDate(ctr.expiry_date)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-400 font-medium">Próximo Reajuste</p>
+                                  <p className="font-semibold text-orange-600 mt-0.5">{formatDate(ctr.readjustment_date)}</p>
+                                </div>
+                              </div>
+                              
+                              <div className="border-t pt-3 space-y-2 text-sm text-gray-600">
+                                <div className="flex justify-between">
+                                  <span>Receita de Locação:</span>
+                                  <span className="font-semibold text-gray-950">{formatCurrency(ctr.total_rental_value)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Custo de Operação (Pago):</span>
+                                  <span className="font-semibold text-red-500">-{formatCurrency(ctr.cost_value)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Imposto Estimado ({ctr.tax_cost_percent || 0}%):</span>
+                                  <span className="font-semibold text-amber-500">-{formatCurrency(parseFloat(ctr.total_rental_value || 0) * (parseFloat(ctr.tax_cost_percent || 0) / 100))}</span>
+                                </div>
+                                
+                                <div className="flex justify-between border-t pt-2 font-bold text-gray-900">
+                                  <span>Margem Bruta Mensal:</span>
+                                  <span className={parseFloat(ctr.total_rental_value || 0) - parseFloat(ctr.cost_value || 0) - (parseFloat(ctr.total_rental_value || 0) * (parseFloat(ctr.tax_cost_percent || 0) / 100)) >= 0 ? 'text-emerald-600' : 'text-red-600'}>
+                                    {formatCurrency(parseFloat(ctr.total_rental_value || 0) - parseFloat(ctr.cost_value || 0) - (parseFloat(ctr.total_rental_value || 0) * (parseFloat(ctr.tax_cost_percent || 0) / 100)))} 
+                                    <span className="text-xs ml-1 font-semibold">
+                                      ({ctr.total_rental_value > 0 ? (((parseFloat(ctr.total_rental_value || 0) - parseFloat(ctr.cost_value || 0) - (parseFloat(ctr.total_rental_value || 0) * (parseFloat(ctr.tax_cost_percent || 0) / 100))) / parseFloat(ctr.total_rental_value)) * 100).toFixed(1) : '0.0'}%)
+                                    </span>
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                               <button 
-                                onClick={() => navigate(`/contratos/editar/${ctr.id}`)}
-                                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                               >
-                                 <Edit className="w-4 h-4 mr-2 text-gray-500" />
-                                 Editar
-                               </button>
-                            </div>
+                            
                           </div>
                         </td>
                       </tr>
                     )}
                   </React.Fragment>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
