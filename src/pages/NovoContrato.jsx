@@ -161,7 +161,7 @@ export default function NovoContrato() {
           <!-- Header -->
           <div style="text-align: center; margin-bottom: 20px;">
             ${companyLogo ? 
-              `<img src="${companyLogo}" alt="Logo" style="max-height: 50px; max-width: 250px; object-fit: contain; display: block; margin: 0 auto 8px;" />` : 
+              `<img src="${companyLogo}" alt="Logo" style="max-height: 80px; max-width: 320px; object-fit: contain; display: block; margin: 0 auto 10px;" />` : 
               `<h1 style="font-size: 22px; font-weight: bold; margin: 0;">Clean Tech Pro</h1>`
             }
             <p style="margin: 2px 0; font-size: 11px;">CNPJ: 00.000.000/0001-00</p>

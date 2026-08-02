@@ -214,7 +214,7 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
   <div class="header" style="align-items: center;">
     <div>
       ${companyLogo ? 
-        `<img src="${companyLogo}" alt="Logo" style="max-height: 48px; max-width: 220px; object-fit: contain; display: block; margin-bottom: 4px;" />` : 
+        `<img src="${companyLogo}" alt="Logo" style="max-height: 80px; max-width: 320px; object-fit: contain; display: block; margin-bottom: 6px;" />` : 
         `<div class="co-name">Clean Tech Smart</div>`
       }
       <div class="co-sub">Soluções Inteligentes em Higiene e Limpeza</div>
