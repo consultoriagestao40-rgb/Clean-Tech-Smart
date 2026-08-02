@@ -756,11 +756,22 @@ body{padding-top:60px}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white"
                   >
                     <option value="">Selecione o Código da Tabela</option>
-                    {getFilteredPrices().map(r => (
-                      <option key={r.id} value={r.id}>
-                        {r.code} - {r.description} (12M: R${r.price_12 || '—'} / 36M: R${r.price_36 || '—'})
-                      </option>
-                    ))}
+                    {getFilteredPrices().map(r => {
+                      const totalMarkup = Number(formData.insumos_percent || 0) +
+                                          Number(formData.manutencao_percent || 0) +
+                                          Number(formData.lucro_percent || 0) +
+                                          Number(formData.tributos_percent || 0);
+                      const calc = (val) => {
+                        if (!val) return '—';
+                        const finalVal = Number(val) * (1 + totalMarkup / 100);
+                        return 'R$ ' + finalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      };
+                      return (
+                        <option key={r.id} value={r.id}>
+                          {r.code} - {r.description} (12M: {calc(r.price_12)} / 36M: {calc(r.price_36)})
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
