@@ -237,11 +237,11 @@ CARACTERÍSTICAS & BENEFÍCIOS:
               >
                 <div onClick={() => handleViewModel(item)} className="cursor-pointer flex-1 flex flex-col">
                   {/* Photo area */}
-                  <div className="h-48 bg-gray-100 border-b border-gray-100 flex items-center justify-center relative overflow-hidden">
+                  <div className="h-48 bg-white border-b border-gray-100 flex items-center justify-center relative overflow-hidden">
                     {firstPhoto ? (
                       <img src={firstPhoto} alt={item.name} className="w-full h-full object-contain p-2 group-hover:scale-[1.03] transition-transform duration-300" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
                     ) : null}
-                    <div className={`absolute inset-0 flex-col items-center justify-center text-gray-400 bg-gray-50 ${firstPhoto ? 'hidden' : 'flex'}`}>
+                    <div className={`absolute inset-0 flex-col items-center justify-center text-gray-400 bg-white ${firstPhoto ? 'hidden' : 'flex'}`}>
                       <Image className="w-10 h-10 mb-1" />
                       <span className="text-xs">Sem foto cadastrada</span>
                     </div>
@@ -401,7 +401,7 @@ CARACTERÍSTICAS & BENEFÍCIOS:
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto flex flex-col md:flex-row min-h-[550px] max-h-[85vh]">
               
               {/* Left Column: Photo gallery */}
-              <div className="w-full md:w-1/2 bg-gray-50 border-r border-gray-100 flex flex-col justify-between p-6 relative min-h-[350px] md:min-h-0">
+              <div className="w-full md:w-1/2 bg-white border-r border-gray-100 flex flex-col justify-between p-6 relative min-h-[350px] md:min-h-0">
                 <button 
                   onClick={() => setViewingModel(null)}
                   className="md:hidden absolute top-4 right-4 bg-white/80 backdrop-blur-xs text-gray-500 hover:text-gray-700 p-2 rounded-full shadow-xs border border-gray-200 z-10"
