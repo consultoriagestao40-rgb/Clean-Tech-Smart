@@ -21,7 +21,8 @@ import {
   Settings,
   Coins,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Layout
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -57,6 +58,7 @@ export default function Sidebar() {
     { name: 'Técnicos', path: '/tecnicos', icon: <User size={20} /> },
     { name: 'Equipamentos', path: '/equipamentos', icon: <Package size={20} /> },
     { name: 'Tabela Locação', path: '/tabela-locacao', icon: <Coins size={20} /> },
+    { name: 'Catálogo Máquinas', path: '/modelos-maquinas', icon: <Layout size={20} /> },
     { name: 'Estoque', path: '/estoque', icon: <Boxes size={20} /> },
     { name: 'Chamados', path: '/chamados', icon: <ClipboardList size={20} /> },
     { name: 'Modalidades', path: '/modalidades', icon: <Tags size={20} /> },

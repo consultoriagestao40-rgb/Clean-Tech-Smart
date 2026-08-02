@@ -179,6 +179,68 @@ export default function Dashboard() {
     const emissao = new Date(budget.created_at).toLocaleDateString('pt-BR');
     const geradoEm = new Date().toLocaleString('pt-BR');
 
+    let machinePageHtml = '';
+    if (budget.machine_model_id && budget.machine_model_name) {
+      const photosList = (budget.machine_model_photos || '').split('\n').map(u => u.trim()).filter(Boolean);
+      const mainPhoto = photosList.length > 0 ? photosList[0] : '';
+      const thumbnails = photosList.slice(1).map(p => `
+        <img src="${p}" style="width: 60px; height: 60px; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px; background: #fff;" />
+      `).join('');
+
+      machinePageHtml = `
+      <div class="page" style="page-break-before: always; margin-top: 30px;">
+        <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid ${pdfColor}; padding-bottom: 20px; margin-bottom: 25px;">
+          ${companyLogo ? `<div style="width: 180px; display: block;"></div>` : ''}
+          <div style="flex: 1; text-align: center;">
+            <h1 style="font-size: 18px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Apresentação do Equipamento</h1>
+            <div style="font-size: 11px; font-weight: bold; color: #475569; margin-top: 4px;">Proposta nº #${String(budget.id).padStart(4,'0')}</div>
+          </div>
+          ${companyLogo ? `
+            <div style="width: 180px; display: flex; justify-content: flex-end;">
+              <img src="${companyLogo}" alt="Logo" style="max-height: 80px; max-width: 180px; object-fit: contain;" />
+            </div>
+          ` : ''}
+        </div>
+
+        <div style="text-align: center; margin-bottom: 25px;">
+          <h2 style="font-size: 18px; font-weight: 800; color: ${pdfColor}; text-transform: uppercase; margin: 0; letter-spacing: 0.5px;">${budget.machine_model_name}</h2>
+          <div style="font-size: 11px; font-weight: bold; color: #64748b; margin-top: 2px;">Especificações e Ficha Técnica Comercial</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px; align-items: start; margin-top: 10px;">
+          <!-- Coluna Foto -->
+          <div style="display: flex; flex-direction: column; align-items: center;">
+            ${mainPhoto ? `
+              <img src="${mainPhoto}" alt="${budget.machine_model_name}" style="max-width: 100%; max-height: 280px; object-fit: contain; border-radius: 8px; border: 1px solid #e2e8f0; padding: 15px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" />
+            ` : `
+              <div style="width: 100%; height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; color: #94a3b8;">
+                <span>Foto não disponível</span>
+              </div>
+            `}
+            
+            ${thumbnails ? `
+              <div style="display: flex; gap: 8px; justify-content: center; margin-top: 15px; flex-wrap: wrap;">
+                ${thumbnails}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Coluna Descrição Técnica -->
+          <div style="font-size: 12px; color: #334155; line-height: 1.6; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; white-space: pre-line; font-family: 'Inter', sans-serif;">
+            ${budget.machine_model_technical_description || 'Nenhuma especificação disponível.'}
+          </div>
+        </div>
+
+        <div class="footer" style="margin-top: 60px;">
+          <div>
+            <div>${companyName} &mdash; ${companySub}</div>
+            <div>Proposta comercial e técnica de locação/venda de ativos.</div>
+          </div>
+        </div>
+      </div>
+      `;
+    }
+
     const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -364,6 +426,7 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
       <div>Assinatura do Responsável</div>
     </div>
   </div>
+  \${machinePageHtml}
 </div>
 </body>
 </html>`;

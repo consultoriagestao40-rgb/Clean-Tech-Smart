@@ -20,14 +20,16 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
-    // 1. Obter dados do orçamento com informações do cliente e equipamento
+    // 1. Obter dados do orçamento com informações do cliente, equipamento e modelo do catálogo
     const budgetRes = await client.query(`
       SELECT b.*, 
              c.name as client_name, c.document as client_document, c.email as client_email, c.phone as client_phone, c.address as client_address,
-             e.name as equipment_name, e.brand as equipment_brand, e.model as equipment_model, e.serial_number as equipment_serial_number
+             e.name as equipment_name, e.brand as equipment_brand, e.model as equipment_model, e.serial_number as equipment_serial_number,
+             m.name as machine_model_name, m.photo_urls as machine_model_photos, m.technical_description as machine_model_technical_description
       FROM budgets b
       LEFT JOIN clients c ON b.client_id::text = c.id::text
       LEFT JOIN equipments e ON b.equipment_id = e.id
+      LEFT JOIN machine_models m ON b.machine_model_id = m.id
       WHERE b.id = $1
     `, [id]);
 

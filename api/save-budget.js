@@ -28,14 +28,15 @@ export default async function handler(req, res) {
         SET client_id = $1, contact_name = $2, contact_info = $3, service_type = $4, 
             initial_km = $5, final_km = $6, price_per_km = $7, 
             total_labor = $8, total_parts = $9, total_logistics = $10, grand_total = $11, notes = $12, status = $13, equipment_id = $14,
-            markup_percent = $15
-        WHERE id = $16
+            markup_percent = $15, machine_model_id = $16
+        WHERE id = $17
       `, [
         data.client, data.contact, data.contactInfo, data.serviceType,
         data.logistics.initialKm, data.logistics.finalKm, data.logistics.pricePerKm,
         data.totalLabor, data.totalParts, data.totalLogistics, data.grandTotal, data.notes,
         data.status || 'Pendente', data.equipmentId ? Number(data.equipmentId) : null,
         markupPercent,
+        data.machineModelId ? Number(data.machineModelId) : null,
         budgetId
       ]);
 
@@ -49,15 +50,16 @@ export default async function handler(req, res) {
           client_id, contact_name, contact_info, service_type, 
           initial_km, final_km, price_per_km, 
           total_labor, total_parts, total_logistics, grand_total, notes, status, equipment_id,
-          markup_percent
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+          markup_percent, machine_model_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING id;
       `, [
         data.client, data.contact, data.contactInfo, data.serviceType,
         data.logistics.initialKm, data.logistics.finalKm, data.logistics.pricePerKm,
         data.totalLabor, data.totalParts, data.totalLogistics, data.grandTotal, data.notes,
         data.status || 'Pendente', data.equipmentId ? Number(data.equipmentId) : null,
-        markupPercent
+        markupPercent,
+        data.machineModelId ? Number(data.machineModelId) : null
       ]);
 
       budgetId = budgetResult.rows[0].id;

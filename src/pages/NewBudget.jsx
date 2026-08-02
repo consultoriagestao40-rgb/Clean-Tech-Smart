@@ -15,13 +15,15 @@ export default function NewBudget() {
   
   const [clients, setClients] = useState([]);
   const [allEquipments, setAllEquipments] = useState([]);
+  const [machineModels, setMachineModels] = useState([]);
   
   const [clientData, setClientData] = useState({
     client: '',
     contact: '',
     contactInfo: '',
     serviceType: 'corretiva',
-    equipmentId: ''
+    equipmentId: '',
+    machineModelId: ''
   });
 
   // Modal Equipamento states
@@ -87,6 +89,14 @@ export default function NewBudget() {
         await fetchCategories();
         
         try {
+          const modelsRes = await fetch('/api/get-machine-models');
+          const modelsData = await modelsRes.json();
+          if (modelsData.machineModels) setMachineModels(modelsData.machineModels);
+        } catch (err) {
+          console.error('Erro ao buscar modelos de máquinas do catálogo:', err);
+        }
+
+        try {
           const partsRes = await fetch('/api/get-parts');
           const partsData = await partsRes.json();
           if (partsData.parts) setInventoryParts(partsData.parts);
@@ -104,7 +114,8 @@ export default function NewBudget() {
               contact: b.contact_name || '',
               contactInfo: b.contact_info || '',
               serviceType: b.service_type || 'corretiva',
-              equipmentId: b.equipment_id ? String(b.equipment_id) : ''
+              equipmentId: b.equipment_id ? String(b.equipment_id) : '',
+              machineModelId: b.machine_model_id ? String(b.machine_model_id) : ''
             });
             setMarkupPercent(b.markup_percent !== undefined && b.markup_percent !== null ? Number(b.markup_percent) : 28);
             if (budgetData.laborItems) {
@@ -524,6 +535,20 @@ export default function NewBudget() {
                 <option value="corretiva">Manutenção Corretiva</option>
                 <option value="preventiva">Manutenção Preventiva</option>
                 <option value="instalacao">Instalação</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-600 mb-1">Modelo da Máquina (Catálogo)</label>
+              <select 
+                value={clientData.machineModelId}
+                onChange={(e) => setClientData({...clientData, machineModelId: e.target.value})}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white"
+              >
+                <option value="">Nenhum Modelo (Opcional)</option>
+                {machineModels.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
               </select>
             </div>
           </div>
