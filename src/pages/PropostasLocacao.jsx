@@ -967,25 +967,25 @@ body{padding-top:60px}
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td style="font-weight: bold;">0 - Sem Cobertura</td>
-        <td>Incluso: Somente locação do Equipamento.</td>
+      <tr \${p.contract_type?.startsWith('0') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; \${p.contract_type?.startsWith('0') ? 'color: #854d0e !important;' : ''}">\${p.contract_type?.startsWith('0') ? '★ ' : ''}0 - Sem Cobertura</td>
+        <td \${p.contract_type?.startsWith('0') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Somente locação do Equipamento. \${p.contract_type?.startsWith('0') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
       </tr>
-      <tr>
-        <td style="font-weight: bold;">1 - Ouro</td>
-        <td>Incluso: Manutenção, Mão de Obra, Peças, Água Destilada e Deslocamento do técnico autorizado TENNANT COMPANY. Não incluso: Combustíveis e Químicos.</td>
+      <tr \${p.contract_type?.startsWith('1') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; \${p.contract_type?.startsWith('1') ? 'color: #854d0e !important;' : ''}">\${p.contract_type?.startsWith('1') ? '★ ' : ''}1 - Ouro</td>
+        <td \${p.contract_type?.startsWith('1') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Manutenção, Mão de Obra, Peças, Água Destilada e Deslocamento do técnico autorizado TENNANT COMPANY. Não incluso: Combustíveis e Químicos. \${p.contract_type?.startsWith('1') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
       </tr>
-      <tr>
-        <td style="font-weight: bold;">2 - Prata</td>
-        <td>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Químicos, Escovas e Discos.</td>
+      <tr \${p.contract_type?.startsWith('2') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; \${p.contract_type?.startsWith('2') ? 'color: #854d0e !important;' : ''}">\${p.contract_type?.startsWith('2') ? '★ ' : ''}2 - Prata</td>
+        <td \${p.contract_type?.startsWith('2') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Químicos, Escovas e Discos. \${p.contract_type?.startsWith('2') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
       </tr>
-      <tr>
-        <td style="font-weight: bold;">3 - Bronze</td>
-        <td>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Água Destilada, Químicos, Escovas, Discos e Baterias.</td>
+      <tr \${p.contract_type?.startsWith('3') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; \${p.contract_type?.startsWith('3') ? 'color: #854d0e !important;' : ''}">\${p.contract_type?.startsWith('3') ? '★ ' : ''}3 - Bronze</td>
+        <td \${p.contract_type?.startsWith('3') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Água Destilada, Químicos, Escovas, Discos e Baterias. \${p.contract_type?.startsWith('3') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
       </tr>
-      <tr>
-        <td style="font-weight: bold;">4 - MOB</td>
-        <td>Incluso: Somente Manutenção, Mão de Obra, e Deslocamento do técnico autorizado TENNANT COMPANY.</td>
+      <tr \${p.contract_type?.startsWith('4') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; \${p.contract_type?.startsWith('4') ? 'color: #854d0e !important;' : ''}">\${p.contract_type?.startsWith('4') ? '★ ' : ''}4 - MOB</td>
+        <td \${p.contract_type?.startsWith('4') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Somente Manutenção, Mão de Obra, e Deslocamento do técnico autorizado TENNANT COMPANY. \${p.contract_type?.startsWith('4') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
       </tr>
     </tbody>
   </table>
@@ -1051,6 +1051,40 @@ body{padding-top:60px}
           Nova Proposta
         </button>
       </header>
+
+      {/* Status Totalizer Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+        {['Rascunho', 'Enviada', 'Negociação', 'Fechada', 'Contrato'].map(status => {
+          const matching = filtered.filter(p => (p.status || 'Rascunho') === status);
+          const totalValue = matching.reduce((sum, p) => sum + Number(p.monthly_value || 0), 0);
+          
+          const statusConfigs = {
+            'Rascunho': { label: 'Rascunho', border: 'border-t-4 border-t-gray-400', text: 'text-gray-700', bg: 'bg-gray-50/50' },
+            'Enviada': { label: 'Enviada', border: 'border-t-4 border-t-blue-500', text: 'text-blue-700', bg: 'bg-blue-50/20' },
+            'Negociação': { label: 'Negociação', border: 'border-t-4 border-t-orange-500', text: 'text-orange-700', bg: 'bg-orange-50/20' },
+            'Fechada': { label: 'Fechada', border: 'border-t-4 border-t-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50/20' },
+            'Contrato': { label: 'Contrato', border: 'border-t-4 border-t-indigo-500', text: 'text-indigo-700', bg: 'bg-indigo-50/20' }
+          };
+          const config = statusConfigs[status] || statusConfigs['Rascunho'];
+
+          return (
+            <div key={status} className={`bg-white rounded-xl shadow-xs border border-gray-150 ${config.border} p-4 flex flex-col justify-between hover:shadow-sm transition-shadow`}>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xxs font-extrabold uppercase tracking-widest text-gray-400">{config.label}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xxs font-black bg-white border border-gray-200 text-gray-700 shadow-xxs`}>
+                  {matching.length}
+                </span>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-400">Total Mensal</p>
+                <p className={`text-sm font-black ${config.text} mt-0.5`}>
+                  R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Search filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -1175,13 +1209,6 @@ body{padding-top:60px}
                                   <Printer className="w-3.5 h-3.5" />
                                 </button>
                                 <button 
-                                  onClick={() => handleOpenMinutaModal(p.id)}
-                                  className="p-2 bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg transition-colors"
-                                  title="Gerar Minuta de Contrato"
-                                >
-                                  <FileText className="w-3.5 h-3.5" />
-                                </button>
-                                <button 
                                   onClick={() => handleEdit(p)}
                                   className="p-2 bg-gray-50 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
                                   title="Editar Proposta"
@@ -1237,13 +1264,6 @@ body{padding-top:60px}
                         >
                           <Printer className="w-3.5 h-3.5 mr-1" />
                           Gerar PDF
-                        </button>
-                        <button 
-                          onClick={() => handleOpenMinutaModal(p.id)}
-                          className="flex items-center px-3 py-1.5 bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg text-xs font-semibold transition-colors"
-                        >
-                          <FileText className="w-3.5 h-3.5 mr-1" />
-                          Gerar Minuta
                         </button>
                         <button 
                           onClick={() => handleEdit(p)}
