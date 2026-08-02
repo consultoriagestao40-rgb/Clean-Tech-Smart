@@ -24,10 +24,12 @@ import {
 export default function Sidebar() {
   const location = useLocation();
   const [logo, setLogo] = useState(localStorage.getItem('app_company_logo') || '');
+  const [zoom, setZoom] = useState(parseInt(localStorage.getItem('app_company_logo_zoom') || '100', 10));
 
   useEffect(() => {
     const handleLogoChange = () => {
       setLogo(localStorage.getItem('app_company_logo') || '');
+      setZoom(parseInt(localStorage.getItem('app_company_logo_zoom') || '100', 10));
     };
     window.addEventListener('logoChanged', handleLogoChange);
     return () => window.removeEventListener('logoChanged', handleLogoChange);
@@ -84,7 +86,7 @@ export default function Sidebar() {
       {/* Logo Area */}
       <div className="px-4 py-4 min-h-[96px] flex items-center justify-center border-b border-gray-100 mb-4">
         {logo ? (
-          <img src={logo} alt="Logo" className="max-h-16 w-auto max-w-full object-contain" />
+          <img src={logo} alt="Logo" className="max-h-16 w-auto max-w-full object-contain" style={{ transform: `scale(${zoom / 100})`, transition: 'transform 0.1s' }} />
         ) : (
           <h2 className="text-2xl font-bold text-gray-800 tracking-tight text-center w-full">
             <span className="text-blue-600">Clean Tech</span> Smart

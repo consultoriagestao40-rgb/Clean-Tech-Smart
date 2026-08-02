@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Upload, Trash2, Check } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Configuracoes() {
@@ -7,6 +7,7 @@ export default function Configuracoes() {
   const [originalLogo, setOriginalLogo] = useState(localStorage.getItem('app_company_logo_original') || '');
   const [removeBg, setRemoveBg] = useState(localStorage.getItem('app_company_logo_remove_bg') === 'true');
   const [tolerance, setTolerance] = useState(parseInt(localStorage.getItem('app_company_logo_tolerance') || '30', 10));
+  const [zoom, setZoom] = useState(parseInt(localStorage.getItem('app_company_logo_zoom') || '100', 10));
 
   useEffect(() => {
     if (originalLogo) {
@@ -78,10 +79,12 @@ export default function Configuracoes() {
       localStorage.removeItem('app_company_logo_original');
       localStorage.removeItem('app_company_logo_remove_bg');
       localStorage.removeItem('app_company_logo_tolerance');
+      localStorage.removeItem('app_company_logo_zoom');
       setLogo('');
       setOriginalLogo('');
       setRemoveBg(false);
       setTolerance(30);
+      setZoom(100);
       window.dispatchEvent(new Event('logoChanged'));
     }
   };
@@ -96,6 +99,13 @@ export default function Configuracoes() {
     const val = parseInt(e.target.value, 10);
     setTolerance(val);
     localStorage.setItem('app_company_logo_tolerance', String(val));
+  };
+
+  const handleZoomChange = (e) => {
+    const val = parseInt(e.target.value, 10);
+    setZoom(val);
+    localStorage.setItem('app_company_logo_zoom', String(val));
+    window.dispatchEvent(new Event('logoChanged'));
   };
 
   return (
@@ -146,44 +156,68 @@ export default function Configuracoes() {
 
             {/* Background Remover Controls */}
             {originalLogo && (
-              <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 space-y-4">
-                <div className="flex items-center space-x-3">
-                  <button
-                    type="button"
-                    onClick={toggleRemoveBg}
-                    className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 focus:outline-none ${
-                      removeBg ? 'bg-blue-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <div
-                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
-                        removeBg ? 'translate-x-4' : 'translate-x-0'
+              <div className="space-y-4">
+                <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={toggleRemoveBg}
+                      className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 focus:outline-none ${
+                        removeBg ? 'bg-blue-600' : 'bg-gray-300'
                       }`}
-                    />
-                  </button>
-                  <div>
-                    <span className="text-sm font-semibold text-gray-900 block">Remover Fundo Branco</span>
-                    <span className="text-xs text-gray-500 block">Torna o fundo branco da imagem transparente</span>
+                    >
+                      <div
+                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                          removeBg ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                    <div>
+                      <span className="text-sm font-semibold text-gray-900 block">Remover Fundo Branco</span>
+                      <span className="text-xs text-gray-500 block">Torna o fundo branco da imagem transparente</span>
+                    </div>
                   </div>
+
+                  {removeBg && (
+                    <div className="space-y-2 pt-2 border-t border-blue-100/50">
+                      <div className="flex justify-between text-xs text-gray-600">
+                        <span>Tolerância do Fundo</span>
+                        <span>{tolerance}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="5"
+                        max="80"
+                        value={tolerance}
+                        onChange={handleToleranceChange}
+                        className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      />
+                      <span className="text-[10px] text-gray-400 block">Ajuste para remover bordas e sombras brancas do logo</span>
+                    </div>
+                  )}
                 </div>
 
-                {removeBg && (
-                  <div className="space-y-2 pt-2 border-t border-blue-100/50">
+                {/* Logo Zoom controls */}
+                <div className="bg-slate-50 rounded-xl p-4 border border-gray-200 space-y-4">
+                  <div>
+                    <span className="text-sm font-semibold text-gray-900 block">Zoom do Logotipo</span>
+                    <span className="text-xs text-gray-500 block">Ajuste o tamanho do logotipo no menu</span>
+                  </div>
+                  <div className="space-y-2 pt-2 border-t border-gray-100">
                     <div className="flex justify-between text-xs text-gray-600">
-                      <span>Tolerância do Fundo</span>
-                      <span>{tolerance}%</span>
+                      <span>Aproximar / Afastar</span>
+                      <span>{zoom}%</span>
                     </div>
                     <input
                       type="range"
-                      min="5"
-                      max="80"
-                      value={tolerance}
-                      onChange={handleToleranceChange}
+                      min="50"
+                      max="150"
+                      value={zoom}
+                      onChange={handleZoomChange}
                       className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                     />
-                    <span className="text-[10px] text-gray-400 block">Ajuste para remover bordas e sombras brancas do logo</span>
                   </div>
-                )}
+                </div>
               </div>
             )}
           </div>
@@ -195,20 +229,20 @@ export default function Configuracoes() {
               
               <div className="grid grid-cols-2 gap-4">
                 {/* Light background preview */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center min-h-[96px]">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center min-h-[120px] overflow-hidden">
                   <span className="text-[10px] text-gray-400 mb-2">Fundo Claro</span>
                   {logo ? (
-                    <img src={logo} alt="Logo Preview" className="max-h-12 w-auto max-w-full object-contain" />
+                    <img src={logo} alt="Logo Preview" className="max-h-16 w-auto max-w-full object-contain" style={{ transform: `scale(${zoom / 100})`, transition: 'transform 0.1s' }} />
                   ) : (
                     <span className="text-gray-400 italic text-[11px] text-center">Clean Tech Smart</span>
                   )}
                 </div>
 
                 {/* Dark background preview (matches sidebar contrast) */}
-                <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col items-center justify-center min-h-[96px]">
+                <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col items-center justify-center min-h-[120px] overflow-hidden">
                   <span className="text-[10px] text-slate-500 mb-2">Fundo Escuro (Menu)</span>
                   {logo ? (
-                    <img src={logo} alt="Logo Preview" className="max-h-12 w-auto max-w-full object-contain" />
+                    <img src={logo} alt="Logo Preview" className="max-h-16 w-auto max-w-full object-contain" style={{ transform: `scale(${zoom / 100})`, transition: 'transform 0.1s' }} />
                   ) : (
                     <span className="text-slate-400 font-bold text-xs tracking-tight text-center">Clean Tech <span className="text-slate-500">Smart</span></span>
                   )}
