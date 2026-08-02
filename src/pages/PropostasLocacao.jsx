@@ -400,27 +400,33 @@ body{padding-top:60px}
     </div>
   </div>
 
-  <div class="main-img-box">
-    <img src="${mainPhoto}" alt="${p.machine_name}" class="main-img" />
-  </div>
-
-  <h3 class="eq-title">${p.machine_name} <span>- Informações do equipamento</span></h3>
-  
-  <p class="description">
-    ${introText || 'Equipamento selecionado de alta qualidade para higienização e conservação de pisos comerciais ou industriais.'}
-  </p>
-
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; margin-top: 20px;">
-    <div>
-      <div style="font-size: 11px; font-weight: 700; color: ${primaryColor}; text-transform: uppercase; border-bottom: 2px solid ${primaryColor}; padding-bottom: 4px; margin-bottom: 10px;">Especificações Técnicas</div>
-      ${specsHTML || '<p style="color: #94a3b8; font-style: italic;">Consulte a ficha técnica anexa.</p>'}
+  <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px; margin-top: 20px; align-items: start;">
+    <!-- Coluna Esquerda: Imagem e Diferenciais -->
+    <div style="display: flex; flex-direction: column; gap: 15px;">
+      <div style="height: 220px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 10px;">
+        <img src="${mainPhoto}" alt="${p.machine_name}" style="max-height: 100%; max-width: 100%; object-fit: contain;" />
+      </div>
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 11px; color: #475569; line-height: 1.5;">
+        <h4 style="font-weight: 700; color: #0f172a; margin-bottom: 6px; text-transform: uppercase; font-size: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">Diferenciais</h4>
+        <p style="margin-bottom: 4px;">• Alta produtividade e eficiência em grandes áreas.</p>
+        <p style="margin-bottom: 4px;">• Facilidade de operação e controles simples.</p>
+        <p style="margin-bottom: 4px;">• Robustez construtiva Tennant reconhecida.</p>
+        <p>• Suporte técnico e peças originais Alfa Tennant.</p>
+      </div>
     </div>
-    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; font-size: 11px; color: #475569;">
-      <h4 style="font-weight: 700; color: #0f172a; margin-bottom: 8px; text-transform: uppercase;">Diferenciais de Limpeza</h4>
-      <p style="margin-bottom: 6px;">• Alta produtividade e eficiência em grandes áreas.</p>
-      <p style="margin-bottom: 6px;">• Facilidade extrema de operação e controles simples.</p>
-      <p style="margin-bottom: 6px;">• Robustez construtiva Tennant reconhecida mundialmente.</p>
-      <p>• Suporte técnico e peças originais Alfa Tennant.</p>
+
+    <!-- Coluna Direita: Nome e Ficha Técnica -->
+    <div>
+      <h3 style="font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 8px; border-bottom: 2px solid ${primaryColor}; padding-bottom: 6px; text-transform: uppercase;">
+        ${p.machine_name}
+      </h3>
+      <p style="font-size: 11px; color: #64748b; line-height: 1.4; margin-bottom: 12px; font-style: italic;">
+        ${introText || 'Equipamento selecionado de alta performance para conservação de pisos.'}
+      </p>
+      <div>
+        <div style="font-size: 10px; font-weight: 700; color: ${primaryColor}; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; letter-spacing: 0.5px;">Especificações Técnicas</div>
+        ${specsHTML || '<p style="color: #94a3b8; font-style: italic;">Consulte a ficha técnica anexa.</p>'}
+      </div>
     </div>
   </div>
 </div>
