@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Edit, Plus, Trash2, Printer, Ban, Package, Wrench, History, Loader2, Calendar } from 'lucide-react';
+import { ArrowLeft, Edit, Plus, Trash2, Printer, Ban, Package, Wrench, History, Loader2, Calendar, ChevronDown, FileText } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 export default function NovoContrato() {
@@ -590,32 +590,44 @@ export default function NovoContrato() {
       
       {/* SELECIONAR PROPOSTA PARA NOVO CONTRATO */}
       {!id && (
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-orange-950 mb-1">Criar Contrato a partir de Proposta Comercial</h2>
-          <p className="text-sm text-orange-800 mb-4">
-            Selecione uma proposta de locação aprovada para importar todos os dados do cliente, máquina, vigência e valores automaticamente.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-3 max-w-xl">
-            <select 
-              value={selectedProposalId}
-              onChange={e => setSelectedProposalId(e.target.value)}
-              className="flex-1 px-3 py-2 border border-orange-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-            >
-              <option value="">Selecione uma Proposta de Locação...</option>
-              {proposals.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.client_name} - {p.machine_name} (R$ {Number(p.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês)
-                </option>
-              ))}
-            </select>
-            <button 
-              onClick={() => handleImportFromProposal(selectedProposalId)}
-              disabled={!selectedProposalId}
-              className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg text-sm transition-colors shadow-sm disabled:opacity-50"
-            >
-              Importar e Gerar Contrato
-            </button>
+        <div className="bg-gradient-to-r from-orange-50 to-amber-50/40 border border-orange-100 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-orange-600 text-white rounded-xl shadow-md hidden sm:block">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-bold text-orange-950">Criar Contrato a partir de Proposta Comercial</h2>
+              <p className="text-sm text-orange-850 mt-1">
+                Selecione uma proposta de locação aprovada para importar todos os dados do cliente, máquina, vigência e valores automaticamente.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-stretch gap-4 max-w-2xl mt-4">
+                <div className="relative flex-1">
+                  <select 
+                    value={selectedProposalId}
+                    onChange={e => setSelectedProposalId(e.target.value)}
+                    className="w-full h-11 px-4 py-2 border border-orange-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all appearance-none pr-10 text-gray-700 font-semibold shadow-sm"
+                  >
+                    <option value="">Selecione uma Proposta de Locação...</option>
+                    {proposals.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.client_name} — {p.machine_name} (R$ {Number(p.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês)
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-orange-600">
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleImportFromProposal(selectedProposalId)}
+                  disabled={!selectedProposalId}
+                  className="h-11 px-6 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 duration-150"
+                >
+                  Importar e Gerar Contrato
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
