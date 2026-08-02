@@ -29,7 +29,11 @@ export default function PropostasLocacao() {
     freight_cost: '0.00',
     validity_days: '10 dias',
     notes: 'Contrato padrão de locação Alfa Tennant.',
-    seller_info: 'Cristiano Magalhães\nContato Comercial\ncristiano@cleantechpro.com.br'
+    seller_info: 'Cristiano Magalhães\nContato Comercial\ncristiano@cleantechpro.com.br',
+    insumos_percent: 20,
+    manutencao_percent: 20,
+    lucro_percent: 50,
+    tributos_percent: 8
   });
 
   useEffect(() => {
@@ -68,25 +72,40 @@ export default function PropostasLocacao() {
     }
   }
 
-  // Handle auto-pricing when pricing row or period changes
+  // Handle auto-pricing when pricing row, period, or markup settings change
   useEffect(() => {
     if (!formData.rental_price_id) return;
     const selectedPriceRow = rentalPrices.find(r => String(r.id) === String(formData.rental_price_id));
     if (!selectedPriceRow) return;
 
-    let value = '';
+    let baseCost = 0;
     const period = Number(formData.period_months);
-    if (period === 12) value = selectedPriceRow.price_12;
-    else if (period === 24) value = selectedPriceRow.price_24;
-    else if (period === 36) value = selectedPriceRow.price_36;
-    else if (period === 48) value = selectedPriceRow.price_48;
-    else if (period === 60) value = selectedPriceRow.price_60;
+    if (period === 12) baseCost = Number(selectedPriceRow.price_12 || 0);
+    else if (period === 24) baseCost = Number(selectedPriceRow.price_24 || 0);
+    else if (period === 36) baseCost = Number(selectedPriceRow.price_36 || 0);
+    else if (period === 48) baseCost = Number(selectedPriceRow.price_48 || 0);
+    else if (period === 60) baseCost = Number(selectedPriceRow.price_60 || 0);
+
+    const totalMarkup = Number(formData.insumos_percent || 0) +
+                        Number(formData.manutencao_percent || 0) +
+                        Number(formData.lucro_percent || 0) +
+                        Number(formData.tributos_percent || 0);
+
+    const finalValue = baseCost > 0 ? baseCost * (1 + totalMarkup / 100) : 0;
 
     setFormData(prev => ({
       ...prev,
-      monthly_value: value || ''
+      monthly_value: finalValue > 0 ? finalValue.toFixed(2) : ''
     }));
-  }, [formData.rental_price_id, formData.period_months, rentalPrices]);
+  }, [
+    formData.rental_price_id, 
+    formData.period_months, 
+    formData.insumos_percent, 
+    formData.manutencao_percent, 
+    formData.lucro_percent, 
+    formData.tributos_percent, 
+    rentalPrices
+  ]);
 
   const getMachineModelKeywords = (name) => {
     if (!name) return [];
@@ -155,7 +174,11 @@ export default function PropostasLocacao() {
       freight_cost: item.freight_cost || '0.00',
       validity_days: item.validity_days || '10 dias',
       notes: item.notes || '',
-      seller_info: item.seller_info || ''
+      seller_info: item.seller_info || '',
+      insumos_percent: item.insumos_percent !== undefined ? Number(item.insumos_percent) : 20,
+      manutencao_percent: item.manutencao_percent !== undefined ? Number(item.manutencao_percent) : 20,
+      lucro_percent: item.lucro_percent !== undefined ? Number(item.lucro_percent) : 50,
+      tributos_percent: item.tributos_percent !== undefined ? Number(item.tributos_percent) : 8
     });
     setIsModalOpen(true);
   };
@@ -175,7 +198,11 @@ export default function PropostasLocacao() {
       freight_cost: '0.00',
       validity_days: '10 dias',
       notes: 'Contrato padrão de locação Alfa Tennant.',
-      seller_info: localStorage.getItem('app_seller_info') || 'Cristiano Magalhães\nContato Comercial\ncristiano@cleantechpro.com.br'
+      seller_info: localStorage.getItem('app_seller_info') || 'Cristiano Magalhães\nContato Comercial\ncristiano@cleantechpro.com.br',
+      insumos_percent: Number(localStorage.getItem('rental_premise_insumos') || 20),
+      manutencao_percent: Number(localStorage.getItem('rental_premise_manutencao') || 20),
+      lucro_percent: Number(localStorage.getItem('rental_premise_lucro') || 50),
+      tributos_percent: Number(localStorage.getItem('rental_premise_tributos') || 8)
     });
     setIsModalOpen(true);
   };
@@ -752,6 +779,51 @@ body{padding-top:60px}
                     <option value={48}>48 Meses</option>
                     <option value={60}>60 Meses</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Premissas Customizadas */}
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
+                <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  Premissas de Markup Customizadas para esta Proposta
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Insumos (%)</label>
+                    <input 
+                      type="number" 
+                      value={formData.insumos_percent} 
+                      onChange={e => setFormData({...formData, insumos_percent: Number(e.target.value) || 0})}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Manutenção (%)</label>
+                    <input 
+                      type="number" 
+                      value={formData.manutencao_percent} 
+                      onChange={e => setFormData({...formData, manutencao_percent: Number(e.target.value) || 0})}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Lucro (%)</label>
+                    <input 
+                      type="number" 
+                      value={formData.lucro_percent} 
+                      onChange={e => setFormData({...formData, lucro_percent: Number(e.target.value) || 0})}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Tributos (%)</label>
+                    <input 
+                      type="number" 
+                      value={formData.tributos_percent} 
+                      onChange={e => setFormData({...formData, tributos_percent: Number(e.target.value) || 0})}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
                 </div>
               </div>
 

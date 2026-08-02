@@ -17,6 +17,23 @@ export default function TabelaLocacao() {
     price_12: '', price_24: '', price_36: '', price_48: '', price_60: ''
   });
 
+  // Premissas de Locação state
+  const [premises, setPremises] = useState({
+    insumos: Number(localStorage.getItem('rental_premise_insumos') || 20),
+    manutencao: Number(localStorage.getItem('rental_premise_manutencao') || 20),
+    lucro: Number(localStorage.getItem('rental_premise_lucro') || 50),
+    tributos: Number(localStorage.getItem('rental_premise_tributos') || 8)
+  });
+
+  const handlePremiseChange = (key, value) => {
+    const newVal = Math.max(0, Number(value) || 0);
+    const updated = { ...premises, [key]: newVal };
+    setPremises(updated);
+    localStorage.setItem(`rental_premise_${key}`, newVal);
+  };
+
+  const totalMarkup = premises.insumos + premises.manutencao + premises.lucro + premises.tributos;
+
   useEffect(() => {
     fetchItems();
   }, []);
@@ -298,6 +315,19 @@ export default function TabelaLocacao() {
     return Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
+  const renderCellWithMarkup = (val) => {
+    if (val === null || val === undefined || val === '') return '—';
+    const numVal = Number(val);
+    if (isNaN(numVal)) return val;
+    const finalVal = numVal * (1 + totalMarkup / 100);
+    return (
+      <div className="flex flex-col text-right">
+        <span className="text-[10px] text-gray-400 font-normal">Custo: R$ {formatBRL(numVal)}</span>
+        <span className="text-xs text-blue-700 font-bold mt-0.5">Real: R$ {formatBRL(finalVal)}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="font-sans text-gray-800 max-w-7xl mx-auto space-y-6">
       
@@ -338,6 +368,59 @@ export default function TabelaLocacao() {
           </button>
         </div>
       </header>
+
+      {/* Premissas de Locação Panel */}
+      <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center">
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-600 mr-2" />
+          Premissas de Locação (Formação de Preço Real)
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Insumos (%)</label>
+            <input 
+              type="number" 
+              value={premises.insumos} 
+              onChange={e => handlePremiseChange('insumos', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Manutenção (%)</label>
+            <input 
+              type="number" 
+              value={premises.manutencao} 
+              onChange={e => handlePremiseChange('manutencao', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Lucro (%)</label>
+            <input 
+              type="number" 
+              value={premises.lucro} 
+              onChange={e => handlePremiseChange('lucro', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Tributos (%)</label>
+            <input 
+              type="number" 
+              value={premises.tributos} 
+              onChange={e => handlePremiseChange('tributos', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
+            />
+          </div>
+          <div className="col-span-2 md:col-span-1 bg-gray-50 rounded-lg p-2.5 border border-gray-100 flex flex-col justify-center items-center">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Markup Total</span>
+            <span className="text-lg font-black text-blue-600 mt-0.5">+{totalMarkup}%</span>
+          </div>
+        </div>
+        <p className="text-[11px] text-gray-400 mt-3">
+          💡 Os percentuais de premissa acima são somados para formar o markup sobre o custo base da Tennant (Preço Real = Custo × (1 + Markup/100)).
+        </p>
+      </section>
 
       {/* Filter and Search Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -405,11 +488,11 @@ export default function TabelaLocacao() {
                     <td className="px-4 py-3 text-gray-700 font-medium whitespace-nowrap">{item.description}</td>
                     <td className="px-3 py-3 text-right text-gray-600 font-medium whitespace-nowrap">R$ {formatBRL(item.list_price)}</td>
                     <td className="px-3 py-3 text-right text-green-700 font-semibold whitespace-nowrap">R$ {formatBRL(item.distributor_price)}</td>
-                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10 whitespace-nowrap">R$ {formatBRL(item.price_12)}</td>
-                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10 whitespace-nowrap">R$ {formatBRL(item.price_24)}</td>
-                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10 whitespace-nowrap">R$ {formatBRL(item.price_36)}</td>
-                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10 whitespace-nowrap">R$ {formatBRL(item.price_48)}</td>
-                    <td className="px-3 py-3 text-right text-blue-900 font-semibold bg-blue-50/10 whitespace-nowrap">R$ {formatBRL(item.price_60)}</td>
+                    <td className="px-3 py-3 text-right bg-blue-50/10 whitespace-nowrap">{renderCellWithMarkup(item.price_12)}</td>
+                    <td className="px-3 py-3 text-right bg-blue-50/10 whitespace-nowrap">{renderCellWithMarkup(item.price_24)}</td>
+                    <td className="px-3 py-3 text-right bg-blue-50/10 whitespace-nowrap">{renderCellWithMarkup(item.price_36)}</td>
+                    <td className="px-3 py-3 text-right bg-blue-50/10 whitespace-nowrap">{renderCellWithMarkup(item.price_48)}</td>
+                    <td className="px-3 py-3 text-right bg-blue-50/10 whitespace-nowrap">{renderCellWithMarkup(item.price_60)}</td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <div className="flex justify-end space-x-1">
                         <button onClick={() => handleEdit(item)} className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Editar">
