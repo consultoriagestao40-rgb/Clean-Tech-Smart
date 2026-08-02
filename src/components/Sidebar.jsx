@@ -82,11 +82,11 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0 overflow-y-auto custom-scrollbar">
       {/* Logo Area */}
-      <div className="p-6 h-20 flex items-center">
+      <div className="px-4 py-4 min-h-[96px] flex items-center justify-center border-b border-gray-100 mb-4">
         {logo ? (
-          <img src={logo} alt="Logo" className="max-h-12 max-w-full object-contain" />
+          <img src={logo} alt="Logo" className="max-h-16 w-auto max-w-full object-contain" />
         ) : (
-          <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
+          <h2 className="text-2xl font-bold text-gray-800 tracking-tight text-center w-full">
             <span className="text-blue-600">Clean Tech</span> Smart
           </h2>
         )}
