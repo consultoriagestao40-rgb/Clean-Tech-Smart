@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Loader2, Edit, X, Trash2, Image, FileText, Layout, Info } from 'lucide-react';
+import { Plus, Search, Loader2, Edit, X, Trash2, Image, FileText, Layout, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function ModelosMaquinas() {
   const [models, setModels] = useState([]);
@@ -9,6 +9,10 @@ export default function ModelosMaquinas() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Viewing details state
+  const [viewingModel, setViewingModel] = useState(null);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [formData, setFormData] = useState({
     id: null,
     name: '',
@@ -110,6 +114,46 @@ export default function ModelosMaquinas() {
     return urls.length > 0 ? urls[0] : null;
   };
 
+  const handleViewModel = (item) => {
+    setViewingModel(item);
+    setActivePhotoIndex(0);
+  };
+
+  const renderSpecs = (text) => {
+    if (!text) return null;
+    return text.split('\n').map((line, idx) => {
+      const trimmed = line.trim();
+      if (!trimmed) return <div key={idx} className="h-2" />;
+      if (trimmed.includes(':')) {
+        const [key, ...valParts] = trimmed.split(':');
+        const val = valParts.join(':').trim();
+        const cleanKey = key.replace(/^[-\s*]+/, '').trim();
+        return (
+          <div key={idx} className="flex border-b border-gray-100 py-2 text-sm hover:bg-gray-50/50">
+            <span className="font-semibold text-gray-500 w-1/2">{cleanKey}</span>
+            <span className="text-gray-900 w-1/2 font-medium">{val}</span>
+          </div>
+        );
+      }
+      if (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) {
+        return (
+          <div key={idx} className="flex items-start py-1.5 text-sm text-gray-700">
+            <span className="text-blue-500 mr-2 font-bold">•</span>
+            <span>{trimmed.replace(/^[-\s*•]+/, '')}</span>
+          </div>
+        );
+      }
+      if (trimmed === trimmed.toUpperCase() && trimmed.length > 3) {
+        return (
+          <h4 key={idx} className="font-bold text-blue-900 text-sm mt-5 mb-2.5 uppercase tracking-wide border-b border-blue-100 pb-1.5">
+            {trimmed}
+          </h4>
+        );
+      }
+      return <p key={idx} className="text-sm text-gray-600 py-1">{trimmed}</p>;
+    });
+  };
+
   // Pre-fill model A260 Tennant for template convenience
   const fillA260Template = () => {
     setFormData({
@@ -187,30 +231,38 @@ CARACTERÍSTICAS & BENEFÍCIOS:
           {filtered.map((item) => {
             const firstPhoto = getFirstPhoto(item.photo_urls);
             return (
-              <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
-                <div>
+              <div 
+                key={item.id} 
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-blue-200 transition-all group"
+              >
+                <div onClick={() => handleViewModel(item)} className="cursor-pointer flex-1 flex flex-col">
                   {/* Photo area */}
                   <div className="h-48 bg-gray-100 border-b border-gray-100 flex items-center justify-center relative overflow-hidden">
                     {firstPhoto ? (
-                      <img src={firstPhoto} alt={item.name} className="w-full h-full object-contain p-2" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                      <img src={firstPhoto} alt={item.name} className="w-full h-full object-contain p-2 group-hover:scale-[1.03] transition-transform duration-300" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
                     ) : null}
                     <div className={`absolute inset-0 flex-col items-center justify-center text-gray-400 bg-gray-50 ${firstPhoto ? 'hidden' : 'flex'}`}>
                       <Image className="w-10 h-10 mb-1" />
                       <span className="text-xs">Sem foto cadastrada</span>
                     </div>
+                    {/* Visual Hover Badge */}
+                    <div className="absolute top-3 right-3 bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      Visualizar Ficha
+                    </div>
                   </div>
 
                   {/* Body Info */}
-                  <div className="p-5 space-y-3">
-                    <h3 className="font-bold text-gray-900 text-lg leading-tight">{item.name}</h3>
-                    
-                    {item.technical_description ? (
-                      <p className="text-xs text-gray-500 line-clamp-4 bg-gray-50 p-2.5 rounded border border-gray-100 font-mono whitespace-pre-line">
-                        {item.technical_description}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-gray-400 italic">Sem descrição técnica cadastrada.</p>
-                    )}
+                  <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-base leading-tight group-hover:text-blue-600 transition-colors mb-2">{item.name}</h3>
+                      {item.technical_description ? (
+                        <p className="text-xs text-gray-500 line-clamp-4 bg-gray-50 p-2.5 rounded border border-gray-100 font-mono whitespace-pre-line">
+                          {item.technical_description}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400 italic">Sem descrição técnica cadastrada.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -330,6 +382,133 @@ CARACTERÍSTICAS & BENEFÍCIOS:
           </div>
         </div>
       )}
+
+      {/* Viewing Details Modal */}
+      {viewingModel && (() => {
+        const photos = (viewingModel.photo_urls || '').split('\n').map(u => u.trim()).filter(Boolean);
+        const activePhoto = photos.length > 0 ? photos[activePhotoIndex] : null;
+
+        const nextPhoto = () => {
+          setActivePhotoIndex((prev) => (prev + 1) % photos.length);
+        };
+
+        const prevPhoto = () => {
+          setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
+        };
+
+        return (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto flex flex-col md:flex-row min-h-[550px] max-h-[85vh]">
+              
+              {/* Left Column: Photo gallery */}
+              <div className="w-full md:w-1/2 bg-gray-50 border-r border-gray-100 flex flex-col justify-between p-6 relative min-h-[350px] md:min-h-0">
+                <button 
+                  onClick={() => setViewingModel(null)}
+                  className="md:hidden absolute top-4 right-4 bg-white/80 backdrop-blur-xs text-gray-500 hover:text-gray-700 p-2 rounded-full shadow-xs border border-gray-200 z-10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {/* Main Active Photo */}
+                <div className="flex-1 flex items-center justify-center relative group/gallery min-h-[220px]">
+                  {activePhoto ? (
+                    <img 
+                      src={activePhoto} 
+                      alt={viewingModel.name} 
+                      className="max-w-full max-h-[320px] object-contain p-2 rounded-lg"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center text-gray-400">
+                      <Image className="w-16 h-16 mb-2 text-gray-300" />
+                      <span className="text-sm">Nenhuma foto cadastrada</span>
+                    </div>
+                  )}
+
+                  {/* Arrow controls if more than 1 photo */}
+                  {photos.length > 1 && (
+                    <>
+                      <button 
+                        onClick={prevPhoto}
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 p-1.5 rounded-full border border-gray-200 shadow-sm transition-all hover:scale-105"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={nextPhoto}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 p-1.5 rounded-full border border-gray-200 shadow-sm transition-all hover:scale-105"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Thumbnails list */}
+                {photos.length > 1 && (
+                  <div className="flex space-x-2 mt-4 overflow-x-auto py-1 justify-center max-w-full">
+                    {photos.map((photo, idx) => (
+                      <button 
+                        key={idx}
+                        onClick={() => setActivePhotoIndex(idx)}
+                        className={`w-14 h-14 bg-white rounded-lg border-2 overflow-hidden flex-shrink-0 transition-all p-0.5 ${idx === activePhotoIndex ? 'border-blue-500 scale-105 shadow-xs' : 'border-gray-200 hover:border-gray-300'}`}
+                      >
+                        <img src={photo} alt="" className="w-full h-full object-contain" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Spec sheet / details */}
+              <div className="w-full md:w-1/2 flex flex-col justify-between p-8">
+                {/* Title */}
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md uppercase tracking-wider mb-2 inline-block">Catálogo Comercial</span>
+                    <h2 className="text-xl font-extrabold text-gray-900 leading-tight">{viewingModel.name}</h2>
+                  </div>
+                  <button 
+                    onClick={() => setViewingModel(null)} 
+                    className="hidden md:flex text-gray-400 hover:text-gray-600 transition-colors p-1.5 hover:bg-gray-100 rounded-full"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Technical Specifications Container */}
+                <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar space-y-4 max-h-[350px] md:max-h-[380px]">
+                  {viewingModel.technical_description ? (
+                    <div className="border border-gray-100 rounded-xl p-4 bg-gray-50/50">
+                      {renderSpecs(viewingModel.technical_description)}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-gray-400 italic text-sm">
+                      <Info className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      Nenhuma especificação ou descrição técnica cadastrada.
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Footer */}
+                <div className="pt-6 border-t border-gray-100 flex justify-end mt-4">
+                  <button 
+                    onClick={() => {
+                      setViewingModel(null);
+                      handleEdit(viewingModel);
+                    }}
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition-colors shadow-sm flex items-center"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar Ficha Técnica
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );
