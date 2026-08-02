@@ -315,7 +315,7 @@ export default function PropostasLocacao() {
         clientIe: 'Isento',
         clientAddress: p.client_address || '',
         clientPhone: p.client_phone || '',
-        clientContact: '',
+        clientContact: p.client_contact || '',
         clientEmail: p.client_email || '',
         machineName: p.machine_name || '',
         localUtilizacao: p.client_address || '',
