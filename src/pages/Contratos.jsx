@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Loader2, ArrowLeft, Edit, ChevronDown, ChevronRight, Package, Printer, Play, Square, CheckCircle, Ban, Trash2 } from 'lucide-react';
+import { Plus, Loader2, ArrowLeft, Edit, ChevronDown, ChevronRight, Package, Printer, Play, Square, CheckCircle, Ban, Trash2, DollarSign, TrendingUp, TrendingDown, Percent } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function Contratos() {
@@ -300,6 +300,12 @@ export default function Contratos() {
     return true;
   });
 
+  const totalRevenue = filteredContracts.reduce((acc, c) => acc + parseFloat(c.total_rental_value || 0), 0);
+  const totalCost = filteredContracts.reduce((acc, c) => acc + parseFloat(c.cost_value || 0), 0);
+  const totalTax = filteredContracts.reduce((acc, c) => acc + (parseFloat(c.total_rental_value || 0) * (parseFloat(c.tax_cost_percent || 0) / 100)), 0);
+  const totalMarginVal = totalRevenue - totalCost - totalTax;
+  const totalMarginPct = totalRevenue > 0 ? (totalMarginVal / totalRevenue) * 100 : 0;
+
   return (
     <div className="font-sans text-gray-800 max-w-7xl mx-auto space-y-6">
       
@@ -316,6 +322,55 @@ export default function Contratos() {
           <Plus className="w-4 h-4 mr-2" />
           Novo Contrato
         </button>
+      </div>
+
+      {/* Cards de Métricas Consolidadas */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Receita */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Receita Mensal Total</p>
+            <h3 className="text-xl font-black text-blue-600 mt-1">{formatCurrency(totalRevenue)}</h3>
+          </div>
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl shadow-sm">
+            <DollarSign className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Card 2: Custos */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Custo de Operação</p>
+            <h3 className="text-xl font-black text-red-500 mt-1">{formatCurrency(totalCost)}</h3>
+          </div>
+          <div className="p-3 bg-red-50 text-red-500 rounded-xl shadow-sm">
+            <TrendingDown className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Card 3: Impostos */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Imposto Estimado</p>
+            <h3 className="text-xl font-black text-amber-500 mt-1">{formatCurrency(totalTax)}</h3>
+          </div>
+          <div className="p-3 bg-amber-50 text-amber-500 rounded-xl shadow-sm">
+            <Percent className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Card 4: Margem Bruta */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Margem Bruta Acumulada</p>
+            <h3 className={`text-xl font-black mt-1 ${totalMarginVal >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+              {formatCurrency(totalMarginVal)} <span className="text-xs font-semibold">({totalMarginPct.toFixed(1)}%)</span>
+            </h3>
+          </div>
+          <div className={`p-3 rounded-xl shadow-sm ${totalMarginVal >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+            <TrendingUp className="w-5 h-5" />
+          </div>
+        </div>
       </div>
 
       {/* Main Card */}
