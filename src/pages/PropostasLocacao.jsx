@@ -293,19 +293,37 @@ export default function PropostasLocacao() {
           if (trimmed.includes(':')) {
             const [key, ...valParts] = trimmed.split(':');
             const val = valParts.join(':').trim();
-            const cleanKey = key.replace(/^[-\s*]+/, '').trim();
+            const cleanKey = key.replace(/^[-\s*•]+/, '').trim();
             htmlContent += `
-              <tr style="border-bottom: 1px solid #e2e8f0;">
-                <td style="padding: 6px 12px; font-weight: 600; color: #475569; width: 50%; font-size: 11px;">${cleanKey}</td>
-                <td style="padding: 6px 12px; color: #0f172a; width: 50%; font-size: 11px;">${val}</td>
-              </tr>
+              <div style="display: flex; border-bottom: 1px solid #f1f5f9; padding: 5px 0; font-size: 11px;">
+                <span style="font-weight: 600; color: #475569; width: 50%;">${cleanKey}</span>
+                <span style="color: #0f172a; width: 50%; font-weight: 500;">${val}</span>
+              </div>
+            `;
+          } else if (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) {
+            const cleanLine = trimmed.replace(/^[-\s*•]+/, '').trim();
+            htmlContent += `
+              <div style="display: flex; align-items: start; padding: 4px 0; font-size: 11px; color: #334155;">
+                <span style="color: ${primaryColor}; margin-right: 6px; font-weight: bold;">•</span>
+                <span>${cleanLine}</span>
+              </div>
+            `;
+          } else if (trimmed === trimmed.toUpperCase() && trimmed.length > 3) {
+            htmlContent += `
+              <div style="font-weight: 700; color: ${primaryColor}; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid ${primaryColor}; padding-bottom: 4px; margin-top: 15px; margin-bottom: 8px;">
+                ${trimmed}
+              </div>
+            `;
+          } else {
+            htmlContent += `
+              <p style="font-size: 11px; color: #475569; padding: 3px 0; line-height: 1.4;">${trimmed}</p>
             `;
           }
         }
-        return htmlContent ? `<table style="width: 100%; border-collapse: collapse;">${htmlContent}</table>` : '';
+        return htmlContent;
       };
 
-      const introText = p.machine_specs ? p.machine_specs.split('\n')[2] || 'Equipamento de limpeza de alta performance.' : '';
+      const introText = 'Equipamento de alta qualidade e rendimento, ideal para processos contínuos de higienização de pisos.';
       const specsHTML = parseSpecsToHTML(p.machine_specs);
 
       const html = `<!DOCTYPE html>
