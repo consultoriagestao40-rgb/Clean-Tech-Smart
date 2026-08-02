@@ -201,8 +201,8 @@ export default function VisualizarPropostaPublica() {
           </h4>
         );
       }
-      return <p key={idx} className="text-xs text-gray-600 py-1 font-semibold">{trimmed}</p>;
     });
+  };
   const getGeneralDescription = (text) => {
     if (!text) return '';
     const lines = text.split('\n');
