@@ -88,6 +88,58 @@ export default function PropostasLocacao() {
     }));
   }, [formData.rental_price_id, formData.period_months, rentalPrices]);
 
+  const getMachineModelKeywords = (name) => {
+    if (!name) return [];
+    return name
+      .split(/\s+/)
+      .map(w => w.replace(/[(),]/g, '').trim().toLowerCase())
+      .filter(w => w.length >= 3 && w !== 'tennant' && w !== 'lavadora' && w !== 'varredeira' && w !== 'piso' && w !== 'operação' && w !== 'opera');
+  };
+
+  const getFilteredPrices = () => {
+    if (!formData.machine_model_id) return rentalPrices;
+    
+    const selectedMachine = machineModels.find(m => String(m.id) === String(formData.machine_model_id));
+    if (!selectedMachine) return rentalPrices;
+
+    const keywords = getMachineModelKeywords(selectedMachine.name);
+    if (keywords.length === 0) return rentalPrices;
+
+    return rentalPrices.filter(r => {
+      const rCode = String(r.code || '').toLowerCase();
+      const rDesc = String(r.description || '').toLowerCase();
+      return keywords.some(kw => rCode.includes(kw) || rDesc.includes(kw));
+    });
+  };
+
+  // Auto-select first matching rental price when machine model changes
+  useEffect(() => {
+    if (!formData.machine_model_id || rentalPrices.length === 0 || machineModels.length === 0) return;
+    
+    const selectedMachine = machineModels.find(m => String(m.id) === String(formData.machine_model_id));
+    if (!selectedMachine) return;
+
+    const keywords = getMachineModelKeywords(selectedMachine.name);
+    if (keywords.length === 0) return;
+
+    const matchingPrices = rentalPrices.filter(r => {
+      const rCode = String(r.code || '').toLowerCase();
+      const rDesc = String(r.description || '').toLowerCase();
+      return keywords.some(kw => rCode.includes(kw) || rDesc.includes(kw));
+    });
+
+    if (matchingPrices.length > 0) {
+      // Check if current rental_price_id is already valid
+      const isValid = matchingPrices.some(r => String(r.id) === String(formData.rental_price_id));
+      if (!isValid) {
+        setFormData(prev => ({
+          ...prev,
+          rental_price_id: String(matchingPrices[0].id)
+        }));
+      }
+    }
+  }, [formData.machine_model_id, rentalPrices, machineModels]);
+
   const handleEdit = async (item) => {
     setFormData({
       id: item.id,
@@ -183,6 +235,15 @@ export default function PropostasLocacao() {
       }
       
       const p = data.proposal;
+      
+      // Load Clean Tech details
+      const companyLogo = localStorage.getItem('app_company_logo') || '';
+      const companyName = localStorage.getItem('app_company_name') || 'Clean Tech Smart';
+      const companySub = localStorage.getItem('app_company_subtitle') || 'Soluções Inteligentes em Higiene e Limpeza';
+      const companyCnpj = localStorage.getItem('app_company_cnpj') || '00.000.000/0001-00';
+      const companyAddress = localStorage.getItem('app_company_address') || 'Curitiba - PR';
+      const companyPhone = localStorage.getItem('app_company_phone') || '41984042835';
+      const companyEmail = localStorage.getItem('app_company_email') || 'financeiro@grupojvsserv.com.br';
       
       // Load colors from localstorage or use Alfa Tennant green
       const primaryColor = '#739600'; // Alfa Green
@@ -321,6 +382,28 @@ body{padding-top:60px}
     <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" class="logo-img" />
   </div>
 
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+    <!-- Emitente (Clean Tech) -->
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; font-size: 11px; line-height: 1.6;">
+      <div style="font-weight: 700; color: ${primaryColor}; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; font-size: 10px; letter-spacing: 0.5px;">Emitente (Locador)</div>
+      <div><b>Empresa:</b> ${companyName}</div>
+      <div><b>CNPJ:</b> ${companyCnpj}</div>
+      <div><b>Telefone:</b> ${companyPhone}</div>
+      <div><b>E-mail:</b> ${companyEmail}</div>
+      <div><b>Endereço:</b> ${companyAddress}</div>
+    </div>
+
+    <!-- Cliente (Locatário) -->
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; font-size: 11px; line-height: 1.6;">
+      <div style="font-weight: 700; color: ${primaryColor}; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; font-size: 10px; letter-spacing: 0.5px;">Cliente Proponente (Locatário)</div>
+      <div><b>Razão Social:</b> ${p.client_name}</div>
+      <div><b>CNPJ/CPF:</b> ${p.client_document || '&mdash;'}</div>
+      <div><b>Telefone:</b> ${p.client_phone || '&mdash;'}</div>
+      <div><b>E-mail:</b> ${p.client_email || '&mdash;'}</div>
+      <div><b>Endereço:</b> ${p.client_address || '&mdash;'}</div>
+    </div>
+  </div>
+
   <h3 class="box-title">Valores e Condições de Locação</h3>
 
   <table class="table-rental">
@@ -406,11 +489,13 @@ body{padding-top:60px}
     </div>
     
     <div class="brand-footer">
-      <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" />
+      <div style="font-weight: 700; color: ${primaryColor}; font-size: 10px; margin-bottom: 4px; text-transform: uppercase;">Parceiro Autorizado:</div>
+      <div style="font-weight: 800; color: #0f172a; font-size: 11px; margin-bottom: 2px;">${companyName}</div>
       <div class="brand-footer-text">
-        Rua Barão de Campinas, 715<br>
-        São Paulo, SP - 01201-902<br>
-        Vendas: (11) 3320-8550
+        CNPJ: ${companyCnpj}<br>
+        Telefone: ${companyPhone}<br>
+        E-mail: ${companyEmail}<br>
+        Endereço: ${companyAddress}
       </div>
     </div>
   </div>
@@ -594,7 +679,7 @@ body{padding-top:60px}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white"
                   >
                     <option value="">Selecione o Código da Tabela</option>
-                    {rentalPrices.map(r => (
+                    {getFilteredPrices().map(r => (
                       <option key={r.id} value={r.id}>
                         {r.code} - {r.description} (12M: R${r.price_12 || '—'} / 36M: R${r.price_36 || '—'})
                       </option>
