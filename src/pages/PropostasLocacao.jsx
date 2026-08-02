@@ -1184,55 +1184,58 @@ body{padding-top:60px}
                           key={p.id}
                           draggable
                           onDragStart={(e) => handleDragStart(e, p.id)}
-                          className={`bg-white border border-gray-150 ${stripeColor} border-l-4 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-grab active:cursor-grabbing select-none`}
+                          className={`bg-white border border-gray-150 ${stripeColor} border-l-4 rounded-xl p-3.5 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-grab active:cursor-grabbing select-none flex flex-col justify-between h-[155px]`}
                         >
-                          <div className="flex justify-between items-start gap-2 mb-2">
-                            <h4 className="font-extrabold text-gray-900 text-xs tracking-wide uppercase line-clamp-2" title={p.client_name}>
+                          <div>
+                            <h4 className="font-extrabold text-gray-900 text-xs truncate uppercase" title={p.client_name}>
                               {p.client_name}
                             </h4>
+                            <p className="text-xxs text-gray-400 mt-1 truncate" title={p.machine_name}>
+                              ⚙️ {p.machine_name || 'Equipamento não especificado'}
+                            </p>
                           </div>
-                          
-                          <p className="text-xxs text-gray-500 line-clamp-1 mb-3" title={p.machine_name}>
-                            ⚙️ {p.machine_name || 'Máquina não especificada'}
-                          </p>
-                          
-                          <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100/70 flex items-center justify-between gap-2 mb-4">
-                            <span className="text-xxs font-bold text-gray-500 uppercase tracking-wider">{formatPeriod(p.period_months)}</span>
-                            <span className="text-xs font-black text-blue-600 bg-blue-50/50 px-2 py-0.5 rounded-md border border-blue-100/50">
+
+                          {/* Horizontal row for basic info at the same height */}
+                          <div className="flex justify-between items-center my-2 text-xxs font-bold bg-gray-50/50 p-2 rounded-lg border border-gray-100/70">
+                            <span className="text-gray-500 uppercase">{formatPeriod(p.period_months)}</span>
+                            <span className="text-blue-600 font-extrabold">
                               R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </span>
                           </div>
                           
-                          <div className="flex justify-between items-center gap-2 pt-2.5 border-t border-gray-100">
-                            {/* Actions Group */}
+                          <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                             <div className="flex items-center gap-1.5 w-full justify-between">
                               <div className="flex items-center gap-1">
                                 <button 
+                                  type="button"
                                   onClick={() => handleCopyPublicLink(p.id)}
-                                  className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
+                                  className="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-md transition-colors"
                                   title="Copiar Link Público"
                                 >
                                   <Link2 className="w-3.5 h-3.5" />
                                 </button>
                                 <button 
+                                  type="button"
                                   onClick={() => handleGeneratePDF(p.id)}
-                                  className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                                  title="Gerar PDF de Proposta"
+                                  className="p-1.5 bg-blue-50 text-blue-650 hover:bg-blue-100 rounded-md transition-colors"
+                                  title="Gerar PDF"
                                 >
                                   <Printer className="w-3.5 h-3.5" />
                                 </button>
                                 <button 
+                                  type="button"
                                   onClick={() => handleEdit(p)}
-                                  className="p-2 bg-gray-50 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
-                                  title="Editar Proposta"
+                                  className="p-1.5 bg-gray-50 text-gray-600 hover:bg-gray-150 rounded-md transition-colors"
+                                  title="Editar"
                                 >
                                   <Edit className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                               <button 
+                                type="button"
                                 onClick={() => handleDelete(p.id)}
-                                className="p-2 bg-red-50 text-red-650 hover:bg-red-100 rounded-lg transition-colors"
-                                title="Excluir Proposta"
+                                className="p-1.5 bg-red-50 text-red-650 hover:bg-red-100 rounded-md transition-colors"
+                                title="Excluir"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
