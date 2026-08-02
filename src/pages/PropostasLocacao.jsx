@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, ShieldAlert, Check } from 'lucide-react';
+import { Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, ShieldAlert, Check, Link2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function PropostasLocacao() {
@@ -318,6 +318,12 @@ export default function PropostasLocacao() {
       console.error('Erro ao atualizar status:', error);
       fetchProposals();
     }
+  };
+
+  const handleCopyPublicLink = (proposalId) => {
+    const url = `${window.location.origin}/visualizar-proposta/${proposalId}`;
+    navigator.clipboard.writeText(url);
+    alert('Link público da proposta copiado para a área de transferência!');
   };
 
   const formatPeriod = (months) => {
@@ -1202,6 +1208,13 @@ body{padding-top:60px}
                             <div className="flex items-center gap-1.5 w-full justify-between">
                               <div className="flex items-center gap-1">
                                 <button 
+                                  onClick={() => handleCopyPublicLink(p.id)}
+                                  className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
+                                  title="Copiar Link Público"
+                                >
+                                  <Link2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button 
                                   onClick={() => handleGeneratePDF(p.id)}
                                   className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                                   title="Gerar PDF de Proposta"
@@ -1258,6 +1271,13 @@ body{padding-top:60px}
                     <td className="px-6 py-4 text-gray-500 text-xs">{p.contract_type}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end space-x-2">
+                        <button 
+                          onClick={() => handleCopyPublicLink(p.id)}
+                          className="flex items-center px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors"
+                        >
+                          <Link2 className="w-3.5 h-3.5 mr-1" />
+                          Copiar Link
+                        </button>
                         <button 
                           onClick={() => handleGeneratePDF(p.id)}
                           className="flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-colors"
