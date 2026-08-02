@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -16,11 +17,21 @@ import {
   User,
   Boxes,
   ClipboardList,
-  Kanban
+  Kanban,
+  Settings
 } from 'lucide-react';
 
 export default function Sidebar() {
   const location = useLocation();
+  const [logo, setLogo] = useState(localStorage.getItem('app_company_logo') || '');
+
+  useEffect(() => {
+    const handleLogoChange = () => {
+      setLogo(localStorage.getItem('app_company_logo') || '');
+    };
+    window.addEventListener('logoChanged', handleLogoChange);
+    return () => window.removeEventListener('logoChanged', handleLogoChange);
+  }, []);
 
   const menuPrincipal = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
@@ -41,6 +52,7 @@ export default function Sidebar() {
   ];
 
   const administracao = [
+    { name: 'Configurações', path: '/configuracoes', icon: <Settings size={20} /> },
     { name: 'Gerenciar Usuários', path: '/usuarios', icon: <UserCog size={20} /> },
   ];
 
@@ -70,10 +82,14 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col fixed left-0 top-0 overflow-y-auto custom-scrollbar">
       {/* Logo Area */}
-      <div className="p-6">
-        <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
-          <span className="text-blue-600">Clean Tech</span> Smart
-        </h2>
+      <div className="p-6 h-20 flex items-center">
+        {logo ? (
+          <img src={logo} alt="Logo" className="max-h-12 max-w-full object-contain" />
+        ) : (
+          <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
+            <span className="text-blue-600">Clean Tech</span> Smart
+          </h2>
+        )}
       </div>
 
       {/* Menu Principal */}
