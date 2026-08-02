@@ -162,10 +162,10 @@ export default function TabelaLocacao() {
             const row = rows[i];
             if (!row || !Array.isArray(row)) continue;
 
-            const possibleHeaders = row.map(h => String(h || '').trim().toLowerCase());
+            const possibleHeaders = Array.from(row).map(h => String(h || '').trim().toLowerCase());
             
             const findInRow = (possibleNames) => {
-              return possibleHeaders.findIndex(h => possibleNames.some(p => h.includes(p)));
+              return possibleHeaders.findIndex(h => h && possibleNames.some(p => h.includes(p)));
             };
 
             const tempCode = findInRow(['code', 'cód', 'cod']);
@@ -207,12 +207,14 @@ export default function TabelaLocacao() {
             const row = rows[i];
             if (!row || row.length === 0) continue;
 
-            const code = String(row[codeIdx] || '').trim();
+            // Handle potential sparse row arrays in body too
+            const denseRow = Array.from(row);
+            const code = String(denseRow[codeIdx] || '').trim();
             // Skip header value row if it repeats
             if (!code || code.toLowerCase() === 'code' || code.toLowerCase() === 'cód' || code.toLowerCase() === 'código') continue;
 
-            const type = String(row[typeIdx] || '').trim();
-            const description = String(row[descIdx] || '').trim();
+            const type = String(denseRow[typeIdx] || '').trim();
+            const description = String(denseRow[descIdx] || '').trim();
 
             const parseNum = (val) => {
               if (val === undefined || val === null || val === '') return null;
@@ -222,13 +224,13 @@ export default function TabelaLocacao() {
               return isNaN(num) ? null : num;
             };
 
-            const list_price = parseNum(row[listIdx]);
-            const distributor_price = parseNum(row[distIdx]);
-            const price_12 = parseNum(row[p12Idx]);
-            const price_24 = parseNum(row[p24Idx]);
-            const price_36 = parseNum(row[p36Idx]);
-            const price_48 = parseNum(row[p48Idx]);
-            const price_60 = parseNum(row[p60Idx]);
+            const list_price = parseNum(denseRow[listIdx]);
+            const distributor_price = parseNum(denseRow[distIdx]);
+            const price_12 = parseNum(denseRow[p12Idx]);
+            const price_24 = parseNum(denseRow[p24Idx]);
+            const price_36 = parseNum(denseRow[p36Idx]);
+            const price_48 = parseNum(denseRow[p48Idx]);
+            const price_60 = parseNum(denseRow[p60Idx]);
 
             itemsToSave.push({
               code, type, description, list_price, distributor_price,
