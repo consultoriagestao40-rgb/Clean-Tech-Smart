@@ -286,20 +286,22 @@ export default function VisualizarPropostaPublica() {
     <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-gray-800">
       
       {/* SIDEBAR NAVIGATION (equal to smartbid) */}
-      <aside className="w-full md:w-80 bg-blue-900 text-white flex flex-col justify-between shrink-0 p-5 md:min-h-screen border-r border-blue-950/40">
-        <div>
+      {/* SIDEBAR NAVIGATION (equal to smartbid) */}
+      <aside className="w-full md:w-80 bg-blue-900 text-white flex flex-col justify-between shrink-0 p-5 h-auto md:h-screen md:sticky md:top-0 border-r border-blue-950/40">
+        <div className="flex-1 flex flex-col min-h-0">
           {/* Brand Header */}
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800/60">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-sm shadow-md">
-              CT
-            </div>
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800/60 shrink-0">
+            <svg className="w-8 h-8 shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M30 15 L65 50 L50 65 L15 30 Z" fill="#009AC7" />
+              <path d="M50 35 L85 70 L70 85 L35 50 Z" fill="#00c0f0" opacity="0.95" />
+            </svg>
             <div>
-              <h2 className="font-extrabold text-sm tracking-wide text-white uppercase">Clean Tech Smart</h2>
-              <span className="text-slate-500 text-xxs font-bold uppercase tracking-wider block">Orçamento & Contrato</span>
+              <h2 className="font-extrabold text-sm tracking-wide text-white uppercase leading-tight">Clean Tech Pro</h2>
+              <span className="text-blue-300 text-[9px] font-bold uppercase tracking-wider block">Orçamento & Contrato</span>
             </div>
           </div>
 
-          <div className="mb-6">
+          <div className="mb-6 shrink-0">
             <span className="text-xxs font-black text-blue-400 bg-blue-950/70 border border-blue-900/50 px-2 py-0.5 rounded uppercase tracking-wider block w-max">
               Proposta nº #{String(p.id).padStart(4, '0')}
             </span>
@@ -308,8 +310,8 @@ export default function VisualizarPropostaPublica() {
             </h3>
           </div>
 
-          {/* Sidebar Menu Tabs */}
-          <nav className="space-y-1.5">
+          {/* Sidebar Menu Tabs with internal scrolling if needed */}
+          <nav className="space-y-1.5 overflow-y-auto flex-1 pr-1 scrollbar-thin">
             <button 
               onClick={() => setActiveTab('presentation')}
               className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'presentation' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
@@ -356,8 +358,8 @@ export default function VisualizarPropostaPublica() {
           </nav>
         </div>
 
-        {/* Sidebar Decision/Status Footer */}
-        <div className="mt-8 pt-5 border-t border-slate-800/80">
+        {/* Sidebar Decision/Status Footer - fixed at the bottom */}
+        <div className="mt-6 pt-4 border-t border-slate-800/80 shrink-0 bg-blue-900 w-full">
           {isApproved ? (
             <div className="bg-emerald-950/40 border border-emerald-900/60 p-4 rounded-2xl text-center">
               <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 animate-bounce" />
@@ -547,12 +549,17 @@ export default function VisualizarPropostaPublica() {
                     <span className="text-xxs text-gray-400 block font-medium">Avenida Maringá, 1273 – Emiliano Perneta Pinhais/PR</span>
                   </div>
                   
-                  <div className="w-36 flex justify-end">
-                    <img 
-                      src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" 
-                      alt="Alfa Tennant Logo" 
-                      className="max-h-12 object-contain"
-                    />
+                  <div className="flex justify-end shrink-0">
+                    <div className="flex items-center gap-2.5">
+                      <svg className="w-10 h-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M30 15 L65 50 L50 65 L15 30 Z" fill="#009AC7" />
+                        <path d="M50 35 L85 70 L70 85 L35 50 Z" fill="#004054" opacity="0.85" />
+                      </svg>
+                      <div className="text-left leading-none">
+                        <span className="text-lg font-black text-[#004054] tracking-tight block">CLEANTECH<span className="text-[#009AC7]">PRO</span></span>
+                        <span className="text-[7px] font-bold text-gray-500 uppercase tracking-widest block mt-0.5">A REVOLUÇÃO NO MERCADO DE LOCAÇÕES</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
