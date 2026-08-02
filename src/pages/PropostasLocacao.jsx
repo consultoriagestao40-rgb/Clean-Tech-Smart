@@ -6,7 +6,7 @@ export default function PropostasLocacao() {
   const [proposals, setProposals] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('kanban');
+  const [viewMode, setViewMode] = useState('list');
   
   // Data lists
   const [clients, setClients] = useState([]);
