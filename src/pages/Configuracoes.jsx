@@ -9,8 +9,8 @@ export default function Configuracoes() {
   const [tolerance, setTolerance] = useState(parseInt(localStorage.getItem('app_company_logo_tolerance') || '30', 10));
   const [zoom, setZoom] = useState(parseInt(localStorage.getItem('app_company_logo_zoom') || '100', 10));
 
-  // Color Theme State
-  const [themeColor, setThemeColor] = useState(localStorage.getItem('app_theme_color') || '#2563eb');
+  // PDF Document Color Theme State
+  const [pdfThemeColor, setPdfThemeColor] = useState(localStorage.getItem('app_pdf_theme_color') || '#1e3a8a');
 
   // Company Details State
   const [companyName, setCompanyName] = useState(localStorage.getItem('app_company_name') || 'Clean Tech Smart');
@@ -93,15 +93,14 @@ export default function Configuracoes() {
       localStorage.removeItem('app_company_logo_remove_bg');
       localStorage.removeItem('app_company_logo_tolerance');
       localStorage.removeItem('app_company_logo_zoom');
-      localStorage.removeItem('app_theme_color');
+      localStorage.removeItem('app_pdf_theme_color');
       setLogo('');
       setOriginalLogo('');
       setRemoveBg(false);
       setTolerance(30);
       setZoom(100);
-      setThemeColor('#2563eb');
+      setPdfThemeColor('#1e3a8a');
       window.dispatchEvent(new Event('logoChanged'));
-      window.dispatchEvent(new Event('themeChanged'));
     }
   };
 
@@ -132,9 +131,7 @@ export default function Configuracoes() {
     localStorage.setItem('app_company_address', companyAddress);
     localStorage.setItem('app_company_phone', companyPhone);
     localStorage.setItem('app_company_email', companyEmail);
-    localStorage.setItem('app_theme_color', themeColor);
-
-    window.dispatchEvent(new Event('themeChanged'));
+    localStorage.setItem('app_pdf_theme_color', pdfThemeColor);
 
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
@@ -299,11 +296,11 @@ export default function Configuracoes() {
           </div>
         </div>
 
-        {/* Company Details & Color Palette Section */}
+        {/* Company Details & PDF Colors Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Dados da Empresa e Personalização do Tema</h2>
-            <p className="text-sm text-gray-500">Configure os dados institucionais e a paleta de cores principal da plataforma</p>
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">Dados da Empresa e Cor das Propostas/Orçamentos (PDF)</h2>
+            <p className="text-sm text-gray-500">Configure os dados institucionais e a paleta de cores principal dos documentos PDF</p>
           </div>
 
           <form onSubmit={handleSaveDetails} className="border-t border-gray-100 pt-6 space-y-6">
@@ -388,26 +385,24 @@ export default function Configuracoes() {
               </div>
             </div>
 
-            {/* Color Palette Section */}
+            {/* PDF Color Palette Section */}
             <div className="pt-6 border-t border-gray-100 space-y-4">
               <div>
-                <span className="text-sm font-semibold text-gray-900 block">Cor Principal da Paleta</span>
-                <span className="text-xs text-gray-500 block">Altere o tom azul do painel para as cores originais da sua empresa</span>
+                <span className="text-sm font-semibold text-gray-900 block">Cor Principal dos Documentos (Orçamentos/PDF)</span>
+                <span className="text-xs text-gray-500 block">Altere o tom azul do PDF dos orçamentos para as cores originais da sua empresa</span>
               </div>
               <div className="flex items-center space-x-4">
                 <input
                   type="color"
-                  value={themeColor}
+                  value={pdfThemeColor}
                   onChange={(e) => {
-                    setThemeColor(e.target.value);
-                    localStorage.setItem('app_theme_color', e.target.value);
-                    window.dispatchEvent(new Event('themeChanged'));
+                    setPdfThemeColor(e.target.value);
                   }}
                   className="w-12 h-12 rounded-lg cursor-pointer border border-gray-300 p-1"
                 />
                 <div>
-                  <span className="text-sm font-mono font-semibold text-gray-700 block uppercase">{themeColor}</span>
-                  <span className="text-[11px] text-gray-400 block">💡 Use o conta-gotas do seletor para clicar na foto do seu logo ao lado e capturar a cor exata!</span>
+                  <span className="text-sm font-mono font-semibold text-gray-700 block uppercase">{pdfThemeColor}</span>
+                  <span className="text-[11px] text-gray-400 block">💡 Use o conta-gotas do seletor para clicar na foto do seu logo ao lado e capturar a cor exata do seu logotipo!</span>
                 </div>
               </div>
             </div>

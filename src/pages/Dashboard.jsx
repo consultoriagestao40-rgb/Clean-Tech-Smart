@@ -125,6 +125,34 @@ export default function Dashboard() {
     const companyCnpj = localStorage.getItem('app_company_cnpj') || '00.000.000/0001-00';
     const companyAddress = localStorage.getItem('app_company_address') || 'Curitiba - PR';
     const companyPhone = localStorage.getItem('app_company_phone') || '41984042835';
+    
+    // Theme Colors for PDF
+    const pdfColor = localStorage.getItem('app_pdf_theme_color') || '#007ea7';
+    const adjustColorBrightness = (hex, percent) => {
+      let R = parseInt(hex.substring(1, 3), 16);
+      let G = parseInt(hex.substring(3, 5), 16);
+      let B = parseInt(hex.substring(5, 7), 16);
+
+      R = parseInt((R * (100 + percent)) / 100);
+      G = parseInt((G * (100 + percent)) / 100);
+      B = parseInt((B * (100 + percent)) / 100);
+
+      R = R < 255 ? R : 255;
+      G = G < 255 ? G : 255;
+      B = B < 255 ? B : 255;
+
+      R = R > 0 ? R : 0;
+      G = G > 0 ? G : 0;
+      B = B > 0 ? B : 0;
+
+      const rHex = R.toString(16).padStart(2, '0');
+      const gHex = G.toString(16).padStart(2, '0');
+      const bHex = B.toString(16).padStart(2, '0');
+
+      return `#${rHex}${gHex}${bHex}`;
+    };
+    const pdfColorSecondary = adjustColorBrightness(pdfColor, -20);
+    const pdfColorLight = adjustColorBrightness(pdfColor, 85);
     const companyEmail = localStorage.getItem('app_company_email') || 'financeiro@grupojvsserv.com.br';
 
     const laborRows = laborItems.length === 0
@@ -161,29 +189,29 @@ export default function Dashboard() {
 *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
 
 body{font-family:'Inter',Arial,sans-serif;background:#f1f5f9;color:#1e293b;font-size:13px;line-height:1.6}
-.print-bar{position:fixed;top:0;left:0;right:0;background:#1e3a8a;color:#fff;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;z-index:999;font-size:13px}
+.print-bar{position:fixed;top:0;left:0;right:0;background:${pdfColor};color:#fff;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;z-index:999;font-size:13px}
 .print-bar strong{font-weight:600}
-.btn-print{background:#fff;color:#1e3a8a;border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
-.btn-print:hover{background:#dbeafe}
+.btn-print{background:#fff;color:${pdfColor};border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-print:hover{background:${pdfColorLight}}
 body{padding-top:50px}
 .page{background:#fff;max-width:870px;margin:20px auto;padding:52px 60px;box-shadow:0 4px 24px rgba(0,0,0,.08);border-radius:12px}
-.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:22px;border-bottom:3px solid #1e40af;margin-bottom:30px}
-.co-name{font-size:24px;font-weight:800;color:#1e3a8a;letter-spacing:-0.5px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:22px;border-bottom:3px solid ${pdfColor};margin-bottom:30px}
+.co-name{font-size:24px;font-weight:800;color:${pdfColor};letter-spacing:-0.5px}
 .co-sub{font-size:11px;color:#64748b;margin-top:2px}
-.doc-label{font-size:11px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:1px;text-align:right}
+.doc-label{font-size:11px;font-weight:700;color:${pdfColor};text-transform:uppercase;letter-spacing:1px;text-align:right}
 .doc-num{font-size:24px;font-weight:800;color:#0f172a;text-align:right;margin-top:2px}
 .doc-date{font-size:11px;color:#64748b;text-align:right;margin-top:2px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:28px}
 .box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px}
-.box-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1e40af;padding-bottom:8px;border-bottom:1px solid #e2e8f0;margin-bottom:10px}
+.box-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${pdfColor};padding-bottom:8px;border-bottom:1px solid #e2e8f0;margin-bottom:10px}
 .row{display:flex;gap:6px;font-size:12px;margin-bottom:4px}
 .row b{color:#475569;font-weight:600;min-width:76px}
-.badge{display:inline-block;background:#dbeafe;color:#1e40af;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600}
-.sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1e40af;margin:26px 0 10px;display:flex;align-items:center;gap:8px}
+.badge{display:inline-block;background:${pdfColorLight};color:${pdfColor};border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600}
+.sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${pdfColor};margin:26px 0 10px;display:flex;align-items:center;gap:8px}
 .sec::after{content:'';flex:1;height:1px;background:#e2e8f0}
 table{width:100%;border-collapse:collapse;margin-bottom:4px}
-thead tr{background:#1e3a8a;color:#fff}
+thead tr{background:${pdfColor};color:#fff}
 thead th{padding:9px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;text-align:left}
 th.right,td.right{text-align:right}
 th.center,td.center{text-align:center}
@@ -193,7 +221,7 @@ tbody td{padding:9px 12px;color:#334155;font-size:12px}
 td.bold{font-weight:700}
 td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
 .sumwrap{display:flex;justify-content:flex-end;margin-top:28px}
-.sumbox{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:12px;padding:22px 26px;min-width:280px}
+.sumbox{background:linear-gradient(135deg,${pdfColor},${pdfColorSecondary});color:#fff;border-radius:12px;padding:22px 26px;min-width:280px}
 .sum-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:.75;margin-bottom:14px}
 .sum-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:7px;opacity:.9}
 .sum-div{border:none;border-top:1px solid rgba(255,255,255,.3);margin:10px 0}
@@ -213,11 +241,11 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
 </head>
 <body>
 <div class="print-bar no-print">
-  <strong>📄 Orçamento #${String(budget.id).padStart(4,'0')} &mdash; Clean Tech Smart</strong>
+  <strong>📄 Orçamento #${String(budget.id).padStart(4,'0')} &mdash; ${companyName}</strong>
   <button class="btn-print" onclick="window.print()">⬇️&nbsp; Salvar / Imprimir como PDF</button>
 </div>
 <div class="page">
-  <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #1e3a8a; padding-bottom: 20px; margin-bottom: 25px;">
+  <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid ${pdfColor}; padding-bottom: 20px; margin-bottom: 25px;">
     ${companyLogo ? `<div style="width: 180px; display: block;"></div>` : ''}
     <div style="flex: 1; text-align: center;">
       <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">${companyName}</h1>
@@ -239,8 +267,8 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
     <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Data: ${emissao}</div>
   </div>
 
-  <div class="box" style="margin-bottom: 20px; border-left: 4px solid #1e3a8a; border-radius: 4px; padding: 15px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-left-width: 4px; text-align: left;">
-    <div class="box-title" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-align: left; letter-spacing: 0.5px;">Dados do Cliente</div>
+  <div class="box" style="margin-bottom: 20px; border-left: 4px solid ${pdfColor}; border-radius: 4px; padding: 15px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-left-width: 4px; text-align: left;">
+    <div class="box-title" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: ${pdfColor}; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-align: left; letter-spacing: 0.5px;">Dados do Cliente</div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 30px;">
       <div class="row"><b>Cliente:</b> ${budget.client_name || budget.client_id || 'Não informado'}</div>
       <div class="row"><b>CNPJ/CPF:</b> ${budget.client_document || '&mdash;'}</div>
@@ -254,7 +282,7 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
   <div class="sec">Dados do Equipamento</div>
   <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
     <thead>
-      <tr style="background: #1e3a8a; color: #fff;">
+      <tr style="background: ${pdfColor}; color: #fff;">
         <th style="padding: 8px 12px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; text-align: left;">Equipamento / Ativo</th>
         <th style="padding: 8px 12px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; text-align: left;">Marca</th>
         <th style="padding: 8px 12px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; text-align: left;">Modelo</th>
