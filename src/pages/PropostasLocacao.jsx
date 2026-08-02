@@ -344,50 +344,62 @@ export default function PropostasLocacao() {
 
     const periodText = formatPeriod(minutaData.periodMonths);
     const monthlyValueFormatted = Number(minutaData.monthlyValue).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    
+    // Total value
+    const totalValue = Number(minutaData.monthlyValue) * (m > 0 && m !== 30 && m !== 15 && m !== 7 && m !== 1 ? m : 1);
+    const totalValueFormatted = totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Minuta de Locação</title>
+<title>Minuta de Contrato de Locação</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
   body {
-    font-family: 'Inter', sans-serif;
-    color: #1e293b;
-    font-size: 13px;
-    line-height: 1.6;
+    font-family: Arial, sans-serif;
+    color: #334155;
+    font-size: 11px;
+    line-height: 1.5;
     margin: 40px;
     background: #fff;
   }
-  .bold { font-weight: bold; color: #0f172a; }
+  .bold { font-weight: bold; color: #000; }
   .uppercase { text-transform: uppercase; }
   .section-title {
-    font-weight: 700;
-    color: #0f172a;
-    margin-top: 22px;
-    margin-bottom: 6px;
-    font-size: 13px;
+    font-weight: bold;
+    color: #000;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    font-size: 11px;
   }
   .grid-table {
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     border-collapse: collapse;
   }
   .grid-table td {
-    padding: 4px 0;
+    padding: 3px 0;
     vertical-align: top;
   }
   .label-col {
-    width: 160px;
-    font-weight: 700;
+    width: 150px;
+    font-weight: bold;
     color: #475569;
+  }
+  .clause-box {
+    margin-bottom: 12px;
+    text-align: justify;
+  }
+  .clause-title {
+    font-weight: bold;
+    color: #000;
+    margin-top: 15px;
+    margin-bottom: 4px;
     text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.5px;
   }
   .signature-section {
-    margin-top: 60px;
+    margin-top: 50px;
     display: flex;
     justify-content: space-between;
     page-break-inside: avoid;
@@ -395,13 +407,13 @@ export default function PropostasLocacao() {
   .signature-box {
     width: 45%;
     text-align: center;
-    border-top: 1.5px solid #cbd5e1;
-    padding-top: 12px;
-    font-size: 11px;
-    color: #64748b;
+    border-top: 1px solid #94a3b8;
+    padding-top: 10px;
+    font-size: 10px;
+    color: #475569;
   }
   @media print {
-    body { margin: 20px; font-size: 12px; }
+    body { margin: 20px; font-size: 10px; }
   }
 </style>
 </head>
@@ -426,7 +438,7 @@ export default function PropostasLocacao() {
     </tr>
   </table>
 
-  <div style="border-top: 1px dashed #e2e8f0; margin: 15px 0;"></div>
+  <div style="border-top: 1px dashed #cbd5e1; margin: 10px 0;"></div>
 
   <table class="grid-table">
     <tr>
@@ -459,32 +471,160 @@ export default function PropostasLocacao() {
     </tr>
   </table>
 
-  <div style="border-top: 2px solid #0f172a; margin: 20px 0;"></div>
+  <div style="border-top: 1px dashed #cbd5e1; margin: 10px 0;"></div>
 
-  <div class="section-title">1. Objeto: <span style="font-weight: normal; color: #334155;">Locação de 01 ${minutaData.machineName}.</span></div>
+  <table class="grid-table">
+    <tr>
+      <td class="label-col">1. OBJETO</td>
+      <td>: Locação de 01 lavadora de pisos marca Tennant ${minutaData.machineName}.</td>
+    </tr>
+    <tr>
+      <td class="label-col">2. LOCAL DE USO</td>
+      <td>: Máquina 01: ${minutaData.machineName.toUpperCase()}<br/>${minutaData.localUtilizacao}</td>
+    </tr>
+    <tr>
+      <td class="label-col">3. VIGÊNCIA</td>
+      <td>: ${periodText}, contadas a partir da entrega física do bem. Previsão de ${startDateFormatted} à ${endDateFormatted}.</td>
+    </tr>
+    <tr>
+      <td class="label-col">4. PREÇO MENSAL</td>
+      <td>: R$ ${monthlyValueFormatted} e/ou conforme Anexo I, pago até 05 dias após a emissão da fatura.</td>
+    </tr>
+    <tr>
+      <td class="label-col">5. RESCISÃO</td>
+      <td>: Multa por rompimento imotivado: 10% da soma dos aluguéis vincendos.</td>
+    </tr>
+    <tr>
+      <td class="label-col">6. VALOR INDICATIVO</td>
+      <td class="bold">: R$ ${totalValueFormatted} (Total estimado)</td>
+    </tr>
+  </table>
 
-  <div class="section-title">2. Local de utilização dos bens locados:</div>
-  <div style="margin-left: 20px; color: #334155;">
-    <p class="bold" style="margin-bottom: 4px;">Máquina 01: ${minutaData.machineName.toUpperCase()}</p>
-    <p>${minutaData.localUtilizacao}</p>
+  <div style="border-top: 2px solid #000; margin: 15px 0;"></div>
+
+  <p>Pelo presente instrumento particular de contrato de locação de bem(ns) móvel(is) e outros, as partes acima nomeadas e qualificadas, por seus representantes legais al final assinados, têm entre si justo e contratado o seguinte:</p>
+
+  <div class="clause-title">CLÁUSULA I – DO(S) BEM(NS) MÓVEL(IS)</div>
+  <div class="clause-box">
+    1.1. A LOCADORA é legítima proprietária do(s) bem(ns) móvel(is) descritos no campo 01 do preâmbulo do presente Contrato.
   </div>
 
-  <div class="section-title">3. Vigência: <span style="font-weight: normal; color: #334155;">${periodText}, contadas a partir da data de entrega dos bens, conforme assinatura no documento fiscal de remessa de locação. Tendo como combinado a entrega do item no dia ${startDateFormatted} à ${endDateFormatted}.</span></div>
+  <div class="clause-title">CLÁUSULA II - DO OBJETO</div>
+  <div class="clause-box">
+    2.1. Constitui objeto do presente contrato a locação do(s) bem(ns) móvel(is) descrito(s) na Cláusula I, de propriedade da LOCADORA, que serão explorados pela LOCATÁRIA para fins presentes em seu escopo de atuação. Os bens ora locados serão utilizados pela LOCATÁRIA no local/endereço identificado no campo 02 do preâmbulo deste Contrato.
+  </div>
 
-  <div class="section-title">4. Preço mensal: <span style="font-weight: normal; color: #334155;"><u>R$ ${monthlyValueFormatted}</u> e/ou conforme anexo I, a ser pago 05 (cinco) dias após a emissão da fatura de locação.</span></div>
+  <div class="clause-title">CLÁUSULA III - DO PRAZO</div>
+  <div class="clause-box">
+    3.1. O prazo de vigência do presente contrato será aquele estabelecido no campo 03 do preâmbulo deste Instrumento, comprometendo-se a LOCATÁRIA a devolver o(s) bem(s) objeto do presente Contrato ao fim da vigência deste Contrato nas mesmas condições do recebimento, salvo os desgastes decorrentes do uso natural do(s) mesmo(s).
+  </div>
 
-  <div class="section-title">5. Rescisão: <span style="font-weight: normal; color: #334155;">Multa por rompimento imotivado: 10% (dez por cento) da soma dos aluguéis vincendos.</span></div>
+  <div class="clause-title">CLÁUSULA IV - DA RENOVAÇÃO</div>
+  <div class="clause-box">
+    4.1. Findo o prazo de vigência do presente contrato, as Partes, de comum acordo, deliberarão sobre a renovação da locação em questão.<br/>
+    4.2. Caso as partes decidam pela prorrogação do prazo, sem alterações no contrato vigente (além de valores a serem praticados e prazo), tal renovação poderá ser feita automaticamente por igual período mediante manifestação das partes, podendo esta manifestação ser feita por meio de e-mail. No caso de renovação automática e por prazo indeterminado, a multa estabelecida no campo 5 passa a não mais vigorar.<br/>
+    4.2.A. Caso as partes decidam pela prorrogação do prazo, porém com alteração de alguma das cláusulas vigentes (exceto as mencionadas acima), tal prorrogação será feita mediante a assinatura de um Termo Aditivo ao contrato vigente.<br/>
+    4.3. Caso as Partes decidam pela não renovação do Contrato, a LOCATÁRIA deverá emitir Nota Fiscal de retorno referente à nota fiscal de remessa de locação recebida no momento da entrega do equipamento da LOCADORA. Caso não seja feita a nota fiscal de devolução e/ou solicitada a retirada do(s) bens pela LOCATÁRIA, o contrato será renovado automaticamente por prazo indeterminado, gerando a cobrança mensal do aluguel, até a emissão da nota fiscal de devolução e respectiva devolução do equipamento locado.<br/>
+    4.4. Caso a LOCATÁRIA seja isenta, esta deverá emitir a nota fiscal avulsa ou declaração (de acordo com a legislação vigente em seu Estado de origem).
+  </div>
 
-  <div class="section-title">5.1: <span style="font-weight: normal; color: #334155;">A <span class="bold">LOCATÁRIA</span> não será responsável por multa rescisória caso o contrato seja rescindido em razão de descumprimento contratual pela LOCADORA, especialmente quanto à manutenção e prazos de atendimento.</span></div>
+  <div class="clause-title">CLÁUSULA V - DO VALOR DA LOCAÇÃO</div>
+  <div class="clause-box">
+    5.1. A LOCATÁRIA pagará pela locação supra o valor definido no campo 04 do preâmbulo deste Contrato, mediante depósito para crédito da LOCADORA em conta corrente por esta indicada, ou mediante o pagamento de boleto bancário emitido pela LOCADORA.<br/>
+    5.2. A primeira fatura de locação será emitida juntamente com o documento fiscal de remessa de locação, com o prazo de pagamento indicado no preâmbulo 4 deste contrato, sendo as demais faturas emitidas nos meses subsequentes.<br/>
+    5.3. O não pagamento do aluguel na respectiva data de vencimento implicará na incidência de multa moratória de 2% (dois por cento) sobre o valor em atraso, além de juros de mora de 1% (um por cento) ao mês. Os juros de mora serão calculados "pro rata die" pelo período entre a data de vencimento do aluguel e data do seu efetivo pagamento.<br/>
+    5.4. Caso sejam criados novos tributos, extintos os atuais ou alteradas suas alíquotas, bases de cálculo ou interpretação legal durante a vigência deste contrato, o valor do aluguel poderá ser ajustado somente se houver impacto comprovado nos custos da locação.<br/>
+    5.4.1. O reajuste deverá ser comprovado documentalmente pela parte interessada e limitado ao valor efetivo da variação tributária.<br/>
+    5.4.2. Em caso de redução da carga tributária, as partes deverão rever o valor do aluguel para manter o equilíbrio econômico do contrato.<br/>
+    5.5. Os aluguéis serão devidos pela LOCATÁRIA, independente do uso ou não dos bens, seja por motivo de manutenção, reparos ou qualquer outra razão, não podendo a LOCATÁRIA, em hipótese alguma, reter os pagamentos dos aluguéis, a que título for.<br/>
+    5.5.1. Na hipótese de o equipamento permanecer inoperante por período superior a 48 horas úteis após o chamado técnico, a LOCATÁRIA ficará isenta do pagamento do aluguel proporcional aos dias de inoperância, ou fará jus à substituição imediata do equipamento por outro em perfeitas condições de uso.<br/>
+    5.6. O valor a ser pago pela LOCATÁRIA a título de locação dos bens não inclui cobertura securitária de riscos relacionados com a operação dos bens, que será de exclusiva responsabilidade da LOCATÁRIA, bem como não inclui outras despesas além das que estiverem expressamente previstas neste contrato.
+  </div>
+
+  <div class="clause-title">CLÁUSULA VI - DO REAJUSTE</div>
+  <div class="clause-box">
+    6.1. O valor do aluguel definido no preâmbulo e no Anexo I do presente contrato será reajustado anualmente (a cada 12 meses a contar da data de recebimento dos bens locados) conforme variação do Índice IPCA do mesmo período, ou por outro índice que venha substituí-lo.
+  </div>
+
+  <div class="clause-title">CLÁUSULA VII - DA CONSERVAÇÃO</div>
+  <div class="clause-box">
+    7.1. A LOCATÁRIA declara haver recebido na data e nas condições declaradas no Anexo II, os bens móveis em perfeito estado de funcionalidade, cabendo-lhe trazer os bens locados em perfeito estado de funcionamento para assim restituí-los quando findo ou rescindido este contrato, livre e desembaraçado de quaisquer ônus.
+  </div>
+
+  <div class="clause-title">CLÁUSULA VIII – MANUTENÇÃO DOS BENS LOCADOS</div>
+  <div class="clause-box">
+    8.1. A LOCADORA efetuará a manutenção do(s) bem(ns) ora objeto do presente contrato, decorrentes do uso e desgaste natural do(s) bem(ns), de acordo com a contratação do seguinte formato de manutenção pela LOCATÁRIA, especificados no Anexo I: Incluso Mão de Obra de Manutenção Preventiva e Corretiva, e Deslocamento do Técnico Autorizado CLEAN TECH PRO.<br/>
+    8.1.1. O prazo máximo para o início do atendimento técnico será de até 48 horas úteis e o prazo máximo para solução definitiva do problema será de 72 horas úteis. O descumprimento sujeitará a LOCADORA à multa de 10% do valor mensal do aluguel por ocorrência.<br/>
+    8.2. Não incluso: peças desgastadas pelo uso diário, como refil de borrachas de rodo e mangueiras, Combustíveis, Água destilada, Químicos, Escovas, Discos e Baterias.<br/>
+    8.3. A LOCATÁRIA arcará com quaisquer custos havidos com manutenção corretiva decorrente de mau uso ou uso inadequado dos bens, em desconformidade com as instruções de operação e de manutenção dos bens descritas no manual do operador fornecido pelo fabricante. Também caracteriza mau uso o não seguimento das manutenções diárias atribuídas ao operador (ex: limpeza do equipamento, nível da água das baterias, vazamentos).<br/>
+    8.3.1. Qualquer dano ou defeito será objeto de vistoria técnica conjunta, com emissão de relatório de constatação assinado por representantes de ambas as partes. Na ausência de assinatura conjunta, não poderá a LOCADORA imputar responsabilidade à LOCATÁRIA.
+  </div>
+
+  <div class="clause-title">CLÁUSULA IX – OBRIGAÇÕES DA LOCADORA</div>
+  <div class="clause-box">
+    9.1. São obrigações da LOCADORA:<br/>
+    a) Realizar, no início da locação, a entrega do(s) bem(ns) móvel(is);<br/>
+    b) Guardar absoluto sigilo com relação a todas as informações sobre as atividades e o processo produtivo da LOCATÁRIA;<br/>
+    c) Fornecer à LOCATÁRIA as instruções de operação e manutenção dos bens;<br/>
+    d) Realizar a manutenção preventiva de itens pré-definidos;<br/>
+    e) Realizar a manutenção corretiva solicitada pela LOCATÁRIA através do Portal Pós-Venda, obedecendo ao prazo de 48 horas para primeiro atendimento e 72 horas úteis para equipamento operativo;<br/>
+    f) Em caso de falha que impeça o uso por mais de 48 horas, fornecer sem custo adicional equipamento de substituição equivalente.
+  </div>
+
+  <div class="clause-title">CLÁUSULA X – OBRIGAÇÕES DA LOCATÁRIA</div>
+  <div class="clause-box">
+    10.1. São obrigações da LOCATÁRIA:<br/>
+    a) Vistoriar o(s) bem(ns) móvel(is) por ocasião de sua entrega pela LOCADORA;<br/>
+    b) Promover e responder pela guarda e vigilância do(s) bem(ns), conservando-o em área coberta;<br/>
+    c) Utilizar o bem dentro de limites adequados similares recomendados pelo fabricante;<br/>
+    d) Seguir as instruções de operação e permitir acesso aos técnicos da LOCADORA;<br/>
+    e) Disponibilizar local arejado, seguro e protegido para manutenções conforme segurança do trabalho;<br/>
+    f) Não sublocar, ceder ou efetuar alterações que modifiquem as características técnicas do bem;<br/>
+    g) Devolver o equipamento ao término da locação emitindo Nota Fiscal de retorno correspondente.
+  </div>
+
+  <div class="clause-title">CLÁUSULA XI – DA RESCISÃO OU RESILIÇÃO</div>
+  <div class="clause-box">
+    11.1. Na hipótese de inadimplemento de qualquer cláusula ou condição, este contrato poderá ser considerado rescindido por justa causa caso a falha não seja sanada após prazo razoável de notificação.<br/>
+    11.2. O presente contrato poderá ser rompido por qualquer das Partes imotivadamente mediante aviso prévio por escrito de 30 dias, sujeitando-se a parte rescindente ao pagamento de multa de 10% da soma das mensalidades vincendas estipuladas.
+  </div>
+
+  <div class="clause-title">CLÁUSULA XII – DISPOSIÇÕES GERAIS</div>
+  <div class="clause-box">
+    12.1. O bem locado poderá ser utilizado por empresas do mesmo grupo econômico da LOCATÁRIA, ou prestadores de serviços no mesmo endereço.<br/>
+    12.2. Caso a LOCATÁRIA perca o contrato de prestação ao qual o bem estava vinculado, poderá rescindir o presente contrato sem multa, mediante aviso de 30 dias.<br/>
+    12.3. As Partes aceitam e admitem como válida a assinatura digital/eletrônica deste instrumento para todos os fins de direito.
+  </div>
+
+  <div class="clause-title">CLÁUSULA XIII - ALTERAÇÕES CONTRATUAIS</div>
+  <div class="clause-box">
+    13.1. Qualquer alteração deste contrato somente será válida se efetuada por escrito, assinada por ambas as partes.
+  </div>
+
+  <div class="clause-title">CLÁUSULA XIV – VALOR DO CONTRATO</div>
+  <div class="clause-box">
+    14.1. O valor total estimado do contrato é de R$ ${totalValueFormatted}, tendo fins puramente fiscais e indicativos.
+  </div>
+
+  <div class="clause-title">CLÁUSULA XV - DO FORO</div>
+  <div class="clause-box">
+    15.1. As partes elegem o foro da cidade de Pinhais/PR para dirimir quaisquer dúvidas decorrentes deste instrumento.
+  </div>
+
+  <p style="margin-top: 20px;">E, por estarem assim justas e contratadas, assinam eletronicamente o presente instrumento.</p>
+  
+  <p style="margin-top: 10px;" class="bold">Pinhais, ${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.</p>
 
   <div class="signature-section">
     <div class="signature-box">
-      <span class="bold" style="font-size: 11px;">${minutaData.locadoraName.toUpperCase()}</span><br/>
-      Representante Legal
+      <span class="bold">${minutaData.locadoraName.toUpperCase()}</span><br/>
+      Representante Legal: Jaime Horácio de Freitas Junior<br/>
+      CPF: 036.361.979-83
     </div>
     <div class="signature-box">
-      <span class="bold" style="font-size: 11px;">${minutaData.clientName.toUpperCase()}</span><br/>
-      Representante Legal
+      <span class="bold">LOCATÁRIA: ${minutaData.clientName.toUpperCase()}</span><br/>
+      Representante Legal:<br/>
+      CPF / CNPJ: ${minutaData.clientCnpj}
     </div>
   </div>
 
