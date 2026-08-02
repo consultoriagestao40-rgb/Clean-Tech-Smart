@@ -15,7 +15,8 @@ export default async function handler(req, res) {
   const {
     id, client_id, machine_model_id, rental_price_id, period_months, monthly_value,
     contract_type, hours_per_month, region_used, delivery_time, freight_cost, validity_days,
-    notes, seller_info, insumos_percent, manutencao_percent, lucro_percent, tributos_percent
+    notes, seller_info, insumos_percent, manutencao_percent, lucro_percent, tributos_percent,
+    status
   } = req.body;
 
   if (!client_id || !machine_model_id || !rental_price_id) {
@@ -30,13 +31,15 @@ export default async function handler(req, res) {
         SET client_id = $1, machine_model_id = $2, rental_price_id = $3, period_months = $4,
             monthly_value = $5, contract_type = $6, hours_per_month = $7, region_used = $8,
             delivery_time = $9, freight_cost = $10, validity_days = $11, notes = $12, seller_info = $13,
-            insumos_percent = $14, manutencao_percent = $15, lucro_percent = $16, tributos_percent = $17
-        WHERE id = $18
+            insumos_percent = $14, manutencao_percent = $15, lucro_percent = $16, tributos_percent = $17,
+            status = $18
+        WHERE id = $19
         RETURNING *
       `, [
         client_id, machine_model_id, rental_price_id, period_months, monthly_value,
         contract_type, hours_per_month, region_used, delivery_time, freight_cost, validity_days,
-        notes, seller_info, insumos_percent, manutencao_percent, lucro_percent, tributos_percent, id
+        notes, seller_info, insumos_percent, manutencao_percent, lucro_percent, tributos_percent,
+        status || 'Rascunho', id
       ]);
       return res.status(200).json({ proposal: rows[0] });
     } else {
@@ -45,13 +48,15 @@ export default async function handler(req, res) {
         INSERT INTO rental_proposals (
           client_id, machine_model_id, rental_price_id, period_months, monthly_value,
           contract_type, hours_per_month, region_used, delivery_time, freight_cost, validity_days,
-          notes, seller_info, insumos_percent, manutencao_percent, lucro_percent, tributos_percent
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+          notes, seller_info, insumos_percent, manutencao_percent, lucro_percent, tributos_percent,
+          status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
         RETURNING *
       `, [
         client_id, machine_model_id, rental_price_id, period_months, monthly_value,
         contract_type, hours_per_month, region_used, delivery_time, freight_cost, validity_days,
-        notes, seller_info, insumos_percent, manutencao_percent, lucro_percent, tributos_percent
+        notes, seller_info, insumos_percent, manutencao_percent, lucro_percent, tributos_percent,
+        status || 'Rascunho'
       ]);
       return res.status(201).json({ proposal: rows[0] });
     }
