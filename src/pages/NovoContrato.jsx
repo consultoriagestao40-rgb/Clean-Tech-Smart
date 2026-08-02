@@ -85,6 +85,7 @@ export default function NovoContrato() {
 
   const handleEmitContract = async () => {
     setIsGeneratingPDF(true);
+    const companyLogo = localStorage.getItem('app_company_logo') || '';
     try {
       // 1. Buscar o template padrão
       const res = await fetch('/api/get-templates');
@@ -159,7 +160,10 @@ export default function NovoContrato() {
           
           <!-- Header -->
           <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="font-size: 22px; font-weight: bold; margin: 0;">Clean Tech Pro</h1>
+            ${companyLogo ? 
+              `<img src="${companyLogo}" alt="Logo" style="max-height: 50px; max-width: 250px; object-fit: contain; display: block; margin: 0 auto 8px;" />` : 
+              `<h1 style="font-size: 22px; font-weight: bold; margin: 0;">Clean Tech Pro</h1>`
+            }
             <p style="margin: 2px 0; font-size: 11px;">CNPJ: 00.000.000/0001-00</p>
             <p style="margin: 2px 0; font-size: 11px;">Curitiba - PR</p>
             <p style="margin: 2px 0; font-size: 11px;">Telefone: 41984042835</p>

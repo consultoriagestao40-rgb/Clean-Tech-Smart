@@ -119,6 +119,7 @@ export default function Dashboard() {
 
   const handleGeneratePDF = (budgetData) => {
     const { budget, laborItems, partsItems } = budgetData;
+    const companyLogo = localStorage.getItem('app_company_logo') || '';
 
     const laborRows = laborItems.length === 0
       ? `<tr><td colspan="4" class="empty">Nenhuma hora técnica cobrada.</td></tr>`
@@ -210,9 +211,12 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
   <button class="btn-print" onclick="window.print()">⬇️&nbsp; Salvar / Imprimir como PDF</button>
 </div>
 <div class="page">
-  <div class="header">
+  <div class="header" style="align-items: center;">
     <div>
-      <div class="co-name">Clean Tech Smart</div>
+      ${companyLogo ? 
+        `<img src="${companyLogo}" alt="Logo" style="max-height: 48px; max-width: 220px; object-fit: contain; display: block; margin-bottom: 4px;" />` : 
+        `<div class="co-name">Clean Tech Smart</div>`
+      }
       <div class="co-sub">Soluções Inteligentes em Higiene e Limpeza</div>
     </div>
     <div>
