@@ -245,10 +245,33 @@ export default function PropostasLocacao() {
       const companyPhone = localStorage.getItem('app_company_phone') || '41984042835';
       const companyEmail = localStorage.getItem('app_company_email') || 'financeiro@grupojvsserv.com.br';
       
-      // Load colors from localstorage or use Alfa Tennant green
-      const primaryColor = '#739600'; // Alfa Green
-      const secondaryColor = '#506b00';
-      const colorLight = '#f4f9e6';
+      // Load colors from localstorage or use default
+      const primaryColor = localStorage.getItem('app_pdf_theme_color') || '#009AC7';
+      const adjustColorBrightness = (hex, percent) => {
+        let R = parseInt(hex.substring(1, 3), 16);
+        let G = parseInt(hex.substring(3, 5), 16);
+        let B = parseInt(hex.substring(5, 7), 16);
+
+        R = parseInt((R * (100 + percent)) / 100);
+        G = parseInt((G * (100 + percent)) / 100);
+        B = parseInt((B * (100 + percent)) / 100);
+
+        R = R < 255 ? R : 255;
+        G = G < 255 ? G : 255;
+        B = B < 255 ? B : 255;
+
+        R = R > 0 ? R : 0;
+        G = G > 0 ? G : 0;
+        B = B > 0 ? B : 0;
+
+        const rHex = R.toString(16).padStart(2, '0');
+        const gHex = G.toString(16).padStart(2, '0');
+        const bHex = B.toString(16).padStart(2, '0');
+
+        return `#${rHex}${gHex}${bHex}`;
+      };
+      const secondaryColor = adjustColorBrightness(primaryColor, -20);
+      const colorLight = adjustColorBrightness(primaryColor, 85);
       
       const emissao = new Date(p.created_at).toLocaleDateString('pt-BR');
       const geradoEm = new Date().toLocaleString('pt-BR');
@@ -343,12 +366,39 @@ body{padding-top:60px}
 
 <!-- PAGE 1: Presentation & Technical Specs -->
 <div class="page">
-  <div class="header">
-    <span class="tagline">Transforme seu jeito de limpar</span>
-    <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" class="logo-img" />
+  <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid ${primaryColor}; padding-bottom: 20px; margin-bottom: 25px;">
+    ${companyLogo ? `<div style="width: 180px; display: block;"></div>` : ''}
+    <div style="flex: 1; text-align: center;">
+      <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">${companyName}</h1>
+      <div style="font-size: 11px; font-weight: bold; color: #1e293b; margin-top: 4px;">CNPJ: ${companyCnpj}</div>
+      <div style="font-size: 10px; color: #475569; margin-top: 2px;">${companyAddress}</div>
+      <div style="font-size: 10px; color: #475569; margin-top: 2px;">Telefone: ${companyPhone}</div>
+      ${companyEmail ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">Email: ${companyEmail}</div>` : ''}
+    </div>
+    ${companyLogo ? `
+      <div style="width: 180px; display: flex; justify-content: flex-end;">
+        <img src="${companyLogo}" alt="Logo" style="max-height: 100px; max-width: 180px; object-fit: contain;" />
+      </div>
+    ` : ''}
   </div>
 
-  <h2 class="green-title">Proposta Comercial</h2>
+  <div style="text-align: center; margin-bottom: 25px;">
+    <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin: 0 0 4px 0; letter-spacing: 0.5px;">Proposta Comercial de Locação de Equipamentos</h2>
+    <div style="font-size: 11px; font-weight: bold; color: #475569;">Proposta nº #${String(p.id).padStart(4,'0')}</div>
+    <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Data: ${emissao}</div>
+  </div>
+
+  <div class="box" style="margin-bottom: 25px; border-left: 4px solid ${primaryColor}; border-radius: 4px; padding: 15px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-left-width: 4px; text-align: left;">
+    <div class="box-title" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: ${primaryColor}; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-align: left; letter-spacing: 0.5px;">Dados do Cliente</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 30px;">
+      <div class="row"><b>Cliente:</b> ${p.client_name || 'Não informado'}</div>
+      <div class="row"><b>CNPJ/CPF:</b> ${p.client_document || '&mdash;'}</div>
+      <div class="row"><b>Endereço:</b> ${p.client_address || '&mdash;'}</div>
+      <div class="row"><b>Contato:</b> ${p.client_email ? p.client_email.split('@')[0] : '&mdash;'}</div>
+      <div class="row"><b>Telefone:</b> ${p.client_phone || p.client_email || '&mdash;'}</div>
+      <div class="row"><b>Serviço:</b> Locação de Equipamento</div>
+    </div>
+  </div>
 
   <div class="main-img-box">
     <img src="${mainPhoto}" alt="${p.machine_name}" class="main-img" />
@@ -380,28 +430,6 @@ body{padding-top:60px}
   <div class="header">
     <span class="tagline">Valores e Condições de Locação</span>
     <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" class="logo-img" />
-  </div>
-
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
-    <!-- Emitente (Clean Tech) -->
-    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; font-size: 11px; line-height: 1.6;">
-      <div style="font-weight: 700; color: ${primaryColor}; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; font-size: 10px; letter-spacing: 0.5px;">Emitente (Locador)</div>
-      <div><b>Empresa:</b> ${companyName}</div>
-      <div><b>CNPJ:</b> ${companyCnpj}</div>
-      <div><b>Telefone:</b> ${companyPhone}</div>
-      <div><b>E-mail:</b> ${companyEmail}</div>
-      <div><b>Endereço:</b> ${companyAddress}</div>
-    </div>
-
-    <!-- Cliente (Locatário) -->
-    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; font-size: 11px; line-height: 1.6;">
-      <div style="font-weight: 700; color: ${primaryColor}; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; font-size: 10px; letter-spacing: 0.5px;">Cliente Proponente (Locatário)</div>
-      <div><b>Razão Social:</b> ${p.client_name}</div>
-      <div><b>CNPJ/CPF:</b> ${p.client_document || '&mdash;'}</div>
-      <div><b>Telefone:</b> ${p.client_phone || '&mdash;'}</div>
-      <div><b>E-mail:</b> ${p.client_email || '&mdash;'}</div>
-      <div><b>Endereço:</b> ${p.client_address || '&mdash;'}</div>
-    </div>
   </div>
 
   <h3 class="box-title">Valores e Condições de Locação</h3>
@@ -489,13 +517,11 @@ body{padding-top:60px}
     </div>
     
     <div class="brand-footer">
-      <div style="font-weight: 700; color: ${primaryColor}; font-size: 10px; margin-bottom: 4px; text-transform: uppercase;">Parceiro Autorizado:</div>
-      <div style="font-weight: 800; color: #0f172a; font-size: 11px; margin-bottom: 2px;">${companyName}</div>
+      <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" style="max-height: 40px; margin-bottom: 6px; object-fit: contain;" />
       <div class="brand-footer-text">
-        CNPJ: ${companyCnpj}<br>
-        Telefone: ${companyPhone}<br>
-        E-mail: ${companyEmail}<br>
-        Endereço: ${companyAddress}
+        Rua Barão de Campinas, 715<br>
+        São Paulo, SP - 01201-902<br>
+        Vendas: (11) 3320-8550
       </div>
     </div>
   </div>
