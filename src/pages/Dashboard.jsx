@@ -218,7 +218,7 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
 </div>
 <div class="page">
   <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #1e3a8a; padding-bottom: 20px; margin-bottom: 25px;">
-    ${companyLogo ? `<div style="width: 120px; display: block;"></div>` : ''}
+    ${companyLogo ? `<div style="width: 180px; display: block;"></div>` : ''}
     <div style="flex: 1; text-align: center;">
       <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">${companyName}</h1>
       <div style="font-size: 11px; font-weight: bold; color: #1e293b; margin-top: 4px;">CNPJ: ${companyCnpj}</div>
@@ -227,8 +227,8 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
       ${companyEmail ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">Email: ${companyEmail}</div>` : ''}
     </div>
     ${companyLogo ? `
-      <div style="width: 120px; display: flex; justify-content: flex-end;">
-        <img src="${companyLogo}" alt="Logo" style="max-height: 70px; max-width: 120px; object-fit: contain;" />
+      <div style="width: 180px; display: flex; justify-content: flex-end;">
+        <img src="${companyLogo}" alt="Logo" style="max-height: 100px; max-width: 180px; object-fit: contain;" />
       </div>
     ` : ''}
   </div>
