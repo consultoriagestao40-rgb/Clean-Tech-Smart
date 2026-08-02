@@ -967,25 +967,25 @@ body{padding-top:60px}
       </tr>
     </thead>
     <tbody>
-      <tr \${p.contract_type?.startsWith('0') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
-        <td style="font-weight: bold; \${p.contract_type?.startsWith('0') ? 'color: #854d0e !important;' : ''}">\${p.contract_type?.startsWith('0') ? '★ ' : ''}0 - Sem Cobertura</td>
-        <td \${p.contract_type?.startsWith('0') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Somente locação do Equipamento. \${p.contract_type?.startsWith('0') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      <tr ${p.contract_type?.startsWith('0') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('0') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('0') ? '★ ' : ''}0 - Sem Cobertura</td>
+        <td ${p.contract_type?.startsWith('0') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Somente locação do Equipamento. ${p.contract_type?.startsWith('0') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
       </tr>
-      <tr \${p.contract_type?.startsWith('1') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
-        <td style="font-weight: bold; \${p.contract_type?.startsWith('1') ? 'color: #854d0e !important;' : ''}">\${p.contract_type?.startsWith('1') ? '★ ' : ''}1 - Ouro</td>
-        <td \${p.contract_type?.startsWith('1') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Manutenção, Mão de Obra, Peças, Água Destilada e Deslocamento do técnico autorizado TENNANT COMPANY. Não incluso: Combustíveis e Químicos. \${p.contract_type?.startsWith('1') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      <tr ${p.contract_type?.startsWith('1') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('1') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('1') ? '★ ' : ''}1 - Ouro</td>
+        <td ${p.contract_type?.startsWith('1') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Manutenção, Mão de Obra, Peças, Água Destilada e Deslocamento do técnico autorizado TENNANT COMPANY. Não incluso: Combustíveis e Químicos. ${p.contract_type?.startsWith('1') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
       </tr>
-      <tr \${p.contract_type?.startsWith('2') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
-        <td style="font-weight: bold; \${p.contract_type?.startsWith('2') ? 'color: #854d0e !important;' : ''}">\${p.contract_type?.startsWith('2') ? '★ ' : ''}2 - Prata</td>
-        <td \${p.contract_type?.startsWith('2') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Químicos, Escovas e Discos. \${p.contract_type?.startsWith('2') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      <tr ${p.contract_type?.startsWith('2') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('2') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('2') ? '★ ' : ''}2 - Prata</td>
+        <td ${p.contract_type?.startsWith('2') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Químicos, Escovas e Discos. ${p.contract_type?.startsWith('2') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
       </tr>
-      <tr \${p.contract_type?.startsWith('3') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
-        <td style="font-weight: bold; \${p.contract_type?.startsWith('3') ? 'color: #854d0e !important;' : ''}">\${p.contract_type?.startsWith('3') ? '★ ' : ''}3 - Bronze</td>
-        <td \${p.contract_type?.startsWith('3') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Água Destilada, Químicos, Escovas, Discos e Baterias. \${p.contract_type?.startsWith('3') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      <tr ${p.contract_type?.startsWith('3') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('3') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('3') ? '★ ' : ''}3 - Bronze</td>
+        <td ${p.contract_type?.startsWith('3') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Água Destilada, Químicos, Escovas, Discos e Baterias. ${p.contract_type?.startsWith('3') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
       </tr>
-      <tr \${p.contract_type?.startsWith('4') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
-        <td style="font-weight: bold; \${p.contract_type?.startsWith('4') ? 'color: #854d0e !important;' : ''}">\${p.contract_type?.startsWith('4') ? '★ ' : ''}4 - MOB</td>
-        <td \${p.contract_type?.startsWith('4') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Somente Manutenção, Mão de Obra, e Deslocamento do técnico autorizado TENNANT COMPANY. \${p.contract_type?.startsWith('4') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      <tr ${p.contract_type?.startsWith('4') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('4') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('4') ? '★ ' : ''}4 - MOB</td>
+        <td ${p.contract_type?.startsWith('4') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Somente Manutenção, Mão de Obra, e Deslocamento do técnico autorizado TENNANT COMPANY. ${p.contract_type?.startsWith('4') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
       </tr>
     </tbody>
   </table>
