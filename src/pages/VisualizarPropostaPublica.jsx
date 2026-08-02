@@ -203,6 +203,27 @@ export default function VisualizarPropostaPublica() {
       }
       return <p key={idx} className="text-xs text-gray-600 py-1 font-semibold">{trimmed}</p>;
     });
+  const getGeneralDescription = (text) => {
+    if (!text) return '';
+    const lines = text.split('\n');
+    const descLines = [];
+    for (let line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      // Stop when we hit structured lists or sub-headers
+      if (trimmed.toUpperCase().includes('ESPECIFICAÇÕES TÉCNICAS') || 
+          trimmed.toUpperCase().includes('CARACTERÍSTICAS') || 
+          trimmed.toUpperCase().includes('BENEFÍCIOS') ||
+          (trimmed.includes(':') && !trimmed.toLowerCase().startsWith('http')) || 
+          trimmed.startsWith('-') || 
+          trimmed.startsWith('*') ||
+          trimmed.startsWith('•')) {
+        break;
+      }
+      descLines.push(trimmed);
+    }
+    // Filter out title line if it matches or contains the machine name
+    return descLines.join('\n\n');
   };
 
   if (isLoading) {
@@ -426,13 +447,13 @@ export default function VisualizarPropostaPublica() {
         </header>
 
         {/* VIEWPORTS */}
-        <div className="flex-1 bg-slate-900/40 p-6 md:p-10 overflow-y-auto">
+        <div className="flex-1 bg-[#001f2a] p-0 overflow-y-auto">
           
           {/* TAB 1: PRESENTATION & CATALOG SPECIFICATIONS */}
           {activeTab === 'presentation' && (
-            <div className="max-w-4xl mx-auto animate-in fade-in duration-150 text-left">
+            <div className="w-full animate-in fade-in duration-150 text-left">
               
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-md p-6 md:p-8 space-y-6">
+              <div className="bg-white min-h-[calc(100vh-70px)] p-6 md:p-10 space-y-6 border-b border-gray-200 w-full">
                 <div className="border-b border-gray-150 pb-4">
                   <span className="text-xxs font-black text-blue-600 bg-blue-50 border border-blue-100/50 px-2.5 py-0.5 rounded uppercase tracking-wider">
                     Catálogo de Equipamentos
@@ -446,12 +467,34 @@ export default function VisualizarPropostaPublica() {
                   
                   {/* Left Column: Interactive photo gallery */}
                   <div className="md:col-span-5 space-y-4">
-                    <div className="h-[300px] bg-white border border-gray-150 rounded-xl flex items-center justify-center p-4 shadow-xxs">
+                    <div className="relative h-[300px] bg-white border border-gray-150 rounded-xl flex items-center justify-center p-4 shadow-xxs overflow-hidden">
                       <img 
                         src={photoArray[activePhotoIndex] || mainPhoto} 
                         alt={p.machine_name} 
                         className="max-h-full max-w-full object-contain" 
                       />
+                      
+                      {/* Chevron Navigation Controls */}
+                      {photoArray.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setActivePhotoIndex(prev => (prev === 0 ? photoArray.length - 1 : prev - 1))}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors shadow-sm z-10"
+                            title="Foto Anterior"
+                          >
+                            <ChevronLeft className="w-4.5 h-4.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActivePhotoIndex(prev => (prev === photoArray.length - 1 ? 0 : prev + 1))}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors shadow-sm z-10"
+                            title="Próxima Foto"
+                          >
+                            <ChevronRight className="w-4.5 h-4.5" />
+                          </button>
+                        </>
+                      )}
                     </div>
 
                     {/* Thumbnail list if there are multiple photos */}
@@ -491,10 +534,10 @@ export default function VisualizarPropostaPublica() {
 
           {/* TAB 2: COMMERCIAL PROPOSAL DETAILS (CLONED FROM PRINTED PDF STRUCTURE, NO TECHNICAL SPECS TEXTBOX) */}
           {activeTab === 'proposal' && (
-            <div className="max-w-4xl mx-auto animate-in fade-in duration-150 text-left">
+            <div className="w-full py-8 px-4 flex justify-center animate-in fade-in duration-150">
               
               {/* Virtual A4 sheet representing the PDF structure */}
-              <div className="bg-white rounded-2xl border border-gray-200/80 shadow-md p-8 md:p-12 space-y-6 relative max-w-3xl mx-auto font-sans leading-relaxed text-gray-800">
+              <div className="bg-white rounded-2xl border border-gray-250 shadow-lg p-8 md:p-12 space-y-8 relative w-full max-w-4xl font-sans leading-relaxed text-gray-800 text-left">
                 
                 {/* Header matching printed proposal */}
                 <div className="flex justify-between items-center border-b-2 border-blue-600 pb-5 mb-5 gap-4">
@@ -514,7 +557,7 @@ export default function VisualizarPropostaPublica() {
                 </div>
 
                 <div className="text-center mb-6">
-                  <h1 className="text-sm font-extrabold uppercase text-slate-800 tracking-wider">Proposta Comercial de Locação de Equipamentos</h1>
+                  <h1 className="text-base font-extrabold uppercase text-slate-800 tracking-wider">Proposta Comercial de Locação de Equipamentos</h1>
                   <span className="text-xxs font-bold text-slate-400 block mt-1">Proposta nº #{String(p.id).padStart(4, '0')} • Data: {new Date(p.created_at || new Date()).toLocaleDateString('pt-BR')}</span>
                 </div>
 
@@ -531,72 +574,132 @@ export default function VisualizarPropostaPublica() {
                   </div>
                 </div>
 
-                {/* Equipment visual description and commercial terms */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                {/* Structured Clauses instead of Dashboard Grid */}
+                <div className="space-y-6 text-xs text-gray-700 font-medium leading-relaxed">
                   
-                  {/* Left column: photo & differentials checklist */}
-                  <div className="md:col-span-5 space-y-4">
-                    <div className="h-44 bg-white border border-gray-150 rounded-xl flex items-center justify-center p-3">
-                      <img src={mainPhoto} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
-                    </div>
+                  <div>
+                    <h3 className="font-extrabold text-gray-900 border-b border-gray-250 pb-1 mb-2 text-sm uppercase">01 - DO OBJETO E ESCOPO</h3>
+                    <p className="pl-4">
+                      1.1. Constitui objeto desta Proposta Comercial a locação temporária do seguinte equipamento de alta performance:
+                    </p>
+                    
+                    {/* Machine Photo and Paragraph Description Grid matching the PDF Print layout */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start mt-4 pl-4 mb-4">
+                      
+                      {/* Left: Machine Photo */}
+                      <div className="md:col-span-4 bg-white border border-gray-150 rounded-xl p-3 flex items-center justify-center h-48 shadow-xxs">
+                        <img src={mainPhoto} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
+                      </div>
 
-                    <div className="border border-gray-150 rounded-xl p-3 bg-white">
-                      <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider mb-2">Diferenciais Inclusos</span>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2 text-xxs font-bold text-gray-600">
-                          <span className="text-blue-500 font-extrabold">✔</span> Equipamento Revisado
-                        </div>
-                        <div className="flex items-center gap-2 text-xxs font-bold text-gray-600">
-                          <span className="text-blue-500 font-extrabold">✔</span> Suporte Técnico 48h
-                        </div>
-                        <div className="flex items-center gap-2 text-xxs font-bold text-gray-600">
-                          <span className="text-blue-500 font-extrabold">✔</span> Substituição Backup
+                      {/* Right: Machine Title & Description */}
+                      <div className="md:col-span-8 space-y-2">
+                        <h4 className="text-xs font-black text-gray-900 border-b border-blue-200 pb-1 uppercase tracking-wide">
+                          {p.machine_name || 'Equipamento'}
+                        </h4>
+                        
+                        <div className="text-gray-600 text-[11px] font-semibold leading-relaxed space-y-2 whitespace-pre-line">
+                          {getGeneralDescription(p.machine_specs) || 'Equipamento de alta qualidade e rendimento, ideal para processos contínuos de higienização de pisos.'}
                         </div>
                       </div>
+
                     </div>
+
+                    <p className="pl-4 mt-4">
+                      1.2. O escopo compreende a disponibilização do equipamento em plenas condições de operação, acompanhado dos seguintes diferenciais operacionais inclusos:
+                    </p>
+                    <ul className="pl-8 list-disc mt-1 space-y-0.5 text-gray-600">
+                      <li>Revisão técnica preventiva realizada antes da entrega.</li>
+                      <li>Suporte técnico ágil para atendimento e resolução de eventuais chamados.</li>
+                      <li>Frota de backup disponível em caso de indisponibilidade prolongada.</li>
+                    </ul>
                   </div>
 
-                  {/* Right column: Condições Comerciais Table */}
-                  <div className="md:col-span-7">
-                    <div className="border border-gray-150 rounded-xl overflow-hidden shadow-xxs bg-white">
-                      <table className="w-full text-left text-xs text-gray-600 border-collapse">
-                        <tbody className="divide-y divide-gray-150">
+                  <div>
+                    <h3 className="font-extrabold text-gray-900 border-b border-gray-250 pb-1 mb-2 text-sm uppercase">02 - DAS CONDIÇÕES E INVESTIMENTO</h3>
+                    <p className="pl-4 mb-3">
+                      2.1. Os valores referentes aos serviços de locação e as condições logísticas acordadas estão descritos no resumo comercial abaixo:
+                    </p>
+                    
+                    <div className="border border-gray-150 rounded-xl overflow-hidden shadow-xxs bg-white ml-4 max-w-2xl">
+                      <table className="w-full text-left text-xs text-gray-650 border-collapse">
+                        <tbody className="divide-y divide-gray-150 font-semibold">
                           <tr>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide w-1/2">Investimento Mensal</td>
-                            <td className="px-3.5 py-2.5 font-black text-blue-600 text-sm">
+                            <td className="px-3.5 py-2 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide w-1/2">Investimento Mensal</td>
+                            <td className="px-3.5 py-2 font-black text-blue-600 text-sm">
                               R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} /mês
                             </td>
                           </tr>
                           <tr>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Plano Escolhido</td>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-800">{p.contract_type}</td>
+                            <td className="px-3.5 py-2 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Plano de Manutenção</td>
+                            <td className="px-3.5 py-2 font-bold text-gray-800">{p.contract_type}</td>
                           </tr>
                           <tr>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Período de Locação</td>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-800">{formatPeriod(p.period_months)}</td>
+                            <td className="px-3.5 py-2 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Período de Locação</td>
+                            <td className="px-3.5 py-2 font-bold text-gray-800">{formatPeriod(p.period_months)}</td>
                           </tr>
                           <tr>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Franquia de Horas</td>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-800">{p.hours_per_month || 'Franquia Livre'}</td>
+                            <td className="px-3.5 py-2 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Franquia de Horas</td>
+                            <td className="px-3.5 py-2 font-bold text-gray-800">{p.hours_per_month || 'Franquia Livre'}</td>
                           </tr>
                           <tr>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Região de Uso</td>
-                            <td className="px-3.5 py-2.5 font-semibold text-gray-700">{p.region_used || 'Estado de São Paulo'}</td>
+                            <td className="px-3.5 py-2 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Região de Uso Autorizada</td>
+                            <td className="px-3.5 py-2 font-semibold text-gray-700">{p.region_used || 'Estado de São Paulo'}</td>
                           </tr>
                           <tr>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Tempo de Entrega</td>
-                            <td className="px-3.5 py-2.5 font-semibold text-gray-700">{p.delivery_time || 'Imediato'}</td>
+                            <td className="px-3.5 py-2 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Tempo de Entrega</td>
+                            <td className="px-3.5 py-2 font-semibold text-gray-700">{p.delivery_time || 'Imediato'}</td>
                           </tr>
                           <tr>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Custo do Frete</td>
-                            <td className="px-3.5 py-2.5 font-semibold text-gray-700">
+                            <td className="px-3.5 py-2 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Custo de Frete</td>
+                            <td className="px-3.5 py-2 font-semibold text-gray-700">
                               {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
                             </td>
                           </tr>
                           <tr>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Validade da Proposta</td>
-                            <td className="px-3.5 py-2.5 font-semibold text-gray-700">{p.validity_days || '10'} dias</td>
+                            <td className="px-3.5 py-2 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Validade desta Proposta</td>
+                            <td className="px-3.5 py-2 font-semibold text-gray-700">{p.validity_days || '10'} dias</td>
                           </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-extrabold text-gray-900 border-b border-gray-250 pb-1 mb-2 text-sm uppercase">03 - COBERTURAS DO PLANO ESCOLHIDO</h3>
+                    <p className="pl-4 mb-3">
+                      3.1. A cobertura de manutenção associada ao plano contratado está descrita na tabela comparativa abaixo:
+                    </p>
+                    
+                    <div className="border border-gray-150 rounded-xl overflow-hidden shadow-xxs bg-white ml-4">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-slate-50 border-b border-gray-250">
+                          <tr>
+                            <th className="px-4 py-2 font-bold text-gray-700 w-1/3">Tipo de Contrato</th>
+                            <th className="px-4 py-2 font-bold text-gray-700">Descrição de Cobertura</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {[
+                            { id: '0', title: '0 - Sem Cobertura', desc: 'Incluso somente aluguel da máquina.' },
+                            { id: '1', title: '1 - Ouro', desc: 'Incluso: Manutenção, peças, água destilada e deslocamento do técnico.' },
+                            { id: '2', title: '2 - Prata', desc: 'Incluso preventivas e corretivas. Não incluso: escovas e discos.' },
+                            { id: '3', title: '3 - Bronze', desc: 'Incluso preventivas. Não incluso baterias e consumíveis.' },
+                            { id: '4', title: '4 - MOB', desc: 'Incluso somente mão de obra de manutenção.' }
+                          ].map(plan => {
+                            const isSel = p.contract_type?.startsWith(plan.id);
+                            return (
+                              <tr key={plan.id} className={`transition-colors ${isSel ? 'bg-yellow-50 font-bold' : 'hover:bg-gray-50/20 text-gray-500'}`}>
+                                <td className={`px-4 py-3 border-r border-gray-150 ${isSel ? 'text-amber-800 font-extrabold' : 'text-gray-900 font-semibold'}`}>
+                                  {isSel && '★ '}
+                                  {plan.title}
+                                </td>
+                                <td className={`px-4 py-3 ${isSel ? 'text-amber-950 font-semibold' : 'text-gray-500'}`}>
+                                  {plan.desc}
+                                  {isSel && <span className="block mt-1 text-[10px] font-black text-amber-800 bg-amber-100/50 border border-amber-200/50 px-2 py-0.5 rounded w-max uppercase tracking-wider">Selecionado</span>}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -604,46 +707,8 @@ export default function VisualizarPropostaPublica() {
 
                 </div>
 
-                {/* Comparative table of plans with highlighted selected type (cloned from PDF) */}
-                <div className="space-y-2 mt-4">
-                  <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">* Tabela Comparativa de Cobertura de Planos</div>
-                  <div className="border border-gray-150 rounded-xl overflow-hidden shadow-xxs">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead className="bg-slate-50 border-b border-gray-250">
-                        <tr>
-                          <th className="px-4 py-2 font-bold text-gray-700 w-1/3">Tipo de Contrato</th>
-                          <th className="px-4 py-2 font-bold text-gray-700">Descrição de Cobertura</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {[
-                          { id: '0', title: '0 - Sem Cobertura', desc: 'Incluso somente aluguel da máquina.' },
-                          { id: '1', title: '1 - Ouro', desc: 'Incluso: Manutenção, peças, água destilada e deslocamento do técnico.' },
-                          { id: '2', title: '2 - Prata', desc: 'Incluso preventivas e corretivas. Não incluso: escovas e discos.' },
-                          { id: '3', title: '3 - Bronze', desc: 'Incluso preventivas. Não incluso baterias e consumíveis.' },
-                          { id: '4', title: '4 - MOB', desc: 'Incluso somente mão de obra de manutenção.' }
-                        ].map(plan => {
-                          const isSel = p.contract_type?.startsWith(plan.id);
-                          return (
-                            <tr key={plan.id} className={`transition-colors ${isSel ? 'bg-yellow-50 font-bold' : 'hover:bg-gray-50/20 text-gray-500'}`}>
-                              <td className={`px-4 py-3.5 border-r border-gray-150 ${isSel ? 'text-amber-800 font-extrabold' : 'text-gray-900 font-semibold'}`}>
-                                {isSel && '★ '}
-                                {plan.title}
-                              </td>
-                              <td className={`px-4 py-3.5 ${isSel ? 'text-amber-950 font-semibold' : 'text-gray-500'}`}>
-                                {plan.desc}
-                                {isSel && <span className="block mt-1 text-[10px] font-black text-amber-800 bg-amber-100/50 border border-amber-200/50 px-2 py-0.5 rounded w-max uppercase tracking-wider">Selecionado</span>}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
                 {/* Seller Box Footer */}
-                <div className="flex justify-between items-end gap-6 pt-5 border-t border-gray-200 mt-6 text-xxs font-bold text-gray-500">
+                <div className="flex justify-between items-end gap-6 pt-5 border-t border-gray-200 mt-8 text-xxs font-bold text-gray-500">
                   <div className="text-left leading-relaxed">
                     <b>Dados do Vendedor</b><br />
                     {p.seller_info || 'Alfa Tennant\nAtendimento Comercial\n(11) 3320-8550'}
@@ -660,8 +725,8 @@ export default function VisualizarPropostaPublica() {
 
           {/* TAB 3: CONTRACT DRAFT MINUTA (15 CLAUSES SCROLLABLE PAGE) */}
           {activeTab === 'minuta' && (
-            <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-150">
-              <div className="bg-white border border-gray-250 shadow-md rounded-2xl p-8 md:p-12 text-left relative overflow-hidden font-serif leading-relaxed">
+            <div className="w-full py-8 px-4 flex justify-center animate-in fade-in duration-150">
+              <div className="bg-white border border-gray-250 shadow-lg rounded-2xl p-8 md:p-12 text-left relative overflow-hidden font-serif leading-relaxed w-full max-w-4xl">
                 
                 {/* Watermark/Pre-contract stamp */}
                 <div className="absolute top-10 right-10 border-4 border-dashed border-slate-300 text-slate-300/80 px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transform rotate-6 select-none pointer-events-none">
@@ -690,8 +755,8 @@ export default function VisualizarPropostaPublica() {
 
           {/* TAB 4: CHAT / CONVERSATION & DECISIONS HISTORY */}
           {activeTab === 'chat' && (
-            <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-150 text-left">
-              <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-sm">
+            <div className="w-full py-8 px-4 flex justify-center animate-in fade-in duration-150 text-left">
+              <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-sm w-full max-w-4xl">
                 <h3 className="text-sm font-extrabold text-gray-900 mb-4 flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-blue-600" />
                   Histórico de Negociação & Decisões
