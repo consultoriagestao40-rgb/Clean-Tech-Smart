@@ -238,10 +238,10 @@ export default function VisualizarPropostaPublica() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col md:flex-row font-sans text-gray-800">
+    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-gray-800">
       
       {/* SIDEBAR NAVIGATION (equal to smartbid) */}
-      <aside className="w-full md:w-80 bg-slate-950 text-white flex flex-col justify-between shrink-0 p-5 md:min-h-screen border-r border-slate-900">
+      <aside className="w-full md:w-80 bg-blue-900 text-white flex flex-col justify-between shrink-0 p-5 md:min-h-screen border-r border-blue-950/40">
         <div>
           {/* Brand Header */}
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800/60">
@@ -267,7 +267,7 @@ export default function VisualizarPropostaPublica() {
           <nav className="space-y-1.5">
             <button 
               onClick={() => setActiveTab('presentation')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'presentation' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'presentation' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
             >
               <div className="flex items-center gap-2.5">
                 <Info className="w-4 h-4" />
@@ -278,7 +278,7 @@ export default function VisualizarPropostaPublica() {
 
             <button 
               onClick={() => setActiveTab('proposal')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'proposal' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'proposal' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
             >
               <div className="flex items-center gap-2.5">
                 <FileText className="w-4 h-4" />
@@ -289,7 +289,7 @@ export default function VisualizarPropostaPublica() {
 
             <button 
               onClick={() => setActiveTab('minuta')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'minuta' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'minuta' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
             >
               <div className="flex items-center gap-2.5">
                 <FileSignature className="w-4 h-4" />
@@ -300,7 +300,7 @@ export default function VisualizarPropostaPublica() {
 
             <button 
               onClick={() => setActiveTab('chat')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'chat' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'chat' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
             >
               <div className="flex items-center gap-2.5">
                 <MessageSquare className="w-4 h-4" />
@@ -354,7 +354,7 @@ export default function VisualizarPropostaPublica() {
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* Top Header Bar with Live Countdown (equal to smartbid) */}
-        <header className="bg-slate-950 border-b border-slate-900 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-white">
+        <header className="bg-blue-900 border-b border-blue-950/40 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-white">
           <div className="text-center sm:text-left">
             <h2 className="font-extrabold text-sm text-slate-100 tracking-wide uppercase">
               {p.client_name}
