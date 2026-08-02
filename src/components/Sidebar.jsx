@@ -46,7 +46,6 @@ export default function Sidebar() {
     { name: 'Estoque', path: '/estoque', icon: <Boxes size={20} /> },
     { name: 'Chamados', path: '/chamados', icon: <ClipboardList size={20} /> },
     { name: 'Modalidades', path: '/modalidades', icon: <Tags size={20} /> },
-    { name: 'Serviços', path: '/servicos', icon: <Wrench size={20} /> },
     { name: 'Templates', path: '/templates', icon: <FileBox size={20} /> },
     { name: 'Disponibilidade', path: '/disponibilidade', icon: <Calendar size={20} /> },
     { name: 'Relatórios', path: '/relatorios', icon: <BarChart size={20} /> },
