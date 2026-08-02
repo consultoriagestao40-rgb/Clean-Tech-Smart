@@ -30,6 +30,9 @@ export default function VisualizarPropostaPublica() {
   // Slide Deck Presentation player state
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  // Active photo gallery state for catalog presentation
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+
   useEffect(() => {
     fetchProposalDetails();
     fetchTemplates();
@@ -40,7 +43,7 @@ export default function VisualizarPropostaPublica() {
     
     const calculateTimeLeft = () => {
       const createdAtDate = new Date(proposal.created_at || new Date());
-      const validityDaysNum = Number(proposal.validity_days || 10);
+      const validityDaysNum = parseInt(proposal.validity_days) || 10;
       const expirationDate = new Date(createdAtDate.getTime() + (validityDaysNum * 24 * 60 * 60 * 1000));
       const diffTime = expirationDate.getTime() - new Date().getTime();
       
@@ -167,20 +170,38 @@ export default function VisualizarPropostaPublica() {
     return `${m} Meses`;
   };
 
-  const parseSpecsToHTML = (specsText) => {
-    if (!specsText) return <p className="text-xs text-gray-400">Nenhuma especificação disponível.</p>;
-    return specsText.split('\n').map((line, idx) => {
+  const parseSpecsToHTML = (text) => {
+    if (!text) return <p className="text-xs text-gray-400">Nenhuma especificação disponível.</p>;
+    return text.split('\n').map((line, idx) => {
       const trimmed = line.trim();
-      if (!trimmed) return null;
-      if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+      if (!trimmed) return <div key={idx} className="h-1.5" />;
+      if (trimmed.includes(':')) {
+        const [key, ...valParts] = trimmed.split(':');
+        const val = valParts.join(':').trim();
+        const cleanKey = key.replace(/^[-\s*•]+/, '').trim();
         return (
-          <div key={idx} className="flex items-start py-1 text-xs text-gray-700 gap-2">
-            <span className="text-blue-500 font-extrabold">•</span>
-            <span>{trimmed.substring(1).trim()}</span>
+          <div key={idx} className="flex border-b border-gray-100 py-2 text-xs hover:bg-gray-50/50">
+            <span className="font-semibold text-gray-500 w-1/2">{cleanKey}</span>
+            <span className="text-gray-950 w-1/2 font-bold">{val}</span>
           </div>
         );
       }
-      return <p key={idx} className="text-xs text-gray-800 py-1 font-semibold">{trimmed}</p>;
+      if (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) {
+        return (
+          <div key={idx} className="flex items-start py-1.5 text-xs text-gray-700">
+            <span className="text-blue-500 mr-2 font-bold">•</span>
+            <span className="font-medium text-gray-800">{trimmed.replace(/^[-\s*•]+/, '')}</span>
+          </div>
+        );
+      }
+      if (trimmed === trimmed.toUpperCase() && trimmed.length > 3) {
+        return (
+          <h4 key={idx} className="font-bold text-blue-900 text-xs mt-4 mb-2 uppercase tracking-wide border-b border-blue-100 pb-1">
+            {trimmed}
+          </h4>
+        );
+      }
+      return <p key={idx} className="text-xs text-gray-600 py-1 font-semibold">{trimmed}</p>;
     });
   };
 
@@ -214,7 +235,7 @@ export default function VisualizarPropostaPublica() {
 
   // Expiration properties
   const createdAtDate = new Date(p.created_at || new Date());
-  const validityDaysNum = Number(p.validity_days || 10);
+  const validityDaysNum = parseInt(p.validity_days) || 10;
   const expirationDate = new Date(createdAtDate.getTime() + (validityDaysNum * 24 * 60 * 60 * 1000));
   const expirationFormatted = expirationDate.toLocaleDateString('pt-BR');
 
@@ -407,159 +428,62 @@ export default function VisualizarPropostaPublica() {
         {/* VIEWPORTS */}
         <div className="flex-1 bg-slate-900/40 p-6 md:p-10 overflow-y-auto">
           
-          {/* TAB 1: PRESENTATION SLIDES (EQUAL TO SMARTBID SLIDES PRESENTATION PLAYER) */}
+          {/* TAB 1: PRESENTATION & CATALOG SPECIFICATIONS */}
           {activeTab === 'presentation' && (
             <div className="max-w-4xl mx-auto animate-in fade-in duration-150 text-left">
               
-              {/* Outer Slate Frame representing the Presentation Screen */}
-              <div className="bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl p-4 md:p-6 flex flex-col justify-between min-h-[460px]">
-                
-                {/* Slide content viewport */}
-                <div className="flex-1 bg-white rounded-xl shadow-inner p-6 md:p-10 relative overflow-hidden min-h-[380px] flex flex-col justify-between border border-slate-850">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-md p-6 md:p-8 space-y-6">
+                <div className="border-b border-gray-150 pb-4">
+                  <span className="text-xxs font-black text-blue-600 bg-blue-50 border border-blue-100/50 px-2.5 py-0.5 rounded uppercase tracking-wider">
+                    Catálogo de Equipamentos
+                  </span>
+                  <h2 className="text-xl font-black text-gray-900 mt-2 uppercase tracking-wide">
+                    {p.machine_name || 'Equipamento'}
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
                   
-                  {/* SLIDE 1: COVER (CAPA) */}
-                  {currentSlide === 0 && (
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-8 h-full animate-in fade-in duration-200">
-                      <div className="space-y-4 max-w-lg">
-                        <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center font-black text-white text-xl shadow-lg mb-2">
-                          CT
-                        </div>
-                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight tracking-tight uppercase">
-                          Apresentação & Proposta 2026
-                        </h1>
-                        <p className="text-sm font-extrabold text-blue-600 uppercase tracking-widest">
-                          Solução Premium de Higienização de Pisos
-                        </p>
-                        <div className="pt-4 border-t border-gray-150">
-                          <span className="text-xxs text-gray-400 font-bold uppercase tracking-wider block">Preparado para</span>
-                          <span className="text-base font-extrabold text-gray-800 uppercase">{p.client_name}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="w-full md:w-80 h-64 bg-slate-50/50 rounded-2xl border border-gray-100 flex items-center justify-center p-4 shadow-sm shrink-0">
-                        <img src={mainPhoto} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
-                      </div>
+                  {/* Left Column: Interactive photo gallery */}
+                  <div className="md:col-span-5 space-y-4">
+                    <div className="h-[300px] bg-white border border-gray-150 rounded-xl flex items-center justify-center p-4 shadow-xxs">
+                      <img 
+                        src={photoArray[activePhotoIndex] || mainPhoto} 
+                        alt={p.machine_name} 
+                        className="max-h-full max-w-full object-contain" 
+                      />
                     </div>
-                  )}
 
-                  {/* SLIDE 2: CATALOG DETAILS & SPECS */}
-                  {currentSlide === 1 && (
-                    <div className="flex flex-col md:flex-row gap-8 h-full items-start animate-in fade-in duration-200">
-                      
-                      {/* Left side: Photo & details */}
-                      <div className="w-full md:w-80 shrink-0 space-y-4">
-                        <div className="h-56 bg-slate-50 rounded-2xl border border-gray-100 flex items-center justify-center p-4">
-                          <img src={mainPhoto} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
-                        </div>
-                        <div>
-                          <span className="text-xxs font-black text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded uppercase tracking-wider">
-                            Especificações Básicas
-                          </span>
-                          <h3 className="font-extrabold text-sm text-gray-800 mt-2 uppercase">{p.machine_name}</h3>
-                        </div>
+                    {/* Thumbnail list if there are multiple photos */}
+                    {photoArray.length > 1 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
+                        {photoArray.map((url, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setActivePhotoIndex(idx)}
+                            className={`w-16 h-12 bg-white border-2 rounded-lg flex items-center justify-center p-1 shrink-0 transition-all ${activePhotoIndex === idx ? 'border-blue-600 scale-102' : 'border-gray-200 hover:border-gray-300'}`}
+                          >
+                            <img src={url} alt={`Preview ${idx + 1}`} className="max-h-full max-w-full object-contain" />
+                          </button>
+                        ))}
                       </div>
-
-                      {/* Right side: Spec lines list */}
-                      <div className="flex-1 space-y-3 min-w-0">
-                        <h4 className="text-xxs font-black text-slate-400 uppercase tracking-widest pb-1 border-b border-gray-150">Especificações do Catálogo</h4>
-                        <div className="bg-slate-50 border border-gray-100 rounded-xl p-4 max-h-[260px] overflow-y-auto scrollbar-thin space-y-0.5">
-                          {parseSpecsToHTML(p.machine_specs)}
-                        </div>
-                      </div>
-
-                    </div>
-                  )}
-
-                  {/* SLIDE 3: COMMITMENTS & BENEFITS */}
-                  {currentSlide === 2 && (
-                    <div className="flex flex-col justify-between h-full animate-in fade-in duration-200">
-                      
-                      <div className="space-y-3">
-                        <h2 className="text-xl font-black text-slate-900 uppercase tracking-wide">Nossos Diferenciais & Garantias</h2>
-                        <p className="text-xs text-gray-500 font-medium">
-                          Garantimos a operação contínua e a conservação da sua planta com o melhor suporte técnico da categoria.
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6">
-                        <div className="bg-slate-50 border border-gray-100 rounded-xl p-4 space-y-2">
-                          <span className="w-8 h-8 bg-blue-100/60 text-blue-600 rounded-lg flex items-center justify-center font-bold text-xs">01</span>
-                          <h4 className="font-extrabold text-xs text-gray-800 uppercase tracking-wide">Atendimento Rápido</h4>
-                          <p className="text-xxs text-gray-500 font-semibold leading-relaxed">
-                            Abertura de chamados técnicos com atendimento e deslocamento de técnicos em até 48 horas úteis.
-                          </p>
-                        </div>
-
-                        <div className="bg-slate-50 border border-gray-100 rounded-xl p-4 space-y-2">
-                          <span className="w-8 h-8 bg-blue-100/60 text-blue-600 rounded-lg flex items-center justify-center font-bold text-xs">02</span>
-                          <h4 className="font-extrabold text-xs text-gray-800 uppercase tracking-wide">Solução ou Backup</h4>
-                          <p className="text-xxs text-gray-500 font-semibold leading-relaxed">
-                            Equipamento reparado em até 72 horas úteis ou substituído por uma máquina equivalente sem custos.
-                          </p>
-                        </div>
-
-                        <div className="bg-slate-50 border border-gray-100 rounded-xl p-4 space-y-2">
-                          <span className="w-8 h-8 bg-blue-100/60 text-blue-600 rounded-lg flex items-center justify-center font-bold text-xs">03</span>
-                          <h4 className="font-extrabold text-xs text-gray-800 uppercase tracking-wide">Técnicos de Fábrica</h4>
-                          <p className="text-xxs text-gray-500 font-semibold leading-relaxed">
-                            Manutenções preventivas e corretivas executadas por profissionais certificados e com peças originais.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="pt-3 border-t border-gray-150 flex items-center justify-between text-xxs font-bold text-gray-400">
-                        <span>Suporte Técnico CLEAN TECH PRO</span>
-                        <span>Contrato de Locação Garantido</span>
-                      </div>
-
-                    </div>
-                  )}
-
-                </div>
-
-                {/* Presentation Player navigation bar matching smartbid */}
-                <div className="flex justify-between items-center mt-4 pt-2 border-t border-slate-900 text-slate-400 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <button 
-                      onClick={() => setCurrentSlide(0)}
-                      className={`w-2.5 h-2.5 rounded-full transition-all ${currentSlide === 0 ? 'bg-blue-500 scale-110' : 'bg-slate-800 hover:bg-slate-700'}`}
-                      title="Slide 1"
-                    />
-                    <button 
-                      onClick={() => setCurrentSlide(1)}
-                      className={`w-2.5 h-2.5 rounded-full transition-all ${currentSlide === 1 ? 'bg-blue-500 scale-110' : 'bg-slate-800 hover:bg-slate-700'}`}
-                      title="Slide 2"
-                    />
-                    <button 
-                      onClick={() => setCurrentSlide(2)}
-                      className={`w-2.5 h-2.5 rounded-full transition-all ${currentSlide === 2 ? 'bg-blue-500 scale-110' : 'bg-slate-800 hover:bg-slate-700'}`}
-                      title="Slide 3"
-                    />
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <span className="font-bold font-mono tracking-widest uppercase text-xxs">
-                      Slide {currentSlide + 1} de 3
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <button 
-                        onClick={() => setCurrentSlide(prev => Math.max(0, prev - 1))}
-                        disabled={currentSlide === 0}
-                        className="p-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-850 rounded-lg disabled:opacity-30 disabled:hover:bg-slate-900 transition-colors"
-                      >
-                        <ChevronRight className="w-4 h-4 transform rotate-180" />
-                      </button>
-                      <button 
-                        onClick={() => setCurrentSlide(prev => Math.min(2, prev + 1))}
-                        disabled={currentSlide === 2}
-                        className="p-1.5 bg-slate-900 border border-slate-800 hover:bg-slate-850 rounded-lg disabled:opacity-30 disabled:hover:bg-slate-900 transition-colors"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
+                  {/* Right Column: Structured technical specifications list */}
+                  <div className="md:col-span-7 space-y-4">
+                    <div className="bg-slate-50 border border-gray-100 rounded-xl p-4 md:p-5">
+                      <h3 className="text-xs font-extrabold text-blue-900 uppercase tracking-widest border-b border-blue-100 pb-2 mb-3">
+                        Especificações Técnicas
+                      </h3>
+                      <div className="space-y-0.5 max-h-[360px] overflow-y-auto pr-2 scrollbar-thin">
+                        {parseSpecsToHTML(p.machine_specs)}
+                      </div>
                     </div>
                   </div>
-                </div>
 
+                </div>
               </div>
 
             </div>
