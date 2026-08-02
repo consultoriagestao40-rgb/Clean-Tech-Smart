@@ -27,6 +27,9 @@ export default function VisualizarPropostaPublica() {
   // Live countdown timer state
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: false });
 
+  // Slide Deck Presentation player state
+  const [currentSlide, setCurrentSlide] = useState(0);
+
   useEffect(() => {
     fetchProposalDetails();
     fetchTemplates();
