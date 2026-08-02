@@ -14,6 +14,7 @@ import Chamados from './pages/Chamados';
 import Tecnicos from './pages/Tecnicos';
 import Crm from './pages/Crm';
 import Configuracoes from './pages/Configuracoes';
+import TabelaLocacao from './pages/TabelaLocacao';
 
 function Placeholder({ title }) {
   return (
@@ -46,6 +47,7 @@ function App() {
           <Route path="chamados" element={<Chamados />} />
           <Route path="tecnicos" element={<Tecnicos />} />
           <Route path="configuracoes" element={<Configuracoes />} />
+          <Route path="tabela-locacao" element={<TabelaLocacao />} />
           
           {/* Outras Rotas (Placeholders) */}
           <Route path="disponibilidade" element={<Placeholder title="Disponibilidade" />} />
