@@ -23,6 +23,10 @@ export default function NovoContrato() {
   const [dbClients, setDbClients] = useState([]);
   const [proposals, setProposals] = useState([]);
   const [selectedProposalId, setSelectedProposalId] = useState('');
+  
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
 
   // Estados dos modais (Formulários)
   const [eqForm, setEqForm] = useState({ equipment_id: '', modality_id: '', prev_entrega: '', prev_retirada: '', horimetro_saida: 0, horimetro_retorno: 0, price: '' });
@@ -94,6 +98,22 @@ export default function NovoContrato() {
     } catch (e) {
       console.error('Erro ao buscar serviços:', e);
     }
+
+    // 6. Templates de Contrato
+    try {
+      const res = await fetch('/api/get-templates');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.templates) {
+          setTemplates(data.templates);
+          const def = data.templates.find(t => t.is_default);
+          if (def) setSelectedTemplateId(String(def.id));
+          else if (data.templates.length > 0) setSelectedTemplateId(String(data.templates[0].id));
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao buscar templates:', e);
+    }
   }
 
   async function fetchDetails() {
@@ -123,7 +143,7 @@ export default function NovoContrato() {
   const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
   const [newClientForm, setNewClientForm] = useState({ name: '', razao_social: '', document: '', email: '', phone: '', address: '', city: '', contact: '' });
 
-  const handleEmitContract = async () => {
+  const handleEmitContract = async (templateId) => {
     setIsGeneratingPDF(true);
     const companyLogo = localStorage.getItem('app_company_logo') || '';
     const companyName = localStorage.getItem('app_company_name') || 'Clean Tech Pro';
@@ -131,18 +151,11 @@ export default function NovoContrato() {
     const companyAddress = localStorage.getItem('app_company_address') || 'Curitiba - PR';
     const companyPhone = localStorage.getItem('app_company_phone') || '41984042835';
     try {
-      // 1. Buscar o template padrão
-      const res = await fetch('/api/get-templates');
-      const data = await res.json();
-      let defaultTemplate = data.templates?.find(t => t.is_default);
-      
-      // Fallback: se não tiver um marcado como padrão, pega o primeiro que achar
-      if (!defaultTemplate && data.templates?.length > 0) {
-        defaultTemplate = data.templates[0];
-      }
+      // 1. Buscar o template selecionado
+      const defaultTemplate = templates.find(t => String(t.id) === String(templateId));
 
       if (!defaultTemplate) {
-        alert('Nenhum Template cadastrado. Vá em Templates e crie um novo.');
+        alert('Selecione uma minuta válida.');
         setIsGeneratingPDF(false);
         return;
       }
@@ -658,7 +671,7 @@ export default function NovoContrato() {
           }} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
             <Edit className="w-4 h-4 mr-2" /> Editar
           </button>
-          <button onClick={handleEmitContract} disabled={isGeneratingPDF} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors disabled:opacity-50">
+          <button onClick={() => setIsTemplateModalOpen(true)} disabled={isGeneratingPDF} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors disabled:opacity-50">
             {isGeneratingPDF ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Printer className="w-4 h-4 mr-2" />}
             {isGeneratingPDF ? 'Gerando...' : 'Emitir Contrato'}
           </button>
@@ -1084,6 +1097,48 @@ export default function NovoContrato() {
             <div className="mt-6 flex justify-end space-x-3">
               <button onClick={() => setIsNewClientModalOpen(false)} className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50">Cancelar</button>
               <button onClick={handleSaveNewClient} className="px-4 py-2 text-white bg-blue-600 rounded-lg font-medium hover:bg-blue-700">Salvar e Utilizar</button>
+            </div>
+          </div>
+      )}
+
+      {/* MODAL SELEÇÃO DE MINUTA / TEMPLATE */}
+      {isTemplateModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-1">Selecionar Minuta do Contrato</h2>
+            <p className="text-sm text-gray-500 mb-6">Escolha o modelo de contrato (minuta) para gerar o documento.</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Minuta de Locação</label>
+                <select 
+                  value={selectedTemplateId} 
+                  onChange={e => setSelectedTemplateId(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg bg-white"
+                >
+                  <option value="">Selecione um modelo...</option>
+                  {templates.map(t => (
+                    <option key={t.id} value={t.id}>{t.name} {t.is_default ? '(Padrão)' : ''}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button 
+                onClick={() => setIsTemplateModalOpen(false)} 
+                className="px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg font-medium hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  setIsTemplateModalOpen(false);
+                  handleEmitContract(selectedTemplateId);
+                }} 
+                disabled={!selectedTemplateId}
+                className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                Gerar Contrato (Imprimir)
+              </button>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Loader2, ArrowLeft, Edit, ChevronDown, ChevronRight, Package, Printer, Play, Square, CheckCircle, Ban } from 'lucide-react';
+import { Plus, Loader2, ArrowLeft, Edit, ChevronDown, ChevronRight, Package, Printer, Play, Square, CheckCircle, Ban, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function Contratos() {
@@ -264,6 +264,26 @@ export default function Contratos() {
     }
   };
 
+  const handleDeleteContract = async (id) => {
+    if (!confirm('Tem certeza que deseja excluir permanentemente este contrato e todas as suas faturas?')) return;
+    try {
+      const response = await fetch('/api/delete-contract', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      if (response.ok) {
+        fetchContracts();
+      } else {
+        const error = await response.json();
+        alert('Erro ao excluir contrato: ' + (error.error || 'Erro desconhecido'));
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de rede ao excluir contrato.');
+    }
+  };
+
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
   };
@@ -439,6 +459,13 @@ export default function Contratos() {
                             title="Editar Contrato"
                           >
                             <Edit className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteContract(ctr.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" 
+                            title="Excluir Contrato"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
