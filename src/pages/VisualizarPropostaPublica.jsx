@@ -24,10 +24,40 @@ export default function VisualizarPropostaPublica() {
   const [feedbackNotes, setFeedbackNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Live countdown timer state
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: false });
+
   useEffect(() => {
     fetchProposalDetails();
     fetchTemplates();
   }, [id]);
+
+  useEffect(() => {
+    if (!proposal) return;
+    
+    const calculateTimeLeft = () => {
+      const createdAtDate = new Date(proposal.created_at || new Date());
+      const validityDaysNum = Number(proposal.validity_days || 10);
+      const expirationDate = new Date(createdAtDate.getTime() + (validityDaysNum * 24 * 60 * 60 * 1000));
+      const diffTime = expirationDate.getTime() - new Date().getTime();
+      
+      if (diffTime <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true });
+        return;
+      }
+      
+      const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diffTime % (1000 * 60)) / 1000);
+      
+      setTimeLeft({ days, hours, minutes, seconds, expired: false });
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 1000);
+    return () => clearInterval(interval);
+  }, [proposal]);
 
   const fetchProposalDetails = async () => {
     try {
@@ -66,14 +96,13 @@ export default function VisualizarPropostaPublica() {
     }
     setIsSubmitting(true);
     try {
-      const auditLog = `Aprovado por: ${signerName}${signerDocument ? ` (CPF/CNPJ: ${signerDocument})` : ''}`;
       const res = await fetch('/api/approve-rental-proposal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id,
           status: 'Fechada',
-          approved_by: signerName + (signerDocument ? ` (${signerDocument})` : ''),
+          approved_by: signerName + (signerDocument ? ` (CPF/CNPJ: ${signerDocument})` : ''),
           client_feedback: 'Proposta assinada e aprovada digitalmente pelo cliente.'
         })
       });
@@ -174,6 +203,18 @@ export default function VisualizarPropostaPublica() {
   const p = proposal;
   const isApproved = p.status === 'Fechada' || p.status === 'Contrato';
 
+  // Handle parsing of photo URLs properly (split on \n to fix broken image)
+  const photoArray = typeof p.machine_photos === 'string' 
+    ? p.machine_photos.split('\n').map(u => u.trim()).filter(Boolean) 
+    : (Array.isArray(p.machine_photos) ? p.machine_photos.map(u => u.trim()).filter(Boolean) : []);
+  const mainPhoto = photoArray[0] || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=600';
+
+  // Expiration properties
+  const createdAtDate = new Date(p.created_at || new Date());
+  const validityDaysNum = Number(p.validity_days || 10);
+  const expirationDate = new Date(createdAtDate.getTime() + (validityDaysNum * 24 * 60 * 60 * 1000));
+  const expirationFormatted = expirationDate.toLocaleDateString('pt-BR');
+
   // Generate populated minuta
   const defaultTemplate = templates.find(t => t.is_default) || templates[0];
   let minutaHTML = '';
@@ -197,13 +238,13 @@ export default function VisualizarPropostaPublica() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row font-sans text-gray-800">
+    <div className="min-h-screen bg-slate-900 flex flex-col md:flex-row font-sans text-gray-800">
       
       {/* SIDEBAR NAVIGATION (equal to smartbid) */}
-      <aside className="w-full md:w-80 bg-slate-900 text-white flex flex-col justify-between shrink-0 p-5 md:min-h-screen border-r border-slate-800">
+      <aside className="w-full md:w-80 bg-slate-950 text-white flex flex-col justify-between shrink-0 p-5 md:min-h-screen border-r border-slate-900">
         <div>
           {/* Brand Header */}
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800/60">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-sm shadow-md">
               CT
             </div>
@@ -232,7 +273,7 @@ export default function VisualizarPropostaPublica() {
                 <Info className="w-4 h-4" />
                 <span>1. Apresentação do Catálogo</span>
               </div>
-              <ChevronRight className={`w-3.5 h-3.5 opacity-50 group-hover:translate-x-0.5 transition-transform`} />
+              <ChevronRight className="w-3.5 h-3.5 opacity-50 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
             <button 
@@ -243,7 +284,7 @@ export default function VisualizarPropostaPublica() {
                 <FileText className="w-4 h-4" />
                 <span>2. Proposta Comercial</span>
               </div>
-              <ChevronRight className={`w-3.5 h-3.5 opacity-50 group-hover:translate-x-0.5 transition-transform`} />
+              <ChevronRight className="w-3.5 h-3.5 opacity-50 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
             <button 
@@ -254,7 +295,7 @@ export default function VisualizarPropostaPublica() {
                 <FileSignature className="w-4 h-4" />
                 <span>3. Minuta de Contrato</span>
               </div>
-              <ChevronRight className={`w-3.5 h-3.5 opacity-50 group-hover:translate-x-0.5 transition-transform`} />
+              <ChevronRight className="w-3.5 h-3.5 opacity-50 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
             <button 
@@ -265,19 +306,27 @@ export default function VisualizarPropostaPublica() {
                 <MessageSquare className="w-4 h-4" />
                 <span>4. Conversa & Feedback</span>
               </div>
-              <ChevronRight className={`w-3.5 h-3.5 opacity-50 group-hover:translate-x-0.5 transition-transform`} />
+              <ChevronRight className="w-3.5 h-3.5 opacity-50 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </nav>
         </div>
 
         {/* Sidebar Decision/Status Footer */}
-        <div className="mt-8 pt-5 border-t border-slate-800">
+        <div className="mt-8 pt-5 border-t border-slate-800/80">
           {isApproved ? (
-            <div className="bg-emerald-950/60 border border-emerald-800 p-4 rounded-2xl text-center">
-              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+            <div className="bg-emerald-950/40 border border-emerald-900/60 p-4 rounded-2xl text-center">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 animate-bounce" />
               <span className="text-xxs font-black text-emerald-400 uppercase tracking-widest block">Proposta Aprovada</span>
               <p className="text-slate-400 text-xxs mt-1 font-semibold leading-relaxed">
                 Assinatura eletrônica registrada com sucesso no sistema.
+              </p>
+            </div>
+          ) : timeLeft.expired ? (
+            <div className="bg-red-950/40 border border-red-900/60 p-4 rounded-2xl text-center">
+              <XCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+              <span className="text-xxs font-black text-red-400 uppercase tracking-widest block">Proposta Expirada</span>
+              <p className="text-slate-400 text-xxs mt-1 font-semibold leading-relaxed">
+                A validade desta proposta expirou em {expirationFormatted}.
               </p>
             </div>
           ) : (
@@ -291,7 +340,7 @@ export default function VisualizarPropostaPublica() {
               </button>
               <button 
                 onClick={() => setIsRejectOpen(true)}
-                className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs border border-slate-700 transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs border border-slate-800 transition-all flex items-center justify-center gap-1.5"
               >
                 <XCircle className="w-4 h-4 text-red-500" />
                 Solicitar Ajustes
@@ -301,171 +350,241 @@ export default function VisualizarPropostaPublica() {
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 bg-slate-50 p-6 md:p-10 min-h-screen overflow-y-auto">
+      {/* HEADER / COUNTDOWN & MAIN VIEWPORTS */}
+      <div className="flex-1 flex flex-col min-w-0">
         
-        {/* TAB 1: PRESENTATION & CATALOG SPECIFICATIONS */}
-        {activeTab === 'presentation' && (
-          <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-150">
-            <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-sm">
-              <div className="h-[360px] bg-white rounded-xl border border-gray-100 flex items-center justify-center p-6 mb-6">
-                <img 
-                  src={p.machine_photos?.[0] || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=600'} 
-                  alt={p.machine_name} 
-                  className="max-h-full max-w-full object-contain hover:scale-102 transition-transform duration-200" 
-                />
-              </div>
+        {/* Top Header Bar with Live Countdown (equal to smartbid) */}
+        <header className="bg-slate-950 border-b border-slate-900 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-white">
+          <div className="text-center sm:text-left">
+            <h2 className="font-extrabold text-sm text-slate-100 tracking-wide uppercase">
+              {p.client_name}
+            </h2>
+            <p className="text-xxs text-slate-500 font-bold mt-0.5">
+              Proposta nº #{String(p.id).padStart(4, '0')} • Revisão R01
+            </p>
+          </div>
 
-              <div className="border-b border-gray-100 pb-4 mb-4">
-                <span className="text-xxs font-black text-blue-600 bg-blue-50 border border-blue-100/50 px-2 py-0.5 rounded uppercase tracking-wider">
-                  Equipamento Disponibilizado
-                </span>
-                <h2 className="text-xl font-black text-gray-900 mt-2 uppercase tracking-wide">{p.machine_name || 'Equipamento'}</h2>
-                <p className="text-xs text-gray-500 leading-relaxed mt-2 font-medium">
-                  Equipamento de alta qualidade e rendimento, ideal para processos contínuos de higienização de pisos. Projetado especificamente para operações contínuas com alta durabilidade e baixos custos operacionais.
-                </p>
+          {/* Smartbid style live countdown timer */}
+          <div className="flex items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <span className="text-xxs text-slate-400 font-bold uppercase tracking-widest block">Validade da Proposta</span>
+              <span className="text-xs font-black text-slate-200">{expirationFormatted}</span>
+            </div>
+            
+            {timeLeft.expired ? (
+              <div className="px-4 py-2 bg-red-650 text-white font-black rounded-lg text-xxs uppercase tracking-wider shadow-sm animate-pulse">
+                Expirada
               </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <div className="bg-slate-900 border border-slate-800/80 rounded px-2.5 py-1 text-center min-w-[36px]">
+                  <span className="text-xs font-black text-white block leading-tight">{timeLeft.days}</span>
+                  <span className="text-[8px] font-bold text-slate-500 uppercase">Dias</span>
+                </div>
+                <span className="text-slate-600 font-bold">:</span>
+                <div className="bg-slate-900 border border-slate-800/80 rounded px-2.5 py-1 text-center min-w-[36px]">
+                  <span className="text-xs font-black text-white block leading-tight">{String(timeLeft.hours).padStart(2, '0')}</span>
+                  <span className="text-[8px] font-bold text-slate-500 uppercase">Hrs</span>
+                </div>
+                <span className="text-slate-600 font-bold">:</span>
+                <div className="bg-slate-900 border border-slate-800/80 rounded px-2.5 py-1 text-center min-w-[36px]">
+                  <span className="text-xs font-black text-white block leading-tight">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                  <span className="text-[8px] font-bold text-slate-500 uppercase">Min</span>
+                </div>
+                <span className="text-slate-600 font-bold">:</span>
+                <div className="bg-slate-900 border border-slate-800/80 rounded px-2.5 py-1 text-center min-w-[36px]">
+                  <span className="text-xs font-black text-white block leading-tight">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                  <span className="text-[8px] font-bold text-slate-500 uppercase">Seg</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </header>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                <div className="bg-blue-50/40 p-4 rounded-xl border border-blue-100/30 flex items-center gap-3">
-                  <span className="p-2 bg-blue-100/50 text-blue-600 rounded-lg text-xs font-black">✔</span>
-                  <div>
-                    <span className="text-xxs font-bold text-gray-400 block uppercase tracking-wider">Revisão Geral</span>
-                    <span className="text-xs font-bold text-gray-700">100% Inspecionado</span>
+        {/* VIEWPORTS */}
+        <div className="flex-1 bg-slate-900/40 p-6 md:p-10 overflow-y-auto">
+          
+          {/* TAB 1: PRESENTATION & CATALOG SPECIFICATIONS */}
+          {activeTab === 'presentation' && (
+            <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-150">
+              <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-sm">
+                <div className="h-[360px] bg-white rounded-xl border border-gray-100 flex items-center justify-center p-6 mb-6">
+                  <img 
+                    src={mainPhoto} 
+                    alt={p.machine_name} 
+                    className="max-h-full max-w-full object-contain hover:scale-102 transition-transform duration-200" 
+                  />
+                </div>
+
+                <div className="border-b border-gray-100 pb-4 mb-4 text-left">
+                  <span className="text-xxs font-black text-blue-600 bg-blue-50 border border-blue-100/50 px-2 py-0.5 rounded uppercase tracking-wider">
+                    Equipamento Disponibilizado
+                  </span>
+                  <h2 className="text-xl font-black text-gray-900 mt-2 uppercase tracking-wide">{p.machine_name || 'Equipamento'}</h2>
+                  <p className="text-xs text-gray-500 leading-relaxed mt-2 font-medium">
+                    Equipamento de alta qualidade e rendimento, ideal para processos contínuos de higienização de pisos. Projetado especificamente para operações contínuas com alta durabilidade e baixos custos operacionais.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-left">
+                  <div className="bg-blue-50/40 p-4 rounded-xl border border-blue-100/30 flex items-center gap-3">
+                    <span className="p-1 bg-blue-100/50 text-blue-600 rounded-lg text-xs font-black">✔</span>
+                    <div>
+                      <span className="text-xxs font-bold text-gray-400 block uppercase tracking-wider">Revisão Geral</span>
+                      <span className="text-xs font-bold text-gray-700">100% Inspecionado</span>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50/40 p-4 rounded-xl border border-blue-100/30 flex items-center gap-3">
+                    <span className="p-1 bg-blue-100/50 text-blue-600 rounded-lg text-xs font-black">✔</span>
+                    <div>
+                      <span className="text-xxs font-bold text-gray-400 block uppercase tracking-wider">Suporte Técnico</span>
+                      <span className="text-xs font-bold text-gray-700">Atendimento 24/7</span>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50/40 p-4 rounded-xl border border-blue-100/30 flex items-center gap-3">
+                    <span className="p-1 bg-blue-100/50 text-blue-600 rounded-lg text-xs font-black">✔</span>
+                    <div>
+                      <span className="text-xxs font-bold text-gray-400 block uppercase tracking-wider">Frota Backup</span>
+                      <span className="text-xs font-bold text-gray-700">Substituição Imediata</span>
+                    </div>
                   </div>
                 </div>
-                <div className="bg-blue-50/40 p-4 rounded-xl border border-blue-100/30 flex items-center gap-3">
-                  <span className="p-2 bg-blue-100/50 text-blue-600 rounded-lg text-xs font-black">✔</span>
-                  <div>
-                    <span className="text-xxs font-bold text-gray-400 block uppercase tracking-wider">Suporte Técnico</span>
-                    <span className="text-xs font-bold text-gray-700">Atendimento 24/7</span>
-                  </div>
-                </div>
-                <div className="bg-blue-50/40 p-4 rounded-xl border border-blue-100/30 flex items-center gap-3">
-                  <span className="p-2 bg-blue-100/50 text-blue-600 rounded-lg text-xs font-black">✔</span>
-                  <div>
-                    <span className="text-xxs font-bold text-gray-400 block uppercase tracking-wider">Frota Backup</span>
-                    <span className="text-xs font-bold text-gray-700">Substituição Imediata</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Specifications Box */}
-              <div>
-                <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-3">Especificações Técnicas Completas</h3>
-                <div className="bg-slate-50 border border-gray-100 rounded-xl p-4 space-y-1">
-                  {parseSpecsToHTML(p.machine_specs)}
+                {/* Specifications Box */}
+                <div className="text-left">
+                  <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-3">Especificações Técnicas Completas</h3>
+                  <div className="bg-slate-50 border border-gray-100 rounded-xl p-4 space-y-1">
+                    {parseSpecsToHTML(p.machine_specs)}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* TAB 2: COMMERCIAL PROPOSAL DETAILS (WITHOUT TECHNICAL SPECS BOX) */}
-        {activeTab === 'proposal' && (
-          <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-150 text-left">
-            
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* TAB 2: COMMERCIAL PROPOSAL DETAILS (CLONED FROM PRINTED PDF STRUCTURE, NO TECHNICAL SPECS TEXTBOX) */}
+          {activeTab === 'proposal' && (
+            <div className="max-w-4xl mx-auto animate-in fade-in duration-150 text-left">
               
-              {/* Left Column: Core Pricing Info */}
-              <div className="md:col-span-5 space-y-6">
+              {/* Virtual A4 sheet representing the PDF structure */}
+              <div className="bg-white rounded-2xl border border-gray-200/80 shadow-md p-8 md:p-12 space-y-6 relative max-w-3xl mx-auto font-sans leading-relaxed text-gray-800">
                 
-                {/* Investment Card */}
-                <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800">
-                  <span className="text-xxs font-black text-blue-400 bg-blue-950/70 border border-blue-900 px-2 py-0.5 rounded uppercase tracking-wider">
-                    Resumo do Aluguel
-                  </span>
+                {/* Header matching printed proposal */}
+                <div className="flex justify-between items-center border-b-2 border-blue-600 pb-5 mb-5 gap-4">
+                  <div className="text-left">
+                    <h2 className="text-base font-extrabold text-gray-900 tracking-wide uppercase">CLEAN TECH PRO</h2>
+                    <span className="text-xxs font-bold text-gray-500 block uppercase tracking-wider mt-0.5">CNPJ: 43.158.052/0001-01</span>
+                    <span className="text-xxs text-gray-400 block font-medium">Avenida Maringá, 1273 – Emiliano Perneta Pinhais/PR</span>
+                  </div>
                   
-                  <div className="mt-4">
-                    <p className="text-xxs font-bold text-slate-400 uppercase tracking-widest">Valor Mensal</p>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-lg font-bold text-slate-400">R$</span>
-                      <span className="text-3xl font-black text-white">
-                        {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                      <span className="text-xs text-slate-400">/mês</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-800/80 text-left">
-                    <div>
-                      <span className="text-xxs text-slate-400 font-bold block uppercase tracking-wider font-mono">Período</span>
-                      <span className="text-xs font-bold mt-1 block text-slate-200">{formatPeriod(p.period_months)}</span>
-                    </div>
-                    <div>
-                      <span className="text-xxs text-slate-400 font-bold block uppercase tracking-wider font-mono">Franquia</span>
-                      <span className="text-xs font-bold mt-1 block text-slate-200">{p.hours_per_month || 'Livre'} h/mês</span>
-                    </div>
+                  <div className="w-36 flex justify-end">
+                    <img 
+                      src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" 
+                      alt="Alfa Tennant Logo" 
+                      className="max-h-12 object-contain"
+                    />
                   </div>
                 </div>
 
-                {/* General Conditions */}
-                <div className="bg-white border border-gray-150 rounded-2xl p-5 shadow-sm space-y-3.5">
-                  <h4 className="text-xxs font-black text-gray-400 uppercase tracking-widest mb-2">Condições Comerciais</h4>
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-xs font-bold text-gray-500">Região</span>
-                    <span className="text-xs font-black text-gray-800">{p.region_used || 'Estado de São Paulo'}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-xs font-bold text-gray-500">Entrega</span>
-                    <span className="text-xs font-black text-gray-800">{p.delivery_time || 'Imediato'}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-gray-100 pb-2">
-                    <span className="text-xs font-bold text-gray-500">Frete</span>
-                    <span className="text-xs font-black text-gray-800">
-                      {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between pb-1">
-                    <span className="text-xs font-bold text-gray-500">Validade</span>
-                    <span className="text-xs font-black text-gray-800">{p.validity_days || '10'} dias</span>
+                <div className="text-center mb-6">
+                  <h1 className="text-sm font-extrabold uppercase text-slate-800 tracking-wider">Proposta Comercial de Locação de Equipamentos</h1>
+                  <span className="text-xxs font-bold text-slate-400 block mt-1">Proposta nº #{String(p.id).padStart(4, '0')} • Data: {new Date(p.created_at || new Date()).toLocaleDateString('pt-BR')}</span>
+                </div>
+
+                {/* Cliente details container */}
+                <div className="border border-gray-150 rounded-xl p-4 bg-slate-50/50 mb-6 text-left">
+                  <div className="text-xxs font-extrabold text-blue-600 uppercase tracking-widest border-b border-gray-200/80 pb-1.5 mb-3">Dados do Cliente</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-xs text-gray-700 font-semibold">
+                    <div><b>Cliente:</b> {p.client_name || 'Não informado'}</div>
+                    <div><b>CNPJ/CPF:</b> {p.client_document || 'Isento'}</div>
+                    <div><b>Endereço:</b> {p.client_address || '&mdash;'}</div>
+                    <div><b>Telefone:</b> {p.client_phone || '&mdash;'}</div>
+                    <div><b>E-mail:</b> {p.client_email || '&mdash;'}</div>
+                    <div><b>Contato:</b> {p.client_contact || p.client_email?.split('@')[0] || '&mdash;'}</div>
                   </div>
                 </div>
 
-              </div>
+                {/* Equipment visual description and commercial terms */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                  
+                  {/* Left column: photo & differentials checklist */}
+                  <div className="md:col-span-5 space-y-4">
+                    <div className="h-44 bg-white border border-gray-150 rounded-xl flex items-center justify-center p-3">
+                      <img src={mainPhoto} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
+                    </div>
 
-              {/* Right Column: Client details and plan comparison */}
-              <div className="md:col-span-7 space-y-6">
-                
-                {/* Client Box */}
-                <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-sm">
-                  <h4 className="text-xxs font-black text-gray-400 uppercase tracking-widest mb-4">Dados de Faturamento</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <span className="text-gray-400 font-bold block uppercase tracking-wider">Locatária</span>
-                      <span className="text-gray-800 font-bold mt-0.5 block">{p.client_name}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 font-bold block uppercase tracking-wider">CNPJ/CPF</span>
-                      <span className="text-gray-800 font-mono font-semibold mt-0.5 block">{p.client_document || '&mdash;'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 font-bold block uppercase tracking-wider">Endereço</span>
-                      <span className="text-gray-800 font-semibold mt-0.5 block">{p.client_address || '&mdash;'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 font-bold block uppercase tracking-wider">Contato Comercial</span>
-                      <span className="text-gray-800 font-semibold mt-0.5 block">{p.client_phone || p.client_email || '&mdash;'}</span>
+                    <div className="border border-gray-150 rounded-xl p-3 bg-white">
+                      <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider mb-2">Diferenciais Inclusos</span>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 text-xxs font-bold text-gray-600">
+                          <span className="text-blue-500 font-extrabold">✔</span> Equipamento Revisado
+                        </div>
+                        <div className="flex items-center gap-2 text-xxs font-bold text-gray-600">
+                          <span className="text-blue-500 font-extrabold">✔</span> Suporte Técnico 48h
+                        </div>
+                        <div className="flex items-center gap-2 text-xxs font-bold text-gray-600">
+                          <span className="text-blue-500 font-extrabold">✔</span> Substituição Backup
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {p.notes && (
-                    <div className="bg-gray-50 p-4 border border-gray-100 rounded-xl mt-4">
-                      <span className="text-xxs font-black text-gray-400 uppercase tracking-widest block mb-1">Notas Comerciais</span>
-                      <p className="text-xs text-gray-600 font-semibold leading-relaxed">{p.notes}</p>
+                  {/* Right column: Condições Comerciais Table */}
+                  <div className="md:col-span-7">
+                    <div className="border border-gray-150 rounded-xl overflow-hidden shadow-xxs bg-white">
+                      <table className="w-full text-left text-xs text-gray-600 border-collapse">
+                        <tbody className="divide-y divide-gray-150">
+                          <tr>
+                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide w-1/2">Investimento Mensal</td>
+                            <td className="px-3.5 py-2.5 font-black text-blue-600 text-sm">
+                              R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} /mês
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Plano Escolhido</td>
+                            <td className="px-3.5 py-2.5 font-bold text-gray-800">{p.contract_type}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Período de Locação</td>
+                            <td className="px-3.5 py-2.5 font-bold text-gray-800">{formatPeriod(p.period_months)}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Franquia de Horas</td>
+                            <td className="px-3.5 py-2.5 font-bold text-gray-800">{p.hours_per_month || 'Franquia Livre'}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Região de Uso</td>
+                            <td className="px-3.5 py-2.5 font-semibold text-gray-700">{p.region_used || 'Estado de São Paulo'}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Tempo de Entrega</td>
+                            <td className="px-3.5 py-2.5 font-semibold text-gray-700">{p.delivery_time || 'Imediato'}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Custo do Frete</td>
+                            <td className="px-3.5 py-2.5 font-semibold text-gray-700">
+                              {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-3.5 py-2.5 font-bold text-gray-500 bg-gray-50 uppercase text-[9px] tracking-wide">Validade da Proposta</td>
+                            <td className="px-3.5 py-2.5 font-semibold text-gray-700">{p.validity_days || '10'} dias</td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
-                  )}
+                  </div>
+
                 </div>
 
-                {/* Highlighted Plans Comparison table */}
-                <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-sm">
-                  <h4 className="text-xxs font-black text-gray-400 uppercase tracking-widest mb-3">Plano de Cobertura de Manutenção</h4>
-                  <div className="border border-gray-150 rounded-xl overflow-hidden shadow-xs">
+                {/* Comparative table of plans with highlighted selected type (cloned from PDF) */}
+                <div className="space-y-2 mt-4">
+                  <div className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">* Tabela Comparativa de Cobertura de Planos</div>
+                  <div className="border border-gray-150 rounded-xl overflow-hidden shadow-xxs">
                     <table className="w-full text-left text-xs border-collapse">
-                      <thead className="bg-gray-50 border-b border-gray-250">
+                      <thead className="bg-slate-50 border-b border-gray-250">
                         <tr>
-                          <th className="px-4 py-2.5 font-bold text-gray-700">Tipo de Contrato</th>
-                          <th className="px-4 py-2.5 font-bold text-gray-700">Cobertura</th>
+                          <th className="px-4 py-2 font-bold text-gray-700 w-1/3">Tipo de Contrato</th>
+                          <th className="px-4 py-2 font-bold text-gray-700">Descrição de Cobertura</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -478,14 +597,14 @@ export default function VisualizarPropostaPublica() {
                         ].map(plan => {
                           const isSel = p.contract_type?.startsWith(plan.id);
                           return (
-                            <tr key={plan.id} className={`transition-colors ${isSel ? 'bg-amber-50 font-bold' : 'hover:bg-gray-50/20 text-gray-500'}`}>
-                              <td className={`px-4 py-3 border-r border-gray-100 ${isSel ? 'text-amber-800 font-extrabold' : 'text-gray-900 font-semibold'}`}>
+                            <tr key={plan.id} className={`transition-colors ${isSel ? 'bg-yellow-50 font-bold' : 'hover:bg-gray-50/20 text-gray-500'}`}>
+                              <td className={`px-4 py-3.5 border-r border-gray-150 ${isSel ? 'text-amber-800 font-extrabold' : 'text-gray-900 font-semibold'}`}>
                                 {isSel && '★ '}
                                 {plan.title}
                               </td>
-                              <td className={`px-4 py-3 ${isSel ? 'text-amber-950 font-medium' : 'text-gray-500'}`}>
+                              <td className={`px-4 py-3.5 ${isSel ? 'text-amber-950 font-semibold' : 'text-gray-500'}`}>
                                 {plan.desc}
-                                {isSel && <span className="block mt-1 text-xxs font-black text-amber-800 bg-amber-100/60 border border-amber-200/50 px-2 py-0.5 rounded w-max uppercase tracking-wider">Selecionado</span>}
+                                {isSel && <span className="block mt-1 text-[10px] font-black text-amber-800 bg-amber-100/50 border border-amber-200/50 px-2 py-0.5 rounded w-max uppercase tracking-wider">Selecionado</span>}
                               </td>
                             </tr>
                           );
@@ -495,91 +614,102 @@ export default function VisualizarPropostaPublica() {
                   </div>
                 </div>
 
-              </div>
-
-            </div>
-
-          </div>
-        )}
-
-        {/* TAB 3: CONTRACT DRAFT MINUTA (15 CLAUSES SCROLLABLE PAGE) */}
-        {activeTab === 'minuta' && (
-          <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-150">
-            <div className="bg-white border border-gray-250 shadow-md rounded-2xl p-8 md:p-12 text-left relative overflow-hidden font-serif leading-relaxed">
-              
-              {/* Watermark/Pre-contract stamp */}
-              <div className="absolute top-10 right-10 border-4 border-dashed border-slate-300 text-slate-300/80 px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transform rotate-6 select-none pointer-events-none">
-                {isApproved ? 'Minuta Aprovada' : 'Minuta Pré-Contratual'}
-              </div>
-
-              <div className="border-b border-gray-200 pb-6 mb-8 text-center">
-                <h2 className="text-xl font-bold uppercase tracking-wider text-slate-800">Minuta de Contrato de Locação</h2>
-                <p className="text-xs text-gray-400 mt-2 font-sans font-bold">PADRÃO ALFA TENNANT — 15 CLÁUSULAS CONTRATUAIS</p>
-              </div>
-
-              {/* Render dynamic clauses */}
-              {minutaHTML ? (
-                <div 
-                  className="space-y-6 text-gray-700 text-xs overflow-y-auto max-h-[650px] pr-3 scrollbar-thin font-sans"
-                  dangerouslySetInnerHTML={{ __html: minutaHTML }}
-                />
-              ) : (
-                <div className="text-center py-12 text-gray-400 text-xs font-sans font-semibold">
-                  Nenhuma minuta contratual disponível. O administrador precisa semear o template padrão no sistema.
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: CHAT / CONVERSATION & DECISIONS HISTORY */}
-        {activeTab === 'chat' && (
-          <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-150 text-left">
-            <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-sm">
-              <h3 className="text-sm font-extrabold text-gray-900 mb-4 flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-blue-600" />
-                Histórico de Negociação & Decisões
-              </h3>
-
-              {/* Notes field showing logs */}
-              {p.notes ? (
-                <div className="bg-slate-50 border border-gray-100 rounded-xl p-5 space-y-4 max-h-[400px] overflow-y-auto scrollbar-thin">
-                  <div className="text-xs text-gray-700 leading-relaxed font-semibold whitespace-pre-wrap">
-                    {p.notes}
+                {/* Seller Box Footer */}
+                <div className="flex justify-between items-end gap-6 pt-5 border-t border-gray-200 mt-6 text-xxs font-bold text-gray-500">
+                  <div className="text-left leading-relaxed">
+                    <b>Dados do Vendedor</b><br />
+                    {p.seller_info || 'Alfa Tennant\nAtendimento Comercial\n(11) 3320-8550'}
+                  </div>
+                  <div className="text-right text-[10px] font-bold text-slate-400">
+                    Pinhais/PR, {new Date(p.created_at || new Date()).toLocaleDateString('pt-BR')}
                   </div>
                 </div>
-              ) : (
-                <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-10 text-center text-gray-400 text-xs font-bold">
-                  Nenhuma conversa ou decisão registrada até o momento nesta proposta.
-                </div>
-              )}
 
-              {/* Quick feedback box for client */}
-              {!isApproved && (
-                <div className="mt-6 pt-6 border-t border-gray-100">
-                  <h4 className="text-xs font-bold text-gray-700 mb-2">Enviar Mensagem / Solicitar Alteração</h4>
-                  <div className="flex gap-3">
-                    <input 
-                      type="text" 
-                      placeholder="Escreva sua observação comercial, dúvida ou ajuste solicitado..."
-                      value={feedbackNotes}
-                      onChange={e => setFeedbackNotes(e.target.value)}
-                      className="flex-1 px-4 py-2 border border-gray-250 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all font-semibold"
-                    />
-                    <button 
-                      onClick={handleReject}
-                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95"
-                    >
-                      Enviar
-                    </button>
-                  </div>
-                </div>
-              )}
+              </div>
+
             </div>
-          </div>
-        )}
+          )}
 
-      </main>
+          {/* TAB 3: CONTRACT DRAFT MINUTA (15 CLAUSES SCROLLABLE PAGE) */}
+          {activeTab === 'minuta' && (
+            <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-150">
+              <div className="bg-white border border-gray-250 shadow-md rounded-2xl p-8 md:p-12 text-left relative overflow-hidden font-serif leading-relaxed">
+                
+                {/* Watermark/Pre-contract stamp */}
+                <div className="absolute top-10 right-10 border-4 border-dashed border-slate-300 text-slate-300/80 px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transform rotate-6 select-none pointer-events-none">
+                  {isApproved ? 'Minuta Aprovada' : 'Minuta Pré-Contratual'}
+                </div>
+
+                <div className="border-b border-gray-200 pb-6 mb-8 text-center">
+                  <h2 className="text-xl font-bold uppercase tracking-wider text-slate-800">Minuta de Contrato de Locação</h2>
+                  <p className="text-xs text-gray-400 mt-2 font-sans font-bold">PADRÃO ALFA TENNANT — 15 CLÁUSULAS CONTRATUAIS</p>
+                </div>
+
+                {/* Render dynamic clauses */}
+                {minutaHTML ? (
+                  <div 
+                    className="space-y-6 text-gray-700 text-xs overflow-y-auto max-h-[650px] pr-3 scrollbar-thin font-sans"
+                    dangerouslySetInnerHTML={{ __html: minutaHTML }}
+                  />
+                ) : (
+                  <div className="text-center py-12 text-gray-400 text-xs font-sans font-semibold">
+                    Nenhuma minuta contratual disponível. O administrador precisa semear o template padrão no sistema.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: CHAT / CONVERSATION & DECISIONS HISTORY */}
+          {activeTab === 'chat' && (
+            <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-150 text-left">
+              <div className="bg-white border border-gray-150 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-sm font-extrabold text-gray-900 mb-4 flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-blue-600" />
+                  Histórico de Negociação & Decisões
+                </h3>
+
+                {/* Notes field showing logs */}
+                {p.notes ? (
+                  <div className="bg-slate-50 border border-gray-100 rounded-xl p-5 space-y-4 max-h-[400px] overflow-y-auto scrollbar-thin">
+                    <div className="text-xs text-gray-700 leading-relaxed font-semibold whitespace-pre-wrap">
+                      {p.notes}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-10 text-center text-gray-400 text-xs font-bold">
+                    Nenhuma conversa ou decisão registrada até o momento nesta proposta.
+                  </div>
+                )}
+
+                {/* Quick feedback box for client */}
+                {!isApproved && !timeLeft.expired && (
+                  <div className="mt-6 pt-6 border-t border-gray-100">
+                    <h4 className="text-xs font-bold text-gray-700 mb-2">Enviar Mensagem / Solicitar Alteração</h4>
+                    <div className="flex gap-3">
+                      <input 
+                        type="text" 
+                        placeholder="Escreva sua observação comercial, dúvida ou ajuste solicitado..."
+                        value={feedbackNotes}
+                        onChange={e => setFeedbackNotes(e.target.value)}
+                        className="flex-1 px-4 py-2 border border-gray-250 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all font-semibold"
+                      />
+                      <button 
+                        onClick={handleReject}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95"
+                      >
+                        Enviar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+      </div>
 
       {/* APPROVE MODAL */}
       {isApproveOpen && (
