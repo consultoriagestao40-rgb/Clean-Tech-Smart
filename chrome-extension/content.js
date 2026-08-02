@@ -1243,11 +1243,12 @@ function renderCrmInPageBoard() {
   const panel = document.getElementById('crm-inpage-panel');
   if (!panel) return;
 
-  safeStorageGet(['crm_leads', 'crm_stages', 'crm_sellers', 'crm_whatsapp_chats', 'crm_dom_debug'], (stored) => {
+  safeStorageGet(['crm_leads', 'crm_stages', 'crm_sellers', 'crm_whatsapp_chats', 'crm_dom_debug', 'crm_company_logo'], (stored) => {
     const leads = stored.crm_leads || leadsList || [];
     const stages = (stored.crm_stages && stored.crm_stages.length > 0) ? stored.crm_stages : funnelStages;
     const waChats = stored.crm_whatsapp_chats || [];
     const sellers = stored.crm_sellers || sellersList || [];
+    const companyLogo = stored.crm_company_logo || '';
 
     // Enrich leads with WhatsApp data
     const enrichedLeads = leads.map(l => {
@@ -1331,9 +1332,25 @@ function renderCrmInPageBoard() {
 
     panel.innerHTML = `
       <div class="crm-ip-topbar">
-        <div class="crm-ip-topbar-logo">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          Clean Tech Smart CRM
+        <div class="crm-ip-topbar-logo" id="crm-ip-logo-container" style="position: relative; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 4px; transition: background 0.2s;">
+          ${companyLogo ? 
+            `<img src="${companyLogo}" alt="Logo" style="max-height: 28px; max-width: 140px; object-fit: contain;" />` : 
+            `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+             <span id="crm-ip-logo-text" style="font-weight: 700; color: #f8fafc; font-size: 13.5px;">Clean Tech Smart CRM</span>`
+          }
+          <div class="crm-logo-hover-overlay" style="position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9); display: none; align-items: center; justify-content: center; gap: 12px; border-radius: 4px; z-index: 10;">
+            <span class="crm-logo-action-upload" title="Alterar Logo" style="color: #38bdf8; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload
+            </span>
+            ${companyLogo ? `
+              <span class="crm-logo-action-reset" title="Remover Logo" style="color: #ef4444; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Limpar
+              </span>
+            ` : ''}
+          </div>
+          <input type="file" id="crm-logo-file-input" accept="image/*" style="display: none;" />
         </div>
         <span class="crm-ip-title">Funil de Vendas</span>
         <div class="crm-ip-topbar-spacer"></div>
@@ -1533,6 +1550,57 @@ function renderCrmInPageBoard() {
       }
     });
 
+    // Logo Upload & Reset Event Listeners
+    const logoContainer = panel.querySelector('#crm-ip-logo-container');
+    const hoverOverlay = panel.querySelector('.crm-logo-hover-overlay');
+    const fileInput = panel.querySelector('#crm-logo-file-input');
+    
+    if (logoContainer && hoverOverlay && fileInput) {
+      logoContainer.addEventListener('mouseenter', () => {
+        hoverOverlay.style.display = 'flex';
+      });
+      logoContainer.addEventListener('mouseleave', () => {
+        hoverOverlay.style.display = 'none';
+      });
+      
+      const uploadAction = panel.querySelector('.crm-logo-action-upload');
+      if (uploadAction) {
+        uploadAction.addEventListener('click', (e) => {
+          e.stopPropagation();
+          fileInput.click();
+        });
+      }
+      
+      const resetAction = panel.querySelector('.crm-logo-action-reset');
+      if (resetAction) {
+        resetAction.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm('Deseja remover o logotipo personalizado?')) {
+            safeStorageSet({ crm_company_logo: '' });
+            renderCrmInPageBoard();
+          }
+        });
+      }
+      
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (file.size > 2 * 1024 * 1024) {
+          alert('❌ O arquivo de imagem é muito grande! Escolha um arquivo menor que 2MB.');
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const dataUrl = event.target.result;
+          safeStorageSet({ crm_company_logo: dataUrl });
+          renderCrmInPageBoard();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     // Go to WhatsApp button
     panel.querySelector('#crm-ip-go-whatsapp').addEventListener('click', () => {
       toggleCrmPanel();
@@ -1638,6 +1706,20 @@ function injectLeftToolbar() {
   });
 
   updateLeftToolbarActiveStates();
+  updateLeftToolbarLogo();
+}
+
+function updateLeftToolbarLogo() {
+  const leftLogo = document.querySelector('.crm-left-logo');
+  if (!leftLogo) return;
+  safeStorageGet(['crm_company_logo'], (res) => {
+    const companyLogo = res.crm_company_logo || '';
+    if (companyLogo) {
+      leftLogo.innerHTML = `<img src="${companyLogo}" alt="Logo" style="width: 32px; height: 32px; object-fit: contain; border-radius: 4px;" />`;
+    } else {
+      leftLogo.innerHTML = 'CT';
+    }
+  });
 }
 
 function updateLeftToolbarActiveStates() {
@@ -2442,9 +2524,14 @@ function getActiveChatMessages() {
 // Listen for storage changes to update CRM UI in real-time
 if (chrome.storage?.onChanged) {
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local' && changes.crm_dom_debug) {
-      if (typeof renderCrmInPageBoard === 'function' && crmPanelVisible) {
-        renderCrmInPageBoard();
+    if (areaName === 'local') {
+      if (changes.crm_dom_debug || changes.crm_company_logo) {
+        if (typeof renderCrmInPageBoard === 'function' && crmPanelVisible) {
+          renderCrmInPageBoard();
+        }
+      }
+      if (changes.crm_company_logo) {
+        updateLeftToolbarLogo();
       }
     }
   });
