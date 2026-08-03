@@ -747,18 +747,22 @@ export default function Crm() {
         <div className="overflow-x-auto pb-6 custom-scrollbar select-none">
           <div className="flex flex-col space-y-2 min-w-max pr-4">
             
-            {/* 1. Light Gray Chevron Pipeline Header Track (Pipedrive Style) */}
-            <div className="flex items-center flex-nowrap" style={{ gap: 0, marginBottom: '6px' }}>
+            {/* 1. Light Gray Chevron Pipeline Header Track (Exact Pipedrive Photo) */}
+            <div className="flex items-center gap-3 mb-3">
               {funnelStages.map((stage, index) => {
                 const stageLeads = getLeadsInStage(stage.key);
                 const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
                 const isFirst = index === 0;
                 const isLast = index === funnelStages.length - 1;
 
+                // SVG Path for 260x56 Chevron Header:
+                // isFirst: rounded left, arrow tip right (M 12 0 H 245 L 260 28 L 245 56 H 12 A 12 12 0 0 1 0 44 V 12 A 12 12 0 0 1 12 0 Z)
+                // middle: notch left, arrow tip right (M 0 0 H 245 L 260 28 L 245 56 H 0 L 15 28 Z)
+                // isLast: notch left, rounded right (M 0 0 H 248 A 12 12 0 0 1 260 12 V 44 A 12 12 0 0 1 248 56 H 0 L 15 28 Z)
                 let svgPath;
-                if (isFirst)      svgPath = 'M 0 0 H 238 L 260 25 L 238 50 H 0 Z';
-                else if (isLast)  svgPath = 'M 22 0 H 260 V 50 H 22 L 0 25 Z';
-                else              svgPath = 'M 22 0 H 238 L 260 25 L 238 50 H 22 L 0 25 Z';
+                if (isFirst)      svgPath = 'M 12 0 H 245 L 260 28 L 245 56 H 12 A 12 12 0 0 1 0 44 V 12 A 12 12 0 0 1 12 0 Z';
+                else if (isLast)  svgPath = 'M 0 0 H 248 A 12 12 0 0 1 260 12 V 44 A 12 12 0 0 1 248 56 H 0 L 15 28 Z';
+                else              svgPath = 'M 0 0 H 245 L 260 28 L 245 56 H 0 L 15 28 Z';
 
                 return (
                   <div
@@ -767,35 +771,25 @@ export default function Crm() {
                     onDragStart={(e) => handleColumnDragStart(e, index)}
                     onDrop={(e) => handleColumnDrop(e, index)}
                     onDragOver={handleDragOver}
-                    className="group/header select-none cursor-grab active:cursor-grabbing shrink-0 relative"
-                    style={{
-                      width: '260px',
-                      minWidth: '260px',
-                      height: '50px',
-                      marginLeft: isFirst ? '0' : '-22px',
-                      zIndex: funnelStages.length - index,
-                    }}
+                    className="group/header select-none cursor-grab active:cursor-grabbing shrink-0 relative w-[260px] min-w-[260px] h-[56px]"
                   >
                     <svg
-                      viewBox="0 0 260 50"
+                      viewBox="0 0 260 56"
                       preserveAspectRatio="none"
-                      className="absolute inset-0 w-full h-full block"
+                      className="absolute inset-0 w-full h-full block drop-shadow-2xs"
                     >
                       <path
                         d={svgPath}
                         fill="#F4F5F7"
-                        stroke="#FFFFFF"
-                        strokeWidth="3.5"
-                        strokeLinejoin="round"
                       />
                     </svg>
 
-                    <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '16px' : '30px', paddingRight: isLast ? '16px' : '30px' }}>
+                    <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '16px' : '26px', paddingRight: isLast ? '16px' : '26px' }}>
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="font-extrabold text-xs text-gray-900 leading-snug truncate" title={stage.title}>
+                        <div className="font-bold text-xs text-gray-900 leading-snug truncate" title={stage.title}>
                           {stage.title}
                         </div>
-                        <div className="text-[11px] text-gray-500 font-medium mt-0.5 flex items-center space-x-1">
+                        <div className="text-[11px] text-gray-500 font-normal mt-0.5 flex items-center space-x-1">
                           <span>{formatCurrency(stageValueSum)}</span>
                           <span>·</span>
                           <span>{stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}</span>
@@ -820,7 +814,7 @@ export default function Crm() {
             </div>
 
             {/* 2. Light Gray Columns Body Track */}
-            <div className="flex items-start flex-nowrap" style={{ gap: '0px' }}>
+            <div className="flex items-start gap-3">
               {funnelStages.map((stage) => {
                 const stageLeads = getLeadsInStage(stage.key);
 
@@ -829,13 +823,7 @@ export default function Crm() {
                     key={stage.key}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, stage.key)}
-                    style={{
-                      backgroundColor: '#F4F5F7',
-                      width: '238px',
-                      minWidth: '238px',
-                      marginRight: '0px',
-                    }}
-                    className="border-r-2 border-white rounded-b-2xl rounded-t-xs p-2.5 shrink-0 min-h-[600px] flex flex-col"
+                    className="bg-[#F4F5F7] rounded-2xl p-3 min-w-[260px] w-[260px] shrink-0 min-h-[600px] flex flex-col border border-gray-200/60"
                   >
                     <div className="space-y-2.5 flex-grow">
                       {stageLeads.length === 0 ? (
