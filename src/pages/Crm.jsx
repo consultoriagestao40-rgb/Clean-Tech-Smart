@@ -27,14 +27,11 @@ import {
 } from 'lucide-react';
 
 const DEFAULT_STAGES = [
-  { key: 'inbox', title: 'INBOX', color: '#4B5563' },
-  { key: 'tratar', title: 'TRATAR', color: '#F59E0B' },
-  { key: 'lead', title: 'LEAD DE SERVIÇO', color: '#F97316' },
-  { key: 'atendimento', title: 'ATENDIMENTO', color: '#3B82F6' },
-  { key: 'programado', title: 'PROGRAMADO', color: '#10B981' },
-  { key: 'a_faturar', title: 'A FATURAR', color: '#8B5CF6' },
-  { key: 'faturado', title: 'FATURA ENVIADA', color: '#06B6D4' },
-  { key: 'perdido', title: 'PERDIDO', color: '#EF4444' }
+  { key: 'qualificado', title: 'Qualificado', color: '#10B981' },
+  { key: 'contatado', title: 'Contatado', color: '#3B82F6' },
+  { key: 'demo_agendada', title: 'Demo agendada', color: '#8B5CF6' },
+  { key: 'proposta_feita', title: 'Proposta feita', color: '#F59E0B' },
+  { key: 'negociacoes', title: 'Negociações iniciadas', color: '#06B6D4' }
 ];
 
 const STAGE_COLORS = [
@@ -544,15 +541,14 @@ export default function Crm() {
 
   const getLeadsInStage = (stageKey) => {
     return filteredLeads.filter(lead => {
-      if (!lead.stage) return stageKey === 'inbox';
+      if (!lead.stage) return stageKey === 'qualificado';
       const s = String(lead.stage).toLowerCase().trim();
       if (s === stageKey) return true;
-      if (stageKey === 'inbox' && (s === 'prospect')) return true;
-      if (stageKey === 'tratar' && (s === 'contato')) return true;
-      if (stageKey === 'lead' && (s === 'reuniao' || s === 'lead_de_servico')) return true;
-      if (stageKey === 'atendimento' && (s === 'qualificado')) return true;
-      if (stageKey === 'perdido' && (s === 'desqualificado')) return true;
-      if (stageKey === 'a_faturar' && (s === 'proposta' || s === 'proposta_feita')) return true;
+      if (stageKey === 'qualificado' && (s === 'inbox' || s === 'prospect' || s === 'qualificado')) return true;
+      if (stageKey === 'contatado' && (s === 'tratar' || s === 'contato' || s === 'contatado')) return true;
+      if (stageKey === 'demo_agendada' && (s === 'lead' || s === 'reuniao' || s === 'atendimento' || s === 'demo_agendada')) return true;
+      if (stageKey === 'proposta_feita' && (s === 'proposta' || s === 'a_faturar' || s === 'faturado' || s === 'proposta_feita')) return true;
+      if (stageKey === 'negociacoes' && (s === 'programado' || s === 'perdido' || s === 'desqualificado' || s === 'negociacoes')) return true;
       return false;
     });
   };
