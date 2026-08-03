@@ -710,58 +710,71 @@ export default function Crm() {
                     onDragStart={(e) => handleColumnDragStart(e, index)}
                     onDrop={(e) => handleColumnDrop(e, index)}
                     onDragOver={handleDragOver}
-                    className="group/header relative select-none cursor-grab active:cursor-grabbing w-[280px] min-w-[280px] shrink-0 h-[56px] flex items-center bg-white shadow-sm border-t border-b border-slate-200"
-                    style={{
-                      clipPath: isFirst 
-                        ? 'polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%)'
-                        : isLast
-                        ? 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 10px 50%)'
-                        : 'polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%, 10px 50%)',
-                      paddingLeft: isFirst ? '14px' : '22px',
-                      paddingRight: '22px'
-                    }}
+                    className="group/header relative select-none cursor-grab active:cursor-grabbing w-[280px] min-w-[280px] shrink-0 h-[56px]"
                   >
-                    {/* Main info row */}
-                    <div className="flex-grow min-w-0 pr-2">
-                      <div className="flex items-center space-x-1.5">
-                        <span className="font-bold text-xs text-slate-800 truncate" title={stage.title}>
+                    {/* SVG Chevron Background with stroke */}
+                    {isFirst ? (
+                      <svg className="absolute inset-0 w-[280px] h-[56px] pointer-events-none z-0" viewBox="0 0 280 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1.5 1.5 H267.5 L278 28 L267.5 54.5 H1.5 Z" fill="#F8FAFC" stroke="#CBD5E1" strokeWidth="1.5" strokeLinejoin="round" />
+                      </svg>
+                    ) : isLast ? (
+                      <svg className="absolute inset-0 w-[280px] h-[56px] pointer-events-none z-0" viewBox="0 0 280 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12.5 1.5 H278.5 V54.5 H12.5 L23 28 Z" fill="#F8FAFC" stroke="#CBD5E1" strokeWidth="1.5" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg className="absolute inset-0 w-[280px] h-[56px] pointer-events-none z-0" viewBox="0 0 280 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12.5 1.5 H267.5 L278 28 L267.5 54.5 H12.5 L23 28 Z" fill="#F8FAFC" stroke="#CBD5E1" strokeWidth="1.5" strokeLinejoin="round" />
+                      </svg>
+                    )}
+
+                    {/* Content Row (z-10 overlay) */}
+                    <div 
+                      className="relative z-10 w-full h-full flex items-center justify-between"
+                      style={{
+                        paddingLeft: isFirst ? '14px' : '26px',
+                        paddingRight: '22px'
+                      }}
+                    >
+                      <div className="flex-grow min-w-0 pr-2 text-left">
+                        <span className="font-bold text-xs text-slate-800 truncate block" title={stage.title}>
                           {stage.title}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full shrink-0">
-                          {stageLeads.length}
-                        </span>
+                        
+                        <div className="flex items-center space-x-1 text-[10px] font-semibold text-slate-500 mt-0.5">
+                          <Scale className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span>{formatCurrency(stageValueSum)}</span>
+                          <span>•</span>
+                          <span>{stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}</span>
+                        </div>
                       </div>
-                      <div className="text-[10px] font-semibold text-slate-400 mt-0.5">
-                        {formatCurrency(stageValueSum)}
-                      </div>
-                    </div>
 
-                    {/* Action buttons (Visible on hover to match professional clean look) */}
-                    <div className="flex items-center space-x-1 shrink-0 opacity-0 group-hover/header:opacity-100 focus-within:opacity-100 transition-opacity pr-2">
-                      <button 
-                        type="button" 
-                        onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }}
-                        className="p-0.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded"
-                        title="Adicionar Etapa à Direita"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }}
-                        className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded"
-                        title="Editar Etapa"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }}
-                        className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded"
-                        title="Excluir Etapa"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {/* Action buttons (Visible on hover) */}
+                      <div className="flex items-center space-x-1 shrink-0 opacity-0 group-hover/header:opacity-100 focus-within:opacity-100 transition-opacity pr-2">
+                        <button 
+                          type="button" 
+                          onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }}
+                          className="p-0.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded"
+                          title="Adicionar Etapa à Direita"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }}
+                          className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded"
+                          title="Editar Etapa"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }}
+                          className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded"
+                          title="Excluir Etapa"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Left colored stripe indicating stage custom theme */}
