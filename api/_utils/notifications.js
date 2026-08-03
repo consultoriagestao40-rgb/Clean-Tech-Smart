@@ -1,4 +1,3 @@
-import nodemailer from 'nodemailer';
 
 // Helper to fetch all configurations from database
 async function getSystemSettings(dbClient) {
@@ -198,6 +197,7 @@ export async function sendTicketEmailNotification(dbClient, ticket, clientName, 
     `;
 
     console.log(`[SMTP] Enviando e-mail de notificação para ${recipientEmail}...`);
+    const nodemailer = await import('nodemailer');
     const transporter = nodemailer.createTransport({
       host,
       port: Number(port),

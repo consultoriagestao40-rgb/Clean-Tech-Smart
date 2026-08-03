@@ -19,7 +19,8 @@ import {
   X,
   Check,
   Edit,
-  Trash2
+  Trash2,
+  Scale
 } from 'lucide-react';
 
 const DEFAULT_STAGES = [
@@ -695,13 +696,33 @@ export default function Crm() {
           <div className="flex flex-col space-y-3 min-w-max pr-4">
             
             {/* 1. Connected Chevron Pipeline Header Track */}
-            <div className="flex -space-x-[12px] pb-1 overflow-x-hidden">
+            <div className="flex items-stretch pb-1" style={{ gap: '0px', marginBottom: '14px' }}>
               {funnelStages.map((stage, index) => {
                 const stageLeads = getLeadsInStage(stage.key);
                 const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
                 
                 const isFirst = index === 0;
                 const isLast = index === funnelStages.length - 1;
+
+                // Build clip-path: arrow pointing right
+                let clipPath;
+                if (isFirst) {
+                  clipPath = 'polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%)';
+                } else if (isLast) {
+                  clipPath = 'polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%)';
+                } else {
+                  clipPath = 'polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%)';
+                }
+
+                const stageColorBar = stage.color.includes('blue') ? '#3B82F6'
+                  : stage.color.includes('teal') ? '#14B8A6'
+                  : stage.color.includes('emerald') ? '#10B981'
+                  : stage.color.includes('indigo') ? '#6366F1'
+                  : stage.color.includes('purple') ? '#A855F7'
+                  : stage.color.includes('amber') ? '#F59E0B'
+                  : stage.color.includes('orange') ? '#F97316'
+                  : stage.color.includes('rose') ? '#F43F5E'
+                  : '#94A3B8';
 
                 return (
                   <div
@@ -710,82 +731,75 @@ export default function Crm() {
                     onDragStart={(e) => handleColumnDragStart(e, index)}
                     onDrop={(e) => handleColumnDrop(e, index)}
                     onDragOver={handleDragOver}
-                    className="group/header relative select-none cursor-grab active:cursor-grabbing w-[280px] min-w-[280px] shrink-0 h-[56px]"
+                    className="group/header select-none cursor-grab active:cursor-grabbing shrink-0"
+                    style={{
+                      width: '280px',
+                      minWidth: '280px',
+                      marginLeft: index === 0 ? '0' : '-14px',
+                      zIndex: funnelStages.length - index,
+                      position: 'relative',
+                    }}
                   >
-                    {/* SVG Chevron Background with stroke */}
-                    {isFirst ? (
-                      <svg className="absolute inset-0 w-[280px] h-[56px] pointer-events-none z-0" viewBox="0 0 280 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1.5 1.5 H267.5 L278 28 L267.5 54.5 H1.5 Z" fill="#F8FAFC" stroke="#CBD5E1" strokeWidth="1.5" strokeLinejoin="round" />
-                      </svg>
-                    ) : isLast ? (
-                      <svg className="absolute inset-0 w-[280px] h-[56px] pointer-events-none z-0" viewBox="0 0 280 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12.5 1.5 H278.5 V54.5 H12.5 L23 28 Z" fill="#F8FAFC" stroke="#CBD5E1" strokeWidth="1.5" strokeLinejoin="round" />
-                      </svg>
-                    ) : (
-                      <svg className="absolute inset-0 w-[280px] h-[56px] pointer-events-none z-0" viewBox="0 0 280 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12.5 1.5 H267.5 L278 28 L267.5 54.5 H12.5 L23 28 Z" fill="#F8FAFC" stroke="#CBD5E1" strokeWidth="1.5" strokeLinejoin="round" />
-                      </svg>
-                    )}
-
-                    {/* Content Row (z-10 overlay) */}
-                    <div 
-                      className="relative z-10 w-full h-full flex items-center justify-between"
+                    {/* Outer: drop-shadow wrapper */}
+                    <div
                       style={{
-                        paddingLeft: isFirst ? '14px' : '26px',
-                        paddingRight: '22px'
+                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.10))',
+                        height: '56px',
                       }}
                     >
-                      <div className="flex-grow min-w-0 pr-2 text-left">
-                        <span className="font-bold text-xs text-slate-800 truncate block" title={stage.title}>
-                          {stage.title}
-                        </span>
-                        
-                        <div className="flex items-center space-x-1 text-[10px] font-semibold text-slate-500 mt-0.5">
-                          <Scale className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{formatCurrency(stageValueSum)}</span>
-                          <span>•</span>
-                          <span>{stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}</span>
+                      {/* Inner: background shape via clip-path */}
+                      <div
+                        style={{
+                          clipPath,
+                          backgroundColor: '#F1F5F9',
+                          height: '56px',
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          paddingLeft: isFirst ? '14px' : '28px',
+                          paddingRight: '28px',
+                          gap: '8px',
+                          borderTop: `3px solid ${stageColorBar}`,
+                          boxSizing: 'border-box',
+                        }}
+                      >
+                        {/* Colored dot */}
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: stageColorBar, flexShrink: 0 }} />
+
+                        {/* Text info */}
+                        <div style={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
+                          <div style={{ fontWeight: 700, fontSize: '11px', color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {stage.title}
+                          </div>
+                          <div style={{ fontSize: '10px', color: '#64748B', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span>{formatCurrency(stageValueSum)}</span>
+                            <span>·</span>
+                            <span>{stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}</span>
+                          </div>
+                        </div>
+
+                        {/* Action buttons (hover) */}
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover/header:opacity-100 transition-opacity" style={{ flexShrink: 0 }}>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-emerald-600" title="Adicionar Etapa à Direita">
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-blue-600" title="Editar Etapa">
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-red-600" title="Excluir Etapa">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
-
-                      {/* Action buttons (Visible on hover) */}
-                      <div className="flex items-center space-x-1 shrink-0 opacity-0 group-hover/header:opacity-100 focus-within:opacity-100 transition-opacity pr-2">
-                        <button 
-                          type="button" 
-                          onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }}
-                          className="p-0.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded"
-                          title="Adicionar Etapa à Direita"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                        <button 
-                          type="button" 
-                          onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }}
-                          className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded"
-                          title="Editar Etapa"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-                        <button 
-                          type="button" 
-                          onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }}
-                          className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded"
-                          title="Excluir Etapa"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
                     </div>
-
-                    {/* Left colored stripe indicating stage custom theme */}
-                    <div className={`absolute top-0 bottom-0 left-0 w-[4px] ${stage.color.includes('blue') ? 'bg-blue-500' : stage.color.includes('teal') ? 'bg-teal-500' : stage.color.includes('emerald') ? 'bg-emerald-500' : stage.color.includes('indigo') ? 'bg-indigo-500' : stage.color.includes('purple') ? 'bg-purple-500' : stage.color.includes('amber') ? 'bg-amber-500' : stage.color.includes('orange') ? 'bg-orange-500' : stage.color.includes('rose') ? 'bg-rose-500' : 'bg-slate-400'}`} style={{ left: isFirst ? '0px' : '10px' }} />
                   </div>
                 );
               })}
             </div>
 
+
             {/* 2. Columns Grid below */}
-            <div className="flex space-x-3.5 items-start">
+            <div className="flex items-start" style={{ gap: '10px' }}>
               {funnelStages.map((stage) => {
                 const stageLeads = getLeadsInStage(stage.key);
 
@@ -794,10 +808,10 @@ export default function Crm() {
                     key={stage.key}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, stage.key)}
-                    className="bg-slate-50/50 border border-slate-200/50 rounded-xl p-3.5 space-y-3.5 min-w-[280px] w-[280px] shrink-0 min-h-[520px] flex flex-col"
+                    className="bg-slate-50/50 border border-slate-200/50 rounded-xl p-3 min-w-[280px] w-[280px] shrink-0 min-h-[520px] flex flex-col"
                   >
                     {/* Cards Container */}
-                    <div className="space-y-2 max-h-[600px] overflow-y-auto overflow-x-hidden pr-0.5 custom-scrollbar flex-grow">
+                    <div className="space-y-2 overflow-hidden flex-grow">
                       {stageLeads.length === 0 ? (
                         <div className="border-2 border-dashed border-slate-200 rounded-lg py-8 text-center text-[10px] text-slate-400 italic">
                           Arraste chamados aqui
