@@ -745,7 +745,7 @@ export default function Crm() {
         </div>
       ) : (
         <div className="overflow-x-auto pb-6 custom-scrollbar select-none">
-          <div className="flex items-start gap-0.5 min-w-max pr-4">
+          <div className="flex items-start gap-0 min-w-max pr-4">
             {funnelStages.map((stage, index) => {
               const stageLeads = getLeadsInStage(stage.key);
               const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
@@ -765,7 +765,14 @@ export default function Crm() {
               const viewBoxStr = isLast ? '0 0 246 56' : '0 0 260 56';
 
               return (
-                <div key={stage.key} className={`flex flex-col ${colWidthClass} shrink-0`}>
+                <div
+                  key={stage.key}
+                  className={`flex flex-col ${colWidthClass} shrink-0`}
+                  style={{
+                    marginLeft: isFirst ? '0' : '-13px',
+                    zIndex: funnelStages.length - index
+                  }}
+                >
                   {/* 1. Header Chevron */}
                   <div
                     draggable="true"
@@ -815,7 +822,7 @@ export default function Crm() {
                   <div
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, stage.key)}
-                    className="bg-[#F4F5F7] rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[600px] flex flex-col mt-[-1px] w-[246px]"
+                    className="bg-[#F4F5F7] rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[600px] flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                   >
                     <div className="space-y-2.5 flex-grow">
                       {stageLeads.length === 0 ? (
