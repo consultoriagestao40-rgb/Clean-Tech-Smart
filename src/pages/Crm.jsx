@@ -753,14 +753,19 @@ export default function Crm() {
               const isLast = index === funnelStages.length - 1;
 
               // SVG Path for 260x56 Chevron Header:
-              // Base width = 246px (X=0 to X=246). Arrow tip extends from X=246 to X=260.
+              // isFirst: rounded top-left corner, arrow tip right (M 10 0 H 246 L 260 28 L 246 56 H 0 V 10 A 10 10 0 0 1 10 0 Z)
+              // middle: notch left, arrow tip right (M 0 0 H 246 L 260 28 L 246 56 H 0 L 14 28 Z)
+              // isLast: notch left, straight right edge at X=246, rounded top-right corner (M 0 0 H 236 A 10 10 0 0 1 246 10 V 56 H 0 L 14 28 Z)
               let svgPath;
-              if (isFirst)      svgPath = 'M 0 0 H 246 L 260 28 L 246 56 H 0 Z';
-              else if (isLast)  svgPath = 'M 0 0 H 246 A 12 12 0 0 1 258 12 V 44 A 12 12 0 0 1 246 56 H 0 L 14 28 Z';
+              if (isFirst)      svgPath = 'M 10 0 H 246 L 260 28 L 246 56 H 0 V 10 A 10 10 0 0 1 10 0 Z';
+              else if (isLast)  svgPath = 'M 0 0 H 236 A 10 10 0 0 1 246 10 V 56 H 0 L 14 28 Z';
               else              svgPath = 'M 0 0 H 246 L 260 28 L 246 56 H 0 L 14 28 Z';
 
+              const colWidthClass = isLast ? 'min-w-[246px] w-[246px]' : 'min-w-[260px] w-[260px]';
+              const viewBoxStr = isLast ? '0 0 246 56' : '0 0 260 56';
+
               return (
-                <div key={stage.key} className="flex flex-col min-w-[260px] w-[260px] shrink-0">
+                <div key={stage.key} className={`flex flex-col ${colWidthClass} shrink-0`}>
                   {/* 1. Header Chevron */}
                   <div
                     draggable="true"
@@ -770,7 +775,7 @@ export default function Crm() {
                     className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[56px]"
                   >
                     <svg
-                      viewBox="0 0 260 56"
+                      viewBox={viewBoxStr}
                       preserveAspectRatio="none"
                       className="absolute inset-0 w-full h-full block"
                     >
@@ -780,7 +785,7 @@ export default function Crm() {
                       />
                     </svg>
 
-                    <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '14px' : '24px', paddingRight: '24px' }}>
+                    <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '16px' : '24px', paddingRight: isLast ? '16px' : '24px' }}>
                       <div className="flex-1 min-w-0 overflow-hidden">
                         <div className="font-bold text-xs text-gray-900 leading-snug truncate" title={stage.title}>
                           {stage.title}
