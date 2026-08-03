@@ -626,201 +626,337 @@ export default function Crm() {
             <button
               type="submit"
               disabled={isLoggingIn}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-all shadow-md shadow-blue-500/10 flex items-center justify-center space-x-2"
-            >
-              {isLoggingIn ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Entrar no CRM</span>}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  // ---------------- MAIN CRM BOARD SCREEN ----------------
-  return (
-    <div className="-mt-8 -mx-8 p-8 pt-4 space-y-4 text-gray-800 font-sans bg-gray-50 min-h-screen">
-      
-      {/* 1. Header & Metrics Top Bar (Scrolls up naturally) */}
-      <div className="space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-sm gap-3">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 leading-tight">CRM - Funil de Vendas</h1>
-            <p className="text-[11px] text-gray-500">Acompanhe novos contatos, propostas ativas e conversões em tempo real.</p>
-          </div>
-          
-          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
-            {/* Search bar moved to top header where user name was */}
-            <div className="relative min-w-[240px]">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-              <input 
-                type="text"
-                placeholder="Buscar por cliente, tel ou vendedor..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-gray-50/50"
-              />
-            </div>
-
-            {/* Seller Filter */}
-            {currentUser.role === 'gestor' && (
-              <div className="flex items-center space-x-1.5 text-xs">
-                <span className="text-gray-500 font-semibold">Vendedor:</span>
-                <select
-                  value={selectedSeller}
-                  onChange={e => setSelectedSeller(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-xs"
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-all shadow-md shadow-blue-500/10 flex items-center justify-center space-x-2"
                 >
-                  <option value="all">Todos os vendedores</option>
-                  {sellers.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
+                  {isLoggingIn ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Entrar no CRM</span>}
+                </button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      // ---------------- MAIN CRM BOARD SCREEN ----------------
+      return (
+        <div className="h-[calc(100vh-2rem)] -m-8 p-8 flex flex-col space-y-3 text-gray-800 font-sans overflow-hidden bg-gray-50">
+          
+          {/* 1. Header & Metrics Top Bar (Shrink-0) */}
+          <div className="shrink-0 space-y-2">
+            <div className="flex flex-col md:flex-row md:items-center justify-between bg-white px-5 py-2.5 rounded-2xl border border-gray-100 shadow-sm gap-3">
+              <div>
+                <h1 className="text-lg font-bold text-gray-900 leading-tight">CRM - Funil de Vendas</h1>
+                <p className="text-[11px] text-gray-500">Acompanhe novos contatos, propostas ativas e conversões em tempo real.</p>
               </div>
-            )}
+              
+              <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+                {/* Search bar moved to top header */}
+                <div className="relative min-w-[240px]">
+                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+                  <input 
+                    type="text"
+                    placeholder="Buscar por cliente, tel ou vendedor..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-gray-50/50"
+                  />
+                </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm('Deseja restaurar as etapas padrão do Kanban?')) {
-                  setFunnelStages(DEFAULT_STAGES);
-                  localStorage.setItem('crm_stages', JSON.stringify(DEFAULT_STAGES));
-                }
-              }}
-              className="text-xs text-blue-600 hover:text-blue-800 font-semibold px-3 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all border border-blue-100"
-            >
-              Restaurar Etapas
-            </button>
-          </div>
-        </div>
-
-        {/* Compact Metrics Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
-            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-              <Users className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Total de Leads</span>
-              <span className="text-lg font-bold text-gray-900">{stats.totalCount}</span>
-            </div>
-          </div>
-
-          <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
-            <div className="p-2 bg-yellow-50 rounded-lg text-yellow-600">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Valor em Negociação</span>
-              <span className="text-sm font-bold text-yellow-600">{formatCurrency(stats.activeValue)}</span>
-            </div>
-          </div>
-
-          <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
-            <div className="p-2 bg-green-50 rounded-lg text-green-600">
-              <CheckCircle className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Faturamento Fechado</span>
-              <span className="text-sm font-bold text-green-600">{formatCurrency(stats.closedValue)}</span>
-            </div>
-          </div>
-
-          <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
-            <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
-              <AlertCircle className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Taxa de Conversão</span>
-              <span className="text-lg font-bold text-purple-600">{stats.conversionRate}%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Kanban Board Grid */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center p-12 text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-          <span>Carregando negócios...</span>
-        </div>
-      ) : (
-        <div className="space-y-0">
-          {/* A) STICKY CHEVRON HEADER (Freezes at exact top: 0 of window when scrolled down!) */}
-          <div className="sticky top-0 z-40 bg-gray-50 pt-2 pb-1 -mx-8 px-8 border-b border-gray-200/50">
-            <div
-              ref={headerScrollRef}
-              onScroll={handleHeaderScroll}
-              className="overflow-x-auto no-scrollbar select-none"
-            >
-              <div className="flex items-center gap-0 min-w-max pr-4">
-                {funnelStages.map((stage, index) => {
-                  const stageLeads = getLeadsInStage(stage.key);
-                  const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
-                  const isFirst = index === 0;
-                  const isLast = index === funnelStages.length - 1;
-
-                  const rawColor = migrateColor(stage.color);
-                  const headerColor = rawColor && rawColor.startsWith('#') ? rawColor : '#F4F5F7';
-                  const isColored = headerColor !== '#F4F5F7' && headerColor !== '#f4f5f7';
-
-                  let svgPath;
-                  if (isFirst)      svgPath = 'M 10 0 H 246 L 260 28 L 246 56 H 0 V 10 A 10 10 0 0 1 10 0 Z';
-                  else if (isLast)  svgPath = 'M 0 0 H 236 A 10 10 0 0 1 246 10 V 56 H 0 L 14 28 Z';
-                  else              svgPath = 'M 0 0 H 246 L 260 28 L 246 56 H 0 L 14 28 Z';
-
-                  const colWidthClass = isLast ? 'min-w-[246px] w-[246px]' : 'min-w-[260px] w-[260px]';
-                  const viewBoxStr = isLast ? '0 0 246 56' : '0 0 260 56';
-
-                  return (
-                    <div
-                      key={stage.key}
-                      className={`${colWidthClass} shrink-0`}
-                      style={{
-                        marginLeft: isFirst ? '0' : '-8px',
-                        zIndex: funnelStages.length - index
-                      }}
+                {/* Seller Filter */}
+                {currentUser.role === 'gestor' && (
+                  <div className="flex items-center space-x-1.5 text-xs">
+                    <span className="text-gray-500 font-semibold">Vendedor:</span>
+                    <select
+                      value={selectedSeller}
+                      onChange={e => setSelectedSeller(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-xs"
                     >
-                      <div
-                        draggable="true"
-                        onDragStart={(e) => handleColumnDragStart(e, index)}
-                        onDrop={(e) => handleColumnDrop(e, index)}
-                        onDragOver={handleDragOver}
-                        className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[52px]"
-                      >
-                        <svg
-                          viewBox={viewBoxStr}
-                          preserveAspectRatio="none"
-                          className="absolute inset-0 w-full h-full block"
-                        >
-                          <path
-                            d={svgPath}
-                            fill={headerColor}
-                          />
-                        </svg>
+                      <option value="all">Todos os vendedores</option>
+                      {sellers.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-                        <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '16px' : '24px', paddingRight: isLast ? '16px' : '24px' }}>
-                          <div className="flex-1 min-w-0 overflow-hidden">
-                            <div className={`font-bold text-xs leading-snug truncate ${isColored ? 'text-white' : 'text-gray-900'}`} title={stage.title}>
-                              {stage.title}
-                            </div>
-                            <div className={`text-[11px] font-normal mt-0.5 flex items-center space-x-1 ${isColored ? 'text-white/90' : 'text-gray-500'}`}>
-                              <span>{formatCurrency(stageValueSum)}</span>
-                              <span>·</span>
-                              <span>{stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Deseja restaurar as etapas padrão do Kanban?')) {
+                      setFunnelStages(DEFAULT_STAGES);
+                      localStorage.setItem('crm_stages', JSON.stringify(DEFAULT_STAGES));
+                    }
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-semibold px-3 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all border border-blue-100"
+                >
+                  Restaurar Etapas
+                </button>
+              </div>
+            </div>
+
+            {/* Compact Metrics Row */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
+                <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Total de Leads</span>
+                  <span className="text-lg font-bold text-gray-900">{stats.totalCount}</span>
+                </div>
+              </div>
+
+              <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
+                <div className="p-2 bg-yellow-50 rounded-lg text-yellow-600">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Valor em Negociação</span>
+                  <span className="text-sm font-bold text-yellow-600">{formatCurrency(stats.activeValue)}</span>
+                </div>
+              </div>
+
+              <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
+                <div className="p-2 bg-green-50 rounded-lg text-green-600">
+                  <CheckCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Faturamento Fechado</span>
+                  <span className="text-sm font-bold text-green-600">{formatCurrency(stats.closedValue)}</span>
+                </div>
+              </div>
+
+              <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
+                <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Taxa de Conversão</span>
+                  <span className="text-lg font-bold text-purple-600">{stats.conversionRate}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Full-Height Kanban Board Box with Individual Column Scrolling */}
+          {isLoading ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-12 text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
+              <span>Carregando negócios...</span>
+            </div>
+          ) : (
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              {/* A) CHEVRON HEADER ROW — PERMANENTLY FIXED AT TOP OF BOARD */}
+              <div className="shrink-0 overflow-x-auto no-scrollbar select-none bg-gray-50 pt-1 pb-0.5">
+                <div
+                  ref={headerScrollRef}
+                  onScroll={handleHeaderScroll}
+                  className="overflow-x-auto no-scrollbar select-none"
+                >
+                  <div className="flex items-center gap-0 min-w-max pr-4">
+                    {funnelStages.map((stage, index) => {
+                      const stageLeads = getLeadsInStage(stage.key);
+                      const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
+                      const isFirst = index === 0;
+                      const isLast = index === funnelStages.length - 1;
+
+                      const rawColor = migrateColor(stage.color);
+                      const headerColor = rawColor && rawColor.startsWith('#') ? rawColor : '#F4F5F7';
+                      const isColored = headerColor !== '#F4F5F7' && headerColor !== '#f4f5f7';
+
+                      let svgPath;
+                      if (isFirst)      svgPath = 'M 10 0 H 246 L 260 28 L 246 56 H 0 V 10 A 10 10 0 0 1 10 0 Z';
+                      else if (isLast)  svgPath = 'M 0 0 H 236 A 10 10 0 0 1 246 10 V 56 H 0 L 14 28 Z';
+                      else              svgPath = 'M 0 0 H 246 L 260 28 L 246 56 H 0 L 14 28 Z';
+
+                      const colWidthClass = isLast ? 'min-w-[246px] w-[246px]' : 'min-w-[260px] w-[260px]';
+                      const viewBoxStr = isLast ? '0 0 246 56' : '0 0 260 56';
+
+                      return (
+                        <div
+                          key={stage.key}
+                          className={`${colWidthClass} shrink-0`}
+                          style={{
+                            marginLeft: isFirst ? '0' : '-8px',
+                            zIndex: funnelStages.length - index
+                          }}
+                        >
+                          <div
+                            draggable="true"
+                            onDragStart={(e) => handleColumnDragStart(e, index)}
+                            onDrop={(e) => handleColumnDrop(e, index)}
+                            onDragOver={handleDragOver}
+                            className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[52px]"
+                          >
+                            <svg
+                              viewBox={viewBoxStr}
+                              preserveAspectRatio="none"
+                              className="absolute inset-0 w-full h-full block"
+                            >
+                              <path
+                                d={svgPath}
+                                fill={headerColor}
+                              />
+                            </svg>
+
+                            <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '16px' : '24px', paddingRight: isLast ? '16px' : '24px' }}>
+                              <div className="flex-1 min-w-0 overflow-hidden">
+                                <div className={`font-bold text-xs leading-snug truncate ${isColored ? 'text-white' : 'text-gray-900'}`} title={stage.title}>
+                                  {stage.title}
+                                </div>
+                                <div className={`text-[11px] font-normal mt-0.5 flex items-center space-x-1 ${isColored ? 'text-white/90' : 'text-gray-500'}`}>
+                                  <span>{formatCurrency(stageValueSum)}</span>
+                                  <span>·</span>
+                                  <span>{stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}</span>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
+                                <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/60'}`}>
+                                  <Plus className="w-3.5 h-3.5" />
+                                </button>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/60'}`}>
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-red-600 hover:bg-gray-200/60'}`}>
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           </div>
-                          
-                          <div className="flex items-center space-x-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
-                            <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/60'}`}>
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                            <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/60'}`}>
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
-                            <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-red-600 hover:bg-gray-200/60'}`}>
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* B) COLUMN BODIES ROW — INDIVIDUAL COLUMN CARDS SCROLLING */}
+              <div
+                ref={bodyScrollRef}
+                onScroll={handleBodyScroll}
+                className="flex-1 min-h-0 overflow-x-auto custom-scrollbar select-none"
+              >
+                <div className="flex items-stretch gap-0 min-w-max pr-4 h-full">
+                  {funnelStages.map((stage, index) => {
+                    const stageLeads = getLeadsInStage(stage.key);
+                    const isFirst = index === 0;
+                    const isLast = index === funnelStages.length - 1;
+
+                    const rawColor = migrateColor(stage.color);
+                    const headerColor = rawColor && rawColor.startsWith('#') ? rawColor : '#F4F5F7';
+                    const isColored = headerColor !== '#F4F5F7' && headerColor !== '#f4f5f7';
+                    const bodyBg = isColored ? getStageBgTint(headerColor) : '#F4F5F7';
+
+                    const colWidthClass = isLast ? 'min-w-[246px] w-[246px]' : 'min-w-[260px] w-[260px]';
+
+                    return (
+                      <div
+                        key={stage.key}
+                        className={`flex flex-col ${colWidthClass} shrink-0 h-full`}
+                        style={{
+                          marginLeft: isFirst ? '0' : '-8px'
+                        }}
+                      >
+                        <div
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, stage.key)}
+                          style={{ backgroundColor: bodyBg }}
+                          className="rounded-b-2xl rounded-t-none p-3 pt-2.5 flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                        >
+                          <div className="space-y-2.5 flex-grow">
+                            {stageLeads.length === 0 ? (
+                              <div className="border-2 border-dashed border-gray-200/80 rounded-xl py-12 text-center text-xs text-gray-400 font-medium italic">
+                                Sem negócios nesta etapa
+                              </div>
+                            ) : (
+                              stageLeads.map((lead, leadIdx) => {
+                                const leadVal = parseFloat(lead.value) || 0;
+                              const hasActivity = !!lead.next_contact_at;
+
+                              return (
+                                <div
+                                  key={lead.phone || lead.id || leadIdx}
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, lead.phone)}
+                                  className="group bg-white p-3.5 rounded-xl border border-gray-200/90 shadow-xs cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 transition-all space-y-1.5 text-left relative min-w-0"
+                                >
+                                  {/* Deal Title (Pipedrive format: [Amostra] Deal Name) */}
+                                  <h4 className="text-xs font-bold text-gray-900 leading-snug truncate" title={lead.name}>
+                                    {lead.name ? `[Amostra] ${lead.name}` : `[Amostra] Lead ${lead.phone}`}
+                                  </h4>
+
+                                  {/* Subtitle / Organization or Contact */}
+                                  <p className="text-[11px] text-gray-500 truncate leading-tight">
+                                    {lead.name ? `[Amostra] ${lead.name}, ${lead.phone}` : lead.phone}
+                                  </p>
+
+                                  {/* Card Footer Row: Owner Icon + Value on Left, Status Circle Arrow on Right */}
+                                  <div className="pt-2 flex items-center justify-between min-w-0">
+                                    {/* Owner Icon & Value */}
+                                    <div className="flex items-center space-x-1.5 text-xs font-semibold text-gray-700 min-w-0">
+                                      <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                      <span className="truncate">{formatCurrency(leadVal)}</span>
+                                    </div>
+
+                                    {/* Status Circle Arrow Button (Pipedrive Green / Gray Circle) */}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveMoveLead(lead);
+                                      }}
+                                      className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                                        hasActivity 
+                                          ? 'bg-[#22C55E] text-white shadow-xs hover:bg-emerald-600' 
+                                          : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
+                                      }`}
+                                      title={hasActivity ? 'Atividade Agendada' : 'Mover de Etapa / Opções'}
+                                    >
+                                      <ChevronRight className="w-3.5 h-3.5 stroke-[3]" />
+                                    </button>
+                                  </div>
+
+                                  {/* Scheduled Return Date Badge (if present) */}
+                                  {lead.next_contact_at && (
+                                    <div className="flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 p-1.5 rounded-lg mt-1">
+                                      <Calendar className="w-3 h-3 mr-1 text-emerald-500 shrink-0" />
+                                      <span className="truncate">Atividade: {new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                  )}
+
+                                  {/* Quick Action Toolbar on Hover */}
+                                  <div className="pt-1 flex justify-end space-x-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setActiveReminderLead(lead); setActiveNoteLead(null); setActiveMoveLead(null); }}
+                                      className="p-1 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
+                                      title="Agendar Retorno / Atividade"
+                                    >
+                                      <Calendar className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); setActiveNoteLead(lead); setActiveReminderLead(null); setActiveMoveLead(null); }}
+                                      className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
+                                      title="Adicionar Nota"
+                                    >
+                                      <ClipboardList className="w-3.5 h-3.5" />
+                                    </button>
+                                    <a
+                                      href={`https://web.whatsapp.com/send?phone=${lead.phone.replace(/\D/g, '')}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-1 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded transition-all flex items-center"
+                                      title="Chat WhatsApp"
+                                    >
+                                      <MessageSquare className="w-3.5 h-3.5" />
+                                    </a>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
                         </div>
                       </div>
                     </div>
@@ -829,44 +965,6 @@ export default function Crm() {
               </div>
             </div>
           </div>
-
-          {/* B) CARDS BODY CONTAINER (Extends naturally to full bottom of page) */}
-          <div
-            ref={bodyScrollRef}
-            onScroll={handleBodyScroll}
-            className="overflow-x-auto pb-12 custom-scrollbar select-none"
-          >
-            <div className="flex items-stretch gap-0 min-w-max pr-4">
-              {funnelStages.map((stage, index) => {
-                const stageLeads = getLeadsInStage(stage.key);
-                const isFirst = index === 0;
-                const isLast = index === funnelStages.length - 1;
-
-                const rawColor = migrateColor(stage.color);
-                const headerColor = rawColor && rawColor.startsWith('#') ? rawColor : '#F4F5F7';
-                const isColored = headerColor !== '#F4F5F7' && headerColor !== '#f4f5f7';
-                const bodyBg = isColored ? getStageBgTint(headerColor) : '#F4F5F7';
-
-                const colWidthClass = isLast ? 'min-w-[246px] w-[246px]' : 'min-w-[260px] w-[260px]';
-
-                return (
-                  <div
-                    key={stage.key}
-                    className={`flex flex-col ${colWidthClass} shrink-0`}
-                    style={{
-                      marginLeft: isFirst ? '0' : '-8px'
-                    }}
-                  >
-                    <div
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, stage.key)}
-                      style={{ backgroundColor: bodyBg }}
-                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 h-[calc(100vh-56px)] overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
-                    >
-                      <div className="space-y-2.5 flex-grow">
-                        {stageLeads.length === 0 ? (
-                          <div className="border-2 border-dashed border-gray-200/80 rounded-xl py-12 text-center text-xs text-gray-400 font-medium italic">
-                            Sem negócios nesta etapa
                           </div>
                         ) : (
                           stageLeads.map((lead, leadIdx) => {
