@@ -1,20 +1,20 @@
-const CACHE_NAME = 'cleantech-os-v1';
-const urlsToCache = [
-  '/tecnico',
-  '/favicon.png',
-  '/manifest.json'
-];
+const CACHE_NAME = 'cleantech-os-v2';
 
 self.addEventListener('install', event => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys.map(key => caches.delete(key))
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
-  );
+  // Pass-through to network to prevent stale HTML cache and Vite asset mismatches
+  event.respondWith(fetch(event.request));
 });
