@@ -986,7 +986,8 @@ export default function Crm() {
             })}
           </div>
         </div>
-      )}
+      </div>
+    )}
 
       {/* ---------------- QUICK NOTE MODAL (WaSeller Style) ---------------- */}
       {activeNoteLead && (
