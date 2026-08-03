@@ -737,7 +737,7 @@ export default function Crm() {
         </div>
       </div>
 
-      {/* Kanban Board Grid — Pipedrive Style */}
+      {/* Kanban Board Grid — Pipedrive Light Gray Chevron Pipeline */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-12 text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
@@ -745,139 +745,195 @@ export default function Crm() {
         </div>
       ) : (
         <div className="overflow-x-auto pb-6 custom-scrollbar select-none">
-          <div className="flex items-start gap-3 min-w-max pr-4">
-            {funnelStages.map((stage, index) => {
-              const stageLeads = getLeadsInStage(stage.key);
-              const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
+          <div className="flex flex-col space-y-2 min-w-max pr-4">
+            
+            {/* 1. Light Gray Chevron Pipeline Header Track (Pipedrive Style) */}
+            <div className="flex items-center flex-nowrap" style={{ gap: 0, marginBottom: '6px' }}>
+              {funnelStages.map((stage, index) => {
+                const stageLeads = getLeadsInStage(stage.key);
+                const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
+                const isFirst = index === 0;
+                const isLast = index === funnelStages.length - 1;
 
-              return (
-                <div
-                  key={stage.key}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, stage.key)}
-                  className="bg-[#F4F5F7] rounded-2xl p-3 min-w-[270px] w-[270px] shrink-0 min-h-[620px] flex flex-col border border-gray-200/60"
-                >
-                  {/* Column Header — Pipedrive style */}
-                  <div className="mb-3 px-1 flex items-start justify-between group/header">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-bold text-gray-900 leading-snug truncate" title={stage.title}>
-                        {stage.title}
-                      </h3>
-                      <p className="text-xs text-gray-500 font-medium mt-0.5">
-                        {formatCurrency(stageValueSum)} · {stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}
-                      </p>
-                    </div>
+                let svgPath;
+                if (isFirst)      svgPath = 'M 0 0 H 238 L 260 25 L 238 50 H 0 Z';
+                else if (isLast)  svgPath = 'M 22 0 H 260 V 50 H 22 L 0 25 Z';
+                else              svgPath = 'M 22 0 H 238 L 260 25 L 238 50 H 22 L 0 25 Z';
 
-                    {/* Action buttons on hover */}
-                    <div className="flex items-center space-x-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
-                      <button type="button" onClick={() => handleOpenAddStageAfter(index)} className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/60 rounded transition-all" title="Adicionar Etapa">
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                      <button type="button" onClick={() => handleOpenEditStage(stage)} className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/60 rounded transition-all" title="Editar Etapa">
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
-                      <button type="button" onClick={() => handleDeleteStage(stage.key)} className="p-1 text-gray-400 hover:text-red-600 hover:bg-gray-200/60 rounded transition-all" title="Excluir Etapa">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                return (
+                  <div
+                    key={`header-${stage.key}`}
+                    draggable="true"
+                    onDragStart={(e) => handleColumnDragStart(e, index)}
+                    onDrop={(e) => handleColumnDrop(e, index)}
+                    onDragOver={handleDragOver}
+                    className="group/header select-none cursor-grab active:cursor-grabbing shrink-0 relative"
+                    style={{
+                      width: '260px',
+                      minWidth: '260px',
+                      height: '50px',
+                      marginLeft: isFirst ? '0' : '-22px',
+                      zIndex: funnelStages.length - index,
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 260 50"
+                      preserveAspectRatio="none"
+                      className="absolute inset-0 w-full h-full block"
+                    >
+                      <path
+                        d={svgPath}
+                        fill="#F4F5F7"
+                        stroke="#FFFFFF"
+                        strokeWidth="3.5"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
 
-                  {/* Column Cards List */}
-                  <div className="space-y-2.5 flex-grow">
-                    {stageLeads.length === 0 ? (
-                      <div className="border-2 border-dashed border-gray-200/80 rounded-xl py-12 text-center text-xs text-gray-400 font-medium italic">
-                        Sem negócios nesta etapa
+                    <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '16px' : '30px', paddingRight: isLast ? '16px' : '30px' }}>
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="font-extrabold text-xs text-gray-900 leading-snug truncate" title={stage.title}>
+                          {stage.title}
+                        </div>
+                        <div className="text-[11px] text-gray-500 font-medium mt-0.5 flex items-center space-x-1">
+                          <span>{formatCurrency(stageValueSum)}</span>
+                          <span>·</span>
+                          <span>{stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}</span>
+                        </div>
                       </div>
-                    ) : (
-                      stageLeads.map((lead, leadIdx) => {
-                        const leadVal = parseFloat(lead.value) || 0;
-                        const hasActivity = !!lead.next_contact_at;
-
-                        return (
-                          <div
-                            key={lead.phone || lead.id || leadIdx}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, lead.phone)}
-                            className="group bg-white p-3.5 rounded-xl border border-gray-200/90 shadow-xs cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 transition-all space-y-1.5 text-left relative min-w-0"
-                          >
-                            {/* Deal Title (Pipedrive format: [Amostra] Deal Name) */}
-                            <h4 className="text-xs font-bold text-gray-900 leading-snug truncate" title={lead.name}>
-                              {lead.name ? `[Amostra] ${lead.name}` : `[Amostra] Lead ${lead.phone}`}
-                            </h4>
-
-                            {/* Subtitle / Organization or Contact */}
-                            <p className="text-[11px] text-gray-500 truncate leading-tight">
-                              {lead.name ? `[Amostra] ${lead.name}, ${lead.phone}` : lead.phone}
-                            </p>
-
-                            {/* Card Footer Row: Owner Icon + Value on Left, Status Circle Arrow on Right */}
-                            <div className="pt-2 flex items-center justify-between min-w-0">
-                              {/* Owner Icon & Value */}
-                              <div className="flex items-center space-x-1.5 text-xs font-semibold text-gray-700 min-w-0">
-                                <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                                <span className="truncate">{formatCurrency(leadVal)}</span>
-                              </div>
-
-                              {/* Status Activity Circle Arrow Button (Pipedrive Green / Gray Circle) */}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveMoveLead(lead);
-                                }}
-                                className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-                                  hasActivity 
-                                    ? 'bg-[#22C55E] text-white shadow-xs hover:bg-emerald-600' 
-                                    : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
-                                }`}
-                                title={hasActivity ? 'Atividade Agendada' : 'Mover de Etapa / Opções'}
-                              >
-                                <ChevronRight className="w-3.5 h-3.5 stroke-[3]" />
-                              </button>
-                            </div>
-
-                            {/* Scheduled Return Date Badge (if present) */}
-                            {lead.next_contact_at && (
-                              <div className="flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 p-1.5 rounded-lg mt-1">
-                                <Calendar className="w-3 h-3 mr-1 text-emerald-500 shrink-0" />
-                                <span className="truncate">Atividade: {new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                              </div>
-                            )}
-
-                            {/* Quick Action Toolbar on Hover */}
-                            <div className="pt-1 flex justify-end space-x-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setActiveReminderLead(lead); setActiveNoteLead(null); setActiveMoveLead(null); }}
-                                className="p-1 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
-                                title="Agendar Retorno / Atividade"
-                              >
-                                <Calendar className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setActiveNoteLead(lead); setActiveReminderLead(null); setActiveMoveLead(null); }}
-                                className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
-                                title="Adicionar Nota"
-                              >
-                                <ClipboardList className="w-3.5 h-3.5" />
-                              </button>
-                              <a
-                                href={`https://web.whatsapp.com/send?phone=${lead.phone.replace(/\D/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded transition-all flex items-center"
-                                title="Chat WhatsApp"
-                              >
-                                <MessageSquare className="w-3.5 h-3.5" />
-                              </a>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
+                      
+                      <div className="flex items-center space-x-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/60 rounded">
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/60 rounded">
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className="p-1 text-gray-400 hover:text-red-600 hover:bg-gray-200/60 rounded">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            {/* 2. Light Gray Columns Body Track */}
+            <div className="flex items-start flex-nowrap" style={{ gap: '0px' }}>
+              {funnelStages.map((stage) => {
+                const stageLeads = getLeadsInStage(stage.key);
+
+                return (
+                  <div
+                    key={stage.key}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, stage.key)}
+                    style={{
+                      backgroundColor: '#F4F5F7',
+                      width: '238px',
+                      minWidth: '238px',
+                      marginRight: '0px',
+                    }}
+                    className="border-r-2 border-white rounded-b-2xl rounded-t-xs p-2.5 shrink-0 min-h-[600px] flex flex-col"
+                  >
+                    <div className="space-y-2.5 flex-grow">
+                      {stageLeads.length === 0 ? (
+                        <div className="border-2 border-dashed border-gray-200/80 rounded-xl py-12 text-center text-xs text-gray-400 font-medium italic">
+                          Sem negócios nesta etapa
+                        </div>
+                      ) : (
+                        stageLeads.map((lead, leadIdx) => {
+                          const leadVal = parseFloat(lead.value) || 0;
+                          const hasActivity = !!lead.next_contact_at;
+
+                          return (
+                            <div
+                              key={lead.phone || lead.id || leadIdx}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, lead.phone)}
+                              className="group bg-white p-3.5 rounded-xl border border-gray-200/90 shadow-xs cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 transition-all space-y-1.5 text-left relative min-w-0"
+                            >
+                              {/* Deal Title (Pipedrive format: [Amostra] Deal Name) */}
+                              <h4 className="text-xs font-bold text-gray-900 leading-snug truncate" title={lead.name}>
+                                {lead.name ? `[Amostra] ${lead.name}` : `[Amostra] Lead ${lead.phone}`}
+                              </h4>
+
+                              {/* Subtitle / Organization or Contact */}
+                              <p className="text-[11px] text-gray-500 truncate leading-tight">
+                                {lead.name ? `[Amostra] ${lead.name}, ${lead.phone}` : lead.phone}
+                              </p>
+
+                              {/* Card Footer Row: Owner Icon + Value on Left, Status Circle Arrow on Right */}
+                              <div className="pt-2 flex items-center justify-between min-w-0">
+                                {/* Owner Icon & Value */}
+                                <div className="flex items-center space-x-1.5 text-xs font-semibold text-gray-700 min-w-0">
+                                  <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                  <span className="truncate">{formatCurrency(leadVal)}</span>
+                                </div>
+
+                                {/* Status Circle Arrow Button (Pipedrive Green / Gray Circle) */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveMoveLead(lead);
+                                  }}
+                                  className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                                    hasActivity 
+                                      ? 'bg-[#22C55E] text-white shadow-xs hover:bg-emerald-600' 
+                                      : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
+                                  }`}
+                                  title={hasActivity ? 'Atividade Agendada' : 'Mover de Etapa / Opções'}
+                                >
+                                  <ChevronRight className="w-3.5 h-3.5 stroke-[3]" />
+                                </button>
+                              </div>
+
+                              {/* Scheduled Return Date Badge (if present) */}
+                              {lead.next_contact_at && (
+                                <div className="flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 p-1.5 rounded-lg mt-1">
+                                  <Calendar className="w-3 h-3 mr-1 text-emerald-500 shrink-0" />
+                                  <span className="truncate">Atividade: {new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                              )}
+
+                              {/* Quick Action Toolbar on Hover */}
+                              <div className="pt-1 flex justify-end space-x-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setActiveReminderLead(lead); setActiveNoteLead(null); setActiveMoveLead(null); }}
+                                  className="p-1 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
+                                  title="Agendar Retorno / Atividade"
+                                >
+                                  <Calendar className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setActiveNoteLead(lead); setActiveReminderLead(null); setActiveMoveLead(null); }}
+                                  className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
+                                  title="Adicionar Nota"
+                                >
+                                  <ClipboardList className="w-3.5 h-3.5" />
+                                </button>
+                                <a
+                                  href={`https://web.whatsapp.com/send?phone=${lead.phone.replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded transition-all flex items-center"
+                                  title="Chat WhatsApp"
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                </a>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
           </div>
         </div>
       )}
