@@ -756,7 +756,7 @@ export default function Crm() {
         </div>
       ) : (
         <div className="overflow-x-auto pb-6 custom-scrollbar select-none">
-          <div className="flex items-start gap-0 min-w-max pr-4">
+          <div className="flex items-stretch gap-0 min-w-max pr-4">
             {funnelStages.map((stage, index) => {
               const stageLeads = getLeadsInStage(stage.key);
               const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
@@ -783,19 +783,19 @@ export default function Crm() {
               return (
                 <div
                   key={stage.key}
-                  className={`flex flex-col ${colWidthClass} shrink-0`}
+                  className={`flex flex-col ${colWidthClass} shrink-0 h-full`}
                   style={{
                     marginLeft: isFirst ? '0' : '-8px',
                     zIndex: funnelStages.length - index
                   }}
                 >
-                  {/* 1. Header Chevron */}
+                  {/* 1. Header Chevron (Sticky at top when scrolling) */}
                   <div
                     draggable="true"
                     onDragStart={(e) => handleColumnDragStart(e, index)}
                     onDrop={(e) => handleColumnDrop(e, index)}
                     onDragOver={handleDragOver}
-                    className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[56px]"
+                    className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[56px] sticky top-0 z-30"
                   >
                     <svg
                       viewBox={viewBoxStr}
@@ -834,12 +834,12 @@ export default function Crm() {
                     </div>
                   </div>
 
-                  {/* 2. Column Body — Exact width 246px matching header base */}
+                  {/* 2. Column Body — Equal Height Stretch matching tallest column */}
                   <div
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, stage.key)}
                     style={{ backgroundColor: bodyBg }}
-                    className="rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[600px] flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                    className="rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[600px] flex-1 h-full flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                   >
                     <div className="space-y-2.5 flex-grow">
                       {stageLeads.length === 0 ? (
