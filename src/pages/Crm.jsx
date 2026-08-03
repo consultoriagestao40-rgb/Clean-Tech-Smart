@@ -79,9 +79,15 @@ function migrateColor(color) {
 
 export default function Crm() {
   const [funnelStages, setFunnelStages] = useState(() => {
-    // Clear old localStorage to ensure exact default database stages are used
-    localStorage.removeItem('crm_stages');
-    localStorage.setItem('crm_stages', JSON.stringify(DEFAULT_STAGES));
+    const saved = localStorage.getItem('crm_stages');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(s => ({ ...s, color: migrateColor(s.color) }));
+        }
+      } catch (e) {}
+    }
     return DEFAULT_STAGES;
   });
 
@@ -93,7 +99,7 @@ export default function Crm() {
   const [isEditingStage, setIsEditingStage] = useState(false);
   const [editingStageKey, setEditingStageKey] = useState('');
   const [editingStageTitle, setEditingStageTitle] = useState('');
-  const [selectedColor, setSelectedColor] = useState('#4B5563');
+  const [selectedColor, setSelectedColor] = useState('#3B82F6');
   const [insertAfterIndex, setInsertAfterIndex] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('user') || 'null'));
@@ -118,43 +124,47 @@ export default function Crm() {
   const [quickNoteContent, setQuickNoteContent] = useState('');
   
   const [activeReminderLead, setActiveReminderLead] = useState(null);
-  const [sendViaWhatsapp, setSendViaWhatsapp] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
   const [taskMessage, setTaskMessage] = useState('');
   const [taskDate, setTaskDate] = useState('');
   const [taskTime, setTaskTime] = useState('');
+  const [isSavingQuick, setIsSavingQuick] = useState(false);
+  const [sendViaWhatsapp, setSendViaWhatsapp] = useState(true);
 
+  // Move Lead stage state
   const [activeMoveLead, setActiveMoveLead] = useState(null);
 
-  const [isSavingQuick, setIsSavingQuick] = useState(false);
-
-  // Stats
+  // Metrics state
   const [stats, setStats] = useState({
     totalCount: 0,
-    activeValue: 0.00,
-    closedValue: 0.00,
+    activeValue: 0,
+    closedValue: 0,
     conversionRate: 0
   });
 
   useEffect(() => {
     if (token) {
-      fetchSellers();
       fetchLeads();
+      if (currentUser?.role === 'gestor') {
+        fetchSellers();
+      }
     }
   }, [token, selectedSeller]);
 
   useEffect(() => {
-    let totalCount = leads.length;
+    // Recalculate metrics
+    const totalCount = leads.length;
     let activeValue = 0;
     let closedValue = 0;
     let closedCount = 0;
 
     leads.forEach(lead => {
       const val = parseFloat(lead.value) || 0;
-      if (lead.stage === 'faturado') {
+      const st = (lead.stage || '').toLowerCase();
+      if (st === 'faturado' || st === 'a_faturar' || st === 'proposta' || st === 'proposta_feita') {
         closedValue += val;
         closedCount += 1;
-      } else if (lead.stage !== 'perdido') {
+      } else {
         activeValue += val;
       }
     });
@@ -171,6 +181,7 @@ export default function Crm() {
 
   const handleOpenAddStageAfter = (index) => {
     setInsertAfterIndex(index);
+    setSelectedColor('#3B82F6');
     setIsAddingStage(true);
   };
 
@@ -185,7 +196,7 @@ export default function Crm() {
     const newStage = {
       key,
       title: newStageTitle.trim(),
-      color: selectedColor
+      color: selectedColor || '#3B82F6'
     };
     
     const updated = [...funnelStages];
@@ -199,14 +210,14 @@ export default function Crm() {
     localStorage.setItem('crm_stages', JSON.stringify(updated));
     setIsAddingStage(false);
     setNewStageTitle('');
-    setSelectedColor('border-t-2 border-slate-400 bg-slate-50/20 text-slate-700');
+    setSelectedColor('#3B82F6');
     setInsertAfterIndex(null);
   };
 
   const handleOpenEditStage = (stage) => {
     setEditingStageKey(stage.key);
     setEditingStageTitle(stage.title);
-    setSelectedColor(stage.color || 'border-t-2 border-slate-400 bg-slate-50/20 text-slate-700');
+    setSelectedColor(migrateColor(stage.color) || '#3B82F6');
     setIsEditingStage(true);
   };
 
@@ -225,7 +236,7 @@ export default function Crm() {
     setIsEditingStage(false);
     setEditingStageKey('');
     setEditingStageTitle('');
-    setSelectedColor('border-t-2 border-slate-400 bg-slate-50/20 text-slate-700');
+    setSelectedColor('#3B82F6');
   };
 
   const handleDeleteStage = (stageKey) => {
@@ -745,12 +756,17 @@ export default function Crm() {
         </div>
       ) : (
         <div className="overflow-x-auto pb-6 custom-scrollbar select-none">
-          <div className="flex items-start gap-0 min-w-max pr-4">
+          <div className="flex items-start gap-2.5 min-w-max pr-4">
             {funnelStages.map((stage, index) => {
               const stageLeads = getLeadsInStage(stage.key);
               const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
               const isFirst = index === 0;
               const isLast = index === funnelStages.length - 1;
+
+              const rawColor = migrateColor(stage.color);
+              const headerColor = rawColor && rawColor.startsWith('#') ? rawColor : '#F4F5F7';
+              const isColored = headerColor !== '#F4F5F7' && headerColor !== '#f4f5f7';
+              const bodyBg = isColored ? getStageBgTint(headerColor) : '#F4F5F7';
 
               // SVG Path for 260x56 Chevron Header:
               // isFirst: rounded top-left corner, arrow tip right (M 10 0 H 246 L 260 28 L 246 56 H 0 V 10 A 10 10 0 0 1 10 0 Z)
@@ -769,7 +785,6 @@ export default function Crm() {
                   key={stage.key}
                   className={`flex flex-col ${colWidthClass} shrink-0`}
                   style={{
-                    marginLeft: isFirst ? '0' : '-13px',
                     zIndex: funnelStages.length - index
                   }}
                 >
@@ -788,16 +803,16 @@ export default function Crm() {
                     >
                       <path
                         d={svgPath}
-                        fill="#F4F5F7"
+                        fill={headerColor}
                       />
                     </svg>
 
                     <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '16px' : '24px', paddingRight: isLast ? '16px' : '24px' }}>
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="font-bold text-xs text-gray-900 leading-snug truncate" title={stage.title}>
+                        <div className={`font-bold text-xs leading-snug truncate ${isColored ? 'text-white' : 'text-gray-900'}`} title={stage.title}>
                           {stage.title}
                         </div>
-                        <div className="text-[11px] text-gray-500 font-normal mt-0.5 flex items-center space-x-1">
+                        <div className={`text-[11px] font-normal mt-0.5 flex items-center space-x-1 ${isColored ? 'text-white/90' : 'text-gray-500'}`}>
                           <span>{formatCurrency(stageValueSum)}</span>
                           <span>·</span>
                           <span>{stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}</span>
@@ -805,24 +820,25 @@ export default function Crm() {
                       </div>
                       
                       <div className="flex items-center space-x-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/60 rounded">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/60'}`}>
                           <Plus className="w-3.5 h-3.5" />
                         </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200/60 rounded">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/60'}`}>
                           <Edit className="w-3.5 h-3.5" />
                         </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className="p-1 text-gray-400 hover:text-red-600 hover:bg-gray-200/60 rounded">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-red-600 hover:bg-gray-200/60'}`}>
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  {/* 2. Column Body — Exact width 246px matching header base (X=0 to X=246) */}
+                  {/* 2. Column Body — Exact width 246px matching header base */}
                   <div
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, stage.key)}
-                    className="bg-[#F4F5F7] rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[600px] flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                    style={{ backgroundColor: bodyBg }}
+                    className="rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[600px] flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                   >
                     <div className="space-y-2.5 flex-grow">
                       {stageLeads.length === 0 ? (
