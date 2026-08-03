@@ -638,7 +638,7 @@ export default function Crm() {
 
   // ---------------- MAIN CRM BOARD SCREEN ----------------
   return (
-    <div className="-mt-8 -mx-8 p-8 pt-4 space-y-4 text-gray-800 font-sans pb-16 bg-gray-50 min-h-screen">
+    <div className="-mt-8 -mx-8 p-8 pt-4 space-y-4 text-gray-800 font-sans bg-gray-50 min-h-screen">
       
       {/* 1. Header & Metrics Top Bar (Scrolls up naturally) */}
       <div className="space-y-3">
@@ -861,7 +861,7 @@ export default function Crm() {
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, stage.key)}
                       style={{ backgroundColor: bodyBg }}
-                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[calc(100vh-180px)] max-h-[calc(100vh-70px)] overflow-y-auto custom-scrollbar flex-1 h-full flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 h-[calc(100vh-56px)] overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                     >
                       <div className="space-y-2.5 flex-grow">
                         {stageLeads.length === 0 ? (
