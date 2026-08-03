@@ -745,38 +745,33 @@ export default function Crm() {
         </div>
       ) : (
         <div className="overflow-x-auto pb-6 custom-scrollbar select-none">
-          <div className="flex flex-col space-y-2 min-w-max pr-4">
-            
-            {/* 1. Light Gray Chevron Pipeline Header Track (Exact Pipedrive Photo) */}
-            <div className="flex items-center gap-1.5 mb-2">
-              {funnelStages.map((stage, index) => {
-                const stageLeads = getLeadsInStage(stage.key);
-                const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
-                const isFirst = index === 0;
-                const isLast = index === funnelStages.length - 1;
+          <div className="flex items-start gap-1.5 min-w-max pr-4">
+            {funnelStages.map((stage, index) => {
+              const stageLeads = getLeadsInStage(stage.key);
+              const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
+              const isFirst = index === 0;
+              const isLast = index === funnelStages.length - 1;
 
-                // SVG Path for 260x56 Chevron Header:
-                // isFirst: rounded left, arrow tip right (M 12 0 H 245 L 260 28 L 245 56 H 12 A 12 12 0 0 1 0 44 V 12 A 12 12 0 0 1 12 0 Z)
-                // middle: notch left, arrow tip right (M 0 0 H 245 L 260 28 L 245 56 H 0 L 15 28 Z)
-                // isLast: notch left, rounded right (M 0 0 H 248 A 12 12 0 0 1 260 12 V 44 A 12 12 0 0 1 248 56 H 0 L 15 28 Z)
-                let svgPath;
-                if (isFirst)      svgPath = 'M 12 0 H 245 L 260 28 L 245 56 H 12 A 12 12 0 0 1 0 44 V 12 A 12 12 0 0 1 12 0 Z';
-                else if (isLast)  svgPath = 'M 0 0 H 248 A 12 12 0 0 1 260 12 V 44 A 12 12 0 0 1 248 56 H 0 L 15 28 Z';
-                else              svgPath = 'M 0 0 H 245 L 260 28 L 245 56 H 0 L 15 28 Z';
+              // SVG Path for 260x56 Chevron Header:
+              let svgPath;
+              if (isFirst)      svgPath = 'M 12 0 H 245 L 260 28 L 245 56 H 12 A 12 12 0 0 1 0 44 V 12 A 12 12 0 0 1 12 0 Z';
+              else if (isLast)  svgPath = 'M 0 0 H 248 A 12 12 0 0 1 260 12 V 44 A 12 12 0 0 1 248 56 H 0 L 15 28 Z';
+              else              svgPath = 'M 0 0 H 245 L 260 28 L 245 56 H 0 L 15 28 Z';
 
-                return (
+              return (
+                <div key={stage.key} className="flex flex-col min-w-[260px] w-[260px] shrink-0">
+                  {/* 1. Header Chevron */}
                   <div
-                    key={`header-${stage.key}`}
                     draggable="true"
                     onDragStart={(e) => handleColumnDragStart(e, index)}
                     onDrop={(e) => handleColumnDrop(e, index)}
                     onDragOver={handleDragOver}
-                    className="group/header select-none cursor-grab active:cursor-grabbing shrink-0 relative w-[260px] min-w-[260px] h-[56px]"
+                    className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[56px]"
                   >
                     <svg
                       viewBox="0 0 260 56"
                       preserveAspectRatio="none"
-                      className="absolute inset-0 w-full h-full block drop-shadow-2xs"
+                      className="absolute inset-0 w-full h-full block"
                     >
                       <path
                         d={svgPath}
@@ -809,21 +804,12 @@ export default function Crm() {
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* 2. Light Gray Columns Body Track */}
-            <div className="flex items-start gap-1.5">
-              {funnelStages.map((stage) => {
-                const stageLeads = getLeadsInStage(stage.key);
-
-                return (
+                  {/* 2. Column Body — Seamlessly connected to Header (flat top, rounded bottom) */}
                   <div
-                    key={stage.key}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, stage.key)}
-                    className="bg-[#F4F5F7] rounded-2xl p-3 min-w-[260px] w-[260px] shrink-0 min-h-[600px] flex flex-col border border-gray-200/60"
+                    className="bg-[#F4F5F7] rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[600px] flex flex-col mt-[-1px]"
                   >
                     <div className="space-y-2.5 flex-grow">
                       {stageLeads.length === 0 ? (
@@ -918,10 +904,9 @@ export default function Crm() {
                       )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
