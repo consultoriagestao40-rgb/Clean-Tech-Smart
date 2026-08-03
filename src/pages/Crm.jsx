@@ -24,26 +24,27 @@ import {
 } from 'lucide-react';
 
 const DEFAULT_STAGES = [
-  { key: 'inbox', title: 'Inbox', color: 'border-t-2 border-slate-400 bg-slate-50/20 text-slate-700' },
-  { key: 'lead', title: 'Lead de Serviço', color: 'border-t-2 border-blue-500 bg-blue-50/20 text-blue-700' },
-  { key: 'tratar', title: 'Tratar', color: 'border-t-2 border-yellow-500 bg-yellow-50/20 text-yellow-700' },
-  { key: 'atendimento', title: 'Atendimento', color: 'border-t-2 border-cyan-500 bg-cyan-50/20 text-cyan-700' },
-  { key: 'programado', title: 'Programado', color: 'border-t-2 border-purple-500 bg-purple-50/20 text-purple-700' },
-  { key: 'a_faturar', title: 'A Faturar', color: 'border-t-2 border-orange-500 bg-orange-50/20 text-orange-700' },
-  { key: 'faturado', title: 'Fatura Enviada', color: 'border-t-2 border-green-500 bg-green-50/20 text-green-700' },
-  { key: 'perdido', title: 'Perdido', color: 'border-t-2 border-red-500 bg-red-50/20 text-red-700' }
+  { key: 'inbox', title: 'Inbox', color: '#4B5563' },
+  { key: 'tratar', title: 'Tratar', color: '#F59E0B' },
+  { key: 'lead', title: 'Lead de Serviço', color: '#F97316' },
+  { key: 'atendimento', title: 'Atendimento', color: '#3B82F6' },
+  { key: 'programado', title: 'Programado', color: '#10B981' },
+  { key: 'a_faturar', title: 'A Faturar', color: '#8B5CF6' },
+  { key: 'faturado', title: 'Fatura Enviada', color: '#06B6D4' },
+  { key: 'perdido', title: 'Perdido', color: '#EF4444' }
 ];
 
 const STAGE_COLORS = [
-  { name: 'Azul', value: 'border-t-2 border-blue-500 bg-blue-50/20 text-blue-700' },
-  { name: 'Teal', value: 'border-t-2 border-teal-500 bg-teal-50/20 text-teal-700' },
-  { name: 'Esmeralda', value: 'border-t-2 border-emerald-500 bg-emerald-50/20 text-emerald-700' },
-  { name: 'Índigo', value: 'border-t-2 border-indigo-500 bg-indigo-50/20 text-indigo-700' },
-  { name: 'Roxo', value: 'border-t-2 border-purple-500 bg-purple-50/20 text-purple-700' },
-  { name: 'Amarelo', value: 'border-t-2 border-amber-500 bg-amber-50/20 text-amber-700' },
-  { name: 'Laranja', value: 'border-t-2 border-orange-500 bg-orange-50/20 text-orange-700' },
-  { name: 'Rosa', value: 'border-t-2 border-rose-500 bg-rose-50/20 text-rose-700' },
-  { name: 'Cinza', value: 'border-t-2 border-slate-400 bg-slate-50/20 text-slate-700' }
+  { name: 'Cinza', value: '#4B5563' },
+  { name: 'Azul', value: '#3B82F6' },
+  { name: 'Teal', value: '#14B8A6' },
+  { name: 'Esmeralda', value: '#10B981' },
+  { name: 'Índigo', value: '#6366F1' },
+  { name: 'Roxo', value: '#8B5CF6' },
+  { name: 'Amarelo', value: '#F59E0B' },
+  { name: 'Laranja', value: '#F97316' },
+  { name: 'Rosa', value: '#EF4444' },
+  { name: 'Ciano', value: '#06B6D4' }
 ];
 
 export default function Crm() {
@@ -695,34 +696,24 @@ export default function Crm() {
         <div className="overflow-x-auto pb-4 custom-scrollbar select-none">
           <div className="flex flex-col space-y-3 min-w-max pr-4">
             
-            {/* 1. Connected Chevron Pipeline Header Track */}
+            {/* 1. Connected Chevron Pipeline Header Track - Solid Filled like reference image */}
             <div className="flex items-stretch pb-1" style={{ gap: '0px', marginBottom: '14px' }}>
               {funnelStages.map((stage, index) => {
                 const stageLeads = getLeadsInStage(stage.key);
                 const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
-                
+
                 const isFirst = index === 0;
                 const isLast = index === funnelStages.length - 1;
+                const bgColor = stage.color.startsWith('#') ? stage.color : '#4B5563';
 
-                // Build clip-path: arrow pointing right
                 let clipPath;
                 if (isFirst) {
-                  clipPath = 'polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%)';
+                  clipPath = 'polygon(0 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 0 100%)';
                 } else if (isLast) {
-                  clipPath = 'polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%)';
+                  clipPath = 'polygon(16px 0, 100% 0, 100% 100%, 16px 100%, 0 50%)';
                 } else {
-                  clipPath = 'polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%)';
+                  clipPath = 'polygon(16px 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0 50%)';
                 }
-
-                const stageColorBar = stage.color.includes('blue') ? '#3B82F6'
-                  : stage.color.includes('teal') ? '#14B8A6'
-                  : stage.color.includes('emerald') ? '#10B981'
-                  : stage.color.includes('indigo') ? '#6366F1'
-                  : stage.color.includes('purple') ? '#A855F7'
-                  : stage.color.includes('amber') ? '#F59E0B'
-                  : stage.color.includes('orange') ? '#F97316'
-                  : stage.color.includes('rose') ? '#F43F5E'
-                  : '#94A3B8';
 
                 return (
                   <div
@@ -735,68 +726,55 @@ export default function Crm() {
                     style={{
                       width: '280px',
                       minWidth: '280px',
-                      marginLeft: index === 0 ? '0' : '-14px',
+                      marginLeft: index === 0 ? '0' : '-16px',
                       zIndex: funnelStages.length - index,
                       position: 'relative',
                     }}
                   >
-                    {/* Outer: drop-shadow wrapper */}
                     <div
                       style={{
-                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.10))',
-                        height: '56px',
+                        clipPath,
+                        backgroundColor: bgColor,
+                        height: '52px',
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        paddingLeft: isFirst ? '16px' : '32px',
+                        paddingRight: '28px',
+                        gap: '8px',
+                        boxSizing: 'border-box',
+                        cursor: 'grab',
                       }}
                     >
-                      {/* Inner: background shape via clip-path */}
-                      <div
-                        style={{
-                          clipPath,
-                          backgroundColor: '#F1F5F9',
-                          height: '56px',
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          paddingLeft: isFirst ? '14px' : '28px',
-                          paddingRight: '28px',
-                          gap: '8px',
-                          borderTop: `3px solid ${stageColorBar}`,
-                          boxSizing: 'border-box',
-                        }}
-                      >
-                        {/* Colored dot */}
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: stageColorBar, flexShrink: 0 }} />
-
-                        {/* Text info */}
-                        <div style={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
-                          <div style={{ fontWeight: 700, fontSize: '11px', color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {stage.title}
-                          </div>
-                          <div style={{ fontSize: '10px', color: '#64748B', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span>{formatCurrency(stageValueSum)}</span>
-                            <span>·</span>
-                            <span>{stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}</span>
-                          </div>
+                      {/* Text info - white on colored bg */}
+                      <div style={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
+                        <div style={{ fontWeight: 700, fontSize: '11px', color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          {stage.title}
                         </div>
-
-                        {/* Action buttons (hover) */}
-                        <div className="flex items-center gap-0.5 opacity-0 group-hover/header:opacity-100 transition-opacity" style={{ flexShrink: 0 }}>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-emerald-600" title="Adicionar Etapa à Direita">
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-blue-600" title="Editar Etapa">
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-red-600" title="Excluir Etapa">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.80)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span>{formatCurrency(stageValueSum)}</span>
+                          <span>·</span>
+                          <span>{stageLeads.length} {stageLeads.length === 1 ? 'lead' : 'leads'}</span>
                         </div>
+                      </div>
+
+                      {/* Action buttons (hover only) */}
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover/header:opacity-100 transition-opacity" style={{ flexShrink: 0 }}>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className="p-1 rounded" style={{ color: 'rgba(255,255,255,0.8)' }} title="Adicionar Etapa à Direita">
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className="p-1 rounded" style={{ color: 'rgba(255,255,255,0.8)' }} title="Editar Etapa">
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className="p-1 rounded" style={{ color: 'rgba(255,255,255,0.8)' }} title="Excluir Etapa">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-
 
             {/* 2. Columns Grid below */}
             <div className="flex items-start" style={{ gap: '10px' }}>
