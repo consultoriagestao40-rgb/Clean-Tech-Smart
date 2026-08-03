@@ -69,7 +69,33 @@ export default async function handler(req, res) {
       ]);
     }
 
-    return res.status(200).json({ success: true, ticket: result.rows[0] });
+    const ticket = result.rows[0];
+
+    // Buscar dados complementares para as notificações
+    try {
+      const clientRes = await client.query('SELECT name, address FROM clients WHERE id = $1', [finalClientId]);
+      const clientRow = clientRes.rows[0];
+      const clientName = clientRow ? clientRow.name : 'Desconhecido';
+      const clientAddress = clientRow ? clientRow.address : 'Desconhecido';
+      ticket.address = clientAddress;
+
+      const isNew = !id;
+      const actionType = isNew ? 'create' : 'update';
+
+      // Importar dinamicamente os helpers de notificação
+      const { sendTicketWhatsappGroupNotification, sendTicketEmailNotification } = await import('./_utils/notifications.js');
+
+      // Disparar de forma assíncrona (não-bloqueante)
+      sendTicketWhatsappGroupNotification(client, ticket, clientName, technician_name || 'Não atribuído', actionType)
+        .catch(err => console.error('Erro ao enviar notificação WhatsApp:', err));
+      
+      sendTicketEmailNotification(client, ticket, clientName, technician_name || 'Não atribuído', actionType)
+        .catch(err => console.error('Erro ao enviar notificação E-mail:', err));
+    } catch (notifErr) {
+      console.error('Falha ao processar notificações:', notifErr);
+    }
+
+    return res.status(200).json({ success: true, ticket });
   } catch (error) {
     console.error('Erro ao salvar chamado:', error);
     return res.status(500).json({ error: 'Erro interno ao salvar chamado' });

@@ -64,7 +64,35 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Chamado não encontrado.' });
     }
 
-    return res.status(200).json({ success: true, ticket: result.rows[0] });
+    const ticket = result.rows[0];
+
+    // Buscar dados complementares para as notificações de fechamento
+    try {
+      const detailsRes = await client.query(`
+        SELECT c.name as client_name, c.address as client_address, t.name as technician_name
+        FROM service_tickets st
+        LEFT JOIN clients c ON st.client_id = c.id
+        LEFT JOIN technicians t ON st.technician_id = t.id
+        WHERE st.id = $1
+      `, [ticket.id]);
+
+      const details = detailsRes.rows[0] || {};
+      ticket.address = details.client_address;
+
+      // Importar dinamicamente os helpers de notificação
+      const { sendTicketWhatsappGroupNotification, sendTicketEmailNotification } = await import('./_utils/notifications.js');
+
+      // Disparar de forma assíncrona (não-bloqueante)
+      sendTicketWhatsappGroupNotification(client, ticket, details.client_name, details.technician_name || ticket.technician_name || 'Não atribuído', 'close')
+        .catch(err => console.error('Erro ao enviar notificação WhatsApp:', err));
+      
+      sendTicketEmailNotification(client, ticket, details.client_name, details.technician_name || ticket.technician_name || 'Não atribuído', 'close')
+        .catch(err => console.error('Erro ao enviar notificação E-mail:', err));
+    } catch (notifErr) {
+      console.error('Falha ao processar notificações de fechamento:', notifErr);
+    }
+
+    return res.status(200).json({ success: true, ticket });
   } catch (error) {
     console.error('Erro ao fechar chamado:', error);
     return res.status(500).json({ error: 'Erro interno ao fechar chamado' });

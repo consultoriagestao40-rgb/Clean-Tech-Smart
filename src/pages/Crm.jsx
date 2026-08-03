@@ -691,36 +691,57 @@ export default function Crm() {
           <span>Carregando funil de vendas...</span>
         </div>
       ) : (
-        <div className="flex space-x-3.5 overflow-x-auto pb-4 custom-scrollbar items-start">
-          {funnelStages.map((stage, index) => {
-            const stageLeads = getLeadsInStage(stage.key);
-            const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
+        <div className="overflow-x-auto pb-4 custom-scrollbar select-none">
+          <div className="flex flex-col space-y-3 min-w-max pr-4">
+            
+            {/* 1. Connected Chevron Pipeline Header Track */}
+            <div className="flex -space-x-[12px] pb-1 overflow-x-hidden">
+              {funnelStages.map((stage, index) => {
+                const stageLeads = getLeadsInStage(stage.key);
+                const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
+                
+                const isFirst = index === 0;
+                const isLast = index === funnelStages.length - 1;
 
-            return (
-              <div
-                key={stage.key}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, stage.key)}
-                className="bg-slate-50/70 border border-slate-200/60 rounded-xl p-3.5 space-y-3.5 min-w-[280px] w-[280px] shrink-0 min-h-[580px] flex flex-col"
-              >
-                {/* Stage Header (Integrated Pipedrive Style) */}
-                <div 
-                  draggable="true"
-                  onDragStart={(e) => handleColumnDragStart(e, index)}
-                  onDrop={(e) => handleColumnDrop(e, index)}
-                  onDragOver={handleDragOver}
-                  className="group/header select-none cursor-grab active:cursor-grabbing border-b border-slate-200/80 pb-2.5 shrink-0"
-                >
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="font-bold text-xs text-slate-850 uppercase tracking-wider truncate text-left flex-grow mr-2">
-                      {stage.title}
-                    </span>
-                    <div className="flex items-center space-x-1 shrink-0">
-                      {/* Plus button next to edit/delete to insert new stage at N+1 */}
+                return (
+                  <div
+                    key={`header-${stage.key}`}
+                    draggable="true"
+                    onDragStart={(e) => handleColumnDragStart(e, index)}
+                    onDrop={(e) => handleColumnDrop(e, index)}
+                    onDragOver={handleDragOver}
+                    className="group/header relative select-none cursor-grab active:cursor-grabbing w-[280px] min-w-[280px] shrink-0 h-[56px] flex items-center bg-white shadow-sm border-t border-b border-slate-200"
+                    style={{
+                      clipPath: isFirst 
+                        ? 'polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%)'
+                        : isLast
+                        ? 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 10px 50%)'
+                        : 'polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%, 10px 50%)',
+                      paddingLeft: isFirst ? '14px' : '22px',
+                      paddingRight: '22px'
+                    }}
+                  >
+                    {/* Main info row */}
+                    <div className="flex-grow min-w-0 pr-2">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="font-bold text-xs text-slate-800 truncate" title={stage.title}>
+                          {stage.title}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full shrink-0">
+                          {stageLeads.length}
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                        {formatCurrency(stageValueSum)}
+                      </div>
+                    </div>
+
+                    {/* Action buttons (Visible on hover to match professional clean look) */}
+                    <div className="flex items-center space-x-1 shrink-0 opacity-0 group-hover/header:opacity-100 focus-within:opacity-100 transition-opacity pr-2">
                       <button 
                         type="button" 
                         onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }}
-                        className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-slate-200/65 rounded transition-all opacity-0 group-hover/header:opacity-100 focus:opacity-100"
+                        className="p-0.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded"
                         title="Adicionar Etapa à Direita"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -728,7 +749,7 @@ export default function Crm() {
                       <button 
                         type="button" 
                         onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }}
-                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-200/65 rounded transition-all opacity-0 group-hover/header:opacity-100 focus:opacity-100"
+                        className="p-0.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded"
                         title="Editar Etapa"
                       >
                         <Edit className="w-3.5 h-3.5" />
@@ -736,130 +757,141 @@ export default function Crm() {
                       <button 
                         type="button" 
                         onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }}
-                        className="p-1 text-slate-400 hover:text-red-600 hover:bg-slate-200/65 rounded transition-all opacity-0 group-hover/header:opacity-100 focus:opacity-100"
+                        className="p-0.5 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded"
                         title="Excluir Etapa"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 ml-1">
-                        {stageLeads.length}
-                      </span>
                     </div>
+
+                    {/* Left colored stripe indicating stage custom theme */}
+                    <div className={`absolute top-0 bottom-0 left-0 w-[4px] ${stage.color.includes('blue') ? 'bg-blue-500' : stage.color.includes('teal') ? 'bg-teal-500' : stage.color.includes('emerald') ? 'bg-emerald-500' : stage.color.includes('indigo') ? 'bg-indigo-500' : stage.color.includes('purple') ? 'bg-purple-500' : stage.color.includes('amber') ? 'bg-amber-500' : stage.color.includes('orange') ? 'bg-orange-500' : stage.color.includes('rose') ? 'bg-rose-500' : 'bg-slate-400'}`} style={{ left: isFirst ? '0px' : '10px' }} />
                   </div>
-                  <div className="flex justify-between items-center text-[10px] font-semibold text-slate-500">
-                    <span>Total da Etapa</span>
-                    <span className="text-slate-800 font-bold">{formatCurrency(stageValueSum)}</span>
-                  </div>
-                  {/* Stripe indicator stripe using stage color border style */}
-                  <div className={`h-1 w-full rounded-full mt-2 ${stage.color.includes('blue') ? 'bg-blue-500' : stage.color.includes('teal') ? 'bg-teal-500' : stage.color.includes('emerald') ? 'bg-emerald-500' : stage.color.includes('indigo') ? 'bg-indigo-500' : stage.color.includes('purple') ? 'bg-purple-500' : stage.color.includes('amber') ? 'bg-amber-500' : stage.color.includes('orange') ? 'bg-orange-500' : stage.color.includes('rose') ? 'bg-rose-500' : 'bg-slate-400'}`} />
-                </div>
+                );
+              })}
+            </div>
 
-                {/* Cards Container */}
-                <div className="space-y-2 max-h-[600px] overflow-y-auto overflow-x-hidden pr-0.5 custom-scrollbar flex-grow">
-                  {stageLeads.length === 0 ? (
-                    <div className="border-2 border-dashed border-slate-200 rounded-lg py-8 text-center text-[10px] text-slate-400 italic">
-                      Arraste chamados aqui
-                    </div>
-                  ) : (
-                    stageLeads.map(lead => {
-                      const leadVal = parseFloat(lead.value) || 0;
-                      return (
-                        <div
-                          key={lead.phone}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, lead.phone)}
-                          className="bg-white p-3 rounded-lg border border-slate-200/80 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 transition-all space-y-2.5 text-left relative min-w-0 overflow-hidden"
-                        >
-                          {/* Card Content Row */}
-                          <div className="flex items-start justify-between gap-2 w-full min-w-0">
-                            {/* Initials Avatar and Details */}
-                            <div className="flex items-center space-x-2 min-w-0 flex-1">
-                              <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-100">
-                                {getInitials(lead.name)}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <h4 className="text-xs font-bold text-slate-800 leading-tight truncate" title={lead.name}>
-                                  {lead.name}
-                                </h4>
-                                <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{lead.phone}</p>
-                              </div>
-                            </div>
+            {/* 2. Columns Grid below */}
+            <div className="flex space-x-3.5 items-start">
+              {funnelStages.map((stage) => {
+                const stageLeads = getLeadsInStage(stage.key);
 
-                            {/* Value Display */}
-                            <div className="text-[11px] font-bold text-slate-800 text-right whitespace-nowrap shrink-0">
-                              {formatCurrency(leadVal)}
-                            </div>
-                          </div>
-
-                          {/* Next Contact Reminder Badge */}
-                          {lead.next_contact_at && (
-                            <div className="flex items-center text-[9px] font-bold text-orange-600 bg-orange-50/50 border border-orange-100 p-1.5 rounded-lg">
-                              <Calendar className="w-3.5 h-3.5 mr-1 text-orange-400 shrink-0" />
-                              <span className="truncate">Retorno: {new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                            </div>
-                          )}
-
-                          {/* Quick Toolbar Icons Row */}
-                          <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-                            {/* Seller name initials badge */}
-                            {lead.assigned_to_name ? (
-                              <div className="text-[9px] text-slate-400 font-semibold flex items-center bg-slate-50 px-1.5 py-0.5 rounded">
-                                <User className="w-2.5 h-2.5 mr-0.5" />
-                                <span className="truncate max-w-[65px]">{lead.assigned_to_name.split(' ')[0]}</span>
-                              </div>
-                            ) : (
-                              <span className="text-[9px] text-slate-350 italic">Sem vendedor</span>
-                            )}
-
-                            {/* Toolbar Buttons */}
-                            <div className="flex space-x-1.5 items-center">
-                              {/* Schedule reminder icon */}
-                              <button
-                                onClick={() => { setActiveReminderLead(lead); setActiveNoteLead(null); setActiveMoveLead(null); }}
-                                className="p-1 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
-                                title="Agendar Retorno"
-                              >
-                                <Calendar className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Add Note icon */}
-                              <button
-                                onClick={() => { setActiveNoteLead(lead); setActiveReminderLead(null); setActiveMoveLead(null); }}
-                                className="p-1 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
-                                title="Adicionar Nota"
-                              >
-                                <ClipboardList className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Move column shortcut dropdown */}
-                              <button
-                                onClick={() => { setActiveMoveLead(lead); setActiveNoteLead(null); setActiveReminderLead(null); }}
-                                className="p-1 text-slate-400 hover:text-purple-500 hover:bg-purple-50 rounded transition-all"
-                                title="Mover de Etapa"
-                              >
-                                <ArrowRightLeft className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* WhatsApp Chat link */}
-                              <a
-                                href={`https://web.whatsapp.com/send?phone=${lead.phone.replace(/\D/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1 text-slate-400 hover:text-green-500 hover:bg-green-50 rounded transition-all flex items-center"
-                                title="Iniciar Chat WhatsApp"
-                              >
-                                <MessageSquare className="w-3.5 h-3.5" />
-                              </a>
-                            </div>
-                          </div>
+                return (
+                  <div
+                    key={stage.key}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, stage.key)}
+                    className="bg-slate-50/50 border border-slate-200/50 rounded-xl p-3.5 space-y-3.5 min-w-[280px] w-[280px] shrink-0 min-h-[520px] flex flex-col"
+                  >
+                    {/* Cards Container */}
+                    <div className="space-y-2 max-h-[600px] overflow-y-auto overflow-x-hidden pr-0.5 custom-scrollbar flex-grow">
+                      {stageLeads.length === 0 ? (
+                        <div className="border-2 border-dashed border-slate-200 rounded-lg py-8 text-center text-[10px] text-slate-400 italic">
+                          Arraste chamados aqui
                         </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                      ) : (
+                        stageLeads.map(lead => {
+                          const leadVal = parseFloat(lead.value) || 0;
+                          return (
+                            <div
+                              key={lead.phone}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, lead.phone)}
+                              className="bg-white p-3 rounded-lg border border-slate-200/80 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 transition-all space-y-2.5 text-left relative min-w-0 overflow-hidden"
+                            >
+                              {/* Card Content Row */}
+                              <div className="flex items-start justify-between gap-2 w-full min-w-0">
+                                {/* Initials Avatar and Details */}
+                                <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                  <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-100">
+                                    {getInitials(lead.name)}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="text-xs font-bold text-slate-800 leading-tight truncate" title={lead.name}>
+                                      {lead.name}
+                                    </h4>
+                                    <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{lead.phone}</p>
+                                  </div>
+                                </div>
+
+                                {/* Value Display */}
+                                <div className="text-[11px] font-bold text-slate-800 text-right whitespace-nowrap shrink-0">
+                                  {formatCurrency(leadVal)}
+                                </div>
+                              </div>
+
+                              {/* Next Contact Reminder Badge */}
+                              {lead.next_contact_at && (
+                                <div className="flex items-center text-[9px] font-bold text-orange-600 bg-orange-50/50 border border-orange-100 p-1.5 rounded-lg">
+                                  <Calendar className="w-3.5 h-3.5 mr-1 text-orange-400 shrink-0" />
+                                  <span className="truncate">Retorno: {new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                              )}
+
+                              {/* Quick Toolbar Icons Row */}
+                              <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                                {/* Seller name initials badge */}
+                                {lead.assigned_to_name ? (
+                                  <div className="text-[9px] text-slate-400 font-semibold flex items-center bg-slate-50 px-1.5 py-0.5 rounded">
+                                    <User className="w-2.5 h-2.5 mr-0.5" />
+                                    <span className="truncate max-w-[65px]">{lead.assigned_to_name.split(' ')[0]}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-[9px] text-slate-350 italic">Sem vendedor</span>
+                                )}
+
+                                {/* Toolbar Buttons */}
+                                <div className="flex space-x-1.5 items-center">
+                                  {/* Schedule reminder icon */}
+                                  <button
+                                    onClick={() => { setActiveReminderLead(lead); setActiveNoteLead(null); setActiveMoveLead(null); }}
+                                    className="p-1 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
+                                    title="Agendar Retorno"
+                                  >
+                                    <Calendar className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Add Note icon */}
+                                  <button
+                                    onClick={() => { setActiveNoteLead(lead); setActiveReminderLead(null); setActiveMoveLead(null); }}
+                                    className="p-1 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
+                                    title="Adicionar Nota"
+                                  >
+                                    <ClipboardList className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Move column shortcut dropdown */}
+                                  <button
+                                    onClick={() => { setActiveMoveLead(lead); setActiveNoteLead(null); setActiveReminderLead(null); }}
+                                    className="p-1 text-slate-400 hover:text-purple-500 hover:bg-purple-50 rounded transition-all"
+                                    title="Mover de Etapa"
+                                  >
+                                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* WhatsApp Chat link */}
+                                  <a
+                                    href={`https://web.whatsapp.com/send?phone=${lead.phone.replace(/\D/g, '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1 text-slate-400 hover:text-green-500 hover:bg-green-50 rounded transition-all flex items-center"
+                                    title="Iniciar Chat WhatsApp"
+                                  >
+                                    <MessageSquare className="w-3.5 h-3.5" />
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+          </div>
         </div>
       )}
 

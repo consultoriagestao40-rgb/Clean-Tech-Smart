@@ -25,9 +25,38 @@ export default function Configuracoes() {
   const [zapiToken, setZapiToken] = useState(localStorage.getItem('app_zapi_token') || 'D4F38DEC6BD1906C37E044B4');
   const [zapiClientToken, setZapiClientToken] = useState(localStorage.getItem('app_zapi_client_token') || '');
 
+  // SMTP Settings States
+  const [smtpHost, setSmtpHost] = useState(localStorage.getItem('smtp_host') || '');
+  const [smtpPort, setSmtpPort] = useState(localStorage.getItem('smtp_port') || '587');
+  const [smtpUser, setSmtpUser] = useState(localStorage.getItem('smtp_user') || '');
+  const [smtpPass, setSmtpPass] = useState(localStorage.getItem('smtp_pass') || '');
+  const [smtpSenderName, setSmtpSenderName] = useState(localStorage.getItem('smtp_sender_name') || 'Clean Tech Smart');
+  const [smtpSenderEmail, setSmtpSenderEmail] = useState(localStorage.getItem('smtp_sender_email') || '');
+  const [smtpRecipientEmail, setSmtpRecipientEmail] = useState(localStorage.getItem('smtp_recipient_email') || '');
+
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
+    // Carregar configurações do banco de dados (Postgres)
+    fetch('/api/get-settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.settings) {
+          const s = data.settings;
+          if (s.app_zapi_instance_id) setZapiInstanceId(s.app_zapi_instance_id);
+          if (s.app_zapi_token) setZapiToken(s.app_zapi_token);
+          if (s.app_zapi_client_token) setZapiClientToken(s.app_zapi_client_token);
+          if (s.smtp_host) setSmtpHost(s.smtp_host);
+          if (s.smtp_port) setSmtpPort(s.smtp_port);
+          if (s.smtp_user) setSmtpUser(s.smtp_user);
+          if (s.smtp_pass) setSmtpPass(s.smtp_pass);
+          if (s.smtp_sender_name) setSmtpSenderName(s.smtp_sender_name);
+          if (s.smtp_sender_email) setSmtpSenderEmail(s.smtp_sender_email);
+          if (s.smtp_recipient_email) setSmtpRecipientEmail(s.smtp_recipient_email);
+        }
+      })
+      .catch(err => console.error('Erro ao obter configuracoes:', err));
+
     if (originalLogo) {
       applyFilters(originalLogo, removeBg, tolerance);
     }
@@ -143,6 +172,40 @@ export default function Configuracoes() {
     localStorage.setItem('app_zapi_instance_id', zapiInstanceId);
     localStorage.setItem('app_zapi_token', zapiToken);
     localStorage.setItem('app_zapi_client_token', zapiClientToken);
+
+    // SMTP Settings
+    localStorage.setItem('smtp_host', smtpHost);
+    localStorage.setItem('smtp_port', smtpPort);
+    localStorage.setItem('smtp_user', smtpUser);
+    localStorage.setItem('smtp_pass', smtpPass);
+    localStorage.setItem('smtp_sender_name', smtpSenderName);
+    localStorage.setItem('smtp_sender_email', smtpSenderEmail);
+    localStorage.setItem('smtp_recipient_email', smtpRecipientEmail);
+
+    // Enviar para o Banco de Dados (Postgres) para uso nos arquivos do servidor
+    fetch('/api/save-settings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        app_zapi_instance_id: zapiInstanceId,
+        app_zapi_token: zapiToken,
+        app_zapi_client_token: zapiClientToken,
+        smtp_host: smtpHost,
+        smtp_port: smtpPort,
+        smtp_user: smtpUser,
+        smtp_pass: smtpPass,
+        smtp_sender_name: smtpSenderName,
+        smtp_sender_email: smtpSenderEmail,
+        smtp_recipient_email: smtpRecipientEmail
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.success) console.error('Erro ao salvar no banco:', data.error);
+    })
+    .catch(err => console.error('Erro de rede ao salvar configurações:', err));
 
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
@@ -486,6 +549,90 @@ export default function Configuracoes() {
                     className="flex-grow p-1.5 bg-white border border-blue-200 rounded text-xs font-mono text-slate-700 cursor-pointer focus:outline-none select-all" 
                   />
                   <span className="text-[10px] text-blue-500 font-bold shrink-0">Copiar e colar</span>
+                </div>
+              </div>
+            </div>
+
+            {/* SMTP E-mail Settings Section */}
+            <div className="pt-6 border-t border-gray-100 space-y-4 text-left">
+              <div>
+                <span className="text-sm font-semibold text-gray-900 block">Notificações por E-mail (Servidor SMTP)</span>
+                <span className="text-xs text-gray-500 block">Configure as credenciais SMTP da empresa para que o sistema possa disparar alertas de abertura, atualização e fechamento de chamados automaticamente por e-mail.</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-500 uppercase">Servidor SMTP (Host)</label>
+                  <input
+                    type="text"
+                    value={smtpHost}
+                    onChange={(e) => setSmtpHost(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                    placeholder="Ex: smtp.gmail.com"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-500 uppercase">Porta SMTP</label>
+                  <input
+                    type="text"
+                    value={smtpPort}
+                    onChange={(e) => setSmtpPort(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                    placeholder="Ex: 587 ou 465"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-500 uppercase">Usuário SMTP</label>
+                  <input
+                    type="text"
+                    value={smtpUser}
+                    onChange={(e) => setSmtpUser(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                    placeholder="Ex: notificacoes@empresa.com"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-500 uppercase">Senha SMTP</label>
+                  <input
+                    type="password"
+                    value={smtpPass}
+                    onChange={(e) => setSmtpPass(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                    placeholder="Insira a senha do e-mail..."
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-500 uppercase">Nome do Remetente</label>
+                  <input
+                    type="text"
+                    value={smtpSenderName}
+                    onChange={(e) => setSmtpSenderName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                    placeholder="Ex: Clean Tech Smart"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-500 uppercase">E-mail do Remetente</label>
+                  <input
+                    type="email"
+                    value={smtpSenderEmail}
+                    onChange={(e) => setSmtpSenderEmail(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                    placeholder="Ex: notificacoes@empresa.com"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-500 uppercase">E-mail do Destinatário das Notificações</label>
+                  <input
+                    type="email"
+                    value={smtpRecipientEmail}
+                    onChange={(e) => setSmtpRecipientEmail(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-blue-50/30"
+                    placeholder="Ex: cristiano.godoi@hotmail.com"
+                  />
                 </div>
               </div>
             </div>
