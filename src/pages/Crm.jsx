@@ -770,8 +770,8 @@ export default function Crm() {
         </div>
       ) : (
         <div className="space-y-0">
-          {/* A) STICKY CHEVRON HEADER (Outer div has sticky without overflow parent for 100% Chrome window freezing!) */}
-          <div className="sticky -top-8 z-40 bg-gray-50 pt-2 pb-1 -mx-8 px-8 border-b border-gray-200/50">
+          {/* A) STICKY CHEVRON HEADER (Freezes at exact top: 0 with 100% visible stage titles!) */}
+          <div className="sticky top-0 z-40 bg-gray-50 pt-2 pb-1 -mx-8 px-8 border-b border-gray-200/50">
             <div
               ref={headerScrollRef}
               onScroll={handleHeaderScroll}
