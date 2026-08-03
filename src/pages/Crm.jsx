@@ -23,7 +23,8 @@ import {
   Scale,
   Smartphone,
   Tag,
-  Target
+  Target,
+  ChevronRight
 } from 'lucide-react';
 
 const DEFAULT_STAGES = [
