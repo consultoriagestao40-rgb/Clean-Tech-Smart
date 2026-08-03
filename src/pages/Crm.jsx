@@ -638,140 +638,141 @@ export default function Crm() {
 
   // ---------------- MAIN CRM BOARD SCREEN ----------------
   return (
-    <div className="space-y-6 text-gray-800 font-sans pb-16">
+    <div className="h-[calc(100vh-4rem)] -m-8 p-8 flex flex-col space-y-3 text-gray-800 font-sans overflow-hidden bg-gray-50">
       
-      {/* Header Panel */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">CRM - Funil de Vendas</h1>
-          <p className="text-xs text-gray-500 mt-1">Acompanhe novos contatos, propostas ativas e conversões em tempo real.</p>
-        </div>
-        
-        <div className="flex items-center space-x-3 text-sm">
-          <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
-            <User className="w-4 h-4 text-blue-500" />
-            <span className="font-semibold text-gray-700">{currentUser.name}</span>
-            <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold uppercase">{currentUser.role}</span>
-          </div>
-
-          <button 
-            onClick={handleLogout}
-            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-            title="Sair da sessão"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4">
-          <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
-            <Users className="w-6 h-6" />
-          </div>
+      {/* 1. Header & Metrics Top Bar (Shrink-0) */}
+      <div className="shrink-0 space-y-3">
+        <div className="flex justify-between items-center bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-sm">
           <div>
-            <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider block">Total de Leads</span>
-            <span className="text-2xl font-bold text-gray-900">{stats.totalCount}</span>
+            <h1 className="text-lg font-bold text-gray-900 leading-tight">CRM - Funil de Vendas</h1>
+            <p className="text-[11px] text-gray-500">Acompanhe novos contatos, propostas ativas e conversões em tempo real.</p>
           </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4">
-          <div className="p-3 bg-yellow-50 rounded-xl text-yellow-600">
-            <TrendingUp className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider block">Valor em Negociação</span>
-            <span className="text-xl font-bold text-yellow-600">{formatCurrency(stats.activeValue)}</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4">
-          <div className="p-3 bg-green-50 rounded-xl text-green-600">
-            <CheckCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider block">Faturamento Fechado</span>
-            <span className="text-xl font-bold text-green-600">{formatCurrency(stats.closedValue)}</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4">
-          <div className="p-3 bg-purple-50 rounded-xl text-purple-600">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider block">Taxa de Conversão</span>
-            <span className="text-2xl font-bold text-purple-600">{stats.conversionRate}%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters Box */}
-      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <button
-            type="button"
-            onClick={() => {
-              if (confirm('Deseja aplicar as etapas padrão do Kanban (PROSPECT, CONTATO, REUNIÃO, QUALIFICADO, DESQUALIFICADO, PROPOSTA)?')) {
-                setFunnelStages(DEFAULT_STAGES);
-                localStorage.setItem('crm_stages', JSON.stringify(DEFAULT_STAGES));
-              }
-            }}
-            className="text-xs text-blue-600 hover:text-blue-800 font-semibold px-3 py-2 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all border border-blue-100"
-          >
-            Restaurar Etapas (Foto)
-          </button>
-          <div className="flex items-center space-x-2 text-gray-700 font-semibold text-sm">
-            <SlidersHorizontal className="w-4 h-4 text-gray-400" />
-            <span>Filtros do Funil</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
-          {/* Search bar */}
-          <div className="relative min-w-[240px]">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-            <input 
-              type="text"
-              placeholder="Buscar por cliente, tel ou vendedor..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-gray-50/50"
-            />
-          </div>
-
-          {/* Seller Filter */}
-          {currentUser.role === 'gestor' ? (
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-500 font-semibold whitespace-nowrap font-sans">Vendedor:</span>
-              <select
-                value={selectedSeller}
-                onChange={e => setSelectedSeller(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-sm"
-              >
-                <option value="all">Todos os vendedores</option>
-                {sellers.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
+          
+          <div className="flex items-center space-x-3 text-sm">
+            <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
+              <User className="w-4 h-4 text-blue-500" />
+              <span className="font-semibold text-gray-700">{currentUser.name}</span>
+              <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold uppercase">{currentUser.role}</span>
             </div>
-          ) : (
-            <div className="text-xs text-gray-400 italic">Filtrado por seus leads.</div>
-          )}
+
+            <button 
+              onClick={handleLogout}
+              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+              title="Sair da sessão"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Compact Metrics & Filters Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
+            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+              <Users className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Total de Leads</span>
+              <span className="text-lg font-bold text-gray-900">{stats.totalCount}</span>
+            </div>
+          </div>
+
+          <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
+            <div className="p-2 bg-yellow-50 rounded-lg text-yellow-600">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Valor em Negociação</span>
+              <span className="text-sm font-bold text-yellow-600">{formatCurrency(stats.activeValue)}</span>
+            </div>
+          </div>
+
+          <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
+            <div className="p-2 bg-green-50 rounded-lg text-green-600">
+              <CheckCircle className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Faturamento Fechado</span>
+              <span className="text-sm font-bold text-green-600">{formatCurrency(stats.closedValue)}</span>
+            </div>
+          </div>
+
+          <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
+            <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
+              <AlertCircle className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Taxa de Conversão</span>
+              <span className="text-lg font-bold text-purple-600">{stats.conversionRate}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters & Search Row */}
+        <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center space-x-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm('Deseja aplicar as etapas padrão do Kanban (PROSPECT, CONTATO, REUNIÃO, QUALIFICADO, DESQUALIFICADO, PROPOSTA)?')) {
+                  setFunnelStages(DEFAULT_STAGES);
+                  localStorage.setItem('crm_stages', JSON.stringify(DEFAULT_STAGES));
+                }
+              }}
+              className="text-xs text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all border border-blue-100"
+            >
+              Restaurar Etapas (Foto)
+            </button>
+            <div className="flex items-center space-x-1.5 text-gray-700 font-semibold text-xs">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-gray-400" />
+              <span>Filtros do Funil</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+            {/* Search bar */}
+            <div className="relative min-w-[220px]">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-400" />
+              <input 
+                type="text"
+                placeholder="Buscar cliente ou tel..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-8 pr-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-gray-50/50"
+              />
+            </div>
+
+            {/* Seller Filter */}
+            {currentUser.role === 'gestor' && (
+              <div className="flex items-center space-x-1.5 text-xs">
+                <span className="text-gray-500 font-semibold">Vendedor:</span>
+                <select
+                  value={selectedSeller}
+                  onChange={e => setSelectedSeller(e.target.value)}
+                  className="px-2.5 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-xs"
+                >
+                  <option value="all">Todos os vendedores</option>
+                  {sellers.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Kanban Board Grid — Window Sticky Headers & Equal Height Columns */}
+      {/* 2. Unified Full Height Kanban Board Container */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center p-12 text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex-1 flex flex-col items-center justify-center p-12 text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
           <span>Carregando negócios...</span>
         </div>
       ) : (
-        <div className="space-y-0">
-          {/* 1. STICKY HEADER ROW (Sticks at top: 0 of window when scrolling page!) */}
-          <div className="sticky top-0 z-40 bg-gray-50/95 backdrop-blur-md pt-2 pb-1">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white/60 rounded-2xl border border-gray-200/80 shadow-xs">
+          
+          {/* A) CHEVRON HEADER ROW — PERMANENTLY FIXED AT TOP OF KANBAN BOARD */}
+          <div className="shrink-0 overflow-x-auto no-scrollbar select-none bg-gray-100/80 border-b border-gray-200/70 pt-1.5 pb-0.5">
             <div
               ref={headerScrollRef}
               onScroll={handleHeaderScroll}
@@ -810,7 +811,7 @@ export default function Crm() {
                         onDragStart={(e) => handleColumnDragStart(e, index)}
                         onDrop={(e) => handleColumnDrop(e, index)}
                         onDragOver={handleDragOver}
-                        className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[56px]"
+                        className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[52px]"
                       >
                         <svg
                           viewBox={viewBoxStr}
@@ -855,13 +856,13 @@ export default function Crm() {
             </div>
           </div>
 
-          {/* 2. COLUMN BODIES ROW (Equal Full Height Stretch) */}
+          {/* B) COLUMN BODIES ROW — FULL HEIGHT STRETCH WITH CARDS INTERNAL SCROLL */}
           <div
             ref={bodyScrollRef}
             onScroll={handleBodyScroll}
-            className="overflow-x-auto pb-8 custom-scrollbar select-none"
+            className="flex-1 min-h-0 overflow-x-auto custom-scrollbar select-none"
           >
-            <div className="flex items-stretch gap-0 min-w-max pr-4">
+            <div className="flex items-stretch gap-0 min-w-max pr-4 h-full">
               {funnelStages.map((stage, index) => {
                 const stageLeads = getLeadsInStage(stage.key);
                 const isFirst = index === 0;
@@ -877,7 +878,7 @@ export default function Crm() {
                 return (
                   <div
                     key={stage.key}
-                    className={`flex flex-col ${colWidthClass} shrink-0`}
+                    className={`flex flex-col ${colWidthClass} shrink-0 h-full`}
                     style={{
                       marginLeft: isFirst ? '0' : '-8px'
                     }}
@@ -886,7 +887,7 @@ export default function Crm() {
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, stage.key)}
                       style={{ backgroundColor: bodyBg }}
-                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[calc(100vh-200px)] flex-1 h-full flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                     >
                       <div className="space-y-2.5 flex-grow">
                         {stageLeads.length === 0 ? (
@@ -895,7 +896,7 @@ export default function Crm() {
                           </div>
                         ) : (
                           stageLeads.map((lead, leadIdx) => {
-                          const leadVal = parseFloat(lead.value) || 0;
+                            const leadVal = parseFloat(lead.value) || 0;
                           const hasActivity = !!lead.next_contact_at;
 
                           return (
