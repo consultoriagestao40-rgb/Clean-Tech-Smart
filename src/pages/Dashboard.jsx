@@ -426,7 +426,7 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
       <div>Assinatura do Responsável</div>
     </div>
   </div>
-  \${machinePageHtml}
+  ${machinePageHtml}
 </div>
 </body>
 </html>`;
