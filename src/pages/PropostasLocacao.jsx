@@ -1221,7 +1221,7 @@ body{padding-top:60px}
                           key={p.id}
                           draggable
                           onDragStart={(e) => handleDragStart(e, p.id)}
-                          className={`bg-white border border-gray-150 ${stripeColor} border-l-4 rounded-xl p-3.5 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-grab active:cursor-grabbing select-none flex flex-col justify-between h-[155px]`}
+                          className={`bg-white border border-gray-150 ${stripeColor} border-l-4 rounded-xl p-3.5 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-grab active:cursor-grabbing select-none flex flex-col justify-between h-[180px]`}
                         >
                           <div>
                             <h4 className="font-extrabold text-gray-900 text-xs truncate uppercase" title={p.client_name}>
