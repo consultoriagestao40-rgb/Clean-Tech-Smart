@@ -134,6 +134,22 @@ export default function Crm() {
   // Move Lead stage state
   const [activeMoveLead, setActiveMoveLead] = useState(null);
 
+  // Scroll sync refs for sticky header
+  const headerScrollRef = useRef(null);
+  const bodyScrollRef = useRef(null);
+
+  const handleHeaderScroll = (e) => {
+    if (bodyScrollRef.current && Math.abs(bodyScrollRef.current.scrollLeft - e.target.scrollLeft) > 1) {
+      bodyScrollRef.current.scrollLeft = e.target.scrollLeft;
+    }
+  };
+
+  const handleBodyScroll = (e) => {
+    if (headerScrollRef.current && Math.abs(headerScrollRef.current.scrollLeft - e.target.scrollLeft) > 1) {
+      headerScrollRef.current.scrollLeft = e.target.scrollLeft;
+    }
+  };
+
   // Metrics state
   const [stats, setStats] = useState({
     totalCount: 0,
@@ -746,102 +762,139 @@ export default function Crm() {
         </div>
       </div>
 
-      {/* Kanban Board Grid — Sticky Headers on Screen Top Scroll & Equal Full Height Columns */}
+      {/* Kanban Board Grid — Window Sticky Headers & Equal Height Columns */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-12 text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
           <span>Carregando negócios...</span>
         </div>
       ) : (
-        <div className="overflow-x-auto pb-6 custom-scrollbar select-none">
-          <div className="flex items-stretch gap-0 min-w-max pr-4">
-            {funnelStages.map((stage, index) => {
-              const stageLeads = getLeadsInStage(stage.key);
-              const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
-              const isFirst = index === 0;
-              const isLast = index === funnelStages.length - 1;
+        <div className="space-y-0">
+          {/* 1. STICKY HEADER ROW (Sticks at top: 0 of window when scrolling page!) */}
+          <div className="sticky top-0 z-40 bg-gray-50/95 backdrop-blur-md pt-2 pb-1">
+            <div
+              ref={headerScrollRef}
+              onScroll={handleHeaderScroll}
+              className="overflow-x-auto custom-scrollbar select-none"
+            >
+              <div className="flex items-center gap-0 min-w-max pr-4">
+                {funnelStages.map((stage, index) => {
+                  const stageLeads = getLeadsInStage(stage.key);
+                  const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
+                  const isFirst = index === 0;
+                  const isLast = index === funnelStages.length - 1;
 
-              const rawColor = migrateColor(stage.color);
-              const headerColor = rawColor && rawColor.startsWith('#') ? rawColor : '#F4F5F7';
-              const isColored = headerColor !== '#F4F5F7' && headerColor !== '#f4f5f7';
-              const bodyBg = isColored ? getStageBgTint(headerColor) : '#F4F5F7';
+                  const rawColor = migrateColor(stage.color);
+                  const headerColor = rawColor && rawColor.startsWith('#') ? rawColor : '#F4F5F7';
+                  const isColored = headerColor !== '#F4F5F7' && headerColor !== '#f4f5f7';
 
-              let svgPath;
-              if (isFirst)      svgPath = 'M 10 0 H 246 L 260 28 L 246 56 H 0 V 10 A 10 10 0 0 1 10 0 Z';
-              else if (isLast)  svgPath = 'M 0 0 H 236 A 10 10 0 0 1 246 10 V 56 H 0 L 14 28 Z';
-              else              svgPath = 'M 0 0 H 246 L 260 28 L 246 56 H 0 L 14 28 Z';
+                  let svgPath;
+                  if (isFirst)      svgPath = 'M 10 0 H 246 L 260 28 L 246 56 H 0 V 10 A 10 10 0 0 1 10 0 Z';
+                  else if (isLast)  svgPath = 'M 0 0 H 236 A 10 10 0 0 1 246 10 V 56 H 0 L 14 28 Z';
+                  else              svgPath = 'M 0 0 H 246 L 260 28 L 246 56 H 0 L 14 28 Z';
 
-              const colWidthClass = isLast ? 'min-w-[246px] w-[246px]' : 'min-w-[260px] w-[260px]';
-              const viewBoxStr = isLast ? '0 0 246 56' : '0 0 260 56';
+                  const colWidthClass = isLast ? 'min-w-[246px] w-[246px]' : 'min-w-[260px] w-[260px]';
+                  const viewBoxStr = isLast ? '0 0 246 56' : '0 0 260 56';
 
-              return (
-                <div
-                  key={stage.key}
-                  className={`flex flex-col ${colWidthClass} shrink-0`}
-                  style={{
-                    marginLeft: isFirst ? '0' : '-8px',
-                    zIndex: funnelStages.length - index
-                  }}
-                >
-                  {/* 1. Sticky Header Chevron (Freezes when reaching TOP of browser screen) */}
-                  <div
-                    draggable="true"
-                    onDragStart={(e) => handleColumnDragStart(e, index)}
-                    onDrop={(e) => handleColumnDrop(e, index)}
-                    onDragOver={handleDragOver}
-                    className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[56px] sticky top-0 z-30"
-                  >
-                    <svg
-                      viewBox={viewBoxStr}
-                      preserveAspectRatio="none"
-                      className="absolute inset-0 w-full h-full block"
+                  return (
+                    <div
+                      key={stage.key}
+                      className={`${colWidthClass} shrink-0`}
+                      style={{
+                        marginLeft: isFirst ? '0' : '-8px',
+                        zIndex: funnelStages.length - index
+                      }}
                     >
-                      <path
-                        d={svgPath}
-                        fill={headerColor}
-                      />
-                    </svg>
+                      <div
+                        draggable="true"
+                        onDragStart={(e) => handleColumnDragStart(e, index)}
+                        onDrop={(e) => handleColumnDrop(e, index)}
+                        onDragOver={handleDragOver}
+                        className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[56px]"
+                      >
+                        <svg
+                          viewBox={viewBoxStr}
+                          preserveAspectRatio="none"
+                          className="absolute inset-0 w-full h-full block"
+                        >
+                          <path
+                            d={svgPath}
+                            fill={headerColor}
+                          />
+                        </svg>
 
-                    <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '16px' : '24px', paddingRight: isLast ? '16px' : '24px' }}>
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className={`font-bold text-xs leading-snug truncate ${isColored ? 'text-white' : 'text-gray-900'}`} title={stage.title}>
-                          {stage.title}
+                        <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '16px' : '24px', paddingRight: isLast ? '16px' : '24px' }}>
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <div className={`font-bold text-xs leading-snug truncate ${isColored ? 'text-white' : 'text-gray-900'}`} title={stage.title}>
+                              {stage.title}
+                            </div>
+                            <div className={`text-[11px] font-normal mt-0.5 flex items-center space-x-1 ${isColored ? 'text-white/90' : 'text-gray-500'}`}>
+                              <span>{formatCurrency(stageValueSum)}</span>
+                              <span>·</span>
+                              <span>{stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/60'}`}>
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/60'}`}>
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-red-600 hover:bg-gray-200/60'}`}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
-                        <div className={`text-[11px] font-normal mt-0.5 flex items-center space-x-1 ${isColored ? 'text-white/90' : 'text-gray-500'}`}>
-                          <span>{formatCurrency(stageValueSum)}</span>
-                          <span>·</span>
-                          <span>{stageLeads.length} {stageLeads.length === 1 ? 'negócio' : 'negócios'}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/60'}`}>
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-200/60'}`}>
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className={`p-1 rounded ${isColored ? 'text-white hover:bg-white/20' : 'text-gray-400 hover:text-red-600 hover:bg-gray-200/60'}`}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
                       </div>
                     </div>
-                  </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
 
-                  {/* 2. Column Body — Equal Full Height Stretch matching longest column */}
+          {/* 2. COLUMN BODIES ROW (Equal Full Height Stretch) */}
+          <div
+            ref={bodyScrollRef}
+            onScroll={handleBodyScroll}
+            className="overflow-x-auto pb-8 custom-scrollbar select-none"
+          >
+            <div className="flex items-stretch gap-0 min-w-max pr-4">
+              {funnelStages.map((stage, index) => {
+                const stageLeads = getLeadsInStage(stage.key);
+                const isFirst = index === 0;
+                const isLast = index === funnelStages.length - 1;
+
+                const rawColor = migrateColor(stage.color);
+                const headerColor = rawColor && rawColor.startsWith('#') ? rawColor : '#F4F5F7';
+                const isColored = headerColor !== '#F4F5F7' && headerColor !== '#f4f5f7';
+                const bodyBg = isColored ? getStageBgTint(headerColor) : '#F4F5F7';
+
+                const colWidthClass = isLast ? 'min-w-[246px] w-[246px]' : 'min-w-[260px] w-[260px]';
+
+                return (
                   <div
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, stage.key)}
-                    style={{ backgroundColor: bodyBg }}
-                    className="rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[calc(100vh-180px)] flex-1 h-full flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                    key={stage.key}
+                    className={`flex flex-col ${colWidthClass} shrink-0`}
+                    style={{
+                      marginLeft: isFirst ? '0' : '-8px'
+                    }}
                   >
-                    <div className="space-y-2.5 flex-grow">
-                      {stageLeads.length === 0 ? (
-                        <div className="border-2 border-dashed border-gray-200/80 rounded-xl py-12 text-center text-xs text-gray-400 font-medium italic">
-                          Sem negócios nesta etapa
-                        </div>
-                      ) : (
-                        stageLeads.map((lead, leadIdx) => {
+                    <div
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, stage.key)}
+                      style={{ backgroundColor: bodyBg }}
+                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[calc(100vh-200px)] flex-1 h-full flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                    >
+                      <div className="space-y-2.5 flex-grow">
+                        {stageLeads.length === 0 ? (
+                          <div className="border-2 border-dashed border-gray-200/80 rounded-xl py-12 text-center text-xs text-gray-400 font-medium italic">
+                            Sem negócios nesta etapa
+                          </div>
+                        ) : (
+                          stageLeads.map((lead, leadIdx) => {
                           const leadVal = parseFloat(lead.value) || 0;
                           const hasActivity = !!lead.next_contact_at;
 
