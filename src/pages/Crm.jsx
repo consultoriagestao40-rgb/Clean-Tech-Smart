@@ -638,7 +638,7 @@ export default function Crm() {
 
       // ---------------- MAIN CRM BOARD SCREEN ----------------
       return (
-        <div className="h-[calc(100vh-2rem)] -m-8 p-8 flex flex-col space-y-3 text-gray-800 font-sans overflow-hidden bg-gray-50">
+        <div className="h-[calc(100vh-0.75rem)] -m-8 p-8 pb-2 flex flex-col space-y-2 text-gray-800 font-sans overflow-hidden bg-gray-50">
           
           {/* 1. Header & Metrics Top Bar (Shrink-0) */}
           <div className="shrink-0 space-y-2">
