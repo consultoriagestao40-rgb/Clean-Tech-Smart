@@ -638,10 +638,10 @@ export default function Crm() {
 
   // ---------------- MAIN CRM BOARD SCREEN ----------------
   return (
-    <div className="h-[calc(100vh-4rem)] -m-8 p-8 flex flex-col space-y-3 text-gray-800 font-sans overflow-hidden bg-gray-50">
+    <div className="-mt-8 -mx-8 p-8 pt-4 space-y-4 text-gray-800 font-sans pb-16 bg-gray-50 min-h-screen">
       
-      {/* 1. Header & Metrics Top Bar (Shrink-0) */}
-      <div className="shrink-0 space-y-3">
+      {/* 1. Header & Metrics Top Bar (Scrolls up naturally) */}
+      <div className="space-y-3">
         <div className="flex justify-between items-center bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-sm">
           <div>
             <h1 className="text-lg font-bold text-gray-900 leading-tight">CRM - Funil de Vendas</h1>
@@ -665,7 +665,7 @@ export default function Crm() {
           </div>
         </div>
 
-        {/* Compact Metrics & Filters Row */}
+        {/* Compact Metrics Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
             <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
@@ -762,21 +762,20 @@ export default function Crm() {
         </div>
       </div>
 
-      {/* 2. Unified Full Height Kanban Board Container */}
+      {/* 2. Kanban Board Grid */}
       {isLoading ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-12 text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex flex-col items-center justify-center p-12 text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
           <span>Carregando negócios...</span>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white/60 rounded-2xl border border-gray-200/80 shadow-xs">
-          
-          {/* A) CHEVRON HEADER ROW — PERMANENTLY FIXED AT TOP OF KANBAN BOARD */}
-          <div className="shrink-0 overflow-x-auto no-scrollbar select-none bg-gray-100/80 border-b border-gray-200/70 pt-1.5 pb-0.5">
+        <div className="space-y-0">
+          {/* A) STICKY HEADER ROW (Freezes at the VERY TOP of the screen when scrolled!) */}
+          <div className="sticky -top-4 z-40 bg-gray-50 pt-2 pb-2 -mx-8 px-8 border-b border-gray-200/50">
             <div
               ref={headerScrollRef}
               onScroll={handleHeaderScroll}
-              className="overflow-x-auto custom-scrollbar select-none"
+              className="overflow-x-auto no-scrollbar select-none"
             >
               <div className="flex items-center gap-0 min-w-max pr-4">
                 {funnelStages.map((stage, index) => {
@@ -856,13 +855,13 @@ export default function Crm() {
             </div>
           </div>
 
-          {/* B) COLUMN BODIES ROW — FULL HEIGHT STRETCH WITH CARDS INTERNAL SCROLL */}
+          {/* B) COLUMN BODIES ROW — NATURAL FULL HEIGHT (NO BOXED CONTAINERS) */}
           <div
             ref={bodyScrollRef}
             onScroll={handleBodyScroll}
-            className="flex-1 min-h-0 overflow-x-auto custom-scrollbar select-none"
+            className="overflow-x-auto pb-8 custom-scrollbar select-none"
           >
-            <div className="flex items-stretch gap-0 min-w-max pr-4 h-full">
+            <div className="flex items-stretch gap-0 min-w-max pr-4">
               {funnelStages.map((stage, index) => {
                 const stageLeads = getLeadsInStage(stage.key);
                 const isFirst = index === 0;
@@ -878,7 +877,7 @@ export default function Crm() {
                 return (
                   <div
                     key={stage.key}
-                    className={`flex flex-col ${colWidthClass} shrink-0 h-full`}
+                    className={`flex flex-col ${colWidthClass} shrink-0`}
                     style={{
                       marginLeft: isFirst ? '0' : '-8px'
                     }}
@@ -887,7 +886,7 @@ export default function Crm() {
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, stage.key)}
                       style={{ backgroundColor: bodyBg }}
-                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[calc(100vh-180px)] flex-1 h-full flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                     >
                       <div className="space-y-2.5 flex-grow">
                         {stageLeads.length === 0 ? (
