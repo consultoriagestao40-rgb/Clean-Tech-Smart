@@ -19,6 +19,7 @@ import ModelosMaquinas from './pages/ModelosMaquinas';
 import PropostasLocacao from './pages/PropostasLocacao';
 import VisualizarPropostaPublica from './pages/VisualizarPropostaPublica';
 import VisualizarOrcamentoPublico from './pages/VisualizarOrcamentoPublico';
+import TecnicoPainel from './pages/TecnicoPainel';
 
 function Placeholder({ title }) {
   return (
@@ -63,6 +64,7 @@ function App() {
         </Route>
         <Route path="/visualizar-proposta/:id" element={<VisualizarPropostaPublica />} />
         <Route path="/visualizar-orcamento/:id" element={<VisualizarOrcamentoPublico />} />
+        <Route path="/tecnico" element={<TecnicoPainel />} />
       </Routes>
     </BrowserRouter>
   );

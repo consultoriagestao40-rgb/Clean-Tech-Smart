@@ -1,0 +1,16 @@
+{
+  "short_name": "CleanTechOS",
+  "name": "Clean Tech Pro - Ordens de Serviço",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": "/tecnico",
+  "background_color": "#1e3a8a",
+  "theme_color": "#1e3a8a",
+  "display": "standalone",
+  "orientation": "portrait"
+}

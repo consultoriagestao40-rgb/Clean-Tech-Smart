@@ -62,6 +62,7 @@ export default function Sidebar() {
     { name: 'Catálogo Máquinas', path: '/modelos-maquinas', icon: <Layout size={20} /> },
     { name: 'Estoque', path: '/estoque', icon: <Boxes size={20} /> },
     { name: 'Chamados', path: '/chamados', icon: <ClipboardList size={20} /> },
+    { name: 'Painel do Técnico (OS)', path: '/tecnico', icon: <Wrench size={20} /> },
     { name: 'Modalidades', path: '/modalidades', icon: <Tags size={20} /> },
     { name: 'Templates', path: '/templates', icon: <FileBox size={20} /> },
     { name: 'Disponibilidade', path: '/disponibilidade', icon: <Calendar size={20} /> },

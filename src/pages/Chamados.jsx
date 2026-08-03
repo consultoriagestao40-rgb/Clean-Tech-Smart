@@ -13,7 +13,8 @@ import {
   Calendar,
   User,
   SlidersHorizontal,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from 'lucide-react';
 
 export default function Chamados() {
@@ -190,6 +191,312 @@ export default function Chamados() {
       alert('Erro de rede ao salvar chamado.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleGenerateOSPDF = (ticket) => {
+    const companyLogo = localStorage.getItem('app_company_logo') || '';
+    const companyName = localStorage.getItem('app_company_name') || 'Clean Tech Smart';
+    const companySub = localStorage.getItem('app_company_subtitle') || 'Soluções Inteligentes em Higiene e Limpeza';
+    const companyCnpj = localStorage.getItem('app_company_cnpj') || '43.158.052/0001-01';
+    const companyAddress = localStorage.getItem('app_company_address') || 'Avenida Maringá, 1273 – Emiliano Perneta Pinhais/PR';
+
+    const closedFormatted = ticket.closed_at 
+      ? new Date(ticket.closed_at).toLocaleString('pt-BR') 
+      : new Date().toLocaleString('pt-BR');
+
+    const photoList = (ticket.evidence_photos || '').split('\n').filter(Boolean);
+    let photosHtml = '';
+    if (photoList.length > 0) {
+      photosHtml = `
+        <div class="section-title">Evidências Fotográficas do Serviço</div>
+        <div class="photo-grid">
+          ${photoList.map(url => `
+            <div class="photo-card">
+              <img src="${url}" alt="Evidência OS" />
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    const logoHtml = companyLogo 
+      ? `<img src="${companyLogo}" alt="Logo" class="logo-img" />`
+      : `<svg class="logo-img" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 50px; height: 50px;">
+          <path d="M30 15 L65 50 L50 65 L15 30 Z" fill="#009AC7" />
+          <path d="M50 35 L85 70 L70 85 L35 50 Z" fill="#004054" opacity="0.85" />
+         </svg>`;
+
+    const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Ordem de Serviço Concluída #${String(ticket.id).padStart(4, '0')}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 40px;
+      color: #1e293b;
+      background-color: #fff;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #009AC7;
+      padding-bottom: 15px;
+      margin-bottom: 30px;
+    }
+    .company-details {
+      text-align: left;
+    }
+    .company-name {
+      font-size: 15px;
+      font-weight: 800;
+      margin: 0;
+      color: #0f172a;
+      text-transform: uppercase;
+    }
+    .company-sub {
+      font-size: 9px;
+      color: #64748b;
+      font-weight: bold;
+      display: block;
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+    .logo-container {
+      text-align: right;
+    }
+    .logo-img {
+      max-height: 50px;
+      object-fit: contain;
+    }
+    .title-area {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .title-area h1 {
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin: 0;
+      color: #1e3a8a;
+      letter-spacing: 0.5px;
+    }
+    .title-area span {
+      font-size: 10px;
+      color: #64748b;
+      font-weight: bold;
+      display: block;
+      margin-top: 5px;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #1e3a8a;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
+      margin-top: 25px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .details-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px;
+      background-color: #f8fafc;
+      margin-bottom: 20px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+    .col-span-2 {
+      grid-column: span 2;
+    }
+    .col-span-4 {
+      grid-column: span 4;
+    }
+    .detail-item b {
+      color: #64748b;
+      font-size: 9px;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .detail-item span {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .notes-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px;
+      background-color: #fff;
+      font-weight: 500;
+      color: #334155;
+      white-space: pre-line;
+      line-height: 1.6;
+    }
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-top: 10px;
+    }
+    .photo-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 4/3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+    }
+    .photo-card img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: cover;
+    }
+    .signatures-section {
+      margin-top: 40px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 25px;
+    }
+    .sig-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      text-align: center;
+    }
+    .sig-line {
+      border-top: 1px solid #94a3b8;
+      width: 200px;
+      margin: 0 auto 5px auto;
+    }
+    .signature-image {
+      max-height: 70px;
+      object-fit: contain;
+      margin-bottom: 5px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 9px;
+      font-weight: bold;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-concluido {
+      background-color: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+    @media print {
+      body {
+        padding: 20px;
+      }
+      .no-print {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body onload="window.print()">
+  <div class="header">
+    <div class="company-details">
+      <h2 class="company-name">${companyName}</h2>
+      <span class="company-sub">CNPJ: ${companyCnpj}</span>
+      <span style="font-size: 8px; color: #94a3b8; display: block; margin-top: 1px;">${companyAddress}</span>
+    </div>
+    <div class="logo-container">
+      ${logoHtml}
+    </div>
+  </div>
+
+  <div class="title-area">
+    <h1>Ordem de Serviço (OS) Concluída</h1>
+    <span>Chamado Técnico nº #${String(ticket.id).padStart(4, '0')} • Finalizado em: ${closedFormatted}</span>
+  </div>
+
+  <div class="section-title">Dados do Cliente</div>
+  <div class="details-box">
+    <div class="grid-2">
+      <div class="detail-item"><b>Cliente</b><span>${ticket.client_name || 'Não informado'}</span></div>
+      <div class="detail-item"><b>Telefone / Contato</b><span>${ticket.client_phone || '—'}</span></div>
+      <div class="detail-item col-span-2"><b>Endereço de Atendimento</b><span>${ticket.client_address || '—'}</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">Equipamento Relacionado</div>
+  <div class="details-box">
+    <div class="grid-4">
+      <div class="detail-item"><b>Nome / Descrição</b><span>${ticket.equipment_name || 'Não informado'}</span></div>
+      <div class="detail-item"><b>Marca</b><span>${ticket.equipment_brand || '—'}</span></div>
+      <div class="detail-item"><b>Modelo</b><span>${ticket.equipment_model || '—'}</span></div>
+      <div class="detail-item"><b>Número de Série</b><span>${ticket.equipment_serial_number || '—'}</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">Dados de Atendimento Técnico</div>
+  <div class="details-box">
+    <div class="grid-2">
+      <div class="detail-item"><b>Técnico Responsável</b><span>${ticket.technician_name || '—'}</span></div>
+      <div class="detail-item"><b>Tipo de Chamado / OS</b><span>${ticket.ticket_type}</span></div>
+      <div class="detail-item col-span-2"><b>Defeito / Solicitação Inicial</b><span>${ticket.description || '—'}</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">Relatório de Resolução do Serviço</div>
+  <div class="notes-box">
+    ${ticket.resolution_notes || 'Nenhuma nota de resolução preenchida.'}
+  </div>
+
+  ${photosHtml}
+
+  <div class="signatures-section">
+    <div class="sig-grid">
+      <div>
+        <div style="height: 70px; display: flex; align-items: flex-end; justify-content: center;">
+          <span style="font-size: 10px; color: #94a3b8; font-style: italic; margin-bottom: 10px;">Assinado no Sistema</span>
+        </div>
+        <div class="sig-line"></div>
+        <div style="font-weight: bold; font-size: 10px;">${ticket.technician_name || 'Técnico Responsável'}</div>
+        <div style="font-size: 8px; color: #64748b;">Clean Tech Pro</div>
+      </div>
+      <div>
+        <div style="height: 70px; display: flex; align-items: flex-end; justify-content: center;">
+          ${ticket.client_signature ? `<img src="${ticket.client_signature}" class="signature-image" alt="Assinatura Cliente" />` : '<span style="font-size: 10px; color: #94a3b8; font-style: italic; margin-bottom: 10px;">Assinatura Digital Ausente</span>'}
+        </div>
+        <div class="sig-line"></div>
+        <div style="font-weight: bold; font-size: 10px;">${ticket.signed_by_name || 'Responsável Recebimento'}</div>
+        <div style="font-size: 8px; color: #64748b;">${ticket.signed_by_document ? `Documento: ${ticket.signed_by_document}` : 'Cliente Final'}</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    } else {
+      alert('Por favor, permita pop-ups para gerar o relatório em PDF.');
     }
   };
 
@@ -669,6 +976,15 @@ export default function Chamados() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end space-x-1">
+                          {ticket.status === 'Concluído' && (
+                            <button 
+                              onClick={() => handleGenerateOSPDF(ticket)} 
+                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                              title="Gerar Relatório OS / PDF"
+                            >
+                              <FileText className="w-4 h-4" />
+                            </button>
+                          )}
                           <button 
                             onClick={() => handleOpenEdit(ticket)} 
                             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
@@ -789,6 +1105,16 @@ export default function Chamados() {
                           ) : null}
 
                           <div className="flex space-x-0.5">
+                            {ticket.status === 'Concluído' && (
+                              <button 
+                                type="button"
+                                onClick={() => handleGenerateOSPDF(ticket)} 
+                                className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"
+                                title="Gerar Relatório OS / PDF"
+                              >
+                                <FileText className="w-3 h-3" />
+                              </button>
+                            )}
                             <button 
                               type="button"
                               onClick={() => handleOpenEdit(ticket)} 
