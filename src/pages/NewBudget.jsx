@@ -191,6 +191,27 @@ export default function NewBudget() {
     return String(e.client_id) === String(clientData.client);
   });
 
+  const handleClientChange = (clientId) => {
+    const selected = clients.find(c => String(c.id) === String(clientId));
+    if (selected) {
+      setClientData(prev => ({
+        ...prev,
+        client: clientId,
+        equipmentId: '',
+        contact: selected.contact_person || '',
+        contactInfo: selected.phone || selected.email || ''
+      }));
+    } else {
+      setClientData(prev => ({
+        ...prev,
+        client: clientId,
+        equipmentId: '',
+        contact: '',
+        contactInfo: ''
+      }));
+    }
+  };
+
   const handleSaveClient = async (e) => {
     e.preventDefault();
     if (!clientFormData.name) {
@@ -346,7 +367,7 @@ export default function NewBudget() {
       alert('Por favor, selecione um cliente.');
       return;
     }
-    if (!clientData.equipmentId) {
+    if (clientData.serviceType !== 'venda' && !clientData.equipmentId) {
       alert('Por favor, selecione o Ativo / Equipamento do cliente.');
       return;
     }
@@ -528,7 +549,7 @@ export default function NewBudget() {
               <div className="flex space-x-2">
                 <select 
                   value={clientData.client} 
-                  onChange={(e) => setClientData({...clientData, client: e.target.value, equipmentId: ''})}
+                  onChange={(e) => handleClientChange(e.target.value)}
                   className="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white"
                 >
                   <option value="">Selecione o Cliente</option>
