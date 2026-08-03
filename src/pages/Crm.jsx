@@ -753,10 +753,11 @@ export default function Crm() {
               const isLast = index === funnelStages.length - 1;
 
               // SVG Path for 260x56 Chevron Header:
+              // Base width = 246px (X=0 to X=246). Arrow tip extends from X=246 to X=260.
               let svgPath;
-              if (isFirst)      svgPath = 'M 12 0 H 245 L 260 28 L 245 56 H 12 A 12 12 0 0 1 0 44 V 12 A 12 12 0 0 1 12 0 Z';
-              else if (isLast)  svgPath = 'M 0 0 H 248 A 12 12 0 0 1 260 12 V 44 A 12 12 0 0 1 248 56 H 0 L 15 28 Z';
-              else              svgPath = 'M 0 0 H 245 L 260 28 L 245 56 H 0 L 15 28 Z';
+              if (isFirst)      svgPath = 'M 0 0 H 246 L 260 28 L 246 56 H 0 Z';
+              else if (isLast)  svgPath = 'M 0 0 H 246 A 12 12 0 0 1 258 12 V 44 A 12 12 0 0 1 246 56 H 0 L 14 28 Z';
+              else              svgPath = 'M 0 0 H 246 L 260 28 L 246 56 H 0 L 14 28 Z';
 
               return (
                 <div key={stage.key} className="flex flex-col min-w-[260px] w-[260px] shrink-0">
@@ -779,7 +780,7 @@ export default function Crm() {
                       />
                     </svg>
 
-                    <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '16px' : '26px', paddingRight: isLast ? '16px' : '26px' }}>
+                    <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '14px' : '24px', paddingRight: '24px' }}>
                       <div className="flex-1 min-w-0 overflow-hidden">
                         <div className="font-bold text-xs text-gray-900 leading-snug truncate" title={stage.title}>
                           {stage.title}
@@ -805,11 +806,11 @@ export default function Crm() {
                     </div>
                   </div>
 
-                  {/* 2. Column Body — Seamlessly connected to Header (flat top, rounded bottom) */}
+                  {/* 2. Column Body — Exact width 246px matching header base (X=0 to X=246) */}
                   <div
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, stage.key)}
-                    className="bg-[#F4F5F7] rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[600px] flex flex-col mt-[-1px]"
+                    className="bg-[#F4F5F7] rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[600px] flex flex-col mt-[-1px] w-[246px]"
                   >
                     <div className="space-y-2.5 flex-grow">
                       {stageLeads.length === 0 ? (
