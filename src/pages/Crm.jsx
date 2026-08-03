@@ -638,11 +638,11 @@ export default function Crm() {
 
   // ---------------- MAIN CRM BOARD SCREEN ----------------
   return (
-    <div className="-mt-8 -mx-8 p-8 pt-4 space-y-4 text-gray-800 font-sans pb-16 bg-gray-50 min-h-screen">
+    <div className="h-[calc(100vh-2rem)] -m-8 p-8 flex flex-col space-y-3 text-gray-800 font-sans overflow-hidden bg-gray-50">
       
-      {/* 1. Header & Metrics Top Bar (Scrolls up naturally) */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-sm">
+      {/* 1. Header & Metrics Top Bar (Shrink-0) */}
+      <div className="shrink-0 space-y-2">
+        <div className="flex justify-between items-center bg-white px-5 py-2.5 rounded-2xl border border-gray-100 shadow-sm">
           <div>
             <h1 className="text-lg font-bold text-gray-900 leading-tight">CRM - Funil de Vendas</h1>
             <p className="text-[11px] text-gray-500">Acompanhe novos contatos, propostas ativas e conversões em tempo real.</p>
@@ -714,14 +714,14 @@ export default function Crm() {
             <button
               type="button"
               onClick={() => {
-                if (confirm('Deseja aplicar as etapas padrão do Kanban (PROSPECT, CONTATO, REUNIÃO, QUALIFICADO, DESQUALIFICADO, PROPOSTA)?')) {
+                if (confirm('Deseja restaurar as etapas padrão do Kanban?')) {
                   setFunnelStages(DEFAULT_STAGES);
                   localStorage.setItem('crm_stages', JSON.stringify(DEFAULT_STAGES));
                 }
               }}
               className="text-xs text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all border border-blue-100"
             >
-              Restaurar Etapas (Foto)
+              Restaurar Etapas Padrão
             </button>
             <div className="flex items-center space-x-1.5 text-gray-700 font-semibold text-xs">
               <SlidersHorizontal className="w-3.5 h-3.5 text-gray-400" />
@@ -762,16 +762,16 @@ export default function Crm() {
         </div>
       </div>
 
-      {/* 2. Kanban Board Grid */}
+      {/* 2. Full-Height Kanban Board Box with Individual Column Scrolling */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center p-12 text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex-1 flex flex-col items-center justify-center p-12 text-gray-500 bg-white rounded-2xl border border-gray-100 shadow-sm">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
           <span>Carregando negócios...</span>
         </div>
       ) : (
-        <div className="space-y-0">
-          {/* A) STICKY CHEVRON HEADER (Freezes at exact top: 0 with 100% visible stage titles!) */}
-          <div className="sticky top-0 z-40 bg-gray-50 pt-2 pb-1 -mx-8 px-8 border-b border-gray-200/50">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {/* A) CHEVRON HEADER ROW — PERMANENTLY FIXED AT TOP OF BOARD */}
+          <div className="shrink-0 overflow-x-auto no-scrollbar select-none bg-gray-50 pt-1 pb-0.5">
             <div
               ref={headerScrollRef}
               onScroll={handleHeaderScroll}
@@ -810,7 +810,7 @@ export default function Crm() {
                         onDragStart={(e) => handleColumnDragStart(e, index)}
                         onDrop={(e) => handleColumnDrop(e, index)}
                         onDragOver={handleDragOver}
-                        className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[56px]"
+                        className="group/header select-none cursor-grab active:cursor-grabbing relative w-full h-[52px]"
                       >
                         <svg
                           viewBox={viewBoxStr}
@@ -855,13 +855,13 @@ export default function Crm() {
             </div>
           </div>
 
-          {/* B) CARDS BODY CONTAINER */}
+          {/* B) COLUMN BODIES ROW — INDIVIDUAL COLUMN CARDS SCROLLING */}
           <div
             ref={bodyScrollRef}
             onScroll={handleBodyScroll}
-            className="overflow-x-auto pb-12 custom-scrollbar select-none"
+            className="flex-1 min-h-0 overflow-x-auto custom-scrollbar select-none"
           >
-            <div className="flex items-stretch gap-0 min-w-max pr-4">
+            <div className="flex items-stretch gap-0 min-w-max pr-4 h-full">
               {funnelStages.map((stage, index) => {
                 const stageLeads = getLeadsInStage(stage.key);
                 const isFirst = index === 0;
@@ -877,7 +877,7 @@ export default function Crm() {
                 return (
                   <div
                     key={stage.key}
-                    className={`flex flex-col ${colWidthClass} shrink-0`}
+                    className={`flex flex-col ${colWidthClass} shrink-0 h-full`}
                     style={{
                       marginLeft: isFirst ? '0' : '-8px'
                     }}
@@ -886,7 +886,7 @@ export default function Crm() {
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, stage.key)}
                       style={{ backgroundColor: bodyBg }}
-                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[calc(100vh-180px)] flex-1 h-full flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                     >
                       <div className="space-y-2.5 flex-grow">
                         {stageLeads.length === 0 ? (
