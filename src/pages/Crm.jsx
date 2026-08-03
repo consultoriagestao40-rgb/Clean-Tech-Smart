@@ -77,16 +77,33 @@ function migrateColor(color) {
   return '#4B5563';
 }
 
+// Helper to map old lead stage keys to the new 6-stage funnel format
+function mapLeadStage(stageKey) {
+  if (!stageKey) return 'prospect';
+  const s = String(stageKey).toLowerCase();
+  if (s === 'inbox') return 'prospect';
+  if (s === 'tratar') return 'contato';
+  if (s === 'lead' || s === 'lead_de_servico') return 'reuniao';
+  if (s === 'atendimento' || s === 'programado') return 'qualificado';
+  if (s === 'perdido') return 'desqualificado';
+  if (s === 'a_faturar' || s === 'faturado') return 'proposta';
+  return s;
+}
+
 export default function Crm() {
   const [funnelStages, setFunnelStages] = useState(() => {
     const saved = localStorage.getItem('crm_stages');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Migrate old Tailwind color format to hex
-        return parsed.map(s => ({ ...s, color: migrateColor(s.color) }));
+        const hasOldKeys = parsed.some(s => ['inbox', 'tratar', 'lead', 'atendimento', 'programado', 'a_faturar', 'faturado', 'perdido'].includes(s.key));
+        if (!hasOldKeys && parsed.length > 0) {
+          return parsed.map(s => ({ ...s, color: migrateColor(s.color) }));
+        }
       } catch (e) {}
     }
+    // Default to exact 6 stages from mockup photo
+    localStorage.setItem('crm_stages', JSON.stringify(DEFAULT_STAGES));
     return DEFAULT_STAGES;
   });
 
@@ -743,7 +760,7 @@ export default function Crm() {
           <div className="flex flex-col space-y-3 min-w-max pr-4">
             
             {/* 1. Connected Chevron Pipeline Header Track — Exact screenshot styling */}
-            <div style={{ display: 'flex', alignItems: 'stretch', gap: 0, marginBottom: '12px', position: 'relative' }}>
+            <div className="flex items-center flex-nowrap" style={{ gap: 0, marginBottom: '10px' }}>
               {funnelStages.map((stage, index) => {
                 const stageLeads = getLeadsInStage(stage.key);
                 const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
@@ -752,9 +769,9 @@ export default function Crm() {
                 const bgColor = stage.color && stage.color.startsWith('#') ? stage.color : '#5A6B7C';
 
                 let svgPath;
-                if (isFirst)      svgPath = 'M0,0 H258 L280,26 L258,52 H0 Z';
-                else if (isLast)  svgPath = 'M22,0 H280 V52 H22 L0,26 Z';
-                else              svgPath = 'M22,0 H258 L280,26 L258,52 H22 L0,26 Z';
+                if (isFirst)      svgPath = 'M 0 0 H 238 L 260 25 L 238 50 H 0 Z';
+                else if (isLast)  svgPath = 'M 22 0 H 260 V 50 H 22 L 0 25 Z';
+                else              svgPath = 'M 22 0 H 238 L 260 25 L 238 50 H 22 L 0 25 Z';
 
                 return (
                   <div
@@ -763,21 +780,19 @@ export default function Crm() {
                     onDragStart={(e) => handleColumnDragStart(e, index)}
                     onDrop={(e) => handleColumnDrop(e, index)}
                     onDragOver={handleDragOver}
-                    className="group/header select-none cursor-grab active:cursor-grabbing shrink-0"
+                    className="group/header select-none cursor-grab active:cursor-grabbing shrink-0 relative"
                     style={{
-                      position: 'relative',
-                      width: '280px',
-                      minWidth: '280px',
-                      height: '52px',
-                      marginLeft: index === 0 ? '0' : '-20px',
+                      width: '260px',
+                      minWidth: '260px',
+                      height: '50px',
+                      marginLeft: isFirst ? '0' : '-22px',
                       zIndex: funnelStages.length - index,
                     }}
                   >
-                    {/* SVG Background with crisp white border separator */}
                     <svg
-                      viewBox="0 0 280 52"
+                      viewBox="0 0 260 50"
                       preserveAspectRatio="none"
-                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block' }}
+                      className="absolute inset-0 w-full h-full block"
                     >
                       <path
                         d={svgPath}
@@ -788,37 +803,26 @@ export default function Crm() {
                       />
                     </svg>
 
-                    {/* Header Text & Numbers */}
-                    <div style={{
-                      position: 'relative',
-                      zIndex: 1,
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      paddingLeft: isFirst ? '18px' : '34px',
-                      paddingRight: isLast ? '18px' : '34px',
-                      gap: '8px',
-                      boxSizing: 'border-box',
-                    }}>
-                      <div style={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
-                        <div style={{ fontWeight: 800, fontSize: '12px', color: '#FFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                    <div className="relative z-10 h-full flex items-center justify-between" style={{ paddingLeft: isFirst ? '16px' : '30px', paddingRight: isLast ? '16px' : '30px' }}>
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="font-extrabold text-xs text-white uppercase tracking-wider truncate">
                           {stage.title}
                         </div>
-                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.92)', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                        <div className="text-[11px] text-white/90 font-semibold mt-0.5 flex items-center space-x-1">
                           <span>{formatCurrency(stageValueSum)}</span>
                           <span>·</span>
                           <span>{stageLeads.length} {stageLeads.length === 1 ? 'lead' : 'leads'}</span>
                         </div>
                       </div>
-                      {/* Action buttons on hover */}
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover/header:opacity-100 transition-opacity" style={{ flexShrink: 0 }}>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className="p-1 rounded hover:bg-white/20" style={{ color: '#FFF' }} title="Adicionar Etapa à Direita">
+                      
+                      <div className="flex items-center space-x-1 opacity-0 group-hover/header:opacity-100 transition-opacity">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className="p-1 text-white hover:bg-white/20 rounded">
                           <Plus className="w-3.5 h-3.5" />
                         </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className="p-1 rounded hover:bg-white/20" style={{ color: '#FFF' }} title="Editar Etapa">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className="p-1 text-white hover:bg-white/20 rounded">
                           <Edit className="w-3.5 h-3.5" />
                         </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className="p-1 rounded hover:bg-white/20" style={{ color: '#FFF' }} title="Excluir Etapa">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className="p-1 text-white hover:bg-white/20 rounded">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -828,9 +832,9 @@ export default function Crm() {
               })}
             </div>
 
-            {/* 2. Tinted Columns Grid below */}
-            <div className="flex items-start" style={{ gap: '0px' }}>
-              {funnelStages.map((stage, index) => {
+            {/* 2. Columns Body Track */}
+            <div className="flex items-start flex-nowrap" style={{ gap: '8px' }}>
+              {funnelStages.map((stage) => {
                 const stageLeads = getLeadsInStage(stage.key);
                 const bgTint = getStageBgTint(stage.color);
 
@@ -841,16 +845,14 @@ export default function Crm() {
                     onDrop={(e) => handleDrop(e, stage.key)}
                     style={{
                       backgroundColor: bgTint,
-                      width: '260px',
-                      minWidth: '260px',
-                      marginRight: index === funnelStages.length - 1 ? '0' : '0px',
+                      width: '252px',
+                      minWidth: '252px',
                     }}
-                    className="border border-slate-200/60 rounded-b-2xl rounded-t-sm p-2.5 shrink-0 min-h-[560px] flex flex-col transition-colors duration-200"
+                    className="border border-slate-200/80 rounded-2xl p-3 shrink-0 min-h-[580px] flex flex-col shadow-xs"
                   >
-                    {/* Cards Container */}
-                    <div className="space-y-2.5 flex-grow">
+                    <div className="space-y-3 flex-grow">
                       {stageLeads.length === 0 ? (
-                        <div className="border-2 border-dashed border-slate-200/70 rounded-xl py-10 text-center text-[11px] text-slate-400 font-medium italic">
+                        <div className="border-2 border-dashed border-slate-200/60 rounded-xl py-12 text-center text-xs text-slate-400 font-medium italic">
                           Nenhum lead nesta etapa
                         </div>
                       ) : (
@@ -889,7 +891,6 @@ export default function Crm() {
                                   {formatCurrency(leadVal)}
                                 </div>
 
-                                {/* Circular Action Plus Button matching photo */}
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -905,7 +906,6 @@ export default function Crm() {
 
                               {/* Row 4: Footer (Owner Avatar & Date) */}
                               <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
-                                {/* Left: Avatar + Owner Name */}
                                 <div className="flex items-center space-x-1.5 min-w-0">
                                   <div className="w-4 h-4 rounded-full bg-slate-200 text-slate-600 font-bold flex items-center justify-center text-[9px] shrink-0 border border-slate-300">
                                     {getInitials(lead.assigned_to_name || 'Sistema')}
@@ -915,7 +915,6 @@ export default function Crm() {
                                   </span>
                                 </div>
 
-                                {/* Right: Calendar + Date */}
                                 <div className="flex items-center space-x-1 text-slate-400 font-medium shrink-0">
                                   <Calendar className="w-3 h-3 text-red-400/80" />
                                   <span>
@@ -924,41 +923,6 @@ export default function Crm() {
                                       : new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                   </span>
                                 </div>
-                              </div>
-
-                              {/* Scheduled Return Date Badge */}
-                              {lead.next_contact_at && (
-                                <div className="flex items-center text-[9px] font-bold text-orange-600 bg-orange-50/80 border border-orange-100 p-1.5 rounded-lg">
-                                  <Calendar className="w-3.5 h-3.5 mr-1 text-orange-500 shrink-0" />
-                                  <span className="truncate">Retorno: {new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-                              )}
-
-                              {/* Quick Action Toolbar on Hover */}
-                              <div className="pt-1 flex justify-end space-x-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setActiveReminderLead(lead); setActiveNoteLead(null); setActiveMoveLead(null); }}
-                                  className="p-1 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
-                                  title="Agendar Retorno"
-                                >
-                                  <Calendar className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setActiveNoteLead(lead); setActiveReminderLead(null); setActiveMoveLead(null); }}
-                                  className="p-1 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
-                                  title="Adicionar Nota"
-                                >
-                                  <ClipboardList className="w-3.5 h-3.5" />
-                                </button>
-                                <a
-                                  href={`https://web.whatsapp.com/send?phone=${lead.phone.replace(/\D/g, '')}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-1 text-slate-400 hover:text-green-500 hover:bg-green-50 rounded transition-all flex items-center"
-                                  title="Chat WhatsApp"
-                                >
-                                  <MessageSquare className="w-3.5 h-3.5" />
-                                </a>
                               </div>
                             </div>
                           );
