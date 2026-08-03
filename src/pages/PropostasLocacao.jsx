@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, ShieldAlert, Check, Link2 } from 'lucide-react';
+import { Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, ShieldAlert, Check, Link2, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function PropostasLocacao() {
@@ -36,6 +36,12 @@ export default function PropostasLocacao() {
     lucro_percent: 50,
     tributos_percent: 8
   });
+
+  // Share Link Expiration Modal states
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareProposalId, setShareProposalId] = useState(null);
+  const [shareValidityDays, setShareValidityDays] = useState('10 dias');
+  const [isSavingShare, setIsSavingShare] = useState(false);
 
   // Minuta de Locação Modal state
   const [isMinutaModalOpen, setIsMinutaModalOpen] = useState(false);
@@ -321,9 +327,40 @@ export default function PropostasLocacao() {
   };
 
   const handleCopyPublicLink = (proposalId) => {
-    const url = `${window.location.origin}/visualizar-proposta/${proposalId}`;
-    navigator.clipboard.writeText(url);
-    alert('Link público da proposta copiado para a área de transferência!');
+    const proposal = proposals.find(p => p.id === proposalId);
+    setShareProposalId(proposalId);
+    setShareValidityDays(proposal?.validity_days || '10 dias');
+    setIsShareModalOpen(true);
+  };
+
+  const handleConfirmShare = async (e) => {
+    e.preventDefault();
+    if (!shareValidityDays.trim()) {
+      alert('Por favor, informe a validade.');
+      return;
+    }
+    setIsSavingShare(true);
+    try {
+      const response = await fetch('/api/update-proposal-validity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: shareProposalId, validity_days: shareValidityDays })
+      });
+      if (response.ok) {
+        const url = `${window.location.origin}/visualizar-proposta/${shareProposalId}`;
+        navigator.clipboard.writeText(url);
+        setIsShareModalOpen(false);
+        fetchProposals();
+        alert(`Link público copiado!\nValidade configurada para: ${shareValidityDays}`);
+      } else {
+        alert('Erro ao atualizar a validade da proposta.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de conexão ao salvar validade.');
+    } finally {
+      setIsSavingShare(false);
+    }
   };
 
   const formatPeriod = (months) => {
@@ -1796,6 +1833,73 @@ body{padding-top:60px}
                 Imprimir Minuta
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Share Validity Modal */}
+      {isShareModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-5 border-b border-gray-100">
+              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-blue-600" />
+                Definir Validade & Compartilhar Link
+              </h2>
+              <button 
+                type="button"
+                onClick={() => setIsShareModalOpen(false)} 
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleConfirmShare}>
+              <div className="p-6 space-y-4">
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Defina o prazo de validade/expiração do link público antes de compartilhá-lo com seu cliente.
+                </p>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Prazo de Validade</label>
+                  <select 
+                    value={shareValidityDays} 
+                    onChange={e => setShareValidityDays(e.target.value)}
+                    className="w-full h-10 px-3 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="5 dias">5 dias</option>
+                    <option value="10 dias">10 dias</option>
+                    <option value="15 dias">15 dias</option>
+                    <option value="20 dias">20 dias</option>
+                    <option value="30 dias">30 dias</option>
+                    <option value="45 dias">45 dias</option>
+                    <option value="60 dias">60 dias</option>
+                  </select>
+                </div>
+
+                <div className="text-[10px] text-gray-400 font-semibold italic bg-blue-50/50 p-3 rounded-lg border border-blue-100/30">
+                  * Ao confirmar, a validade da proposta comercial será atualizada no banco de dados e o link público será copiado automaticamente para sua área de transferência.
+                </div>
+              </div>
+
+              <div className="p-5 flex justify-end gap-2.5 border-t border-gray-100 bg-gray-50">
+                <button 
+                  type="button" 
+                  onClick={() => setIsShareModalOpen(false)} 
+                  className="px-4 py-2 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSavingShare}
+                  className="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
+                >
+                  {isSavingShare ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                  {isSavingShare ? 'Salvando...' : 'Confirmar & Copiar Link'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
