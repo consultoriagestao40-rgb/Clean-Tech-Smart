@@ -20,6 +20,8 @@ import PropostasLocacao from './pages/PropostasLocacao';
 import VisualizarPropostaPublica from './pages/VisualizarPropostaPublica';
 import VisualizarOrcamentoPublico from './pages/VisualizarOrcamentoPublico';
 import TecnicoPainel from './pages/TecnicoPainel';
+import Login from './pages/Login';
+import Usuarios from './pages/Usuarios';
 
 function Placeholder({ title }) {
   return (
@@ -60,8 +62,9 @@ function App() {
           <Route path="disponibilidade" element={<Placeholder title="Disponibilidade" />} />
           <Route path="relatorios" element={<Placeholder title="Relatórios" />} />
           <Route path="suporte" element={<Placeholder title="Suporte" />} />
-          <Route path="usuarios" element={<Placeholder title="Gerenciar Usuários" />} />
+          <Route path="usuarios" element={<Usuarios />} />
         </Route>
+        <Route path="/login" element={<Login />} />
         <Route path="/visualizar-proposta/:id" element={<VisualizarPropostaPublica />} />
         <Route path="/visualizar-orcamento/:id" element={<VisualizarOrcamentoPublico />} />
         <Route path="/tecnico" element={<TecnicoPainel />} />

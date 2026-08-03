@@ -33,6 +33,14 @@ export default function Sidebar() {
   // Collapse State
   const [isCollapsed, setIsCollapsed] = useState(localStorage.getItem('sidebar_collapsed') === 'true');
 
+  const loggedInUser = JSON.parse(localStorage.getItem('user') || '{"name": "Cristiano Godoi"}');
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
+
   useEffect(() => {
     const handleLogoChange = () => {
       setLogo(localStorage.getItem('app_company_logo') || '');
@@ -169,12 +177,16 @@ export default function Sidebar() {
 
       {/* User Footer */}
       <div className="border-t border-gray-200 p-4 bg-gray-50 mt-auto">
-        <div className={`flex items-center text-blue-500 px-4 py-2 hover:bg-gray-100 rounded-lg cursor-pointer mb-2 transition-colors ${isCollapsed ? 'justify-center' : ''}`} title={isCollapsed ? 'Cristiano Magalhães da Silva' : ''}>
+        <div className={`flex items-center text-blue-500 px-4 py-2 hover:bg-gray-100 rounded-lg cursor-pointer mb-2 transition-colors ${isCollapsed ? 'justify-center' : ''}`} title={isCollapsed ? loggedInUser.name : ''}>
           <User size={20} className={`${isCollapsed ? 'mr-0' : 'mr-3'} text-blue-400`} />
-          {!isCollapsed && <span className="text-sm font-medium truncate">Cristiano Magalhães...</span>}
+          {!isCollapsed && <span className="text-sm font-medium truncate">{loggedInUser.name}</span>}
         </div>
         
-        <button className={`w-full flex items-center text-gray-600 px-4 py-2 hover:bg-gray-100 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`} title={isCollapsed ? 'Sair' : ''}>
+        <button 
+          onClick={handleLogout}
+          className={`w-full flex items-center text-gray-600 px-4 py-2 hover:bg-gray-100 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`} 
+          title={isCollapsed ? 'Sair' : ''}
+        >
           <LogOut size={20} className={`${isCollapsed ? 'mr-0' : 'mr-3'} text-gray-500`} />
           {!isCollapsed && <span className="text-sm font-medium">Sair</span>}
         </button>
