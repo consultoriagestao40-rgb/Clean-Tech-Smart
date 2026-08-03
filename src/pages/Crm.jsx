@@ -47,12 +47,32 @@ const STAGE_COLORS = [
   { name: 'Ciano', value: '#06B6D4' }
 ];
 
+// Migrate old Tailwind color strings to hex
+function migrateColor(color) {
+  if (!color || color.startsWith('#')) return color;
+  if (color.includes('blue')) return '#3B82F6';
+  if (color.includes('teal')) return '#14B8A6';
+  if (color.includes('emerald')) return '#10B981';
+  if (color.includes('indigo')) return '#6366F1';
+  if (color.includes('purple')) return '#8B5CF6';
+  if (color.includes('amber')) return '#F59E0B';
+  if (color.includes('yellow')) return '#F59E0B';
+  if (color.includes('orange')) return '#F97316';
+  if (color.includes('rose')) return '#EF4444';
+  if (color.includes('red')) return '#EF4444';
+  if (color.includes('cyan')) return '#06B6D4';
+  if (color.includes('green')) return '#10B981';
+  return '#4B5563';
+}
+
 export default function Crm() {
   const [funnelStages, setFunnelStages] = useState(() => {
     const saved = localStorage.getItem('crm_stages');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Migrate old Tailwind color format to hex
+        return parsed.map(s => ({ ...s, color: migrateColor(s.color) }));
       } catch (e) {}
     }
     return DEFAULT_STAGES;
@@ -66,7 +86,7 @@ export default function Crm() {
   const [isEditingStage, setIsEditingStage] = useState(false);
   const [editingStageKey, setEditingStageKey] = useState('');
   const [editingStageTitle, setEditingStageTitle] = useState('');
-  const [selectedColor, setSelectedColor] = useState('border-t-2 border-slate-400 bg-slate-50/20 text-slate-700');
+  const [selectedColor, setSelectedColor] = useState('#4B5563');
   const [insertAfterIndex, setInsertAfterIndex] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('user') || 'null'));
@@ -696,24 +716,19 @@ export default function Crm() {
         <div className="overflow-x-auto pb-4 custom-scrollbar select-none">
           <div className="flex flex-col space-y-3 min-w-max pr-4">
             
-            {/* 1. Connected Chevron Pipeline Header Track - Solid Filled like reference image */}
-            <div className="flex items-stretch pb-1" style={{ gap: '0px', marginBottom: '14px' }}>
+            {/* 1. Connected Chevron Pipeline Header Track — SVG-based solid fills */}
+            <div style={{ display: 'flex', alignItems: 'stretch', gap: 0, marginBottom: '14px', position: 'relative' }}>
               {funnelStages.map((stage, index) => {
                 const stageLeads = getLeadsInStage(stage.key);
                 const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
-
                 const isFirst = index === 0;
                 const isLast = index === funnelStages.length - 1;
-                const bgColor = stage.color.startsWith('#') ? stage.color : '#4B5563';
-
-                let clipPath;
-                if (isFirst) {
-                  clipPath = 'polygon(0 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 0 100%)';
-                } else if (isLast) {
-                  clipPath = 'polygon(16px 0, 100% 0, 100% 100%, 16px 100%, 0 50%)';
-                } else {
-                  clipPath = 'polygon(16px 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 16px 100%, 0 50%)';
-                }
+                const bgColor = stage.color && stage.color.startsWith('#') ? stage.color : '#4B5563';
+                // SVG viewBox is 0 0 280 52 — arrow notch/point is 20px deep
+                let svgPath;
+                if (isFirst)      svgPath = 'M0,0 H260 L280,26 L260,52 H0 Z';
+                else if (isLast)  svgPath = 'M20,0 H280 V52 H20 L0,26 Z';
+                else              svgPath = 'M20,0 H260 L280,26 L260,52 H20 L0,26 Z';
 
                 return (
                   <div
@@ -724,49 +739,54 @@ export default function Crm() {
                     onDragOver={handleDragOver}
                     className="group/header select-none cursor-grab active:cursor-grabbing shrink-0"
                     style={{
+                      position: 'relative',
                       width: '280px',
                       minWidth: '280px',
-                      marginLeft: index === 0 ? '0' : '-16px',
+                      height: '52px',
+                      marginLeft: index === 0 ? '0' : '-20px',
                       zIndex: funnelStages.length - index,
-                      position: 'relative',
                     }}
                   >
-                    <div
-                      style={{
-                        clipPath,
-                        backgroundColor: bgColor,
-                        height: '52px',
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        paddingLeft: isFirst ? '16px' : '32px',
-                        paddingRight: '28px',
-                        gap: '8px',
-                        boxSizing: 'border-box',
-                        cursor: 'grab',
-                      }}
+                    {/* SVG Background */}
+                    <svg
+                      viewBox="0 0 280 52"
+                      preserveAspectRatio="none"
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block' }}
                     >
-                      {/* Text info - white on colored bg */}
+                      <path d={svgPath} fill={bgColor} />
+                    </svg>
+
+                    {/* Content on top of SVG */}
+                    <div style={{
+                      position: 'relative',
+                      zIndex: 1,
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      paddingLeft: isFirst ? '14px' : '30px',
+                      paddingRight: '30px',
+                      gap: '8px',
+                      boxSizing: 'border-box',
+                    }}>
                       <div style={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
-                        <div style={{ fontWeight: 700, fontSize: '11px', color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <div style={{ fontWeight: 700, fontSize: '11px', color: '#FFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                           {stage.title}
                         </div>
-                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.80)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.85)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <span>{formatCurrency(stageValueSum)}</span>
                           <span>·</span>
                           <span>{stageLeads.length} {stageLeads.length === 1 ? 'lead' : 'leads'}</span>
                         </div>
                       </div>
-
-                      {/* Action buttons (hover only) */}
+                      {/* Action buttons — appear on hover */}
                       <div className="flex items-center gap-0.5 opacity-0 group-hover/header:opacity-100 transition-opacity" style={{ flexShrink: 0 }}>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className="p-1 rounded" style={{ color: 'rgba(255,255,255,0.8)' }} title="Adicionar Etapa à Direita">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }} className="p-1 rounded hover:bg-white/20" style={{ color: '#FFF' }} title="Adicionar Etapa à Direita">
                           <Plus className="w-3.5 h-3.5" />
                         </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className="p-1 rounded" style={{ color: 'rgba(255,255,255,0.8)' }} title="Editar Etapa">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }} className="p-1 rounded hover:bg-white/20" style={{ color: '#FFF' }} title="Editar Etapa">
                           <Edit className="w-3.5 h-3.5" />
                         </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className="p-1 rounded" style={{ color: 'rgba(255,255,255,0.8)' }} title="Excluir Etapa">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }} className="p-1 rounded hover:bg-white/20" style={{ color: '#FFF' }} title="Excluir Etapa">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -775,6 +795,8 @@ export default function Crm() {
                 );
               })}
             </div>
+
+
 
             {/* 2. Columns Grid below */}
             <div className="flex items-start" style={{ gap: '10px' }}>
@@ -1148,19 +1170,18 @@ export default function Crm() {
               <label className="text-xs font-bold text-gray-500 block">Cor de Destaque</label>
               <div className="grid grid-cols-5 gap-2">
                 {STAGE_COLORS.map(color => {
-                  const borderClass = color.value.split(' ')[1] || 'border-slate-400';
-                  const bgClass = color.value.split(' ')[2] || 'bg-slate-50/20';
                   const isSelected = selectedColor === color.value;
                   return (
                     <button
                       key={color.name}
                       type="button"
                       onClick={() => setSelectedColor(color.value)}
-                      className={`h-8 rounded-lg border-2 ${borderClass} ${bgClass} transition-all relative flex items-center justify-center`}
                       title={color.name}
+                      style={{ backgroundColor: color.value, border: isSelected ? '3px solid #1E293B' : '3px solid transparent' }}
+                      className="h-8 rounded-lg transition-all relative flex items-center justify-center"
                     >
                       {isSelected && (
-                        <div className="w-2 h-2 rounded-full bg-current" />
+                        <div className="w-2 h-2 rounded-full bg-white" />
                       )}
                     </button>
                   );
@@ -1216,19 +1237,18 @@ export default function Crm() {
               <label className="text-xs font-bold text-gray-500 block">Cor de Destaque</label>
               <div className="grid grid-cols-5 gap-2">
                 {STAGE_COLORS.map(color => {
-                  const borderClass = color.value.split(' ')[1] || 'border-slate-400';
-                  const bgClass = color.value.split(' ')[2] || 'bg-slate-50/20';
                   const isSelected = selectedColor === color.value;
                   return (
                     <button
                       key={color.name}
                       type="button"
                       onClick={() => setSelectedColor(color.value)}
-                      className={`h-8 rounded-lg border-2 ${borderClass} ${bgClass} transition-all relative flex items-center justify-center`}
                       title={color.name}
+                      style={{ backgroundColor: color.value, border: isSelected ? '3px solid #1E293B' : '3px solid transparent' }}
+                      className="h-8 rounded-lg transition-all relative flex items-center justify-center"
                     >
                       {isSelected && (
-                        <div className="w-2 h-2 rounded-full bg-current" />
+                        <div className="w-2 h-2 rounded-full bg-white" />
                       )}
                     </button>
                   );
