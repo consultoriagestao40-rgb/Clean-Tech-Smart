@@ -21,9 +21,8 @@ export default function Configuracoes() {
   const [companyEmail, setCompanyEmail] = useState(localStorage.getItem('app_company_email') || 'financeiro@grupojvsserv.com.br');
   const [companyIe, setCompanyIe] = useState(localStorage.getItem('app_company_ie') || '91101403-36');
 
-  // WhatsApp Integration (Z-API) States
-  const [zapiInstanceId, setZapiInstanceId] = useState(localStorage.getItem('app_zapi_instance_id') || 'D4F38DEC6BD1906C37E044B4');
-  const [zapiToken, setZapiToken] = useState(localStorage.getItem('app_zapi_token') || '');
+  const [zapiInstanceId, setZapiInstanceId] = useState(localStorage.getItem('app_zapi_instance_id') || '3F718C3D9582E1963A49EAE0B2B942D4');
+  const [zapiToken, setZapiToken] = useState(localStorage.getItem('app_zapi_token') || 'D4F38DEC6BD1906C37E044B4');
   const [zapiClientToken, setZapiClientToken] = useState(localStorage.getItem('app_zapi_client_token') || '');
 
   const [saveSuccess, setSaveSuccess] = useState(false);
