@@ -642,25 +642,53 @@ export default function Crm() {
       
       {/* 1. Header & Metrics Top Bar (Scrolls up naturally) */}
       <div className="space-y-3">
-        <div className="flex justify-between items-center bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-sm gap-3">
           <div>
             <h1 className="text-lg font-bold text-gray-900 leading-tight">CRM - Funil de Vendas</h1>
             <p className="text-[11px] text-gray-500">Acompanhe novos contatos, propostas ativas e conversões em tempo real.</p>
           </div>
           
-          <div className="flex items-center space-x-3 text-sm">
-            <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
-              <User className="w-4 h-4 text-blue-500" />
-              <span className="font-semibold text-gray-700">{currentUser.name}</span>
-              <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold uppercase">{currentUser.role}</span>
+          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+            {/* Search bar moved to top header where user name was */}
+            <div className="relative min-w-[240px]">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+              <input 
+                type="text"
+                placeholder="Buscar por cliente, tel ou vendedor..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-gray-50/50"
+              />
             </div>
 
-            <button 
-              onClick={handleLogout}
-              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-              title="Sair da sessão"
+            {/* Seller Filter */}
+            {currentUser.role === 'gestor' && (
+              <div className="flex items-center space-x-1.5 text-xs">
+                <span className="text-gray-500 font-semibold">Vendedor:</span>
+                <select
+                  value={selectedSeller}
+                  onChange={e => setSelectedSeller(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-xs"
+                >
+                  <option value="all">Todos os vendedores</option>
+                  {sellers.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm('Deseja restaurar as etapas padrão do Kanban?')) {
+                  setFunnelStages(DEFAULT_STAGES);
+                  localStorage.setItem('crm_stages', JSON.stringify(DEFAULT_STAGES));
+                }
+              }}
+              className="text-xs text-blue-600 hover:text-blue-800 font-semibold px-3 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all border border-blue-100"
             >
-              <LogOut className="w-5 h-5" />
+              Restaurar Etapas
             </button>
           </div>
         </div>
@@ -705,59 +733,6 @@ export default function Crm() {
               <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Taxa de Conversão</span>
               <span className="text-lg font-bold text-purple-600">{stats.conversionRate}%</span>
             </div>
-          </div>
-        </div>
-
-        {/* Filters & Search Row */}
-        <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center space-x-3">
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm('Deseja restaurar as etapas padrão do Kanban?')) {
-                  setFunnelStages(DEFAULT_STAGES);
-                  localStorage.setItem('crm_stages', JSON.stringify(DEFAULT_STAGES));
-                }
-              }}
-              className="text-xs text-blue-600 hover:text-blue-800 font-semibold px-3 py-1 bg-blue-50 hover:bg-blue-100 rounded-lg transition-all border border-blue-100"
-            >
-              Restaurar Etapas Padrão
-            </button>
-            <div className="flex items-center space-x-1.5 text-gray-700 font-semibold text-xs">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-gray-400" />
-              <span>Filtros do Funil</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
-            {/* Search bar */}
-            <div className="relative min-w-[220px]">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-gray-400" />
-              <input 
-                type="text"
-                placeholder="Buscar cliente ou tel..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-gray-50/50"
-              />
-            </div>
-
-            {/* Seller Filter */}
-            {currentUser.role === 'gestor' && (
-              <div className="flex items-center space-x-1.5 text-xs">
-                <span className="text-gray-500 font-semibold">Vendedor:</span>
-                <select
-                  value={selectedSeller}
-                  onChange={e => setSelectedSeller(e.target.value)}
-                  className="px-2.5 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-xs"
-                >
-                  <option value="all">Todos os vendedores</option>
-                  {sellers.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -886,7 +861,7 @@ export default function Crm() {
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, stage.key)}
                       style={{ backgroundColor: bodyBg }}
-                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[calc(100vh-180px)] flex-1 h-full flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                      className="rounded-b-2xl rounded-t-none p-3 pt-2.5 min-h-[calc(100vh-180px)] max-h-[calc(100vh-70px)] overflow-y-auto custom-scrollbar flex-1 h-full flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                     >
                       <div className="space-y-2.5 flex-grow">
                         {stageLeads.length === 0 ? (
