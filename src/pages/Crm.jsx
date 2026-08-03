@@ -89,6 +89,7 @@ export default function Crm() {
   const [quickNoteContent, setQuickNoteContent] = useState('');
   
   const [activeReminderLead, setActiveReminderLead] = useState(null);
+  const [sendViaWhatsapp, setSendViaWhatsapp] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
   const [taskMessage, setTaskMessage] = useState('');
   const [taskDate, setTaskDate] = useState('');
@@ -362,6 +363,7 @@ export default function Crm() {
     if (!quickNoteContent.trim()) return;
     setIsSavingQuick(true);
     try {
+      const noteText = quickNoteContent.trim();
       const res = await fetch('/api/crm/notes', {
         method: 'POST',
         headers: {
@@ -370,13 +372,52 @@ export default function Crm() {
         },
         body: JSON.stringify({
           lead_phone: leadPhone,
-          content: quickNoteContent.trim()
+          content: noteText
         })
       });
 
       if (res.ok) {
+        // Enviar via WhatsApp (Z-API) se ativado e credenciais configuradas
+        if (sendViaWhatsapp) {
+          const zapiInstance = localStorage.getItem('app_zapi_instance_id');
+          const zapiToken = localStorage.getItem('app_zapi_token');
+          const zapiClientToken = localStorage.getItem('app_zapi_client_token');
+
+          if (zapiInstance && zapiToken) {
+            const zapiHeaders = { 'Content-Type': 'application/json' };
+            if (zapiClientToken) {
+              zapiHeaders['Client-Token'] = zapiClientToken;
+            }
+            
+            // Clean phone for Brazil
+            let cleanPhoneDigits = leadPhone.replace(/\D/g, '');
+            if (cleanPhoneDigits.length === 11 && !cleanPhoneDigits.startsWith('55')) {
+              cleanPhoneDigits = '55' + cleanPhoneDigits;
+            } else if (cleanPhoneDigits.length === 10 && !cleanPhoneDigits.startsWith('55')) {
+              cleanPhoneDigits = '55' + cleanPhoneDigits;
+            }
+
+            try {
+              const whatsRes = await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/send-text`, {
+                method: 'POST',
+                headers: zapiHeaders,
+                body: JSON.stringify({
+                  phone: cleanPhoneDigits,
+                  message: noteText
+                })
+              });
+              if (!whatsRes.ok) {
+                console.error('Erro ao enviar mensagem via Z-API:', await whatsRes.text());
+              }
+            } catch (whatsErr) {
+              console.error('Erro de rede na Z-API:', whatsErr);
+            }
+          }
+        }
+
         setActiveNoteLead(null);
         setQuickNoteContent('');
+        setSendViaWhatsapp(false);
         alert('Anotação salva com sucesso!');
       } else {
         alert('Erro ao salvar anotação.');
@@ -857,6 +898,19 @@ export default function Crm() {
                 rows="4"
                 className="w-full p-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white shadow-inner"
               ></textarea>
+            </div>
+
+            <div className="flex items-center space-x-2 text-left bg-slate-50 p-3 rounded-xl border border-slate-100">
+              <input
+                id="send-whats"
+                type="checkbox"
+                checked={sendViaWhatsapp}
+                onChange={e => setSendViaWhatsapp(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="send-whats" className="text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                💬 Enviar esta mensagem também via WhatsApp (Z-API) para o lead
+              </label>
             </div>
 
             <div className="flex justify-end space-x-3 border-t border-gray-100 pt-4">

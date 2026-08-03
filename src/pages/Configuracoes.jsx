@@ -21,6 +21,11 @@ export default function Configuracoes() {
   const [companyEmail, setCompanyEmail] = useState(localStorage.getItem('app_company_email') || 'financeiro@grupojvsserv.com.br');
   const [companyIe, setCompanyIe] = useState(localStorage.getItem('app_company_ie') || '91101403-36');
 
+  // WhatsApp Integration (Z-API) States
+  const [zapiInstanceId, setZapiInstanceId] = useState(localStorage.getItem('app_zapi_instance_id') || 'D4F38DEC6BD1906C37E044B4');
+  const [zapiToken, setZapiToken] = useState(localStorage.getItem('app_zapi_token') || '');
+  const [zapiClientToken, setZapiClientToken] = useState(localStorage.getItem('app_zapi_client_token') || '');
+
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
@@ -134,6 +139,11 @@ export default function Configuracoes() {
     localStorage.setItem('app_company_phone', companyPhone);
     localStorage.setItem('app_company_email', companyEmail);
     localStorage.setItem('app_pdf_theme_color', pdfThemeColor);
+    
+    // Z-API settings
+    localStorage.setItem('app_zapi_instance_id', zapiInstanceId);
+    localStorage.setItem('app_zapi_token', zapiToken);
+    localStorage.setItem('app_zapi_client_token', zapiClientToken);
 
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
@@ -418,6 +428,65 @@ export default function Configuracoes() {
                 <div>
                   <span className="text-sm font-mono font-semibold text-gray-700 block uppercase">{pdfThemeColor}</span>
                   <span className="text-[11px] text-gray-400 block">💡 Use o conta-gotas do seletor para clicar na foto do seu logo ao lado e capturar a cor exata do seu logotipo!</span>
+                </div>
+              </div>
+            </div>
+
+            {/* WhatsApp Integration (Z-API) Section */}
+            <div className="pt-6 border-t border-gray-100 space-y-4 text-left">
+              <div>
+                <span className="text-sm font-semibold text-gray-900 block">Integração WhatsApp (Z-API)</span>
+                <span className="text-xs text-gray-500 block">Conecte sua instância da Z-API para enviar e receber mensagens diretamente do CRM.</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-500 uppercase">Z-API Instância ID</label>
+                  <input
+                    type="text"
+                    value={zapiInstanceId}
+                    onChange={(e) => setZapiInstanceId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                    placeholder="Ex: D4F38DEC6BD1906C37E044B4"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-500 uppercase">Z-API Token da Instância</label>
+                  <input
+                    type="password"
+                    value={zapiToken}
+                    onChange={(e) => setZapiToken(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                    placeholder="Insira o token da instância..."
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-gray-500 uppercase">Z-API Client Token (Opcional)</label>
+                  <input
+                    type="password"
+                    value={zapiClientToken}
+                    onChange={(e) => setZapiClientToken(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                    placeholder="Insira o Client Token de segurança..."
+                  />
+                </div>
+              </div>
+
+              {/* Webhook Hint */}
+              <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-xl space-y-2">
+                <div className="text-xs font-bold text-blue-700 uppercase">webhook de recebimento (Z-API)</div>
+                <p className="text-xs text-blue-600 leading-relaxed">
+                  Para criar novos leads automaticamente e gravar mensagens recebidas no CRM, acesse seu painel da Z-API e configure a URL de Webhook abaixo para o evento <strong>"Recebimento de Mensagem"</strong>:
+                </p>
+                <div className="flex items-center space-x-2">
+                  <input 
+                    readOnly
+                    type="text" 
+                    value="https://clean-tech-smart.vercel.app/api/crm/zapi-webhook" 
+                    onClick={(e) => { e.target.select(); document.execCommand('copy'); alert('URL do webhook copiada!'); }}
+                    className="flex-grow p-1.5 bg-white border border-blue-200 rounded text-xs font-mono text-slate-700 cursor-pointer focus:outline-none select-all" 
+                  />
+                  <span className="text-[10px] text-blue-500 font-bold shrink-0">Copiar e colar</span>
                 </div>
               </div>
             </div>
