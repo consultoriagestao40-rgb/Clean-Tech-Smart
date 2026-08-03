@@ -756,7 +756,7 @@ export default function Crm() {
         </div>
       ) : (
         <div className="overflow-x-auto pb-6 custom-scrollbar select-none">
-          <div className="flex items-start gap-2.5 min-w-max pr-4">
+          <div className="flex items-start gap-0 min-w-max pr-4">
             {funnelStages.map((stage, index) => {
               const stageLeads = getLeadsInStage(stage.key);
               const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
@@ -785,6 +785,7 @@ export default function Crm() {
                   key={stage.key}
                   className={`flex flex-col ${colWidthClass} shrink-0`}
                   style={{
+                    marginLeft: isFirst ? '0' : '-8px',
                     zIndex: funnelStages.length - index
                   }}
                 >
