@@ -626,18 +626,15 @@ export default function Crm() {
             <button
               type="submit"
               disabled={isLoggingIn}
-                <button
-                  type="submit"
-                  disabled={isLoggingIn}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-all shadow-md shadow-blue-500/10 flex items-center justify-center space-x-2"
-                >
-                  {isLoggingIn ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Entrar no CRM</span>}
-                </button>
-              </form>
-            </div>
-          </div>
-        );
-      }
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-all shadow-md shadow-blue-500/10 flex items-center justify-center space-x-2"
+            >
+              {isLoggingIn ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Entrar no CRM</span>}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
       // ---------------- MAIN CRM BOARD SCREEN ----------------
       return (
