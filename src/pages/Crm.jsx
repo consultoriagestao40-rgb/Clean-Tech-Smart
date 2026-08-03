@@ -65,6 +65,7 @@ export default function Crm() {
   const [editingStageKey, setEditingStageKey] = useState('');
   const [editingStageTitle, setEditingStageTitle] = useState('');
   const [selectedColor, setSelectedColor] = useState('border-t-2 border-slate-400 bg-slate-50/20 text-slate-700');
+  const [insertAfterIndex, setInsertAfterIndex] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('user') || 'null'));
   
@@ -138,6 +139,11 @@ export default function Crm() {
     });
   }, [leads]);
 
+  const handleOpenAddStageAfter = (index) => {
+    setInsertAfterIndex(index);
+    setIsAddingStage(true);
+  };
+
   const handleCreateStage = () => {
     if (!newStageTitle.trim()) return;
     const key = newStageTitle.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_');
@@ -151,12 +157,20 @@ export default function Crm() {
       title: newStageTitle.trim(),
       color: selectedColor
     };
-    const updated = [...funnelStages, newStage];
+    
+    const updated = [...funnelStages];
+    if (insertAfterIndex !== null && insertAfterIndex !== undefined) {
+      updated.splice(insertAfterIndex + 1, 0, newStage);
+    } else {
+      updated.push(newStage);
+    }
+
     setFunnelStages(updated);
     localStorage.setItem('crm_stages', JSON.stringify(updated));
     setIsAddingStage(false);
     setNewStageTitle('');
     setSelectedColor('border-t-2 border-slate-400 bg-slate-50/20 text-slate-700');
+    setInsertAfterIndex(null);
   };
 
   const handleOpenEditStage = (stage) => {
@@ -594,14 +608,7 @@ export default function Crm() {
         </div>
 
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
-          {/* Adicionar Etapa Button */}
-          <button
-            onClick={() => setIsAddingStage(true)}
-            className="flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nova Etapa</span>
-          </button>
+
 
           {/* Search bar */}
           <div className="relative min-w-[240px]">
@@ -643,7 +650,7 @@ export default function Crm() {
           <span>Carregando funil de vendas...</span>
         </div>
       ) : (
-        <div className="flex space-x-6 overflow-x-auto pb-4 custom-scrollbar items-start">
+        <div className="flex space-x-3.5 overflow-x-auto pb-4 custom-scrollbar items-start">
           {funnelStages.map((stage, index) => {
             const stageLeads = getLeadsInStage(stage.key);
             const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
@@ -653,49 +660,63 @@ export default function Crm() {
                 key={stage.key}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, stage.key)}
-                className="bg-gray-50/40 rounded-2xl border border-gray-200/50 p-4 space-y-4 min-w-[290px] w-[290px] shrink-0 min-h-[550px]"
+                className="bg-slate-50/70 border border-slate-200/60 rounded-xl p-3.5 space-y-3.5 min-w-[280px] w-[280px] shrink-0 min-h-[580px] flex flex-col"
               >
-                {/* Stage Header (Draggable for reordering columns) */}
+                {/* Stage Header (Integrated Pipedrive Style) */}
                 <div 
                   draggable="true"
                   onDragStart={(e) => handleColumnDragStart(e, index)}
                   onDrop={(e) => handleColumnDrop(e, index)}
                   onDragOver={handleDragOver}
-                  className={`p-3 rounded-xl flex flex-col space-y-1.5 shadow-sm border cursor-grab active:cursor-grabbing ${stage.color}`}
+                  className="group/header select-none cursor-grab active:cursor-grabbing border-b border-slate-200/80 pb-2.5 shrink-0"
                 >
-                  <div className="flex justify-between items-center group/header">
-                    <span className="font-bold text-xs uppercase tracking-wider truncate text-left flex-grow mr-2">{stage.title}</span>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="font-bold text-xs text-slate-850 uppercase tracking-wider truncate text-left flex-grow mr-2">
+                      {stage.title}
+                    </span>
                     <div className="flex items-center space-x-1 shrink-0">
+                      {/* Plus button next to edit/delete to insert new stage at N+1 */}
+                      <button 
+                        type="button" 
+                        onClick={(e) => { e.stopPropagation(); handleOpenAddStageAfter(index); }}
+                        className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-slate-200/65 rounded transition-all opacity-0 group-hover/header:opacity-100 focus:opacity-100"
+                        title="Adicionar Etapa à Direita"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
                       <button 
                         type="button" 
                         onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }}
-                        className="p-1 text-gray-500 hover:text-blue-600 hover:bg-white/80 rounded transition-all opacity-0 group-hover/header:opacity-100 focus:opacity-100"
+                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-200/65 rounded transition-all opacity-0 group-hover/header:opacity-100 focus:opacity-100"
                         title="Editar Etapa"
                       >
-                        <Edit className="w-3 h-3" />
+                        <Edit className="w-3.5 h-3.5" />
                       </button>
                       <button 
                         type="button" 
                         onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }}
-                        className="p-1 text-gray-500 hover:text-red-600 hover:bg-white/80 rounded transition-all opacity-0 group-hover/header:opacity-100 focus:opacity-100"
+                        className="p-1 text-slate-400 hover:text-red-600 hover:bg-slate-200/65 rounded transition-all opacity-0 group-hover/header:opacity-100 focus:opacity-100"
                         title="Excluir Etapa"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-white/80 shadow-sm text-gray-700">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 ml-1">
                         {stageLeads.length}
                       </span>
                     </div>
                   </div>
-                  <div className="text-xs font-bold text-gray-500 text-left">
-                    {formatCurrency(stageValueSum)}
+                  <div className="flex justify-between items-center text-[10px] font-semibold text-slate-500">
+                    <span>Total da Etapa</span>
+                    <span className="text-slate-800 font-bold">{formatCurrency(stageValueSum)}</span>
                   </div>
+                  {/* Stripe indicator stripe using stage color border style */}
+                  <div className={`h-1 w-full rounded-full mt-2 ${stage.color.includes('blue') ? 'bg-blue-500' : stage.color.includes('teal') ? 'bg-teal-500' : stage.color.includes('emerald') ? 'bg-emerald-500' : stage.color.includes('indigo') ? 'bg-indigo-500' : stage.color.includes('purple') ? 'bg-purple-500' : stage.color.includes('amber') ? 'bg-amber-500' : stage.color.includes('orange') ? 'bg-orange-500' : stage.color.includes('rose') ? 'bg-rose-500' : 'bg-slate-400'}`} />
                 </div>
 
                 {/* Cards Container */}
-                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+                <div className="space-y-2 max-h-[600px] overflow-y-auto overflow-x-hidden pr-0.5 custom-scrollbar flex-grow">
                   {stageLeads.length === 0 ? (
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl py-10 text-center text-xs text-gray-400 italic">
+                    <div className="border-2 border-dashed border-slate-200 rounded-lg py-8 text-center text-[10px] text-slate-400 italic">
                       Arraste chamados aqui
                     </div>
                   ) : (
@@ -706,25 +727,25 @@ export default function Crm() {
                           key={lead.phone}
                           draggable
                           onDragStart={(e) => handleDragStart(e, lead.phone)}
-                          className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 transition-all space-y-3 text-left relative"
+                          className="bg-white p-3 rounded-lg border border-slate-200/80 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 transition-all space-y-2.5 text-left relative min-w-0 overflow-hidden"
                         >
                           {/* Card Content Row */}
-                          <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start justify-between gap-2 w-full min-w-0">
                             {/* Initials Avatar and Details */}
-                            <div className="flex items-center space-x-2.5">
-                              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-100">
+                            <div className="flex items-center space-x-2 min-w-0 flex-1">
+                              <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-100">
                                 {getInitials(lead.name)}
                               </div>
-                              <div>
-                                <h4 className="text-xs font-bold text-gray-900 leading-tight max-w-[130px] truncate" title={lead.name}>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="text-xs font-bold text-slate-800 leading-tight truncate" title={lead.name}>
                                   {lead.name}
                                 </h4>
-                                <p className="text-[10px] text-gray-400 font-mono mt-0.5">{lead.phone}</p>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{lead.phone}</p>
                               </div>
                             </div>
 
                             {/* Value Display */}
-                            <div className="text-[11px] font-bold text-gray-800 text-right whitespace-nowrap">
+                            <div className="text-[11px] font-bold text-slate-800 text-right whitespace-nowrap shrink-0">
                               {formatCurrency(leadVal)}
                             </div>
                           </div>
@@ -738,15 +759,15 @@ export default function Crm() {
                           )}
 
                           {/* Quick Toolbar Icons Row */}
-                          <div className="pt-2 border-t border-gray-100 flex justify-between items-center">
+                          <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
                             {/* Seller name initials badge */}
                             {lead.assigned_to_name ? (
-                              <div className="text-[9px] text-gray-400 font-semibold flex items-center bg-gray-50 px-1.5 py-0.5 rounded">
+                              <div className="text-[9px] text-slate-400 font-semibold flex items-center bg-slate-50 px-1.5 py-0.5 rounded">
                                 <User className="w-2.5 h-2.5 mr-0.5" />
-                                <span>{lead.assigned_to_name.split(' ')[0]}</span>
+                                <span className="truncate max-w-[65px]">{lead.assigned_to_name.split(' ')[0]}</span>
                               </div>
                             ) : (
-                              <span className="text-[9px] text-gray-300 italic">Sem vendedor</span>
+                              <span className="text-[9px] text-slate-350 italic">Sem vendedor</span>
                             )}
 
                             {/* Toolbar Buttons */}
@@ -754,7 +775,7 @@ export default function Crm() {
                               {/* Schedule reminder icon */}
                               <button
                                 onClick={() => { setActiveReminderLead(lead); setActiveNoteLead(null); setActiveMoveLead(null); }}
-                                className="p-1 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
+                                className="p-1 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
                                 title="Agendar Retorno"
                               >
                                 <Calendar className="w-3.5 h-3.5" />
@@ -763,7 +784,7 @@ export default function Crm() {
                               {/* Add Note icon */}
                               <button
                                 onClick={() => { setActiveNoteLead(lead); setActiveReminderLead(null); setActiveMoveLead(null); }}
-                                className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
+                                className="p-1 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
                                 title="Adicionar Nota"
                               >
                                 <ClipboardList className="w-3.5 h-3.5" />
@@ -772,7 +793,7 @@ export default function Crm() {
                               {/* Move column shortcut dropdown */}
                               <button
                                 onClick={() => { setActiveMoveLead(lead); setActiveNoteLead(null); setActiveReminderLead(null); }}
-                                className="p-1 text-gray-400 hover:text-purple-500 hover:bg-purple-50 rounded transition-all"
+                                className="p-1 text-slate-400 hover:text-purple-500 hover:bg-purple-50 rounded transition-all"
                                 title="Mover de Etapa"
                               >
                                 <ArrowRightLeft className="w-3.5 h-3.5" />
@@ -783,7 +804,7 @@ export default function Crm() {
                                 href={`https://web.whatsapp.com/send?phone=${lead.phone.replace(/\D/g, '')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-1 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded transition-all flex items-center"
+                                className="p-1 text-slate-400 hover:text-green-500 hover:bg-green-50 rounded transition-all flex items-center"
                                 title="Iniciar Chat WhatsApp"
                               >
                                 <MessageSquare className="w-3.5 h-3.5" />
