@@ -716,7 +716,7 @@ export default function Crm() {
         <div className="overflow-x-auto pb-4 custom-scrollbar select-none">
           <div className="flex flex-col space-y-3 min-w-max pr-4">
             
-            {/* 1. Connected Chevron Pipeline Header Track — SVG-based solid fills */}
+            {/* 1. Connected Chevron Pipeline Header Track — Pipedrive puzzle-piece style */}
             <div style={{ display: 'flex', alignItems: 'stretch', gap: 0, marginBottom: '14px', position: 'relative' }}>
               {funnelStages.map((stage, index) => {
                 const stageLeads = getLeadsInStage(stage.key);
@@ -724,11 +724,16 @@ export default function Crm() {
                 const isFirst = index === 0;
                 const isLast = index === funnelStages.length - 1;
                 const bgColor = stage.color && stage.color.startsWith('#') ? stage.color : '#4B5563';
-                // SVG: flat left + arrow right for all except last (plain rectangle)
-                // The previous column's arrow overlaps the next column's flat left — that creates the connected look
+
+                // Arrow & Notch depth = 22px
+                // ViewBox: 0 0 280 52
+                // isFirst:  Flat Left, Arrow Right  => M0,0 H258 L280,26 L258,52 H0 Z
+                // isLast:   Notch Left, Flat Right => M22,0 H280 V52 H22 L0,26 Z
+                // Middle:   Notch Left, Arrow Right => M22,0 H258 L280,26 L258,52 H22 L0,26 Z
                 let svgPath;
-                if (isLast) svgPath = 'M0,0 H280 V52 H0 Z';       // plain rectangle — no arrow on right
-                else        svgPath = 'M0,0 H245 L280,26 L245,52 H0 Z'; // flat left, arrow pointing right
+                if (isFirst)      svgPath = 'M0,0 H258 L280,26 L258,52 H0 Z';
+                else if (isLast)  svgPath = 'M22,0 H280 V52 H22 L0,26 Z';
+                else              svgPath = 'M22,0 H258 L280,26 L258,52 H22 L0,26 Z';
 
                 return (
                   <div
@@ -743,17 +748,23 @@ export default function Crm() {
                       width: '280px',
                       minWidth: '280px',
                       height: '52px',
-                      marginLeft: index === 0 ? '0' : '-35px',
+                      marginLeft: index === 0 ? '0' : '-20px',
                       zIndex: funnelStages.length - index,
                     }}
                   >
-                    {/* SVG Background */}
+                    {/* SVG Background with crisp white border separator */}
                     <svg
                       viewBox="0 0 280 52"
                       preserveAspectRatio="none"
                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block' }}
                     >
-                      <path d={svgPath} fill={bgColor} />
+                      <path
+                        d={svgPath}
+                        fill={bgColor}
+                        stroke="#FFFFFF"
+                        strokeWidth="3"
+                        strokeLinejoin="round"
+                      />
                     </svg>
 
                     {/* Content on top of SVG */}
@@ -763,8 +774,8 @@ export default function Crm() {
                       height: '100%',
                       display: 'flex',
                       alignItems: 'center',
-                      paddingLeft: isFirst ? '14px' : '50px',
-                      paddingRight: isLast ? '14px' : '40px',
+                      paddingLeft: isFirst ? '16px' : '32px',
+                      paddingRight: isLast ? '16px' : '32px',
                       gap: '8px',
                       boxSizing: 'border-box',
                     }}>
@@ -799,7 +810,7 @@ export default function Crm() {
 
 
             {/* 2. Columns Grid below */}
-            <div className="flex items-start" style={{ gap: '10px' }}>
+            <div className="flex items-start" style={{ gap: '4px' }}>
               {funnelStages.map((stage) => {
                 const stageLeads = getLeadsInStage(stage.key);
 
