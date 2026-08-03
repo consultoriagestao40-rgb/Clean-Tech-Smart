@@ -748,7 +748,7 @@ export default function Crm() {
           <div className="flex flex-col space-y-2 min-w-max pr-4">
             
             {/* 1. Light Gray Chevron Pipeline Header Track (Exact Pipedrive Photo) */}
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-1.5 mb-2">
               {funnelStages.map((stage, index) => {
                 const stageLeads = getLeadsInStage(stage.key);
                 const stageValueSum = stageLeads.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
@@ -814,7 +814,7 @@ export default function Crm() {
             </div>
 
             {/* 2. Light Gray Columns Body Track */}
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-1.5">
               {funnelStages.map((stage) => {
                 const stageLeads = getLeadsInStage(stage.key);
 
