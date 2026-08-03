@@ -18,6 +18,7 @@ import TabelaLocacao from './pages/TabelaLocacao';
 import ModelosMaquinas from './pages/ModelosMaquinas';
 import PropostasLocacao from './pages/PropostasLocacao';
 import VisualizarPropostaPublica from './pages/VisualizarPropostaPublica';
+import VisualizarOrcamentoPublico from './pages/VisualizarOrcamentoPublico';
 
 function Placeholder({ title }) {
   return (
@@ -61,6 +62,7 @@ function App() {
           <Route path="usuarios" element={<Placeholder title="Gerenciar Usuários" />} />
         </Route>
         <Route path="/visualizar-proposta/:id" element={<VisualizarPropostaPublica />} />
+        <Route path="/visualizar-orcamento/:id" element={<VisualizarOrcamentoPublico />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, FileText, Loader2, Filter, Eye, Check, X, FileDown, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, Filter, Eye, Check, X, FileDown, Edit, Trash2, Link2 } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -115,6 +115,12 @@ export default function Dashboard() {
     } finally {
       setIsActionLoading(false);
     }
+  };
+
+  const handleShareBudget = (budgetId) => {
+    const url = `${window.location.origin}/visualizar-orcamento/${budgetId}`;
+    navigator.clipboard.writeText(url);
+    alert('Link público do orçamento copiado para a área de transferência!');
   };
 
   const handleGeneratePDF = (budgetData) => {
@@ -555,6 +561,13 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-1.5">
                         <button 
+                          onClick={() => handleShareBudget(budget.id)}
+                          className="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
+                          title="Compartilhar Link Público"
+                        >
+                          <Link2 className="w-4 h-4" />
+                        </button>
+                        <button 
                           onClick={() => handleViewDetails(budget.id)}
                           className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           title="Visualizar Detalhes"
@@ -793,13 +806,22 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
               </div>
               <div className="flex space-x-3">
                 {selectedBudget && (
-                  <button
-                    onClick={() => handleGeneratePDF(selectedBudget)}
-                    className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition-colors shadow-sm"
-                  >
-                    <FileDown className="w-4 h-4 mr-2" />
-                    Gerar PDF
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleShareBudget(selectedBudget.budget.id)}
+                      className="flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-sm transition-colors shadow-sm"
+                    >
+                      <Link2 className="w-4 h-4 mr-2" />
+                      Compartilhar Link
+                    </button>
+                    <button
+                      onClick={() => handleGeneratePDF(selectedBudget)}
+                      className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition-colors shadow-sm"
+                    >
+                      <FileDown className="w-4 h-4 mr-2" />
+                      Gerar PDF
+                    </button>
+                  </>
                 )}
                 <button
                   onClick={() => setIsModalOpen(false)}
