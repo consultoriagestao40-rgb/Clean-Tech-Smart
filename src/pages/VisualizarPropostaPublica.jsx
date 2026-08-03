@@ -572,7 +572,7 @@ export default function VisualizarPropostaPublica() {
                 <div className="border border-gray-150 rounded-xl p-4 bg-slate-50/50 mb-6 text-left">
                   <div className="text-xxs font-extrabold text-blue-600 uppercase tracking-widest border-b border-gray-200/80 pb-1.5 mb-3">Dados do Cliente</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-xs text-gray-700 font-semibold">
-                    <div><b>Cliente:</b> {p.client_name || 'Não informado'}</div>
+                    <div><b>Cliente:</b> {p.client_razao_social || p.client_name || 'Não informado'}</div>
                     <div><b>CNPJ/CPF:</b> {p.client_document || 'Isento'}</div>
                     <div><b>Endereço:</b> {p.client_address || '&mdash;'}</div>
                     <div><b>Telefone:</b> {p.client_phone || '&mdash;'}</div>

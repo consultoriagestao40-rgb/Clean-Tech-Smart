@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   try {
     const { rows } = await pool.query(`
       SELECT rp.*, 
-             c.name as client_name, c.document as client_document, c.email as client_email, c.phone as client_phone, c.address as client_address, c.contact_person as client_contact,
+             c.name as client_name, c.document as client_document, c.email as client_email, c.phone as client_phone, c.address as client_address, c.contact_person as client_contact, c.razao_social as client_razao_social,
              mm.name as machine_name, mm.photo_urls as machine_photos, mm.technical_description as machine_specs,
              r.code as rental_code, r.list_price as rental_list_price
       FROM rental_proposals rp

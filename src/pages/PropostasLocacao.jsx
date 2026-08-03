@@ -908,10 +908,10 @@ body{padding-top:60px}
   <div class="box" style="margin-bottom: 25px; border-left: 4px solid ${primaryColor}; border-radius: 4px; padding: 15px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-left-width: 4px; text-align: left;">
     <div class="box-title" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: ${primaryColor}; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-align: left; letter-spacing: 0.5px;">Dados do Cliente</div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 30px;">
-      <div class="row"><b>Cliente:</b> ${p.client_name || 'Não informado'}</div>
+      <div class="row"><b>Cliente:</b> ${p.client_razao_social || p.client_name || 'Não informado'}</div>
       <div class="row"><b>CNPJ/CPF:</b> ${p.client_document || '&mdash;'}</div>
       <div class="row"><b>Endereço:</b> ${p.client_address || '&mdash;'}</div>
-      <div class="row"><b>Contato:</b> ${p.client_email ? p.client_email.split('@')[0] : '&mdash;'}</div>
+      <div class="row"><b>Contato:</b> ${p.client_contact || (p.client_email ? p.client_email.split('@')[0] : '&mdash;')}</div>
       <div class="row"><b>Telefone:</b> ${p.client_phone || p.client_email || '&mdash;'}</div>
       <div class="row"><b>Serviço:</b> Locação de Equipamento</div>
     </div>

@@ -30,24 +30,48 @@ export async function sendTicketWhatsappGroupNotification(dbClient, ticket, clie
     }
 
     console.log('[Z-API] Buscando JID do grupo "CHAMADOS CLEAN TECH"...');
-    const chatsRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/chats`, {
-      headers: zapiHeaders
-    });
+    let groupJid = null;
 
-    if (!chatsRes.ok) {
-      console.error('[Z-API] Falha ao listar chats:', await chatsRes.text());
-      return;
+    // Tenta primeiro o endpoint /groups (lista todos os grupos)
+    try {
+      const groupsRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/groups`, {
+        headers: zapiHeaders
+      });
+      if (groupsRes.ok) {
+        const groups = await groupsRes.json();
+        const found = groups.find(c => c.name && c.name.trim().toUpperCase() === 'CHAMADOS CLEAN TECH');
+        if (found) {
+          groupJid = found.phone || found.id;
+          console.log('[Z-API] Grupo encontrado via /groups:', groupJid);
+        }
+      }
+    } catch (err) {
+      console.warn('[Z-API] Erro ao buscar grupos via /groups:', err);
     }
 
-    const chats = await chatsRes.json();
-    const group = chats.find(c => c.name && c.name.trim().toUpperCase() === 'CHAMADOS CLEAN TECH');
-
-    if (!group) {
-      console.warn('[Z-API] Grupo "CHAMADOS CLEAN TECH" não encontrado na lista de chats.');
-      return;
+    // Fallback: Tenta o endpoint /chats (lista conversas recentes)
+    if (!groupJid) {
+      try {
+        const chatsRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/chats`, {
+          headers: zapiHeaders
+        });
+        if (chatsRes.ok) {
+          const chats = await chatsRes.json();
+          const found = chats.find(c => c.name && c.name.trim().toUpperCase() === 'CHAMADOS CLEAN TECH');
+          if (found) {
+            groupJid = found.phone || found.id;
+            console.log('[Z-API] Grupo encontrado via /chats:', groupJid);
+          }
+        }
+      } catch (err) {
+        console.warn('[Z-API] Erro ao buscar grupos via /chats:', err);
+      }
     }
 
-    const groupJid = group.phone || group.id;
+    if (!groupJid) {
+      console.warn('[Z-API] Grupo "CHAMADOS CLEAN TECH" não foi encontrado em /groups nem em /chats.');
+      return;
+    }
 
     // 2. Format notification text message
     let actionLabel = '🆕 NOVO CHAMADO ABERTO';
