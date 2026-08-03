@@ -861,9 +861,9 @@ export default function Crm() {
                           onDragOver={handleDragOver}
                           onDrop={(e) => handleDrop(e, stage.key)}
                           style={{ backgroundColor: bodyBg }}
-                          className="rounded-b-2xl rounded-t-none p-3 pt-2.5 flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                          className="rounded-b-2xl rounded-t-none px-1.5 py-1.5 flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                         >
-                          <div className="space-y-2.5 flex-grow">
+                          <div className="space-y-1.5 flex-grow">
                             {stageLeads.length === 0 ? (
                               <div className="border-2 border-dashed border-gray-200/80 rounded-xl py-12 text-center text-xs text-gray-400 font-medium italic">
                                 Sem negócios nesta etapa
@@ -878,10 +878,10 @@ export default function Crm() {
                                   key={lead.phone || lead.id || leadIdx}
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, lead.phone)}
-                                  className="group bg-white p-3.5 rounded-xl border border-gray-200/90 shadow-xs cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 transition-all space-y-1.5 text-left relative min-w-0"
+                                  className="group bg-white p-2.5 rounded-xl border border-gray-200/90 shadow-xs cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 transition-all space-y-1 text-left relative min-w-0"
                                 >
                                   {/* Deal Title (Pipedrive format: [Amostra] Deal Name) */}
-                                  <h4 className="text-xs font-bold text-gray-900 leading-snug truncate" title={lead.name}>
+                                  <h4 className="text-xs font-bold text-gray-900 leading-tight truncate" title={lead.name}>
                                     {lead.name ? `[Amostra] ${lead.name}` : `[Amostra] Lead ${lead.phone}`}
                                   </h4>
 
@@ -891,9 +891,9 @@ export default function Crm() {
                                   </p>
 
                                   {/* Card Footer Row: Owner Icon + Value on Left, Status Circle Arrow on Right */}
-                                  <div className="pt-2 flex items-center justify-between min-w-0">
+                                  <div className="pt-1 flex items-center justify-between min-w-0">
                                     {/* Owner Icon & Value */}
-                                    <div className="flex items-center space-x-1.5 text-xs font-semibold text-gray-700 min-w-0">
+                                    <div className="flex items-center space-x-1 text-xs font-semibold text-gray-700 min-w-0">
                                       <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                                       <span className="truncate">{formatCurrency(leadVal)}</span>
                                     </div>
@@ -918,14 +918,14 @@ export default function Crm() {
 
                                   {/* Scheduled Return Date Badge (if present) */}
                                   {lead.next_contact_at && (
-                                    <div className="flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 p-1.5 rounded-lg mt-1">
+                                    <div className="flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded-lg mt-0.5">
                                       <Calendar className="w-3 h-3 mr-1 text-emerald-500 shrink-0" />
                                       <span className="truncate">Atividade: {new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
                                   )}
 
                                   {/* Quick Action Toolbar on Hover */}
-                                  <div className="pt-1 flex justify-end space-x-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="pt-0.5 flex justify-end space-x-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
                                       onClick={(e) => { e.stopPropagation(); setActiveReminderLead(lead); setActiveNoteLead(null); setActiveMoveLead(null); }}
                                       className="p-1 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
