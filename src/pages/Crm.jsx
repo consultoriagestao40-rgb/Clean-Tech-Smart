@@ -79,32 +79,10 @@ function migrateColor(color) {
   return '#4B5563';
 }
 
-// Helper to map old lead stage keys to the new 6-stage funnel format
-function mapLeadStage(stageKey) {
-  if (!stageKey) return 'prospect';
-  const s = String(stageKey).toLowerCase();
-  if (s === 'inbox') return 'prospect';
-  if (s === 'tratar') return 'contato';
-  if (s === 'lead' || s === 'lead_de_servico') return 'reuniao';
-  if (s === 'atendimento' || s === 'programado') return 'qualificado';
-  if (s === 'perdido') return 'desqualificado';
-  if (s === 'a_faturar' || s === 'faturado') return 'proposta';
-  return s;
-}
-
 export default function Crm() {
   const [funnelStages, setFunnelStages] = useState(() => {
-    const saved = localStorage.getItem('crm_stages');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const hasOldKeys = parsed.some(s => ['inbox', 'tratar', 'lead', 'atendimento', 'programado', 'a_faturar', 'faturado', 'perdido'].includes(s.key));
-        if (!hasOldKeys && parsed.length > 0) {
-          return parsed.map(s => ({ ...s, color: migrateColor(s.color) }));
-        }
-      } catch (e) {}
-    }
-    // Default to exact 6 stages from mockup photo
+    // Clear old localStorage to ensure exact default database stages are used
+    localStorage.removeItem('crm_stages');
     localStorage.setItem('crm_stages', JSON.stringify(DEFAULT_STAGES));
     return DEFAULT_STAGES;
   });
