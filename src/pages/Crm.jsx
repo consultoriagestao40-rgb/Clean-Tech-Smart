@@ -17,7 +17,9 @@ import {
   ClipboardList,
   ArrowRightLeft,
   X,
-  Check
+  Check,
+  Edit,
+  Trash2
 } from 'lucide-react';
 
 const DEFAULT_STAGES = [
@@ -29,6 +31,18 @@ const DEFAULT_STAGES = [
   { key: 'a_faturar', title: 'A Faturar', color: 'border-t-2 border-orange-500 bg-orange-50/20 text-orange-700' },
   { key: 'faturado', title: 'Fatura Enviada', color: 'border-t-2 border-green-500 bg-green-50/20 text-green-700' },
   { key: 'perdido', title: 'Perdido', color: 'border-t-2 border-red-500 bg-red-50/20 text-red-700' }
+];
+
+const STAGE_COLORS = [
+  { name: 'Azul', value: 'border-t-2 border-blue-500 bg-blue-50/20 text-blue-700' },
+  { name: 'Teal', value: 'border-t-2 border-teal-500 bg-teal-50/20 text-teal-700' },
+  { name: 'Esmeralda', value: 'border-t-2 border-emerald-500 bg-emerald-50/20 text-emerald-700' },
+  { name: 'Índigo', value: 'border-t-2 border-indigo-500 bg-indigo-50/20 text-indigo-700' },
+  { name: 'Roxo', value: 'border-t-2 border-purple-500 bg-purple-50/20 text-purple-700' },
+  { name: 'Amarelo', value: 'border-t-2 border-amber-500 bg-amber-50/20 text-amber-700' },
+  { name: 'Laranja', value: 'border-t-2 border-orange-500 bg-orange-50/20 text-orange-700' },
+  { name: 'Rosa', value: 'border-t-2 border-rose-500 bg-rose-50/20 text-rose-700' },
+  { name: 'Cinza', value: 'border-t-2 border-slate-400 bg-slate-50/20 text-slate-700' }
 ];
 
 export default function Crm() {
@@ -45,6 +59,12 @@ export default function Crm() {
   const [isAddingStage, setIsAddingStage] = useState(false);
   const [newStageTitle, setNewStageTitle] = useState('');
   const [draggedColumnIndex, setDraggedColumnIndex] = useState(null);
+  
+  // Custom Stage Editing States
+  const [isEditingStage, setIsEditingStage] = useState(false);
+  const [editingStageKey, setEditingStageKey] = useState('');
+  const [editingStageTitle, setEditingStageTitle] = useState('');
+  const [selectedColor, setSelectedColor] = useState('border-t-2 border-slate-400 bg-slate-50/20 text-slate-700');
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('user') || 'null'));
   
@@ -129,13 +149,55 @@ export default function Crm() {
     const newStage = {
       key,
       title: newStageTitle.trim(),
-      color: 'border-t-2 border-slate-400 bg-slate-50/20 text-slate-700'
+      color: selectedColor
     };
     const updated = [...funnelStages, newStage];
     setFunnelStages(updated);
     localStorage.setItem('crm_stages', JSON.stringify(updated));
     setIsAddingStage(false);
     setNewStageTitle('');
+    setSelectedColor('border-t-2 border-slate-400 bg-slate-50/20 text-slate-700');
+  };
+
+  const handleOpenEditStage = (stage) => {
+    setEditingStageKey(stage.key);
+    setEditingStageTitle(stage.title);
+    setSelectedColor(stage.color || 'border-t-2 border-slate-400 bg-slate-50/20 text-slate-700');
+    setIsEditingStage(true);
+  };
+
+  const handleSaveEditStage = () => {
+    if (!editingStageTitle.trim()) {
+      alert('O nome da etapa não pode ser vazio.');
+      return;
+    }
+    const updated = funnelStages.map(st => 
+      st.key === editingStageKey 
+        ? { ...st, title: editingStageTitle.trim(), color: selectedColor } 
+        : st
+    );
+    setFunnelStages(updated);
+    localStorage.setItem('crm_stages', JSON.stringify(updated));
+    setIsEditingStage(false);
+    setEditingStageKey('');
+    setEditingStageTitle('');
+    setSelectedColor('border-t-2 border-slate-400 bg-slate-50/20 text-slate-700');
+  };
+
+  const handleDeleteStage = (stageKey) => {
+    const stage = funnelStages.find(st => st.key === stageKey);
+    if (!stage) return;
+    const stageLeads = getLeadsInStage(stageKey);
+    if (stageLeads.length > 0) {
+      if (!confirm(`Esta etapa contém ${stageLeads.length} leads. Se você a excluir, os leads permanecerão cadastrados mas não aparecerão nesta coluna. Deseja excluir mesmo assim?`)) {
+        return;
+      }
+    } else {
+      if (!confirm(`Deseja excluir a etapa "${stage.title}"?`)) return;
+    }
+    const updated = funnelStages.filter(st => st.key !== stageKey);
+    setFunnelStages(updated);
+    localStorage.setItem('crm_stages', JSON.stringify(updated));
   };
 
   const handleColumnDragStart = (e, index) => {
@@ -601,11 +663,29 @@ export default function Crm() {
                   onDragOver={handleDragOver}
                   className={`p-3 rounded-xl flex flex-col space-y-1.5 shadow-sm border cursor-grab active:cursor-grabbing ${stage.color}`}
                 >
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-xs uppercase tracking-wider truncate">{stage.title}</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/80 shadow-sm text-gray-700">
-                      {stageLeads.length}
-                    </span>
+                  <div className="flex justify-between items-center group/header">
+                    <span className="font-bold text-xs uppercase tracking-wider truncate text-left flex-grow mr-2">{stage.title}</span>
+                    <div className="flex items-center space-x-1 shrink-0">
+                      <button 
+                        type="button" 
+                        onClick={(e) => { e.stopPropagation(); handleOpenEditStage(stage); }}
+                        className="p-1 text-gray-500 hover:text-blue-600 hover:bg-white/80 rounded transition-all opacity-0 group-hover/header:opacity-100 focus:opacity-100"
+                        title="Editar Etapa"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={(e) => { e.stopPropagation(); handleDeleteStage(stage.key); }}
+                        className="p-1 text-gray-500 hover:text-red-600 hover:bg-white/80 rounded transition-all opacity-0 group-hover/header:opacity-100 focus:opacity-100"
+                        title="Excluir Etapa"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-white/80 shadow-sm text-gray-700">
+                        {stageLeads.length}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-xs font-bold text-gray-500 text-left">
                     {formatCurrency(stageValueSum)}
@@ -952,6 +1032,30 @@ export default function Crm() {
               />
             </div>
 
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 block">Cor de Destaque</label>
+              <div className="grid grid-cols-5 gap-2">
+                {STAGE_COLORS.map(color => {
+                  const borderClass = color.value.split(' ')[1] || 'border-slate-400';
+                  const bgClass = color.value.split(' ')[2] || 'bg-slate-50/20';
+                  const isSelected = selectedColor === color.value;
+                  return (
+                    <button
+                      key={color.name}
+                      type="button"
+                      onClick={() => setSelectedColor(color.value)}
+                      className={`h-8 rounded-lg border-2 ${borderClass} ${bgClass} transition-all relative flex items-center justify-center`}
+                      title={color.name}
+                    >
+                      {isSelected && (
+                        <div className="w-2 h-2 rounded-full bg-current" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="flex justify-end space-x-3 border-t border-gray-100 pt-4">
               <button
                 onClick={() => { setIsAddingStage(false); setNewStageTitle(''); }}
@@ -964,6 +1068,74 @@ export default function Crm() {
                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-500/10 transition-all"
               >
                 Criar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------------- EDIT CRM STAGE MODAL ---------------- */}
+      {isEditingStage && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-gray-100 flex flex-col space-y-4 animate-in fade-in zoom-in-95 duration-150 text-left">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-lg">Editar Etapa</h3>
+              <button 
+                onClick={() => { setIsEditingStage(false); setEditingStageKey(''); setEditingStageTitle(''); }}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-50 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 block">Nome da etapa *</label>
+              <input
+                type="text"
+                value={editingStageTitle}
+                onChange={e => setEditingStageTitle(e.target.value)}
+                placeholder="Insira o nome da etapa..."
+                className="w-full p-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50/50"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 block">Cor de Destaque</label>
+              <div className="grid grid-cols-5 gap-2">
+                {STAGE_COLORS.map(color => {
+                  const borderClass = color.value.split(' ')[1] || 'border-slate-400';
+                  const bgClass = color.value.split(' ')[2] || 'bg-slate-50/20';
+                  const isSelected = selectedColor === color.value;
+                  return (
+                    <button
+                      key={color.name}
+                      type="button"
+                      onClick={() => setSelectedColor(color.value)}
+                      className={`h-8 rounded-lg border-2 ${borderClass} ${bgClass} transition-all relative flex items-center justify-center`}
+                      title={color.name}
+                    >
+                      {isSelected && (
+                        <div className="w-2 h-2 rounded-full bg-current" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 border-t border-gray-100 pt-4">
+              <button
+                onClick={() => { setIsEditingStage(false); setEditingStageKey(''); setEditingStageTitle(''); }}
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveEditStage}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/10 transition-all"
+              >
+                Salvar
               </button>
             </div>
           </div>
