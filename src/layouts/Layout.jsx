@@ -22,7 +22,7 @@ export default function Layout() {
   return (
     <div className="flex bg-gray-50 min-h-screen">
       <Sidebar />
-      <div className={`flex-1 ${isCollapsed ? 'ml-20' : 'ml-64'} p-8 overflow-y-auto transition-all duration-300`}>
+      <div className={`flex-1 ${isCollapsed ? 'ml-20' : 'ml-64'} p-8 transition-all duration-300`}>
         <Outlet />
       </div>
     </div>
