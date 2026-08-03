@@ -45,8 +45,8 @@ export default function Crm() {
   const [isAddingStage, setIsAddingStage] = useState(false);
   const [newStageTitle, setNewStageTitle] = useState('');
   const [draggedColumnIndex, setDraggedColumnIndex] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('crm_token') || '');
-  const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('crm_user') || 'null'));
+  const [token, setToken] = useState(localStorage.getItem('token') || '');
+  const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('user') || 'null'));
   
   // Auth Form State
   const [email, setEmail] = useState('');
