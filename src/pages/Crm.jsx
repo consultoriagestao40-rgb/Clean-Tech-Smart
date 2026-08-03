@@ -743,7 +743,7 @@ export default function Crm() {
                       width: '280px',
                       minWidth: '280px',
                       height: '52px',
-                      marginLeft: index === 0 ? '0' : '-20px',
+                      marginLeft: index === 0 ? '0' : '-35px',
                       zIndex: funnelStages.length - index,
                     }}
                   >
