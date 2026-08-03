@@ -27,33 +27,27 @@ import {
 } from 'lucide-react';
 
 const DEFAULT_STAGES = [
-  { key: 'qualificado', title: 'Qualificado', color: '#10B981' },
-  { key: 'contatado', title: 'Contatado', color: '#3B82F6' },
-  { key: 'demo_agendada', title: 'Demo agendada', color: '#8B5CF6' },
-  { key: 'proposta_feita', title: 'Proposta feita', color: '#F59E0B' },
-  { key: 'negociacoes', title: 'Negociações iniciadas', color: '#06B6D4' }
+  { key: 'inbox', title: 'INBOX', color: '#4B5563' },
+  { key: 'tratar', title: 'TRATAR', color: '#F59E0B' },
+  { key: 'lead', title: 'LEAD DE SERVIÇO', color: '#F97316' },
+  { key: 'atendimento', title: 'ATENDIMENTO', color: '#3B82F6' },
+  { key: 'programado', title: 'PROGRAMADO', color: '#10B981' },
+  { key: 'a_faturar', title: 'A FATURAR', color: '#8B5CF6' },
+  { key: 'faturado', title: 'FATURA ENVIADA', color: '#06B6D4' },
+  { key: 'perdido', title: 'PERDIDO', color: '#EF4444' }
 ];
 
 const STAGE_COLORS = [
-  { name: 'Esmeralda', value: '#10B981' },
+  { name: 'Cinza', value: '#4B5563' },
   { name: 'Azul', value: '#3B82F6' },
+  { name: 'Teal', value: '#14B8A6' },
+  { name: 'Esmeralda', value: '#10B981' },
   { name: 'Roxo', value: '#8B5CF6' },
   { name: 'Amarelo', value: '#F59E0B' },
-  { name: 'Ciano', value: '#06B6D4' },
   { name: 'Laranja', value: '#F97316' },
-  { name: 'Rosa', value: '#EF4444' }
+  { name: 'Rosa/Vermelho', value: '#EF4444' },
+  { name: 'Ciano', value: '#06B6D4' }
 ];
-
-function mapLeadStage(stageKey) {
-  if (!stageKey) return 'qualificado';
-  const s = String(stageKey).toLowerCase();
-  if (s === 'inbox' || s === 'prospect' || s === 'qualificado') return 'qualificado';
-  if (s === 'tratar' || s === 'contato' || s === 'contatado') return 'contatado';
-  if (s === 'lead' || s === 'reuniao' || s === 'atendimento' || s === 'demo_agendada') return 'demo_agendada';
-  if (s === 'proposta' || s === 'a_faturar' || s === 'faturado' || s === 'proposta_feita') return 'proposta_feita';
-  if (s === 'programado' || s === 'perdido' || s === 'desqualificado' || s === 'negociacoes') return 'negociacoes';
-  return s;
-}
 
 // Helper to calculate soft pastel background tint for columns based on stage hex color
 function getStageBgTint(hex) {
@@ -571,7 +565,18 @@ export default function Crm() {
   });
 
   const getLeadsInStage = (stageKey) => {
-    return filteredLeads.filter(lead => lead.stage === stageKey);
+    return filteredLeads.filter(lead => {
+      if (!lead.stage) return stageKey === 'inbox';
+      const s = String(lead.stage).toLowerCase().trim();
+      if (s === stageKey) return true;
+      if (stageKey === 'inbox' && (s === 'prospect')) return true;
+      if (stageKey === 'tratar' && (s === 'contato')) return true;
+      if (stageKey === 'lead' && (s === 'reuniao' || s === 'lead_de_servico')) return true;
+      if (stageKey === 'atendimento' && (s === 'qualificado')) return true;
+      if (stageKey === 'perdido' && (s === 'desqualificado')) return true;
+      if (stageKey === 'a_faturar' && (s === 'proposta' || s === 'proposta_feita')) return true;
+      return false;
+    });
   };
 
   // ---------------- LOGIN OVERLAY SCREEN ----------------
