@@ -724,11 +724,11 @@ export default function Crm() {
                 const isFirst = index === 0;
                 const isLast = index === funnelStages.length - 1;
                 const bgColor = stage.color && stage.color.startsWith('#') ? stage.color : '#4B5563';
-                // SVG viewBox is 0 0 280 52 — arrow notch/point is 20px deep
+                // SVG: flat left + arrow right for all except last (plain rectangle)
+                // The previous column's arrow overlaps the next column's flat left — that creates the connected look
                 let svgPath;
-                if (isFirst)      svgPath = 'M0,0 H260 L280,26 L260,52 H0 Z';
-                else if (isLast)  svgPath = 'M20,0 H280 V52 H20 L0,26 Z';
-                else              svgPath = 'M20,0 H260 L280,26 L260,52 H20 L0,26 Z';
+                if (isLast) svgPath = 'M0,0 H280 V52 H0 Z';       // plain rectangle — no arrow on right
+                else        svgPath = 'M0,0 H245 L280,26 L245,52 H0 Z'; // flat left, arrow pointing right
 
                 return (
                   <div
@@ -763,8 +763,8 @@ export default function Crm() {
                       height: '100%',
                       display: 'flex',
                       alignItems: 'center',
-                      paddingLeft: isFirst ? '14px' : '30px',
-                      paddingRight: '30px',
+                      paddingLeft: isFirst ? '14px' : '50px',
+                      paddingRight: isLast ? '14px' : '40px',
                       gap: '8px',
                       boxSizing: 'border-box',
                     }}>
