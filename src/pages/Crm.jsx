@@ -878,7 +878,7 @@ export default function Crm() {
                                   key={lead.phone || lead.id || leadIdx}
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, lead.phone)}
-                                  className="group bg-white p-2.5 rounded-xl border border-gray-200/90 shadow-xs cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 transition-all space-y-1 text-left relative min-w-0"
+                                  className="group bg-white p-2.5 rounded-lg border border-gray-200/90 shadow-xs cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 transition-all space-y-1 text-left relative min-w-0"
                                 >
                                   {/* Deal Title (Pipedrive format: [Amostra] Deal Name) */}
                                   <h4 className="text-xs font-bold text-gray-900 leading-tight truncate" title={lead.name}>
@@ -918,7 +918,7 @@ export default function Crm() {
 
                                   {/* Scheduled Return Date Badge (if present) */}
                                   {lead.next_contact_at && (
-                                    <div className="flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded-lg mt-0.5">
+                                    <div className="flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded-md mt-0.5">
                                       <Calendar className="w-3 h-3 mr-1 text-emerald-500 shrink-0" />
                                       <span className="truncate">Atividade: {new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
