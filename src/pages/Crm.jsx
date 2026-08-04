@@ -146,6 +146,7 @@ export default function Crm() {
 
   // Move Lead stage state
   const [activeMoveLead, setActiveMoveLead] = useState(null);
+  const [activeActivityLead, setActiveActivityLead] = useState(null);
 
   // WhatsApp Chat Modal (Smartbid Style)
   const [activeWhatsAppChatLead, setActiveWhatsAppChatLead] = useState(null);
@@ -1444,26 +1445,72 @@ export default function Crm() {
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            setActiveMoveLead(lead);
+                                            setActiveActivityLead(activeActivityLead?.phone === lead.phone ? null : lead);
                                           }}
-                                          className={`w-4 h-4 rounded-full flex items-center justify-center transition-all ${
+                                          className={`w-5 h-5 rounded-full flex items-center justify-center transition-all shadow-xs ${
                                             hasActivity 
-                                              ? 'bg-[#22C55E] text-white hover:bg-emerald-600' 
+                                              ? 'bg-[#EF4444] text-white hover:bg-red-600' 
                                               : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
                                           }`}
-                                          title={hasActivity ? 'Atividade Agendada' : 'Mover de Etapa / Opções'}
+                                          title={hasActivity ? 'Ver Próxima Atividade' : 'Agendar Atividade'}
                                         >
-                                          <ChevronRight className="w-3 h-3 stroke-[3]" />
+                                          <ChevronRight className="w-3 h-3 stroke-[3] rotate-180" />
                                         </button>
                                       </div>
                                     </div>
                                   </div>
 
-                                  {/* Scheduled Return Date Badge (if present) */}
-                                  {lead.next_contact_at && (
-                                    <div className="flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded mt-0.5">
-                                      <Calendar className="w-3 h-3 mr-1 text-emerald-500 shrink-0" />
-                                      <span className="truncate">{formatTaskDateTime(lead.next_contact_at)}</span>
+                                  {/* Smartbid Activity Popover Card ("PRÓXIMA ATIVIDADE") */}
+                                  {activeActivityLead?.phone === lead.phone && (
+                                    <div
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="absolute right-2 top-10 w-64 bg-white rounded-2xl p-4 shadow-2xl border border-gray-200 z-30 animate-fadeIn text-left"
+                                    >
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+                                          Próxima Atividade
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => { e.stopPropagation(); setActiveActivityLead(null); }}
+                                          className="text-gray-400 hover:text-gray-600 p-0.5 rounded"
+                                        >
+                                          <X className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+
+                                      {lead.next_contact_at ? (
+                                        <div className="flex items-start space-x-2.5 py-1.5 border-b border-gray-100">
+                                          <div className="w-4 h-4 rounded-full border-2 border-gray-300 mt-0.5 shrink-0" />
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-bold text-gray-800 truncate">
+                                              Retorno de Contato
+                                            </p>
+                                            <p className="text-[11px] text-gray-500 flex items-center space-x-1 mt-0.5">
+                                              <Clock className="w-3 h-3 text-gray-400 inline mr-1" />
+                                              <span>{formatTaskDateTime(lead.next_contact_at)}</span>
+                                            </p>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <p className="text-xs text-gray-400 italic py-1">Nenhuma atividade agendada</p>
+                                      )}
+
+                                      <div className="pt-2.5">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveActivityLead(null);
+                                            openWhatsAppChatModal(lead);
+                                            setActiveChatTab('lembretes');
+                                            setIsCreatingReminder(true);
+                                          }}
+                                          className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center space-x-1 hover:underline"
+                                        >
+                                          <span>+ Agendar uma atividade</span>
+                                        </button>
+                                      </div>
                                     </div>
                                   )}
 
