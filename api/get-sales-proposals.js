@@ -17,12 +17,15 @@ export default async function handler(req, res) {
       SELECT 
         p.*,
         c.name as client_name,
-        c.cnpj_cpf as client_cnpj,
-        c.contact_name as client_contact,
+        c.razao_social as client_razao_social,
+        c.document as client_cnpj,
+        c.contact_person as client_contact,
         c.email as client_email,
         c.phone as client_phone,
+        c.address as client_address,
         m.name as machine_name,
-        m.image_url as machine_image
+        m.photo_urls as machine_image,
+        m.technical_description as machine_description
       FROM sales_proposals p
       LEFT JOIN clients c ON p.client_id = c.id
       LEFT JOIN machine_models m ON p.machine_model_id = m.id

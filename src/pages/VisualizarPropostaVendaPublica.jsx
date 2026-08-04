@@ -64,7 +64,7 @@ export default function VisualizarPropostaVendaPublica() {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
         <div className="text-center text-white space-y-3">
-          <Loader2 className="w-10 h-10 animate-spin text-emerald-400 mx-auto" />
+          <Loader2 className="w-10 h-10 animate-spin text-[#009AC7] mx-auto" />
           <p className="text-sm font-medium">Carregando Proposta de Venda...</p>
         </div>
       </div>
@@ -90,8 +90,10 @@ export default function VisualizarPropostaVendaPublica() {
   const companyAddress = localStorage.getItem('app_company_address') || 'Rua Barão de Campinas, 715 - São Paulo, SP';
   const companyPhone = localStorage.getItem('app_company_phone') || '(11) 3320-8550';
   const companyEmail = localStorage.getItem('app_company_email') || 'info.brasil@tennantco.com';
-  const primaryColor = localStorage.getItem('app_pdf_color') || '#7CB342';
+  const primaryColor = localStorage.getItem('app_pdf_color') || '#009AC7';
   const emissao = new Date(p.created_at || new Date()).toLocaleDateString('pt-BR');
+
+  const firstImage = p.machine_image ? p.machine_image.split('\n')[0].trim() : '';
 
   const parseSpecsToHTML = (rawSpecs) => {
     if (!rawSpecs) return '<p>Sem especificações cadastradas.</p>';
@@ -107,24 +109,24 @@ export default function VisualizarPropostaVendaPublica() {
     return htmlContent.replace(/\n/g, '<br/>');
   };
 
-  const specsHTML = parseSpecsToHTML(p.machine_specs);
+  const specsHTML = parseSpecsToHTML(p.machine_description);
 
   return (
     <div className="min-h-screen bg-slate-900 font-sans pb-12">
       {/* Public Top Bar */}
       <div className="bg-slate-950 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+          <div className="w-9 h-9 rounded-xl bg-[#009AC7]/20 text-[#009AC7] flex items-center justify-center font-bold">
             <ShoppingCart className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-sm font-bold text-white">Proposta de Venda nº #{String(p.id).padStart(4, '0')}</h1>
-            <p className="text-xs text-slate-400">{p.client_name}</p>
+            <p className="text-xs text-slate-400">{p.client_razao_social || p.client_name}</p>
           </div>
         </div>
 
         {p.status === 'Aprovada' ? (
-          <div className="px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-extrabold rounded-xl flex items-center space-x-2">
+          <div className="px-4 py-2 bg-[#009AC7]/20 border border-[#009AC7]/30 text-[#009AC7] text-xs font-extrabold rounded-xl flex items-center space-x-2">
             <CheckCircle2 className="w-4 h-4" />
             <span>Proposta Aprovada</span>
           </div>
@@ -132,7 +134,7 @@ export default function VisualizarPropostaVendaPublica() {
           <button
             onClick={handleApproveProposal}
             disabled={isApproving}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center space-x-2 disabled:opacity-50"
+            className="px-5 py-2.5 bg-[#009AC7] hover:bg-[#0088b3] text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center space-x-2 disabled:opacity-50"
           >
             {isApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             <span>{isApproving ? 'Aprovando...' : 'Aprovar Proposta de Venda'}</span>
@@ -141,7 +143,7 @@ export default function VisualizarPropostaVendaPublica() {
       </div>
 
       {approvalSuccess && (
-        <div className="bg-emerald-500 text-white px-6 py-3 text-center text-xs font-bold shadow-md animate-fadeIn">
+        <div className="bg-[#009AC7] text-white px-6 py-3 text-center text-xs font-bold shadow-md animate-fadeIn">
           🎉 Proposta de Venda aprovada e assinada digitalmente com sucesso! Obrigado pela preferência.
         </div>
       )}
@@ -179,12 +181,12 @@ export default function VisualizarPropostaVendaPublica() {
               Dados do Cliente
             </span>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
-              <div><span className="font-bold text-slate-700">Cliente:</span> {p.client_name || 'Não informado'}</div>
+              <div><span className="font-bold text-slate-700">Cliente:</span> {p.client_razao_social || p.client_name || 'Não informado'}</div>
               <div><span className="font-bold text-slate-700">CNPJ/CPF:</span> {p.client_cnpj || '—'}</div>
               <div><span className="font-bold text-slate-700">Endereço:</span> {p.client_address || '—'}</div>
               <div><span className="font-bold text-slate-700">Contato:</span> {p.client_contact || '—'}</div>
               <div><span className="font-bold text-slate-700">Telefone:</span> {p.client_phone || '—'}</div>
-              <div><span className="font-bold text-slate-700">Tipo:</span> Venda de Equipamento</div>
+              <div><span className="font-bold text-slate-700">Serviço:</span> Venda de Equipamento</div>
             </div>
           </div>
 
@@ -194,22 +196,20 @@ export default function VisualizarPropostaVendaPublica() {
               <h3 className="text-sm font-bold text-slate-900 border-b pb-1 mb-2">
                 {p.machine_name || 'Equipamento'}
               </h3>
-              <p className="text-xs text-slate-600 mb-3">{p.machine_description || 'Equipamento industrial de alta performance.'}</p>
-              
               <span className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: primaryColor }}>
                 Especificações Técnicas
               </span>
               <div className="text-xs text-slate-700 leading-snug space-y-1" dangerouslySetInnerHTML={{ __html: specsHTML }} />
             </div>
 
-            {p.machine_image && (
+            {firstImage && (
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-center h-56">
-                <img src={p.machine_image} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
+                <img src={firstImage} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
               </div>
             )}
           </div>
 
-          {/* Commercial Table (Exact match to screenshot!) */}
+          {/* Commercial Table */}
           <div className="pt-2">
             <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 font-serif" style={{ color: primaryColor }}>
               VALORES E CONDIÇÕES DE VENDA

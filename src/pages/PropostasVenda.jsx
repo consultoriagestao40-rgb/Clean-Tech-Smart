@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, ShieldAlert, Check, Link2, Clock, DollarSign, Tag, ShoppingCart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, Check, Link2, ShoppingCart } from 'lucide-react';
 
 export default function PropostasVenda() {
   const [proposals, setProposals] = useState([]);
@@ -193,8 +192,10 @@ export default function PropostasVenda() {
     const companyAddress = localStorage.getItem('app_company_address') || 'Rua Barão de Campinas, 715 - São Paulo, SP';
     const companyPhone = localStorage.getItem('app_company_phone') || '(11) 3320-8550';
     const companyEmail = localStorage.getItem('app_company_email') || 'info.brasil@tennantco.com';
-    const primaryColor = localStorage.getItem('app_pdf_color') || '#7CB342';
+    const primaryColor = localStorage.getItem('app_pdf_color') || '#009AC7';
     const emissao = new Date(p.created_at || new Date()).toLocaleDateString('pt-BR');
+
+    const firstImage = p.machine_image ? p.machine_image.split('\n')[0].trim() : '';
 
     const parseSpecsToHTML = (rawSpecs) => {
       if (!rawSpecs) return '<p>Sem especificações cadastradas.</p>';
@@ -210,27 +211,27 @@ export default function PropostasVenda() {
       return htmlContent.replace(/\n/g, '<br/>');
     };
 
-    const specsHTML = parseSpecsToHTML(p.machine_specs);
+    const specsHTML = parseSpecsToHTML(p.machine_description);
 
     return (
       <div className="min-h-screen bg-slate-100 font-sans pb-12">
         {/* Print Bar */}
-        <div className="fixed top-0 left-0 right-0 bg-slate-900 text-white px-6 py-3 flex items-center justify-between z-50 shadow-md no-print">
+        <div className="fixed top-0 left-0 right-0 bg-[#009AC7] text-white px-6 py-3 flex items-center justify-between z-50 shadow-md no-print">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setViewMode('list')}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all"
+              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold rounded-lg flex items-center space-x-1.5 transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Voltar para Lista</span>
             </button>
-            <span className="text-xs font-bold text-slate-300">
+            <span className="text-xs font-bold text-white">
               Proposta de Venda nº #{String(p.id).padStart(4, '0')} — {p.client_name}
             </span>
           </div>
           <button
             onClick={() => window.print()}
-            className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
+            className="px-4 py-1.5 bg-white text-[#009AC7] hover:bg-slate-50 text-xs font-extrabold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
           >
             <Printer className="w-4 h-4" />
             <span>Salvar / Imprimir PDF</span>
@@ -242,7 +243,7 @@ export default function PropostasVenda() {
           <div className="max-w-[870px] mx-auto bg-white p-8 md:p-12 shadow-xl rounded-xl border border-gray-200 text-slate-800 text-xs leading-relaxed space-y-6 printable-page">
             
             {/* 1. Header with Company Logo & Data */}
-            <div className="flex items-center justify-between pb-5 border-b-2 border-slate-200" style={{ borderColor: primaryColor }}>
+            <div className="flex items-center justify-between pb-5 border-b-2" style={{ borderColor: primaryColor }}>
               <div className="flex-1 text-left">
                 <h1 className="text-lg font-extrabold uppercase tracking-wide text-slate-900">{companyName}</h1>
                 <p className="text-[11px] font-bold text-slate-700 mt-0.5">CNPJ: {companyCnpj}</p>
@@ -270,12 +271,12 @@ export default function PropostasVenda() {
                 Dados do Cliente
               </span>
               <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
-                <div><span className="font-bold text-slate-700">Cliente:</span> {p.client_name || 'Não informado'}</div>
+                <div><span className="font-bold text-slate-700">Cliente:</span> {p.client_razao_social || p.client_name || 'Não informado'}</div>
                 <div><span className="font-bold text-slate-700">CNPJ/CPF:</span> {p.client_cnpj || '—'}</div>
                 <div><span className="font-bold text-slate-700">Endereço:</span> {p.client_address || '—'}</div>
                 <div><span className="font-bold text-slate-700">Contato:</span> {p.client_contact || '—'}</div>
                 <div><span className="font-bold text-slate-700">Telefone:</span> {p.client_phone || '—'}</div>
-                <div><span className="font-bold text-slate-700">Tipo:</span> Venda de Equipamento</div>
+                <div><span className="font-bold text-slate-700">Serviço:</span> Venda de Equipamento</div>
               </div>
             </div>
 
@@ -285,22 +286,20 @@ export default function PropostasVenda() {
                 <h3 className="text-sm font-bold text-slate-900 border-b pb-1 mb-2">
                   {p.machine_name || 'Equipamento'}
                 </h3>
-                <p className="text-xs text-slate-600 mb-3">{p.machine_description || 'Equipamento industrial de alta performance.'}</p>
-                
                 <span className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: primaryColor }}>
                   Especificações Técnicas
                 </span>
                 <div className="text-xs text-slate-700 leading-snug space-y-1" dangerouslySetInnerHTML={{ __html: specsHTML }} />
               </div>
 
-              {p.machine_image && (
+              {firstImage && (
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-center h-56">
-                  <img src={p.machine_image} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
+                  <img src={firstImage} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
                 </div>
               )}
             </div>
 
-            {/* 4. Commercial Conditions Table (Exact match to screenshot!) */}
+            {/* 4. Commercial Conditions Table */}
             <div className="pt-2">
               <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 font-serif" style={{ color: primaryColor }}>
                 VALORES E CONDIÇÕES DE VENDA
@@ -350,7 +349,7 @@ export default function PropostasVenda() {
               </table>
             </div>
 
-            {/* 5. Legal Terms Text Below Table (Exact match to printout!) */}
+            {/* 5. Legal Terms Text */}
             <div className="text-[10px] text-slate-700 leading-relaxed text-justify space-y-2 italic">
               <p>
                 Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <strong className="font-bold text-slate-900">9º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital – São Paulo</strong>, cuja cópia digitalizada está disponível no site: <u>www.alfatennant.com.br/terms</u> e também por e-mail ou correio quando solicitada. Os valores acima definidos englobam <strong className="font-bold text-slate-900">única e exclusivamente os impostos, taxas e demais encargos fiscais e tributários</strong>, incidentes nas alíquotas vigentes no Estado de origem (São Paulo) <strong className="font-bold text-slate-900">de responsabilidade da TENNANT COMPANY</strong>. Os demais tributos, inclusive os diferenciais de alíquota, que a lei atribuir como <strong className="font-bold text-slate-900">responsabilidade do comprador</strong>, quer por sua localização, quer por sua classificação (consumidor final, regime do simples, revenda, não contribuinte, dentre outros) não acarretarão quaisquer descontos nos valores acima definidos, nem mesmo serão atribuídas quaisquer responsabilidades pelo seu pagamento à <strong className="font-bold text-slate-900">TENNANT COMPANY</strong>.
@@ -376,11 +375,11 @@ export default function PropostasVenda() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Top Title Bar */}
+      {/* Top Title Bar - System Blue Palette */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900 flex items-center space-x-2.5">
-            <ShoppingCart className="w-7 h-7 text-emerald-600" />
+            <ShoppingCart className="w-7 h-7 text-[#009AC7]" />
             <span>Propostas de Venda</span>
           </h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -390,7 +389,7 @@ export default function PropostasVenda() {
 
         <button
           onClick={handleOpenCreateModal}
-          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-all flex items-center space-x-2 text-sm shrink-0"
+          className="px-4 py-2.5 bg-[#009AC7] hover:bg-[#0088b3] text-white font-bold rounded-xl shadow-xs transition-all flex items-center space-x-2 text-sm shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Nova Proposta de Venda</span>
@@ -412,7 +411,7 @@ export default function PropostasVenda() {
       {/* Proposals List */}
       {isLoading ? (
         <div className="py-16 text-center text-gray-400 space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-600" />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#009AC7]" />
           <p className="text-sm font-medium">Carregando propostas de venda...</p>
         </div>
       ) : filteredProposals.length === 0 ? (
@@ -445,14 +444,14 @@ export default function PropostasVenda() {
                       #{String(p.id).padStart(4, '0')}
                     </td>
                     <td className="px-5 py-4 min-w-[160px]">
-                      <span className="font-bold text-gray-900 block truncate">{p.client_name || 'Sem Cliente'}</span>
+                      <span className="font-bold text-gray-900 block truncate">{p.client_razao_social || p.client_name || 'Sem Cliente'}</span>
                       <span className="text-[11px] text-gray-400 block">{p.client_cnpj || ''}</span>
                     </td>
                     <td className="px-5 py-4 min-w-[160px]">
                       <span className="font-semibold text-gray-800 block truncate">{p.machine_name || 'Sem Máquina'}</span>
                     </td>
-                    <td className="px-5 py-4 font-bold text-emerald-600 whitespace-nowrap">
-                      {p.proposal_value || 'A consultar'}
+                    <td className="px-5 py-4 font-bold text-[#009AC7] whitespace-nowrap">
+                      {p.proposal_value ? `R$ ${p.proposal_value}` : 'A consultar'}
                     </td>
                     <td className="px-5 py-4 font-semibold text-gray-600 whitespace-nowrap">
                       {p.warranty || '12 Meses'}
@@ -460,7 +459,7 @@ export default function PropostasVenda() {
                     <td className="px-5 py-4 whitespace-nowrap">
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                         p.status === 'Aprovada'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          ? 'bg-sky-50 text-sky-700 border-sky-200'
                           : 'bg-amber-50 text-amber-700 border-amber-200'
                       }`}>
                         {p.status || 'Rascunho'}
@@ -469,7 +468,7 @@ export default function PropostasVenda() {
                     <td className="px-5 py-4 text-right whitespace-nowrap space-x-1.5">
                       <button
                         onClick={() => handleOpenPrintView(p)}
-                        className="p-2 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                        className="p-2 text-slate-600 hover:text-[#009AC7] hover:bg-sky-50 rounded-xl transition-all"
                         title="Imprimir / Gerar PDF"
                       >
                         <Printer className="w-4 h-4" />
@@ -511,7 +510,7 @@ export default function PropostasVenda() {
             {/* Header */}
             <div className="bg-[#0B141B] px-6 py-4 flex items-center justify-between text-white shrink-0">
               <div className="flex items-center space-x-2.5">
-                <ShoppingCart className="w-5 h-5 text-emerald-400" />
+                <ShoppingCart className="w-5 h-5 text-[#009AC7]" />
                 <h3 className="font-bold text-sm text-white">
                   {formData.id ? `Editar Proposta de Venda nº #${String(formData.id).padStart(4,'0')}` : 'Nova Proposta de Venda'}
                 </h3>
@@ -530,7 +529,7 @@ export default function PropostasVenda() {
               {/* Section 1: Cliente e Equipamento */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                  <FileText className="w-4 h-4 text-emerald-600" />
+                  <FileText className="w-4 h-4 text-[#009AC7]" />
                   <span>1. Cliente e Equipamento</span>
                 </h4>
 
@@ -541,12 +540,12 @@ export default function PropostasVenda() {
                       value={formData.client_id}
                       onChange={e => setFormData({ ...formData, client_id: e.target.value })}
                       required
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                     >
                       <option value="">Selecione um Cliente...</option>
                       {clients.map(c => (
                         <option key={c.id} value={c.id}>
-                          {c.name} {c.cnpj_cpf ? `(${c.cnpj_cpf})` : ''}
+                          {c.name} {c.document ? `(${c.document})` : ''}
                         </option>
                       ))}
                     </select>
@@ -558,7 +557,7 @@ export default function PropostasVenda() {
                       value={formData.machine_model_id}
                       onChange={e => setFormData({ ...formData, machine_model_id: e.target.value })}
                       required
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                     >
                       <option value="">Selecione um Equipamento...</option>
                       {machineModels.map(m => (
@@ -575,7 +574,7 @@ export default function PropostasVenda() {
               <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-4">
                 <div className="flex items-center justify-between border-b pb-2">
                   <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                    <Tag className="w-4 h-4 text-emerald-600" />
+                    <ShoppingCart className="w-4 h-4 text-[#009AC7]" />
                     <span>2. Valores e Condições de Venda (Tabela Comercial)</span>
                   </h4>
                   <span className="text-[10px] text-gray-400 font-semibold">Tabela editável</span>
@@ -588,7 +587,7 @@ export default function PropostasVenda() {
                       type="text"
                       value={formData.fob_price}
                       onChange={e => setFormData({ ...formData, fob_price: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                     />
                   </div>
 
@@ -598,7 +597,7 @@ export default function PropostasVenda() {
                       type="text"
                       value={formData.cif_price}
                       onChange={e => setFormData({ ...formData, cif_price: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                     />
                   </div>
 
@@ -608,7 +607,7 @@ export default function PropostasVenda() {
                       type="text"
                       value={formData.taxes_info}
                       onChange={e => setFormData({ ...formData, taxes_info: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                     />
                   </div>
 
@@ -616,10 +615,10 @@ export default function PropostasVenda() {
                     <label className="block font-bold text-slate-700 mb-1">Valor da Proposta (Digitado manual) *</label>
                     <input
                       type="text"
-                      placeholder="Ex: R$ 50.000,00"
+                      placeholder="Ex: 50.000,00"
                       value={formData.proposal_value}
                       onChange={e => setFormData({ ...formData, proposal_value: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold text-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-bold text-[#009AC7] focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                     />
                   </div>
 
@@ -630,7 +629,7 @@ export default function PropostasVenda() {
                       placeholder="Ex: 30/60/90 dias ou À Vista via PIX"
                       value={formData.payment_terms}
                       onChange={e => setFormData({ ...formData, payment_terms: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                     />
                   </div>
 
@@ -641,7 +640,7 @@ export default function PropostasVenda() {
                       placeholder="Ex: 15 dias úteis ou Imediato"
                       value={formData.delivery_time}
                       onChange={e => setFormData({ ...formData, delivery_time: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                     />
                   </div>
 
@@ -651,7 +650,7 @@ export default function PropostasVenda() {
                       type="text"
                       value={formData.warranty}
                       onChange={e => setFormData({ ...formData, warranty: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                     />
                   </div>
 
@@ -661,7 +660,7 @@ export default function PropostasVenda() {
                       type="text"
                       value={formData.validity_days}
                       onChange={e => setFormData({ ...formData, validity_days: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                     />
                   </div>
                 </div>
@@ -673,7 +672,7 @@ export default function PropostasVenda() {
                     placeholder="Insira aqui o texto de observações adicionais..."
                     value={formData.notes}
                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white text-xs focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                   />
                 </div>
 
@@ -683,7 +682,7 @@ export default function PropostasVenda() {
                     rows={2}
                     value={formData.seller_info}
                     onChange={e => setFormData({ ...formData, seller_info: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white text-xs focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                   />
                 </div>
               </div>
@@ -700,7 +699,7 @@ export default function PropostasVenda() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center space-x-2 disabled:opacity-50"
+                  className="px-5 py-2 bg-[#009AC7] hover:bg-[#0088b3] text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center space-x-2 disabled:opacity-50"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   <span>{isSaving ? 'Salvando...' : 'Salvar Proposta de Venda'}</span>
@@ -718,7 +717,7 @@ export default function PropostasVenda() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-200 text-left space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-sm text-gray-900 flex items-center space-x-2">
-                <Link2 className="w-4 h-4 text-emerald-600" />
+                <Link2 className="w-4 h-4 text-[#009AC7]" />
                 <span>Link da Proposta de Venda #{String(shareProposalId).padStart(4,'0')}</span>
               </h3>
               <button onClick={() => setIsShareModalOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -745,7 +744,7 @@ export default function PropostasVenda() {
               <button
                 type="button"
                 onClick={() => copyPublicLink(shareProposalId)}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs"
+                className="px-4 py-2 bg-[#009AC7] hover:bg-[#0088b3] text-white text-xs font-bold rounded-xl shadow-xs"
               >
                 Copiar Link
               </button>
