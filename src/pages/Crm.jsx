@@ -790,7 +790,9 @@ export default function Crm() {
         },
         body: JSON.stringify({
           lead_phone: leadPhone,
-          content: noteText
+          content: noteText,
+          user_id: currentUser?.id || currentUser?.userId || 3,
+          user_name: currentUser?.name || 'Vendedor'
         })
       });
 
@@ -1605,10 +1607,10 @@ export default function Crm() {
 
                   <div className="space-y-2">
                     <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Histórico de Anotações</h4>
-                    {chatMessages.filter(m => !m.content?.startsWith('[WhatsApp]')).length === 0 ? (
-                      <div className="text-xs text-gray-400 italic bg-white p-4 rounded-xl border border-gray-100">Nenhuma anotação manual cadastrada.</div>
+                    {chatMessages.filter(m => m.is_whatsapp === false).length === 0 ? (
+                      <div className="text-xs text-gray-400 italic bg-white p-4 rounded-xl border border-gray-100">Nenhuma anotação interna cadastrada. Use o campo acima para registrar observações sobre a negociação.</div>
                     ) : (
-                      chatMessages.filter(m => !m.content?.startsWith('[WhatsApp]')).map((note, idx) => (
+                      chatMessages.filter(m => m.is_whatsapp === false).map((note, idx) => (
                         <div key={note.id || idx} className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs space-y-1">
                           <p className="text-xs text-gray-800 whitespace-pre-wrap">{note.content}</p>
                           <span className="text-[10px] text-gray-400 font-semibold">{note.author_name || 'Equipe'} · {new Date(note.created_at).toLocaleString('pt-BR')}</span>

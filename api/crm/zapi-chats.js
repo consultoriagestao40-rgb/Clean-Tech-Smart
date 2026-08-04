@@ -134,11 +134,17 @@ export default async function handler(req, res) {
               .replace(/https?:\/\/[^\s]+/g, '')
               .trim();
 
+            // is_whatsapp: true = mensagem WhatsApp (chat), false = anotação interna
+            const isWhatsApp = rawContent.startsWith('[WhatsApp]') ||
+              isFileMatch !== null || isImageMatch !== null || isAudio || isVideo ||
+              n.user_id === null; // received from client via webhook
+
             return {
               id: `db_${n.id}`,
               content: text,
               author_name: isSent ? 'Você' : 'Cliente',
               is_sent: isSent,
+              is_whatsapp: isWhatsApp,
               user_id: n.user_id,
               created_at: n.created_at,
               is_file:  !!isFileMatch  && !isAudio,
