@@ -99,11 +99,20 @@ export default async function handler(req, res) {
       let dbNotes = [];
       if (dbClient) {
         try {
+          const digits = phone.replace(/\D/g, '');
+          const suffix = digits.length >= 8 ? digits.slice(-8) : digits;
           const notesRes = await dbClient.query(
-            `SELECT id, lead_phone, user_id, content, created_at FROM crm_notes WHERE lead_phone = $1 ORDER BY created_at ASC`,
-            [phone]
+            `SELECT id, lead_phone, user_id, content, created_at 
+             FROM crm_notes 
+             WHERE lead_phone = $1 OR replace(lead_phone, '-', '') LIKE $2 
+             ORDER BY created_at ASC`,
+            [phone, `%${suffix}`]
           );
-          dbNotes = notesRes.rows;
+          dbNotes = notesRes.rows.map(n => ({
+            ...n,
+            is_sent: n.content && n.content.includes('[WhatsApp]'),
+            author_name: n.user_id ? 'Você' : 'Cliente'
+          }));
         } catch (e) {}
       }
 
