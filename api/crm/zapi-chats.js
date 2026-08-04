@@ -1,38 +1,54 @@
-import { query } from '../_utils/db.js';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
+  );
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   let instanceId = process.env.ZAPI_INSTANCE_ID || '3F718C3D9582E1963A49EAE0B2B942D4';
   let token = process.env.ZAPI_TOKEN || 'D4F38DEC6BD1906C37E044B4';
   let clientToken = process.env.ZAPI_CLIENT_TOKEN || '';
 
+  const dbClient = await pool.connect();
+
   try {
-    const settingsRes = await query(`SELECT key, value FROM settings WHERE key LIKE 'app_zapi%'`);
+    const settingsRes = await dbClient.query(`SELECT key, value FROM settings WHERE key LIKE 'app_zapi%'`);
     settingsRes.rows.forEach(r => {
       if (r.key === 'app_zapi_instance_id' && r.value) instanceId = r.value;
       if (r.key === 'app_zapi_token' && r.value) token = r.value;
       if (r.key === 'app_zapi_client_token' && r.value) clientToken = r.value;
     });
-  } catch (e) {
-    console.warn('[Z-API] Settings query error:', e);
-  }
 
-  const zapiHeaders = {};
-  if (clientToken) zapiHeaders['Client-Token'] = clientToken;
+    const zapiHeaders = {};
+    if (clientToken) zapiHeaders['Client-Token'] = clientToken;
 
-  if (req.method === 'GET') {
-    const { phone } = req.query;
-    if (!phone) {
-      return res.status(400).json({ error: 'Telefone obrigatório.' });
-    }
+    if (req.method === 'GET') {
+      const { phone } = req.query;
+      if (!phone) {
+        return res.status(400).json({ error: 'Telefone obrigatório.' });
+      }
 
-    let cleanPhone = phone.replace(/\D/g, '');
-    if (cleanPhone.length === 11 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
-    if (cleanPhone.length === 10 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
+      let cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length === 11 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
+      if (cleanPhone.length === 10 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
 
-    try {
       let zapiMsgs = [];
 
-      // 1. Try Z-API chats/{phone}/messages endpoint
       try {
         const url1 = `https://api.z-api.io/instances/${instanceId}/token/${token}/chats/${cleanPhone}/messages?page=1&pageSize=40`;
         const res1 = await fetch(url1, { headers: zapiHeaders });
@@ -42,7 +58,6 @@ export default async function handler(req, res) {
         }
       } catch (e) {}
 
-      // 2. Fallback to Z-API chat-messages/{phone} endpoint
       if (zapiMsgs.length === 0) {
         try {
           const url2 = `https://api.z-api.io/instances/${instanceId}/token/${token}/chat-messages/${cleanPhone}`;
@@ -54,7 +69,6 @@ export default async function handler(req, res) {
         } catch (e) {}
       }
 
-      // Format messages
       const formattedZapi = zapiMsgs.map(m => {
         const isSent = m.fromMe || m.isSent;
         const text = m.body || m.text?.message || m.caption || m.message || '';
@@ -67,19 +81,16 @@ export default async function handler(req, res) {
         };
       });
 
-      // Also get saved DB notes/webhooks
       let dbNotes = [];
       try {
-        const notesRes = await query(
+        const notesRes = await dbClient.query(
           `SELECT id, lead_phone, user_id, content, created_at FROM crm_notes WHERE lead_phone = $1 ORDER BY created_at ASC`,
           [phone]
         );
         dbNotes = notesRes.rows;
       } catch (e) {}
 
-      // Merge both sources smoothly
       const allMsgs = [...dbNotes, ...formattedZapi];
-      // Deduplicate by clean content
       const seen = new Set();
       const uniqueMsgs = [];
       for (const m of allMsgs) {
@@ -90,17 +101,10 @@ export default async function handler(req, res) {
         }
       }
 
-      // Sort by created_at
       uniqueMsgs.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-
       return res.status(200).json({ messages: uniqueMsgs });
-    } catch (err) {
-      console.error('[Z-API] Erro no handler:', err);
-      return res.status(500).json({ error: err.message, messages: [] });
-    }
-  } else if (req.method === 'POST') {
-    // SYNC REAL WHATSAPP CHATS TO CRM INBOX
-    try {
+
+    } else if (req.method === 'POST') {
       const chatsRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/chats?page=1&pageSize=50`, {
         headers: zapiHeaders
       });
@@ -120,12 +124,12 @@ export default async function handler(req, res) {
 
         const name = chat.name || chat.contactName || `Lead ${cleanPhone}`;
 
-        await query(
-          `INSERT INTO crm_contacts (phone, name, stage, value)
+        await dbClient.query(
+          `INSERT INTO leads (phone, name, stage, value)
            VALUES ($1, $2, 'inbox', 0)
            ON CONFLICT (phone) DO UPDATE 
            SET name = EXCLUDED.name
-           WHERE crm_contacts.name IS NULL OR crm_contacts.name LIKE 'Lead%'`,
+           WHERE leads.name IS NULL OR leads.name LIKE 'Lead%'`,
           [cleanPhone, name]
         );
 
@@ -133,9 +137,11 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).json({ success: true, synced: syncedCount });
-    } catch (err) {
-      console.error('[Z-API Sync] Erro ao sincronizar:', err);
-      return res.status(500).json({ error: err.message });
     }
+  } catch (err) {
+    console.error('[Z-API Handler Error]:', err);
+    return res.status(500).json({ error: err.message });
+  } finally {
+    dbClient.release();
   }
 }
