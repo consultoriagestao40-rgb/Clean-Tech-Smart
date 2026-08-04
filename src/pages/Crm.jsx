@@ -901,6 +901,7 @@ export default function Crm() {
                   <span>Sincronizar Z-API</span>
                 </button>
               </div>
+            </div>
 
             {/* Compact Metrics Row */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -937,7 +938,6 @@ export default function Crm() {
               <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-3">
                 <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
                   <AlertCircle className="w-4 h-4" />
-                </div>
                 <div>
                   <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Taxa de Conversão</span>
                   <span className="text-lg font-bold text-purple-600">{stats.conversionRate}%</span>
