@@ -1070,7 +1070,7 @@ export default function Crm() {
                           onDragOver={handleDragOver}
                           onDrop={(e) => handleDrop(e, stage.key)}
                           style={{ backgroundColor: bodyBg }}
-                          className="rounded-b-2xl rounded-t-none px-1 py-1.5 flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                          className="rounded-b-2xl rounded-t-none px-1 py-1.5 flex-1 max-h-[calc(100vh-14.5rem)] overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                         >
                           <div className="space-y-1.5 flex-grow">
                             {stageLeads.length === 0 ? (
