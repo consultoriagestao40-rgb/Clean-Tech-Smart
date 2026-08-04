@@ -185,17 +185,52 @@ export default function Crm() {
     fetchChatNotes(lead.phone);
   };
 
+  const [isSyncingWhatsApp, setIsSyncingWhatsApp] = useState(false);
+
   const fetchChatNotes = async (phone) => {
     try {
-      const res = await fetch(`/api/crm/notes?lead_phone=${encodeURIComponent(phone)}`, {
+      const res = await fetch(`/api/crm/zapi-chats?phone=${encodeURIComponent(phone)}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        setChatMessages(data.notes || []);
+        setChatMessages(data.messages || []);
+      } else {
+        const fallbackRes = await fetch(`/api/crm/notes?lead_phone=${encodeURIComponent(phone)}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          setChatMessages(fallbackData.notes || []);
+        }
       }
     } catch (err) {
-      console.error('Erro ao buscar histórico de conversa:', err);
+      console.error('Erro ao buscar histórico de conversa real:', err);
+    }
+  };
+
+  const handleSyncWhatsAppChats = async () => {
+    setIsSyncingWhatsApp(true);
+    try {
+      const res = await fetch('/api/crm/zapi-chats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        fetchLeads();
+        alert(`Sincronização concluída! ${data.synced || 0} conversas reais do WhatsApp sincronizadas.`);
+      } else {
+        alert('Erro ao sincronizar conversas com a Z-API.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro de conexão ao sincronizar com a Z-API.');
+    } finally {
+      setIsSyncingWhatsApp(false);
     }
   };
 
@@ -849,10 +884,20 @@ export default function Crm() {
                       ))}
                     </select>
                   </div>
-                )}
-
-
-              </div>
+                <button
+                  type="button"
+                  onClick={handleSyncWhatsAppChats}
+                  disabled={isSyncingWhatsApp}
+                  className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-xs disabled:opacity-50"
+                  title="Sincronizar conversas reais do WhatsApp via Z-API"
+                >
+                  {isSyncingWhatsApp ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <MessageSquare className="w-3.5 h-3.5" />
+                  )}
+                  <span>Sincronizar Z-API</span>
+                </button>
             </div>
 
             {/* Compact Metrics Row */}
@@ -1023,9 +1068,9 @@ export default function Crm() {
                           onDragOver={handleDragOver}
                           onDrop={(e) => handleDrop(e, stage.key)}
                           style={{ backgroundColor: bodyBg }}
-                          className="rounded-b-2xl rounded-t-none px-0.5 py-1 flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                          className="rounded-b-2xl rounded-t-none px-1 py-1.5 flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                         >
-                          <div className="space-y-1 flex-grow">
+                          <div className="space-y-1.5 flex-grow">
                             {stageLeads.length === 0 ? (
                               <div className="border-2 border-dashed border-gray-200/80 rounded-xl py-12 text-center text-xs text-gray-400 font-medium italic">
                                 Sem negócios nesta etapa
@@ -1041,50 +1086,52 @@ export default function Crm() {
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, lead.phone)}
                                   onClick={() => openWhatsAppChatModal(lead)}
-                                  className="group bg-white px-2 py-1.5 rounded-lg border border-gray-200/90 shadow-2xs cursor-pointer hover:shadow-md hover:border-blue-400 transition-all space-y-1 text-left relative min-w-0"
+                                  className="group bg-white p-2.5 rounded-lg border border-gray-200/90 shadow-2xs cursor-pointer hover:shadow-md hover:border-blue-400 transition-all space-y-1.5 text-left relative min-w-0"
                                 >
-                                  {/* Row 1: Avatar + Name/Phone + Value + Arrow */}
-                                  <div className="flex items-center justify-between gap-1 min-w-0">
-                                    <div className="flex items-center space-x-1.5 min-w-0 flex-1">
-                                      <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 font-bold text-[10px] flex items-center justify-center shrink-0 border border-blue-200 shadow-2xs">
-                                        {getAvatarInitials(lead.name, lead.phone)}
-                                      </div>
-                                      <div className="min-w-0 flex-1">
-                                        <h4 className="text-[11px] font-bold text-gray-900 leading-tight truncate" title={lead.name}>
-                                          {lead.name ? lead.name : `WhatsApp: ${lead.phone}`}
-                                        </h4>
-                                        <p className="text-[10px] text-gray-400 truncate leading-none mt-0.5">
-                                          {lead.phone}
-                                        </p>
-                                      </div>
+                                  {/* Smartbid Card Layout: Avatar on Left, Title/Phone/Value on Right */}
+                                  <div className="flex items-start space-x-2.5 min-w-0">
+                                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200 shadow-2xs mt-0.5">
+                                      {getAvatarInitials(lead.name, lead.phone)}
                                     </div>
 
-                                    <div className="flex items-center space-x-1 shrink-0">
-                                      <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-100">
-                                        {formatCurrency(leadVal)}
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setActiveMoveLead(lead);
-                                        }}
-                                        className={`w-4 h-4 rounded-full flex items-center justify-center transition-all ${
-                                          hasActivity 
-                                            ? 'bg-[#22C55E] text-white hover:bg-emerald-600' 
-                                            : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
-                                        }`}
-                                        title={hasActivity ? 'Atividade Agendada' : 'Mover de Etapa / Opções'}
-                                      >
-                                        <ChevronRight className="w-3 h-3 stroke-[3]" />
-                                      </button>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between gap-1">
+                                        <h4 className="text-xs font-bold text-gray-900 leading-tight truncate" title={lead.name}>
+                                          {lead.name ? lead.name : `WhatsApp: ${lead.phone}`}
+                                        </h4>
+                                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 shrink-0">
+                                          {formatCurrency(leadVal)}
+                                        </span>
+                                      </div>
+
+                                      <div className="flex items-center justify-between gap-1 mt-1">
+                                        <p className="text-[11px] text-gray-500 truncate leading-none">
+                                          📞 {lead.phone}
+                                        </p>
+
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveMoveLead(lead);
+                                          }}
+                                          className={`w-4 h-4 rounded-full flex items-center justify-center transition-all ${
+                                            hasActivity 
+                                              ? 'bg-[#22C55E] text-white hover:bg-emerald-600' 
+                                              : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
+                                          }`}
+                                          title={hasActivity ? 'Atividade Agendada' : 'Mover de Etapa / Opções'}
+                                        >
+                                          <ChevronRight className="w-3 h-3 stroke-[3]" />
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Row 2: Scheduled Return Date Badge (if present) */}
+                                  {/* Scheduled Return Date Badge (if present) */}
                                   {lead.next_contact_at && (
-                                    <div className="flex items-center text-[9px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-1 py-0.5 rounded mt-0.5">
-                                      <Calendar className="w-2.5 h-2.5 mr-1 text-emerald-500 shrink-0" />
+                                    <div className="flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded mt-0.5">
+                                      <Calendar className="w-3 h-3 mr-1 text-emerald-500 shrink-0" />
                                       <span className="truncate">{new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
                                   )}
