@@ -333,22 +333,52 @@ export default function Crm() {
           const mimeType = selectedFile.type || 'application/octet-stream';
           const isImage = mimeType.startsWith('image/');
           const isAudio = mimeType.startsWith('audio/');
-          let sendEndpoint = 'send-document/document';
-          let sendBody = { phone: cleanPhoneDigits, document: `data:${mimeType};base64,${b64}`, fileName: selectedFile.name, caption: textToSend };
+          const isPDF = mimeType === 'application/pdf' || selectedFile.name.toLowerCase().endsWith('.pdf');
+          const isWord = mimeType.includes('word') || /\.(doc|docx)$/i.test(selectedFile.name);
+          const isExcel = mimeType.includes('excel') || mimeType.includes('spreadsheet') || /\.(xls|xlsx)$/i.test(selectedFile.name);
+          const isPPT = mimeType.includes('powerpoint') || mimeType.includes('presentation') || /\.(ppt|pptx)$/i.test(selectedFile.name);
+          const isTxt = mimeType === 'text/plain' || selectedFile.name.toLowerCase().endsWith('.txt');
+
+          // Z-API uses specific endpoints per document type to preserve correct extension
+          let sendEndpoint;
+          let sendBody;
 
           if (isImage) {
             sendEndpoint = 'send-image';
-            sendBody = { phone: cleanPhoneDigits, image: `data:${mimeType};base64,${b64}`, caption: textToSend };
+            sendBody = { phone: cleanPhoneDigits, image: `data:${mimeType};base64,${b64}`, caption: textToSend || '' };
           } else if (isAudio) {
             sendEndpoint = 'send-audio';
             sendBody = { phone: cleanPhoneDigits, audio: `data:${mimeType};base64,${b64}` };
+          } else if (isPDF) {
+            sendEndpoint = 'send-document/pdf';
+            sendBody = { phone: cleanPhoneDigits, document: `data:${mimeType};base64,${b64}`, fileName: selectedFile.name, caption: textToSend || '' };
+          } else if (isWord) {
+            sendEndpoint = 'send-document/word';
+            sendBody = { phone: cleanPhoneDigits, document: `data:${mimeType};base64,${b64}`, fileName: selectedFile.name, caption: textToSend || '' };
+          } else if (isExcel) {
+            sendEndpoint = 'send-document/excel';
+            sendBody = { phone: cleanPhoneDigits, document: `data:${mimeType};base64,${b64}`, fileName: selectedFile.name, caption: textToSend || '' };
+          } else if (isPPT) {
+            sendEndpoint = 'send-document/powerpoint';
+            sendBody = { phone: cleanPhoneDigits, document: `data:${mimeType};base64,${b64}`, fileName: selectedFile.name, caption: textToSend || '' };
+          } else if (isTxt) {
+            sendEndpoint = 'send-document/txt';
+            sendBody = { phone: cleanPhoneDigits, document: `data:${mimeType};base64,${b64}`, fileName: selectedFile.name, caption: textToSend || '' };
+          } else {
+            sendEndpoint = 'send-document/document';
+            sendBody = { phone: cleanPhoneDigits, document: `data:${mimeType};base64,${b64}`, fileName: selectedFile.name, caption: textToSend || '' };
           }
 
-          await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/${sendEndpoint}`, {
+          const sendResp = await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/${sendEndpoint}`, {
             method: 'POST',
             headers: zapiHeaders,
             body: JSON.stringify(sendBody)
           });
+
+          if (!sendResp.ok) {
+            const errText = await sendResp.text();
+            console.error('[Z-API File Send Error]', sendResp.status, errText);
+          }
 
           const fileLabel = isImage ? '[Imagem]' : isAudio ? '[Áudio]' : `[Arquivo: ${selectedFile.name}]`;
           const fileNoteContent = `[WhatsApp] ${fileLabel}${textToSend ? ' ' + textToSend : ''}`;
