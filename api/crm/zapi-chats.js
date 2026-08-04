@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
   let instanceId = process.env.ZAPI_INSTANCE_ID || '3F718C3D9582E1963A49EAE0B2B942D4';
   let token = process.env.ZAPI_TOKEN || 'D4F38DEC6BD1906C37E044B4';
-  let clientToken = process.env.ZAPI_CLIENT_TOKEN || '';
+  let clientToken = process.env.ZAPI_CLIENT_TOKEN || 'F5c1b8f27f6b049c98c4e779d00f67552S';
 
   let dbClient;
   try {
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
   try {
     if (dbClient) {
       try {
-        const settingsRes = await dbClient.query(`SELECT key, value FROM settings WHERE key LIKE 'app_zapi%'`);
+        const settingsRes = await dbClient.query(`SELECT key, value FROM system_settings WHERE key LIKE 'app_zapi%'`);
         if (settingsRes && settingsRes.rows) {
           settingsRes.rows.forEach(r => {
             if (r.key === 'app_zapi_instance_id' && r.value) instanceId = r.value;
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
           });
         }
       } catch (settingsErr) {
-        console.warn('[Z-API] Settings query ignored:', settingsErr.message);
+        console.warn('[Z-API] system_settings query ignored:', settingsErr.message);
       }
     }
 
@@ -132,18 +132,8 @@ export default async function handler(req, res) {
       }
 
       if (!chatsRes.ok) {
-        // If Client-Token was sent and rejected by Z-API, try without Client-Token header as fallback
-        if (zapiHeaders['Client-Token']) {
-          try {
-            delete zapiHeaders['Client-Token'];
-            chatsRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/chats?page=1&pageSize=50`);
-          } catch (e) {}
-        }
-      }
-
-      if (!chatsRes || !chatsRes.ok) {
-        const errText = chatsRes ? await chatsRes.text() : 'Erro de conexão';
-        return res.status(500).json({ error: `Erro Z-API HTTP: ${errText}` });
+        const errText = await chatsRes.text();
+        return res.status(500).json({ error: `Erro Z-API HTTP ${chatsRes.status}: ${errText}` });
       }
 
       const chats = await chatsRes.json();

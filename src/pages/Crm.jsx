@@ -252,7 +252,7 @@ export default function Crm() {
     try {
       const zapiInstance = localStorage.getItem('app_zapi_instance_id') || '3F718C3D9582E1963A49EAE0B2B942D4';
       const zapiToken = localStorage.getItem('app_zapi_token') || 'D4F38DEC6BD1906C37E044B4';
-      const zapiClientToken = localStorage.getItem('app_zapi_client_token') || '';
+      const zapiClientToken = localStorage.getItem('app_zapi_client_token') || 'F5c1b8f27f6b049c98c4e779d00f67552S';
 
       if (zapiInstance && zapiToken) {
         const zapiHeaders = { 'Content-Type': 'application/json' };
