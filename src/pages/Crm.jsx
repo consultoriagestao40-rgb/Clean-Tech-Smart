@@ -29,7 +29,13 @@ import {
   Send,
   Paperclip,
   Smile,
-  CheckCheck
+  CheckCheck,
+  Mic,
+  MicOff,
+  FileText,
+  ImageIcon,
+  Volume2,
+  Square
 } from 'lucide-react';
 
 const DEFAULT_STAGES = [
@@ -145,7 +151,47 @@ export default function Crm() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInputText, setChatInputText] = useState('');
   const [isSendingChatMessage, setIsSendingChatMessage] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
   const chatMessagesEndRef = useRef(null);
+
+  // Audio recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const recordingTimerRef = useRef(null);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
+        const file = new File([blob], `audio_${Date.now()}.ogg`, { type: 'audio/ogg' });
+        setSelectedFile(file);
+        setIsRecording(false);
+        setRecordingTime(0);
+        clearInterval(recordingTimerRef.current);
+      };
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      setRecordingTime(0);
+      recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+    } catch (err) {
+      alert('Permissão de microfone negada.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+    }
+    clearInterval(recordingTimerRef.current);
+  };
 
   useEffect(() => {
     if (activeChatTab === 'chat' && chatMessagesEndRef.current) {
@@ -251,7 +297,7 @@ export default function Crm() {
 
   const handleSendChatMessage = async (e) => {
     if (e) e.preventDefault();
-    if (!chatInputText.trim() || !activeWhatsAppChatLead) return;
+    if ((!chatInputText.trim() && !selectedFile) || !activeWhatsAppChatLead) return;
 
     const textToSend = chatInputText.trim();
     setIsSendingChatMessage(true);
@@ -261,78 +307,116 @@ export default function Crm() {
       const zapiToken = localStorage.getItem('app_zapi_token') || 'D4F38DEC6BD1906C37E044B4';
       const zapiClientToken = localStorage.getItem('app_zapi_client_token') || 'F5c1b8f27f6b049c98c4e779d00f67552S';
 
-      if (zapiInstance && zapiToken) {
-        const zapiHeaders = { 'Content-Type': 'application/json' };
-        if (zapiClientToken && zapiClientToken.trim()) zapiHeaders['Client-Token'] = zapiClientToken.trim();
+      const zapiHeaders = { 'Content-Type': 'application/json' };
+      if (zapiClientToken && zapiClientToken.trim()) zapiHeaders['Client-Token'] = zapiClientToken.trim();
 
-        let cleanPhoneDigits = activeWhatsAppChatLead.phone.replace(/\D/g, '');
-        if (cleanPhoneDigits.length === 11 && !cleanPhoneDigits.startsWith('55')) {
-          cleanPhoneDigits = '55' + cleanPhoneDigits;
-        } else if (cleanPhoneDigits.length === 10 && !cleanPhoneDigits.startsWith('55')) {
-          cleanPhoneDigits = '55' + cleanPhoneDigits;
-        }
+      let cleanPhoneDigits = activeWhatsAppChatLead.phone.replace(/\D/g, '');
+      if (cleanPhoneDigits.length === 11 && !cleanPhoneDigits.startsWith('55')) {
+        cleanPhoneDigits = '55' + cleanPhoneDigits;
+      } else if (cleanPhoneDigits.length === 10 && !cleanPhoneDigits.startsWith('55')) {
+        cleanPhoneDigits = '55' + cleanPhoneDigits;
+      }
 
+      const resolvedUserId = currentUser?.id || currentUser?.userId || 3;
+      const resolvedUserName = currentUser?.name || 'Vendedor';
+
+      // --- Send File (if selected) ---
+      if (selectedFile) {
         try {
-          const sendRes = await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/send-text`, {
+          const b64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(selectedFile);
+          });
+
+          const mimeType = selectedFile.type || 'application/octet-stream';
+          const isImage = mimeType.startsWith('image/');
+          const isAudio = mimeType.startsWith('audio/');
+          let sendEndpoint = 'send-document/document';
+          let sendBody = { phone: cleanPhoneDigits, document: `data:${mimeType};base64,${b64}`, fileName: selectedFile.name, caption: textToSend };
+
+          if (isImage) {
+            sendEndpoint = 'send-image';
+            sendBody = { phone: cleanPhoneDigits, image: `data:${mimeType};base64,${b64}`, caption: textToSend };
+          } else if (isAudio) {
+            sendEndpoint = 'send-audio';
+            sendBody = { phone: cleanPhoneDigits, audio: `data:${mimeType};base64,${b64}` };
+          }
+
+          await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/${sendEndpoint}`, {
             method: 'POST',
             headers: zapiHeaders,
+            body: JSON.stringify(sendBody)
+          });
+
+          const fileLabel = isImage ? '[Imagem]' : isAudio ? '[Áudio]' : `[Arquivo: ${selectedFile.name}]`;
+          const fileNoteContent = `[WhatsApp] ${fileLabel}${textToSend ? ' ' + textToSend : ''}`;
+
+          await fetch('/api/crm/notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({
-              phone: cleanPhoneDigits,
-              message: textToSend
+              lead_phone: activeWhatsAppChatLead.phone,
+              content: fileNoteContent,
+              user_id: resolvedUserId,
+              user_name: resolvedUserName
             })
           });
 
-          if (!sendRes.ok && zapiHeaders['Client-Token']) {
-            await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/send-text`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                phone: cleanPhoneDigits,
-                message: textToSend
-              })
-            });
-          }
-        } catch (e) {
-          console.warn('[Z-API Send Error]:', e);
+          setChatMessages(prev => [...prev, {
+            id: `local_file_${Date.now()}`,
+            content: fileNoteContent.replace('[WhatsApp]', '').trim(),
+            is_sent: true,
+            author_name: resolvedUserName,
+            is_file: !isAudio,
+            is_audio: isAudio,
+            file_name: selectedFile.name,
+            created_at: new Date().toISOString()
+          }]);
+
+          setSelectedFile(null);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          setChatInputText('');
+        } catch (fileErr) {
+          console.error('[Send File Error]:', fileErr);
+          alert('Erro ao enviar arquivo. Verifique a conexão com a Z-API.');
         }
+        setIsSendingChatMessage(false);
+        return;
+      }
+
+      // --- Send Text ---
+      try {
+        await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/send-text`, {
+          method: 'POST',
+          headers: zapiHeaders,
+          body: JSON.stringify({ phone: cleanPhoneDigits, message: textToSend })
+        });
+      } catch (zapiErr) {
+        console.warn('[Z-API Send Error]:', zapiErr);
       }
 
       const resNote = await fetch('/api/crm/notes', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           lead_phone: activeWhatsAppChatLead.phone,
           content: `[WhatsApp] ${textToSend}`,
-          user_id: currentUser?.id || currentUser?.userId || 3,
-          user_name: currentUser?.name || 'Vendedor'
+          user_id: resolvedUserId,
+          user_name: resolvedUserName
         })
       });
 
-      if (resNote.ok) {
-        const noteData = await resNote.json();
-        const savedNote = noteData.note || {};
-        // Ensure is_sent=true for messages we just sent
-        setChatMessages(prev => [...prev, {
-          ...savedNote,
-          id: savedNote.id ? `db_${savedNote.id}` : `local_${Date.now()}`,
-          content: (savedNote.content || textToSend).replace('[WhatsApp]', '').trim(),
-          is_sent: true,
-          author_name: currentUser?.name || 'Vendedor',
-          created_at: savedNote.created_at || new Date().toISOString()
-        }]);
-      } else {
-        // Fallback: add message optimistically as sent
-        setChatMessages(prev => [...prev, {
-          id: `local_${Date.now()}`,
-          content: textToSend,
-          is_sent: true,
-          author_name: currentUser?.name || 'Vendedor',
-          created_at: new Date().toISOString()
-        }]);
-      }
+      const savedNote = resNote.ok ? (await resNote.json()).note || {} : {};
+      setChatMessages(prev => [...prev, {
+        ...savedNote,
+        id: savedNote.id ? `db_${savedNote.id}` : `local_${Date.now()}`,
+        content: (savedNote.content || textToSend).replace('[WhatsApp]', '').trim(),
+        is_sent: true,
+        author_name: resolvedUserName,
+        created_at: savedNote.created_at || new Date().toISOString()
+      }]);
 
       setChatInputText('');
     } catch (err) {
@@ -1333,6 +1417,21 @@ export default function Crm() {
                                   : 'bg-white text-gray-900 rounded-tl-none'
                               }`}
                             >
+                                {/* File bubble */}
+                              {msg.is_file && (
+                                <div className="flex items-center space-x-2 bg-black/5 rounded-lg px-2 py-1.5 mb-1">
+                                  <FileText className="w-5 h-5 text-gray-500 shrink-0" />
+                                  <span className="text-[12px] text-gray-700 font-medium truncate max-w-[180px]">{msg.file_name || 'Arquivo'}</span>
+                                </div>
+                              )}
+                              {/* Audio bubble */}
+                              {msg.is_audio && (
+                                <div className="flex items-center space-x-2 bg-black/5 rounded-lg px-2 py-1.5 mb-1">
+                                  <Volume2 className="w-4 h-4 text-gray-500 shrink-0" />
+                                  <div className="flex-1 h-1.5 bg-gray-300 rounded-full"><div className="h-1.5 bg-emerald-500 rounded-full w-1/2"></div></div>
+                                  <span className="text-[11px] text-gray-500">Áudio</span>
+                                </div>
+                              )}
                               <p className="whitespace-pre-wrap leading-relaxed text-[13px] text-gray-900">{cleanText}</p>
                               <div className="flex items-center justify-end space-x-1 text-[11px] text-gray-500 pt-0.5 mt-1">
                                 <span>{msgTime}</span>
@@ -1347,31 +1446,66 @@ export default function Crm() {
                   </div>
 
                   {/* Chat Bottom Bar */}
-                  <form onSubmit={handleSendChatMessage} className="bg-[#F0F2F5] px-4 py-3 border-t border-gray-200 flex items-center space-x-2 shrink-0 rounded-b-2xl">
-                    <button type="button" className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200/60 transition-all" title="Anexo">
-                      <Paperclip className="w-4 h-4" />
-                    </button>
-                    <button type="button" className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200/60 transition-all" title="Emojis">
-                      <Smile className="w-4 h-4" />
-                    </button>
+                  <div className="bg-[#F0F2F5] border-t border-gray-200 shrink-0 rounded-b-2xl">
+                    {/* File preview strip */}
+                    {selectedFile && (
+                      <div className="flex items-center px-4 py-2 bg-white border-b border-gray-100 space-x-2">
+                        {selectedFile.type.startsWith('image/') ? <ImageIcon className="w-4 h-4 text-blue-500" /> : selectedFile.type.startsWith('audio/') ? <Volume2 className="w-4 h-4 text-emerald-500" /> : <FileText className="w-4 h-4 text-gray-500" />}
+                        <span className="text-xs text-gray-700 font-medium truncate flex-1">{selectedFile.name}</span>
+                        <span className="text-[11px] text-gray-400">{(selectedFile.size / 1024).toFixed(0)} KB</span>
+                        <button type="button" onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }} className="p-1 text-gray-400 hover:text-red-500 rounded-full transition-all">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                    {/* Recording indicator */}
+                    {isRecording && (
+                      <div className="flex items-center px-4 py-2 bg-red-50 border-b border-red-100 space-x-2">
+                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                        <span className="text-xs text-red-600 font-semibold">Gravando... {Math.floor(recordingTime/60).toString().padStart(2,'0')}:{(recordingTime%60).toString().padStart(2,'0')}</span>
+                      </div>
+                    )}
+                    <form onSubmit={handleSendChatMessage} className="px-4 py-3 flex items-center space-x-2">
+                      {/* Hidden file input */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) setSelectedFile(f); }}
+                      />
+                      <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2 text-gray-500 hover:text-blue-600 rounded-full hover:bg-gray-200/60 transition-all" title="Enviar arquivo">
+                        <Paperclip className="w-4 h-4" />
+                      </button>
 
-                    <input
-                      type="text"
-                      placeholder="Digite uma mensagem..."
-                      value={chatInputText}
-                      onChange={(e) => setChatInputText(e.target.value)}
-                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white placeholder-gray-400"
-                    />
+                      {isRecording ? (
+                        <button type="button" onClick={stopRecording} className="p-2 text-red-600 hover:text-red-700 rounded-full hover:bg-red-100 transition-all animate-pulse" title="Parar gravação">
+                          <Square className="w-4 h-4 fill-red-600" />
+                        </button>
+                      ) : (
+                        <button type="button" onClick={startRecording} className="p-2 text-gray-400 hover:text-emerald-600 rounded-full hover:bg-gray-200/60 transition-all" title="Gravar áudio">
+                          <Mic className="w-4 h-4" />
+                        </button>
+                      )}
 
-                    <button
-                      type="submit"
-                      disabled={isSendingChatMessage || !chatInputText.trim()}
-                      className="p-2.5 bg-[#0B141B] hover:bg-[#1E293B] text-white rounded-full transition-all disabled:opacity-50 shadow-md flex items-center justify-center"
-                      title="Enviar via Z-API"
-                    >
-                      {isSendingChatMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    </button>
-                  </form>
+                      <input
+                        type="text"
+                        placeholder={selectedFile ? 'Legenda opcional...' : 'Digite uma mensagem...'}
+                        value={chatInputText}
+                        onChange={(e) => setChatInputText(e.target.value)}
+                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white placeholder-gray-400"
+                      />
+
+                      <button
+                        type="submit"
+                        disabled={isSendingChatMessage || (!chatInputText.trim() && !selectedFile)}
+                        className="p-2.5 bg-[#0B141B] hover:bg-[#1E293B] text-white rounded-full transition-all disabled:opacity-50 shadow-md flex items-center justify-center"
+                        title="Enviar"
+                      >
+                        {isSendingChatMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      </button>
+                    </form>
+                  </div>
                 </div>
               )}
 
