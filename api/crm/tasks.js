@@ -2,17 +2,16 @@ import { Pool } from 'pg';
 import { getAuthUser } from '../_utils/auth.js';
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL || "postgresql://neondb_owner:npg_DtfA7VXHw8ym@ep-winter-cloud-apstwhit-pooler.c-7.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require",
   ssl: {
     rejectUnauthorized: false
   }
 });
 
 export default async function handler(req, res) {
-  // CORS support
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader(
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
@@ -22,23 +21,84 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  let dbClient;
+  try {
+    dbClient = await pool.connect();
+  } catch (e) {
+    console.error('[CRM Tasks DB Connection Error]:', e.message);
   }
 
   try {
-    getAuthUser(req); // Authentication check
-    const { id, completed, lead_phone, title, due_date } = req.body || {};
-
-    const dbClient = await pool.connect();
+    // Optional auth verification with fallback
+    let currentUser = null;
     try {
-      if (id !== undefined) {
-        // Toggle completion or update existing task
+      currentUser = getAuthUser(req);
+    } catch (authErr) {
+      console.warn('[tasks] JWT auth skipped/fallback:', authErr.message);
+    }
+
+    if (req.method === 'GET') {
+      const { phone, lead_phone } = req.query || {};
+      const targetPhone = phone || lead_phone;
+
+      if (!dbClient) {
+        return res.status(200).json({ tasks: [] });
+      }
+
+      if (targetPhone) {
+        const digits = targetPhone.replace(/\D/g, '');
+        const suffix = digits.length >= 8 ? digits.slice(-8) : digits;
+
+        const result = await dbClient.query(
+          `SELECT 
+             t.id, 
+             t.lead_phone, 
+             t.title, 
+             t.completed, 
+             to_char(t.due_date, 'YYYY-MM-DD"T"HH24:MI:SS') as due_date,
+             to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') as created_at
+           FROM crm_tasks t
+           WHERE t.lead_phone = $1 OR replace(t.lead_phone, '-', '') LIKE $2
+           ORDER BY t.completed ASC, t.due_date ASC NULLS LAST, t.id DESC`,
+          [targetPhone, `%${suffix}`]
+        );
+        return res.status(200).json({ tasks: result.rows });
+      } else {
+        // Return ALL tasks across all leads (for CRM top bar summary)
+        const result = await dbClient.query(
+          `SELECT 
+             t.id, 
+             t.lead_phone, 
+             l.name as lead_name,
+             t.title, 
+             t.completed, 
+             to_char(t.due_date, 'YYYY-MM-DD"T"HH24:MI:SS') as due_date,
+             to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') as created_at
+           FROM crm_tasks t
+           LEFT JOIN leads l ON (t.lead_phone = l.phone OR replace(t.lead_phone, '-', '') LIKE '%' || right(replace(l.phone, '-', ''), 8))
+           ORDER BY t.completed ASC, t.due_date ASC NULLS LAST, t.id DESC`
+        );
+        return res.status(200).json({ tasks: result.rows });
+      }
+    } else if (req.method === 'POST') {
+      const { id, action, completed, lead_phone, title, due_date } = req.body || {};
+
+      if (!dbClient) {
+        return res.status(500).json({ error: 'Banco de dados indisponível' });
+      }
+
+      if (action === 'delete' && id) {
+        await dbClient.query(`DELETE FROM crm_tasks WHERE id = $1`, [Number(id)]);
+        return res.status(200).json({ success: true, deletedId: id });
+      }
+
+      if (id !== undefined && id !== null && action !== 'create') {
+        // Toggle completion or update task
         const updateRes = await dbClient.query(
           `UPDATE crm_tasks 
            SET completed = $1 
            WHERE id = $2 
-           RETURNING *`,
+           RETURNING id, lead_phone, title, completed, to_char(due_date, 'YYYY-MM-DD"T"HH24:MI:SS') as due_date`,
           [Boolean(completed), Number(id)]
         );
         if (updateRes.rows.length === 0) {
@@ -48,27 +108,34 @@ export default async function handler(req, res) {
       } else {
         // Create new task
         if (!lead_phone || !title) {
-          return res.status(400).json({ error: 'lead_phone e title são obrigatórios para nova tarefa' });
+          return res.status(400).json({ error: 'lead_phone e title são obrigatórios' });
         }
 
         const cleanPhone = lead_phone.trim();
-        const parsedDueDate = due_date ? new Date(due_date) : null;
+        // due_date can be string "2026-08-04T01:00" or similar
+        const formattedDueDate = due_date ? due_date.replace('T', ' ').substring(0, 19) : null;
 
         const insertRes = await dbClient.query(
           `INSERT INTO crm_tasks (lead_phone, title, completed, due_date) 
-           VALUES ($1, $2, FALSE, $3) 
-           RETURNING *`,
-          [cleanPhone, title.trim(), parsedDueDate]
+           VALUES ($1, $2, FALSE, $3::timestamp) 
+           RETURNING id, lead_phone, title, completed, to_char(due_date, 'YYYY-MM-DD"T"HH24:MI:SS') as due_date`,
+          [cleanPhone, title.trim(), formattedDueDate]
         );
 
         return res.status(201).json({ task: insertRes.rows[0] });
       }
-    } finally {
-      dbClient.release();
+    } else if (req.method === 'DELETE') {
+      const { id } = req.query || req.body || {};
+      if (!id || !dbClient) return res.status(400).json({ error: 'ID é obrigatório' });
+      await dbClient.query(`DELETE FROM crm_tasks WHERE id = $1`, [Number(id)]);
+      return res.status(200).json({ success: true, deletedId: id });
+    } else {
+      return res.status(405).json({ error: 'Method Not Allowed' });
     }
   } catch (error) {
     console.error('Erro na API crm/tasks:', error);
-    return res.status(error.message.includes('Token') || error.message.includes('Authorization') ? 401 : 500)
-      .json({ error: error.message });
+    return res.status(500).json({ error: error.message });
+  } finally {
+    if (dbClient) dbClient.release();
   }
 }

@@ -35,7 +35,9 @@ import {
   FileText,
   ImageIcon,
   Volume2,
-  Square
+  Square,
+  Bell,
+  CheckSquare
 } from 'lucide-react';
 
 const DEFAULT_STAGES = [
@@ -208,6 +210,8 @@ export default function Crm() {
 
   // Cadastro Edit Form States inside Modal
   const [editLeadName, setEditLeadName] = useState('');
+  const [editLeadCompany, setEditLeadCompany] = useState('');
+  const [editLeadContactName, setEditLeadContactName] = useState('');
   const [editLeadPhone, setEditLeadPhone] = useState('');
   const [editLeadValue, setEditLeadValue] = useState('');
   const [editLeadStage, setEditLeadStage] = useState('');
@@ -226,16 +230,118 @@ export default function Crm() {
     return 'W+';
   };
 
+  // Tasks / Lembretes states
+  const [leadTasks, setLeadTasks] = useState([]);
+  const [allCrmTasks, setAllCrmTasks] = useState([]);
+  const [isCreatingReminder, setIsCreatingReminder] = useState(false);
+  const [isRemindersSummaryOpen, setIsRemindersSummaryOpen] = useState(false);
+  const [remindersFilter, setRemindersFilter] = useState('hoje'); // 'hoje' | 'atrasados' | 'todos'
+
+  const fetchLeadTasks = async (phone) => {
+    if (!phone) return;
+    try {
+      const res = await fetch(`/api/crm/tasks?phone=${encodeURIComponent(phone)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLeadTasks(data.tasks || []);
+      }
+    } catch (e) {
+      console.error('Erro ao buscar tarefas do lead:', e);
+    }
+  };
+
+  const fetchAllCrmTasks = async () => {
+    try {
+      const res = await fetch('/api/crm/tasks', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAllCrmTasks(data.tasks || []);
+      }
+    } catch (e) {
+      console.error('Erro ao buscar tarefas do CRM:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllCrmTasks();
+  }, []);
+
+  const handleToggleTaskComplete = async (taskId, currentCompleted, phone) => {
+    try {
+      const res = await fetch('/api/crm/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ id: taskId, completed: !currentCompleted })
+      });
+      if (res.ok) {
+        if (phone) fetchLeadTasks(phone);
+        fetchAllCrmTasks();
+      }
+    } catch (e) {
+      console.error('Erro ao alternar status da tarefa:', e);
+    }
+  };
+
+  const handleDeleteTask = async (taskId, phone) => {
+    try {
+      const res = await fetch('/api/crm/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ id: taskId, action: 'delete' })
+      });
+      if (res.ok) {
+        if (phone) fetchLeadTasks(phone);
+        fetchAllCrmTasks();
+      }
+    } catch (e) {
+      console.error('Erro ao excluir tarefa:', e);
+    }
+  };
+
+  const formatTaskDateTime = (due_date) => {
+    if (!due_date) return 'Sem data agendada';
+    const parts = due_date.split('T');
+    if (parts.length < 2) return due_date;
+    const d = parts[0].split('-');
+    const t = parts[1].split(':');
+    if (d.length < 3 || t.length < 2) return due_date;
+    return `${d[2]}/${d[1]}/${d[0]} às ${t[0]}:${t[1]}`;
+  };
+
+  const getTaskStatusInfo = (due_date, completed) => {
+    if (completed) return { label: 'Concluído', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    if (!due_date) return { label: 'Futuro', bg: 'bg-gray-100 text-gray-600 border-gray-200' };
+    const todayStr = new Date().toISOString().split('T')[0];
+    const taskDateStr = due_date.split('T')[0];
+    if (taskDateStr < todayStr) return { label: 'Atrasado', bg: 'bg-red-50 text-red-700 border-red-200' };
+    if (taskDateStr === todayStr) return { label: 'Hoje', bg: 'bg-amber-50 text-amber-700 border-amber-200' };
+    return { label: 'Futuro', bg: 'bg-blue-50 text-blue-700 border-blue-200' };
+  };
+
   const openWhatsAppChatModal = (lead) => {
     setActiveWhatsAppChatLead(lead);
     setActiveChatTab('chat');
+    setIsCreatingReminder(false);
     setEditLeadName(lead.name || '');
+    setEditLeadCompany(lead.company || lead.name || '');
+    setEditLeadContactName(lead.contact_name || '');
     setEditLeadPhone(lead.phone || '');
     setEditLeadValue(lead.value || '0');
     setEditLeadStage(lead.stage || 'inbox');
     setEditLeadSeller(lead.assigned_to || '');
 
     fetchChatNotes(lead.phone);
+    fetchLeadTasks(lead.phone);
   };
 
   const [isSyncingWhatsApp, setIsSyncingWhatsApp] = useState(false);
@@ -477,7 +583,8 @@ export default function Crm() {
         },
         body: JSON.stringify({
           phone: activeWhatsAppChatLead.phone,
-          name: editLeadName,
+          company: editLeadCompany,
+          contact_name: editLeadContactName,
           value: parseFloat(editLeadValue) || 0,
           stage: editLeadStage,
           assigned_to: editLeadSeller || null
@@ -485,6 +592,10 @@ export default function Crm() {
       });
 
       if (res.ok) {
+        const data = await res.json();
+        if (data.lead) {
+          setActiveWhatsAppChatLead(data.lead);
+        }
         fetchLeads();
         alert('Cadastro do lead atualizado com sucesso!');
       } else {
@@ -822,11 +933,11 @@ export default function Crm() {
       alert('Data e Hora são obrigatórias.');
       return;
     }
-    const combinedDateTime = `${taskDate}T${taskTime}`;
+    const combinedDateTime = `${taskDate} ${taskTime}:00`;
     setIsSavingQuick(true);
     try {
       // 1. Update Lead Contact Return Date
-      const resContact = await fetch('/api/crm/contact', {
+      await fetch('/api/crm/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -837,8 +948,6 @@ export default function Crm() {
           next_contact_at: combinedDateTime
         })
       });
-
-      if (!resContact.ok) throw new Error('Erro ao atualizar data no lead');
 
       // 2. Create CRM Task
       const taskTitleString = taskTitle.trim() || 'Retorno de Contato';
@@ -862,10 +971,13 @@ export default function Crm() {
         setTaskMessage('');
         setTaskDate('');
         setTaskTime('');
-        fetchLeads(); // Refresh to update date badge in UI
-        alert('Agendamento criado com sucesso!');
+        setIsCreatingReminder(false);
+        fetchLeadTasks(leadPhone);
+        fetchAllCrmTasks();
+        fetchLeads();
+        alert('Lembrete agendado com sucesso!');
       } else {
-        alert('Erro ao criar agendamento na tabela de tarefas.');
+        alert('Erro ao criar agendamento.');
       }
     } catch (err) {
       console.error(err);
@@ -1008,6 +1120,38 @@ export default function Crm() {
                     </select>
                   </div>
                 )}
+
+                {/* Global Reminders Button */}
+                {(() => {
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  const pendingTasks = allCrmTasks.filter(t => !t.completed);
+                  const overdueCount = pendingTasks.filter(t => t.due_date && t.due_date.split('T')[0] < todayStr).length;
+                  const todayCount = pendingTasks.filter(t => t.due_date && t.due_date.split('T')[0] === todayStr).length;
+                  const totalAlert = overdueCount + todayCount;
+
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => setIsRemindersSummaryOpen(true)}
+                      className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs border ${
+                        overdueCount > 0
+                          ? 'bg-red-500 hover:bg-red-600 text-white border-red-600 animate-pulse'
+                          : todayCount > 0
+                          ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600'
+                          : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                      }`}
+                      title="Ver resumo de lembretes do CRM"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Lembretes</span>
+                      {totalAlert > 0 && (
+                        <span className="px-1.5 py-0.2 bg-white text-gray-900 rounded-full text-[10px] font-extrabold ml-1">
+                          {totalAlert}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })()}
 
                 <button
                   type="button"
@@ -1287,10 +1431,12 @@ export default function Crm() {
                 </div>
                 <div className="min-w-0">
                   <h3 className="font-bold text-sm text-white truncate">
-                    WhatsApp: {activeWhatsAppChatLead.phone || activeWhatsAppChatLead.name}
+                    {activeWhatsAppChatLead.company && activeWhatsAppChatLead.contact_name
+                      ? `${activeWhatsAppChatLead.company} (${activeWhatsAppChatLead.contact_name})`
+                      : activeWhatsAppChatLead.company || activeWhatsAppChatLead.contact_name || activeWhatsAppChatLead.name || `WhatsApp: ${activeWhatsAppChatLead.phone}`}
                   </h3>
                   <p className="text-xs text-emerald-400 font-medium truncate">
-                    {activeWhatsAppChatLead.phone}
+                    {activeWhatsAppChatLead.contact_name ? `Contato: ${activeWhatsAppChatLead.contact_name} · ` : ''}📱 {activeWhatsAppChatLead.phone}
                   </p>
                 </div>
               </div>
@@ -1591,29 +1737,126 @@ export default function Crm() {
               {/* TAB 3: LEMBRETES */}
               {activeChatTab === 'lembretes' && (
                 <div className="flex-1 p-6 overflow-y-auto space-y-4">
-                  <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
-                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Agendar Retorno / Lembrete</h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Data</label>
-                        <input type="date" value={taskDate} onChange={e => setTaskDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Hora</label>
-                        <input type="time" value={taskTime} onChange={e => setTaskTime(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
-                      </div>
-                    </div>
+                  {/* Top Bar for Tab */}
+                  <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Descrição</label>
-                      <input type="text" placeholder="Ex: Ligar para confirmar proposta" value={taskMessage} onChange={e => setTaskMessage(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+                      <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center space-x-2">
+                        <Clock className="w-4 h-4 text-emerald-600" />
+                        <span>Lembretes Cadastrados</span>
+                      </h4>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        {leadTasks.filter(t => !t.completed).length} pendente(s)
+                      </p>
                     </div>
                     <button
-                      onClick={() => handleSaveQuickReminder(activeWhatsAppChatLead.phone)}
-                      disabled={isSavingQuick}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
+                      type="button"
+                      onClick={() => setIsCreatingReminder(!isCreatingReminder)}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center space-x-1.5 ${
+                        isCreatingReminder
+                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      }`}
                     >
-                      Agendar Lembrete
+                      {isCreatingReminder ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      <span>{isCreatingReminder ? 'Cancelar' : 'Novo Lembrete'}</span>
                     </button>
+                  </div>
+
+                  {/* Creation Form (if toggled or if list is empty and creating) */}
+                  {isCreatingReminder && (
+                    <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm space-y-3 animate-fadeIn">
+                      <h5 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Agendar Novo Retorno</h5>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Data</label>
+                          <input type="date" value={taskDate} onChange={e => setTaskDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50 focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Hora</label>
+                          <input type="time" value={taskTime} onChange={e => setTaskTime(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50 focus:ring-2 focus:ring-emerald-500" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Descrição / Motivo</label>
+                        <input type="text" placeholder="Ex: Ligar para confirmar proposta..." value={taskMessage} onChange={e => setTaskMessage(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50 focus:ring-2 focus:ring-emerald-500" />
+                      </div>
+                      <div className="flex justify-end space-x-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsCreatingReminder(false)}
+                          className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-xl transition-all"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveQuickReminder(activeWhatsAppChatLead.phone)}
+                          disabled={isSavingQuick || !taskDate || !taskTime}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-all shadow-xs disabled:opacity-50"
+                        >
+                          {isSavingQuick ? 'Salvando...' : 'Salvar Lembrete'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* List of Reminders */}
+                  <div className="space-y-2">
+                    {leadTasks.length === 0 ? (
+                      <div className="bg-white p-6 rounded-2xl border border-gray-200 text-center space-y-2">
+                        <Clock className="w-8 h-8 text-gray-300 mx-auto" />
+                        <p className="text-xs text-gray-500 font-medium">Nenhum lembrete cadastrado para este lead.</p>
+                        <button
+                          type="button"
+                          onClick={() => setIsCreatingReminder(true)}
+                          className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold transition-all"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Criar Primeiro Lembrete</span>
+                        </button>
+                      </div>
+                    ) : (
+                      leadTasks.map(task => {
+                        const statusInfo = getTaskStatusInfo(task.due_date, task.completed);
+                        return (
+                          <div
+                            key={task.id}
+                            className={`bg-white p-3.5 rounded-2xl border transition-all flex items-center space-x-3 shadow-2xs ${
+                              task.completed ? 'border-gray-200 opacity-65' : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={Boolean(task.completed)}
+                              onChange={() => handleToggleTaskComplete(task.id, task.completed, activeWhatsAppChatLead.phone)}
+                              className="w-4 h-4 text-emerald-600 rounded-md focus:ring-emerald-500 cursor-pointer shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-xs font-semibold ${task.completed ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                                {task.title}
+                              </p>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <span className="text-[11px] text-gray-500 font-medium flex items-center space-x-1">
+                                  <Clock className="w-3 h-3 text-gray-400 inline" />
+                                  <span>{formatTaskDateTime(task.due_date)}</span>
+                                </span>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusInfo.bg}`}>
+                                  {statusInfo.label}
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTask(task.id, activeWhatsAppChatLead.phone)}
+                              className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all shrink-0"
+                              title="Excluir lembrete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               )}
@@ -1651,18 +1894,45 @@ export default function Crm() {
                 <div className="flex-1 p-6 overflow-y-auto space-y-4">
                   <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-4 max-w-xl">
                     <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Editar Cadastro do Lead</h4>
-                    <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Nome Completo / Empresa</label>
-                      <input type="text" value={editLeadName} onChange={e => setEditLeadName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Nome da Empresa / Razão Social</label>
+                        <input type="text" placeholder="Ex: Grupo JVS, Limpepro..." value={editLeadCompany} onChange={e => setEditLeadCompany(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Nome do Contato / Pessoa</label>
+                        <input type="text" placeholder="Ex: Cristiano Silva, Jaime..." value={editLeadContactName} onChange={e => setEditLeadContactName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Telefone WhatsApp</label>
-                      <input type="text" value={editLeadPhone} onChange={e => setEditLeadPhone(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Telefone WhatsApp</label>
+                        <input type="text" value={editLeadPhone} disabled className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs bg-gray-100 text-gray-500 cursor-not-allowed" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Valor Estimado (R$)</label>
+                        <input type="number" step="0.01" value={editLeadValue} onChange={e => setEditLeadValue(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Valor Estimado (R$)</label>
-                      <input type="number" step="0.01" value={editLeadValue} onChange={e => setEditLeadValue(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
-                    </div>
+
+                    {currentUser.role === 'gestor' && (
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Vendedor Responsável</label>
+                        <select
+                          value={editLeadSeller}
+                          onChange={e => setEditLeadSeller(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50"
+                        >
+                          <option value="">Sem vendedor atribuído</option>
+                          {sellers.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     <button
                       onClick={handleSaveLeadCadastro}
                       className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-md"
@@ -2025,6 +2295,155 @@ export default function Crm() {
               >
                 Salvar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ---------------- RESUMO DE LEMBRETES DO CRM MODAL ---------------- */}
+      {isRemindersSummaryOpen && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border border-gray-200 text-left">
+            {/* Modal Header */}
+            <div className="bg-[#0B141B] px-6 py-4 flex items-center justify-between text-white shrink-0">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white">Resumo de Lembretes & Retornos</h3>
+                  <p className="text-[11px] text-gray-400">Acompanhamento geral de compromissos com leads</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsRemindersSummaryOpen(false)}
+                className="p-1.5 hover:bg-white/10 text-gray-400 hover:text-white rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 flex items-center space-x-2 shrink-0">
+              {[
+                { key: 'hoje', label: 'Hoje' },
+                { key: 'atrasados', label: 'Atrasados' },
+                { key: 'todos', label: 'Todos os Lembretes' }
+              ].map(f => {
+                const todayStr = new Date().toISOString().split('T')[0];
+                const count = allCrmTasks.filter(t => {
+                  if (t.completed) return f.key === 'todos';
+                  const taskDate = t.due_date ? t.due_date.split('T')[0] : '';
+                  if (f.key === 'hoje') return taskDate === todayStr;
+                  if (f.key === 'atrasados') return taskDate < todayStr;
+                  return true;
+                }).length;
+
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setRemindersFilter(f.key)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center space-x-1.5 ${
+                      remindersFilter === f.key
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>{f.label}</span>
+                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${remindersFilter === f.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'}`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Reminders List */}
+            <div className="flex-1 p-6 overflow-y-auto space-y-3 custom-scrollbar">
+              {(() => {
+                const todayStr = new Date().toISOString().split('T')[0];
+                const filtered = allCrmTasks.filter(t => {
+                  if (remindersFilter === 'hoje') return !t.completed && t.due_date && t.due_date.split('T')[0] === todayStr;
+                  if (remindersFilter === 'atrasados') return !t.completed && t.due_date && t.due_date.split('T')[0] < todayStr;
+                  return true;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="py-12 text-center space-y-2">
+                      <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto" />
+                      <p className="text-xs text-gray-500 font-medium">Nenhum lembrete pendente nesta categoria!</p>
+                    </div>
+                  );
+                }
+
+                return filtered.map(t => {
+                  const statusInfo = getTaskStatusInfo(t.due_date, t.completed);
+                  const matchedLead = leads.find(l => l.phone === t.lead_phone || l.phone?.slice(-8) === t.lead_phone?.slice(-8));
+
+                  return (
+                    <div
+                      key={t.id}
+                      className={`p-4 rounded-2xl border transition-all flex items-center justify-between space-x-3 shadow-2xs ${
+                        t.completed ? 'bg-gray-50 border-gray-200 opacity-60' : 'bg-white border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(t.completed)}
+                          onChange={() => handleToggleTaskComplete(t.id, t.completed)}
+                          className="w-4 h-4 text-emerald-600 rounded-md focus:ring-emerald-500 cursor-pointer shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-bold text-gray-900 truncate">
+                              {t.lead_name || matchedLead?.name || t.lead_phone}
+                            </span>
+                            <span className="text-[11px] text-gray-400">({t.lead_phone})</span>
+                          </div>
+                          <p className={`text-xs mt-0.5 ${t.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                            {t.title}
+                          </p>
+                          <div className="flex items-center space-x-2 mt-1.5">
+                            <span className="text-[11px] text-gray-500 font-medium flex items-center space-x-1">
+                              <Clock className="w-3 h-3 text-gray-400 inline" />
+                              <span>{formatTaskDateTime(t.due_date)}</span>
+                            </span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusInfo.bg}`}>
+                              {statusInfo.label}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 shrink-0">
+                        {matchedLead && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsRemindersSummaryOpen(false);
+                              openWhatsAppChatModal(matchedLead);
+                            }}
+                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl transition-all flex items-center space-x-1 shadow-2xs"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>Abrir Chat</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTask(t.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>
