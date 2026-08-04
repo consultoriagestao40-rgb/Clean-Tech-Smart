@@ -488,14 +488,20 @@ export default function Crm() {
       });
       if (res.ok) {
         const data = await res.json();
-        setChatMessages(data.messages || []);
+        const incoming = data.messages || [];
+        if (incoming.length > 0) {
+          setChatMessages(incoming);
+        }
       } else {
         const fallbackRes = await fetch(`/api/crm/notes?lead_phone=${encodeURIComponent(phone)}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (fallbackRes.ok) {
           const fallbackData = await fallbackRes.json();
-          setChatMessages(fallbackData.notes || []);
+          const fallbackNotes = fallbackData.notes || [];
+          if (fallbackNotes.length > 0) {
+            setChatMessages(fallbackNotes);
+          }
         }
       }
     } catch (err) {

@@ -104,27 +104,24 @@ export default async function handler(req, res) {
           const notesRes = await dbClient.query(
             `SELECT id, lead_phone, user_id, content, created_at 
              FROM crm_notes 
-             WHERE lead_phone = $1 OR replace(lead_phone, '-', '') LIKE $2 
+             WHERE lead_phone = $1 
+                OR replace(lead_phone, '-', '') LIKE $2 
+                OR replace($1, '-', '') LIKE '%' || right(replace(lead_phone, '-', ''), 8)
              ORDER BY created_at ASC`,
             [phone, `%${suffix}`]
           );
           dbNotes = notesRes.rows.map(n => {
-            // user_id NOT NULL = mensagem enviada pelo vendedor (DIREITA verde)
-            // user_id IS NULL  = mensagem recebida do cliente (ESQUERDA branco)
             const isSent = n.user_id !== null && n.user_id !== undefined;
             const rawContent = n.content || '';
 
-            // Detect media type from content label saved by webhook or send handler
             const isFileMatch  = rawContent.match(/\[Arquivo:\s*([^\]]+)\]/);
             const isImageMatch = rawContent.match(/\[Imagem(?::\s*([^\]]+))?\]/);
             const isAudio      = /\[Áudio\]/i.test(rawContent);
             const isVideo      = /\[Vídeo\]/i.test(rawContent);
 
-            // Extract URL from content if present (format: [Label] https://... caption)
             const urlMatch = rawContent.match(/https?:\/\/[^\s]+/);
             const mediaUrl = urlMatch ? urlMatch[0] : null;
 
-            // Clean text: remove label, URL
             let text = rawContent
               .replace('[WhatsApp]', '')
               .replace(/\[Arquivo:[^\]]*\]/g, '')
@@ -134,10 +131,9 @@ export default async function handler(req, res) {
               .replace(/https?:\/\/[^\s]+/g, '')
               .trim();
 
-            // is_whatsapp: true = mensagem WhatsApp (chat), false = anotação interna
             const isWhatsApp = rawContent.startsWith('[WhatsApp]') ||
               isFileMatch !== null || isImageMatch !== null || isAudio || isVideo ||
-              n.user_id === null; // received from client via webhook
+              n.user_id === null;
 
             return {
               id: `db_${n.id}`,
@@ -158,7 +154,43 @@ export default async function handler(req, res) {
         } catch (e) { console.error('[zapi-chats] DB notes error:', e.message); }
       }
 
-      // Use only DB notes (source of truth). No deduplication by text - use unique DB ids.
+      // Auto-sync Z-API live messages into DB if missing
+      if (dbClient && formattedZapi.length > 0) {
+        const existingTexts = new Set(dbNotes.map(n => n.content.trim()));
+        for (const zm of formattedZapi) {
+          if (!zm.content || !zm.content.trim()) continue;
+          const trimmed = zm.content.trim();
+          if (!existingTexts.has(trimmed)) {
+            try {
+              const insertRes = await dbClient.query(
+                `INSERT INTO crm_notes (lead_phone, user_id, content, created_at)
+                 VALUES ($1, $2, $3, $4::timestamp)
+                 RETURNING id`,
+                [phone, zm.is_sent ? 1 : null, `[WhatsApp] ${trimmed}`, zm.created_at]
+              );
+              existingTexts.add(trimmed);
+              dbNotes.push({
+                id: `db_${insertRes.rows[0].id}`,
+                content: trimmed,
+                author_name: zm.author_name,
+                is_sent: zm.is_sent,
+                is_whatsapp: true,
+                user_id: zm.is_sent ? 1 : null,
+                created_at: zm.created_at,
+                is_file: false,
+                is_image: false,
+                is_audio: false,
+                is_video: false,
+                file_name: null,
+                media_url: null
+              });
+            } catch (insErr) {
+              console.error('[zapi-chats] Auto insert error:', insErr.message);
+            }
+          }
+        }
+      }
+
       // Sort chronologically
       dbNotes.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
       return res.status(200).json({ messages: dbNotes });
@@ -179,38 +211,43 @@ export default async function handler(req, res) {
       }
 
       const chats = await chatsRes.json();
-      const rawChats = Array.isArray(chats) ? chats : (chats.value || []);
+      const chatsList = Array.isArray(chats) ? chats : (chats.chats || chats.value || []);
+
       let syncedCount = 0;
-
       if (dbClient) {
-        for (const chat of rawChats) {
-          const rawPhone = chat.phone || chat.id || '';
-          const cleanPhone = rawPhone.replace(/\D/g, '');
-          if (!cleanPhone || cleanPhone.length < 10) continue;
+        for (const chat of chatsList) {
+          const rawPhone = chat.phone || chat.id || chat.chatId || '';
+          if (!rawPhone) continue;
+          let cleanPhone = String(rawPhone).split('@')[0].replace(/\D/g, '').trim();
+          if (!cleanPhone) continue;
+          if (cleanPhone.length === 11 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
+          if (cleanPhone.length === 10 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
 
-          const name = chat.name || chat.contactName || `Lead ${cleanPhone}`;
+          const leadName = chat.name || chat.contactName || chat.pushName || `Lead ${cleanPhone}`;
+          const suffix = cleanPhone.length >= 8 ? cleanPhone.slice(-8) : cleanPhone;
 
-          try {
+          const leadCheck = await dbClient.query(
+            `SELECT phone FROM leads WHERE phone = $1 OR replace(phone, '-', '') LIKE $2 LIMIT 1`,
+            [cleanPhone, `%${suffix}`]
+          );
+
+          if (leadCheck.rows.length === 0) {
             await dbClient.query(
-              `INSERT INTO leads (phone, name, stage, value)
-               VALUES ($1, $2, 'inbox', 0)
-               ON CONFLICT (phone) DO UPDATE 
-               SET name = EXCLUDED.name
-               WHERE leads.name IS NULL OR leads.name LIKE 'Lead%'`,
-              [cleanPhone, name]
+              `INSERT INTO leads (phone, name, stage, value) VALUES ($1, $2, 'inbox', 0.00)`,
+              [cleanPhone, leadName]
             );
             syncedCount++;
-          } catch (dbErr) {
-            console.warn('[Z-API Lead Insert Warning]:', dbErr.message);
           }
         }
       }
 
-      return res.status(200).json({ success: true, synced: syncedCount });
+      return res.status(200).json({ success: true, synced: syncedCount, total: chatsList.length });
+    } else {
+      return res.status(405).json({ error: 'Method Not Allowed' });
     }
-  } catch (err) {
-    console.error('[Z-API Handler Error]:', err);
-    return res.status(500).json({ error: err.message });
+  } catch (error) {
+    console.error('Erro na API crm/zapi-chats:', error);
+    return res.status(500).json({ error: error.message });
   } finally {
     if (dbClient) dbClient.release();
   }
