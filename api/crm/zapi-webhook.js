@@ -2,135 +2,202 @@ import { Pool } from 'pg';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL || "postgresql://neondb_owner:npg_DtfA7VXHw8ym@ep-winter-cloud-apstwhit-pooler.c-7.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require",
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: { rejectUnauthorized: false }
 });
 
-async function findClientByPhone(dbClient, rawPhone) {
-  const digits = rawPhone.replace(/\D/g, '');
-  if (!digits) return null;
-  
-  try {
-    const result = await dbClient.query('SELECT id, name, phone FROM clients');
-    for (const row of result.rows) {
-      if (!row.phone) continue;
-      const clientDigits = row.phone.replace(/\D/g, '');
-      if (clientDigits.length >= 8 && digits.length >= 8) {
-        const suffix1 = clientDigits.slice(-8);
-        const suffix2 = digits.slice(-8);
-        if (suffix1 === suffix2) {
-          return row;
-        }
-      }
-    }
-  } catch (e) {}
-  return null;
+async function findLeadByPhone(dbClient, cleanPhone) {
+  const suffix = cleanPhone.length >= 8 ? cleanPhone.slice(-8) : cleanPhone;
+  const r = await dbClient.query(
+    `SELECT * FROM leads WHERE phone = $1 OR replace(phone, '-', '') LIKE $2 LIMIT 1`,
+    [cleanPhone, `%${suffix}`]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Extract all relevant info from Z-API webhook payload.
+ * Z-API sends different shapes depending on message type.
+ * Ref: https://developer.z-api.io/en/webhooks/on-message-received
+ */
+function extractPayloadInfo(payload) {
+  const msg = payload.message || payload;
+
+  // Phone (sender)
+  let phone =
+    payload.phone || payload.participantPhone || payload.from || payload.chatId ||
+    msg.phone || msg.from || msg.chatId || '';
+
+  // Sender name
+  const senderName =
+    payload.senderName || payload.senderShortName || payload.pushName ||
+    msg.senderName || msg.pushName || '';
+
+  // Determine if this message was sent BY US (fromMe) — ignore to avoid duplicate saves
+  const fromMe = payload.fromMe === true || msg.fromMe === true;
+
+  // ── Text message ─────────────────────────────────────────────
+  let messageText =
+    payload.text?.message ||
+    msg.text?.message ||
+    payload.body || msg.body ||
+    payload.caption || msg.caption || '';
+
+  // ── Media / File detection ───────────────────────────────────
+  let mediaType = null;   // 'image' | 'audio' | 'video' | 'document' | 'sticker'
+  let fileName = null;
+  let mediaUrl = null;
+  let mimeType = null;
+
+  // Document
+  const doc = payload.document || msg.document;
+  if (doc) {
+    mediaType = 'document';
+    fileName  = payload.fileName || msg.fileName || doc.fileName || doc.name || 'documento';
+    mediaUrl  = payload.documentUrl || msg.documentUrl || doc.url || doc.documentUrl || null;
+    mimeType  = payload.mimeType || msg.mimeType || doc.mimeType || null;
+    if (!messageText) messageText = payload.caption || msg.caption || '';
+  }
+
+  // Image
+  const img = payload.image || msg.image;
+  if (!mediaType && img) {
+    mediaType = 'image';
+    fileName  = payload.fileName || msg.fileName || img.fileName || 'imagem';
+    mediaUrl  = payload.imageUrl || msg.imageUrl || img.url || img.imageUrl || null;
+    mimeType  = payload.mimeType || msg.mimeType || img.mimeType || 'image/jpeg';
+    if (!messageText) messageText = payload.caption || msg.caption || '';
+  }
+
+  // Audio / PTT
+  const aud = payload.audio || msg.audio;
+  if (!mediaType && aud) {
+    mediaType = 'audio';
+    fileName  = payload.fileName || msg.fileName || `audio_${Date.now()}.ogg`;
+    mediaUrl  = payload.audioUrl || msg.audioUrl || aud.url || aud.audioUrl || null;
+    mimeType  = payload.mimeType || msg.mimeType || aud.mimeType || 'audio/ogg';
+  }
+
+  // Video
+  const vid = payload.video || msg.video;
+  if (!mediaType && vid) {
+    mediaType = 'video';
+    fileName  = payload.fileName || msg.fileName || 'video';
+    mediaUrl  = payload.videoUrl || msg.videoUrl || vid.url || vid.videoUrl || null;
+    mimeType  = payload.mimeType || msg.mimeType || vid.mimeType || 'video/mp4';
+    if (!messageText) messageText = payload.caption || msg.caption || '';
+  }
+
+  // Sticker
+  if (!mediaType && (payload.sticker || msg.sticker)) {
+    mediaType = 'sticker';
+    fileName  = 'sticker';
+    mediaUrl  = null;
+  }
+
+  return { phone, senderName, fromMe, messageText, mediaType, fileName, mediaUrl, mimeType };
 }
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
-  );
+  res.setHeader('Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   let dbClient;
-  try {
-    dbClient = await pool.connect();
-  } catch (e) {
-    console.error('[Z-API Webhook DB Connection Error]:', e.message);
+  try { dbClient = await pool.connect(); } catch (e) {
+    console.error('[Webhook DB Error]:', e.message);
   }
 
   try {
     const payload = req.body || {};
-    
-    let phone = payload.phone || payload.participantPhone || payload.from || payload.chatId;
-    let senderName = payload.senderName || payload.senderShortName || payload.pushName;
-    let messageText = payload.text?.message || payload.body || payload.caption || '';
 
-    if (payload.message) {
-      phone = phone || payload.message.phone || payload.message.from || payload.message.chatId;
-      senderName = senderName || payload.message.senderName || payload.message.pushName;
-      messageText = messageText || payload.message.text?.message || payload.message.body || payload.message.caption || '';
-    }
+    // Log full payload for debugging
+    console.log('[Z-API Webhook]', JSON.stringify(payload).substring(0, 500));
 
-    if (!phone && typeof payload === 'object') {
-      for (const k in payload) {
-        if ((k.toLowerCase().includes('phone') || k.toLowerCase().includes('from')) && typeof payload[k] === 'string') {
-          phone = payload[k];
-          break;
-        }
-      }
+    const { phone, senderName, fromMe, messageText, mediaType, fileName, mediaUrl, mimeType } = extractPayloadInfo(payload);
+
+    // Skip messages we sent (fromMe) — they're already saved when sent via the CRM
+    if (fromMe) {
+      return res.status(200).json({ success: true, skipped: 'fromMe' });
     }
 
     if (!phone) {
-      return res.status(200).json({ success: true, message: 'Payload received, no phone detected' });
+      return res.status(200).json({ success: true, message: 'No phone detected' });
     }
 
     let cleanPhone = String(phone).split('@')[0].replace(/\D/g, '').trim();
-    if (!cleanPhone) {
-      return res.status(200).json({ success: true, message: 'Empty phone digits' });
-    }
+    if (!cleanPhone) return res.status(200).json({ success: true, message: 'Empty phone digits' });
 
     if (cleanPhone.length === 11 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
     if (cleanPhone.length === 10 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
 
-    if (dbClient) {
-      let currentLead;
-      const suffix = cleanPhone.length >= 8 ? cleanPhone.slice(-8) : cleanPhone;
-      
-      const checkRes = await dbClient.query(
-        `SELECT * FROM leads WHERE phone = $1 OR replace(phone, '-', '') LIKE $2 LIMIT 1`,
-        [cleanPhone, `%${suffix}`]
+    if (!dbClient) {
+      return res.status(200).json({ success: true, message: 'DB unavailable, skipping save' });
+    }
+
+    // Upsert lead
+    let lead = await findLeadByPhone(dbClient, cleanPhone);
+    if (!lead) {
+      const ins = await dbClient.query(
+        `INSERT INTO leads (phone, name, stage, value, assigned_to) VALUES ($1, $2, 'inbox', 0.00, NULL) RETURNING *`,
+        [cleanPhone, senderName || `Lead WhatsApp (${cleanPhone})`]
       );
+      lead = ins.rows[0];
+    }
 
-      if (checkRes.rows.length === 0) {
-        const matchedClient = await findClientByPhone(dbClient, cleanPhone);
-        const initialName = senderName || (matchedClient ? matchedClient.name : `Lead WhatsApp (${cleanPhone})`);
+    const leadPhone = lead ? lead.phone : cleanPhone;
 
-        const insertRes = await dbClient.query(
-          `INSERT INTO leads (phone, name, stage, value, assigned_to) 
-           VALUES ($1, $2, 'inbox', 0.00, NULL) 
-           RETURNING *`,
-          [cleanPhone, initialName]
-        );
-        currentLead = insertRes.rows[0];
+    // Build content string to save in crm_notes
+    let contentToSave = null;
+
+    if (mediaType) {
+      // Media message received from client
+      let label;
+      if (mediaType === 'document') {
+        label = `[Arquivo: ${fileName || 'documento'}]`;
+      } else if (mediaType === 'image') {
+        label = `[Imagem: ${fileName || 'imagem'}]`;
+      } else if (mediaType === 'audio') {
+        label = `[Áudio]`;
+      } else if (mediaType === 'video') {
+        label = `[Vídeo]`;
       } else {
-        currentLead = checkRes.rows[0];
+        label = `[${mediaType}]`;
       }
 
-      const leadPhoneToSave = currentLead ? currentLead.phone : cleanPhone;
+      // Append media URL so it can be displayed/downloaded
+      const urlPart = mediaUrl ? ` ${mediaUrl}` : '';
+      const captionPart = messageText ? ` ${messageText}` : '';
+      contentToSave = `${label}${urlPart}${captionPart}`.trim();
 
-      if (messageText) {
-        const cleanMessageText = messageText.replace('[WhatsApp]', '').trim();
-        
-        const noteCheck = await dbClient.query(
-          'SELECT id FROM crm_notes WHERE lead_phone = $1 AND content = $2',
-          [leadPhoneToSave, cleanMessageText]
+    } else if (messageText && messageText.trim()) {
+      contentToSave = messageText.replace('[WhatsApp]', '').trim();
+    }
+
+    if (contentToSave) {
+      // Dedup: same phone + same content within last 10 seconds
+      const tenSecondsAgo = new Date(Date.now() - 10000).toISOString();
+      const noteCheck = await dbClient.query(
+        `SELECT id FROM crm_notes WHERE lead_phone = $1 AND content = $2 AND created_at > $3`,
+        [leadPhone, contentToSave, tenSecondsAgo]
+      );
+
+      if (noteCheck.rows.length === 0) {
+        await dbClient.query(
+          `INSERT INTO crm_notes (lead_phone, content, user_id, created_at) VALUES ($1, $2, NULL, NOW())`,
+          [leadPhone, contentToSave]
         );
-
-        if (noteCheck.rows.length === 0) {
-          await dbClient.query(
-            `INSERT INTO crm_notes (lead_phone, content, user_id, created_at) 
-             VALUES ($1, $2, NULL, NOW())`,
-            [leadPhoneToSave, cleanMessageText]
-          );
-        }
+        console.log(`[Webhook] Saved ${mediaType || 'text'} message for ${leadPhone}`);
+      } else {
+        console.log('[Webhook] Duplicate message, skipped');
       }
     }
 
-    return res.status(200).json({ success: true, phone: cleanPhone });
+    return res.status(200).json({ success: true, phone: cleanPhone, mediaType: mediaType || 'text' });
   } catch (err) {
     console.error('[Z-API Webhook Error]:', err);
     return res.status(500).json({ error: err.message });

@@ -112,14 +112,41 @@ export default async function handler(req, res) {
             // user_id NOT NULL = mensagem enviada pelo vendedor (DIREITA verde)
             // user_id IS NULL  = mensagem recebida do cliente (ESQUERDA branco)
             const isSent = n.user_id !== null && n.user_id !== undefined;
-            const text = (n.content || '').replace('[WhatsApp]', '').trim();
+            const rawContent = n.content || '';
+
+            // Detect media type from content label saved by webhook or send handler
+            const isFileMatch  = rawContent.match(/\[Arquivo:\s*([^\]]+)\]/);
+            const isImageMatch = rawContent.match(/\[Imagem(?::\s*([^\]]+))?\]/);
+            const isAudio      = /\[Áudio\]/i.test(rawContent);
+            const isVideo      = /\[Vídeo\]/i.test(rawContent);
+
+            // Extract URL from content if present (format: [Label] https://... caption)
+            const urlMatch = rawContent.match(/https?:\/\/[^\s]+/);
+            const mediaUrl = urlMatch ? urlMatch[0] : null;
+
+            // Clean text: remove label, URL
+            let text = rawContent
+              .replace('[WhatsApp]', '')
+              .replace(/\[Arquivo:[^\]]*\]/g, '')
+              .replace(/\[Imagem:[^\]]*\]/g, '')
+              .replace(/\[Áudio\]/gi, '')
+              .replace(/\[Vídeo\]/gi, '')
+              .replace(/https?:\/\/[^\s]+/g, '')
+              .trim();
+
             return {
               id: `db_${n.id}`,
               content: text,
               author_name: isSent ? 'Você' : 'Cliente',
               is_sent: isSent,
               user_id: n.user_id,
-              created_at: n.created_at
+              created_at: n.created_at,
+              is_file:  !!isFileMatch  && !isAudio,
+              is_image: !!isImageMatch && !isAudio,
+              is_audio: isAudio,
+              is_video: isVideo,
+              file_name: isFileMatch?.[1] || isImageMatch?.[1] || null,
+              media_url: mediaUrl
             };
           });
         } catch (e) { console.error('[zapi-chats] DB notes error:', e.message); }

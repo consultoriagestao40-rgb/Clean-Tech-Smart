@@ -1447,22 +1447,65 @@ export default function Crm() {
                                   : 'bg-white text-gray-900 rounded-tl-none'
                               }`}
                             >
-                                {/* File bubble */}
-                              {msg.is_file && (
+                              {/* Image bubble */}
+                              {msg.is_image && msg.media_url && (
+                                <a href={msg.media_url} target="_blank" rel="noreferrer" className="block mb-1.5 rounded-lg overflow-hidden">
+                                  <img src={msg.media_url} alt="Imagem" className="max-w-full max-h-48 object-cover rounded-lg" />
+                                </a>
+                              )}
+                              {msg.is_image && !msg.media_url && (
                                 <div className="flex items-center space-x-2 bg-black/5 rounded-lg px-2 py-1.5 mb-1">
-                                  <FileText className="w-5 h-5 text-gray-500 shrink-0" />
-                                  <span className="text-[12px] text-gray-700 font-medium truncate max-w-[180px]">{msg.file_name || 'Arquivo'}</span>
+                                  <ImageIcon className="w-5 h-5 text-blue-500 shrink-0" />
+                                  <span className="text-[12px] font-medium">Imagem</span>
+                                </div>
+                              )}
+                              {/* File / Document bubble */}
+                              {msg.is_file && (
+                                <div className="mb-1.5">
+                                  {msg.media_url ? (
+                                    <a href={msg.media_url} target="_blank" rel="noreferrer"
+                                      className="flex items-center space-x-2 bg-black/5 hover:bg-black/10 rounded-lg px-2 py-1.5 transition-colors">
+                                      <FileText className="w-5 h-5 text-red-500 shrink-0" />
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-[12px] text-gray-700 font-medium truncate">{msg.file_name || 'Arquivo'}</p>
+                                        <p className="text-[10px] text-blue-500">Toque para abrir</p>
+                                      </div>
+                                    </a>
+                                  ) : (
+                                    <div className="flex items-center space-x-2 bg-black/5 rounded-lg px-2 py-1.5">
+                                      <FileText className="w-5 h-5 text-gray-500 shrink-0" />
+                                      <span className="text-[12px] text-gray-700 font-medium truncate max-w-[180px]">{msg.file_name || 'Arquivo'}</span>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               {/* Audio bubble */}
                               {msg.is_audio && (
-                                <div className="flex items-center space-x-2 bg-black/5 rounded-lg px-2 py-1.5 mb-1">
-                                  <Volume2 className="w-4 h-4 text-gray-500 shrink-0" />
-                                  <div className="flex-1 h-1.5 bg-gray-300 rounded-full"><div className="h-1.5 bg-emerald-500 rounded-full w-1/2"></div></div>
-                                  <span className="text-[11px] text-gray-500">Áudio</span>
+                                <div className="mb-1.5">
+                                  {msg.media_url ? (
+                                    <audio controls className="w-full max-w-[220px] h-8" style={{ height: '32px' }}>
+                                      <source src={msg.media_url} />
+                                    </audio>
+                                  ) : (
+                                    <div className="flex items-center space-x-2 bg-black/5 rounded-lg px-2 py-1.5">
+                                      <Volume2 className="w-4 h-4 text-gray-500 shrink-0" />
+                                      <div className="flex-1 h-1.5 bg-gray-300 rounded-full"><div className="h-1.5 bg-emerald-500 rounded-full w-1/2"></div></div>
+                                      <span className="text-[11px] text-gray-500">Áudio</span>
+                                    </div>
+                                  )}
                                 </div>
                               )}
-                              <p className="whitespace-pre-wrap leading-relaxed text-[13px] text-gray-900">{cleanText}</p>
+                              {/* Video bubble */}
+                              {msg.is_video && (
+                                <div className="flex items-center space-x-2 bg-black/5 rounded-lg px-2 py-1.5 mb-1.5">
+                                  <span className="text-lg">🎬</span>
+                                  {msg.media_url
+                                    ? <a href={msg.media_url} target="_blank" rel="noreferrer" className="text-[12px] text-blue-500 font-medium">Vídeo — Abrir</a>
+                                    : <span className="text-[12px] text-gray-700">Vídeo</span>}
+                                </div>
+                              )}
+                              {/* Caption / text */}
+                              {cleanText && <p className="whitespace-pre-wrap leading-relaxed text-[13px] text-gray-900">{cleanText}</p>}
                               <div className="flex items-center justify-end space-x-1 text-[11px] text-gray-500 pt-0.5 mt-1">
                                 <span>{msgTime}</span>
                                 {isSent && <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb] inline" />}
