@@ -48,7 +48,9 @@ export default async function handler(req, res) {
     }
 
     const zapiHeaders = {};
-    if (clientToken) zapiHeaders['Client-Token'] = clientToken;
+    if (clientToken && clientToken.trim()) {
+      zapiHeaders['Client-Token'] = clientToken.trim();
+    }
 
     if (req.method === 'GET') {
       const { phone } = req.query;
@@ -130,8 +132,18 @@ export default async function handler(req, res) {
       }
 
       if (!chatsRes.ok) {
-        const errText = await chatsRes.text();
-        return res.status(500).json({ error: `Erro Z-API HTTP ${chatsRes.status}: ${errText}` });
+        // If Client-Token was sent and rejected by Z-API, try without Client-Token header as fallback
+        if (zapiHeaders['Client-Token']) {
+          try {
+            delete zapiHeaders['Client-Token'];
+            chatsRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/chats?page=1&pageSize=50`);
+          } catch (e) {}
+        }
+      }
+
+      if (!chatsRes || !chatsRes.ok) {
+        const errText = chatsRes ? await chatsRes.text() : 'Erro de conexão';
+        return res.status(500).json({ error: `Erro Z-API HTTP: ${errText}` });
       }
 
       const chats = await chatsRes.json();
