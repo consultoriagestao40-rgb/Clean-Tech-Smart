@@ -1300,9 +1300,9 @@ export default function Crm() {
                       </div>
                     ) : (
                       chatMessages.map((msg, idx) => {
-                        const isSent = msg.content?.startsWith('[WhatsApp]') || msg.user_id || msg.is_sent;
-                        const cleanText = msg.content?.replace('[WhatsApp]', '').trim() || msg.text || '';
-                        const sender = msg.author_name || currentUser?.name || 'Vendedor';
+                        const isSent = Boolean(msg.is_sent || msg.user_id || (msg.author_name && msg.author_name !== 'Cliente' && msg.author_name !== 'Lead'));
+                        const cleanText = (msg.content || '').replace('[WhatsApp]', '').trim();
+                        const sender = isSent ? (msg.author_name || 'Você') : (activeWhatsAppChatLead?.name || 'Cliente');
                         const msgTime = msg.created_at ? new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Agora';
 
                         return (
@@ -1317,11 +1317,9 @@ export default function Crm() {
                                   : 'bg-white text-gray-900 rounded-tl-none border border-gray-200'
                               }`}
                             >
-                              {isSent && (
-                                <div className="font-bold text-[11px] text-emerald-800">
-                                  *{sender}*:
-                                </div>
-                              )}
+                              <div className={`font-bold text-[11px] ${isSent ? 'text-emerald-800' : 'text-blue-800'}`}>
+                                *{sender}*:
+                              </div>
                               <p className="whitespace-pre-wrap leading-relaxed text-gray-800">{cleanText}</p>
                               <div className="flex items-center justify-end space-x-1 text-[10px] text-gray-400 pt-0.5">
                                 <span>{msgTime}</span>

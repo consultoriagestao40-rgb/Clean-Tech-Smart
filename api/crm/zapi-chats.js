@@ -89,7 +89,7 @@ export default async function handler(req, res) {
         const text = m.body || m.text?.message || m.caption || m.message || '';
         return {
           id: m.messageId || m.id || Math.random().toString(),
-          content: isSent ? `[WhatsApp] ${text}` : text,
+          content: text,
           author_name: isSent ? 'Você' : (m.senderName || 'Cliente'),
           is_sent: isSent,
           created_at: m.moment ? new Date(m.moment * 1000).toISOString() : (m.timestamp ? new Date(m.timestamp * 1000).toISOString() : new Date().toISOString())
@@ -108,11 +108,17 @@ export default async function handler(req, res) {
              ORDER BY created_at ASC`,
             [phone, `%${suffix}`]
           );
-          dbNotes = notesRes.rows.map(n => ({
-            ...n,
-            is_sent: n.content && n.content.includes('[WhatsApp]'),
-            author_name: n.user_id ? 'Você' : 'Cliente'
-          }));
+          dbNotes = notesRes.rows.map(n => {
+            const isSent = n.user_id !== null;
+            const text = (n.content || '').replace('[WhatsApp]', '').trim();
+            return {
+              id: n.id,
+              content: text,
+              author_name: isSent ? 'Você' : 'Cliente',
+              is_sent: isSent,
+              created_at: n.created_at
+            };
+          });
         } catch (e) {}
       }
 

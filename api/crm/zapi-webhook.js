@@ -113,18 +113,18 @@ export default async function handler(req, res) {
       const leadPhoneToSave = currentLead ? currentLead.phone : cleanPhone;
 
       if (messageText) {
-        const cleanMessageText = messageText.trim();
+        const cleanMessageText = messageText.replace('[WhatsApp]', '').trim();
         
         const noteCheck = await dbClient.query(
           'SELECT id FROM crm_notes WHERE lead_phone = $1 AND content = $2',
-          [leadPhoneToSave, `[WhatsApp] ${cleanMessageText}`]
+          [leadPhoneToSave, cleanMessageText]
         );
 
         if (noteCheck.rows.length === 0) {
           await dbClient.query(
             `INSERT INTO crm_notes (lead_phone, content, user_id, created_at) 
              VALUES ($1, $2, NULL, NOW())`,
-            [leadPhoneToSave, `[WhatsApp] ${cleanMessageText}`]
+            [leadPhoneToSave, cleanMessageText]
           );
         }
       }
