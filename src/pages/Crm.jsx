@@ -305,20 +305,30 @@ export default function Crm() {
         },
         body: JSON.stringify({
           lead_phone: activeWhatsAppChatLead.phone,
-          content: `[WhatsApp] ${textToSend}`
+          content: `[WhatsApp] ${textToSend}`,
+          user_id: currentUser?.id || currentUser?.userId || 3,
+          user_name: currentUser?.name || 'Vendedor'
         })
       });
 
       if (resNote.ok) {
         const noteData = await resNote.json();
-        setChatMessages(prev => [...prev, noteData.note || {
-          content: `[WhatsApp] ${textToSend}`,
+        const savedNote = noteData.note || {};
+        // Ensure is_sent=true for messages we just sent
+        setChatMessages(prev => [...prev, {
+          ...savedNote,
+          id: savedNote.id ? `db_${savedNote.id}` : `local_${Date.now()}`,
+          content: (savedNote.content || textToSend).replace('[WhatsApp]', '').trim(),
+          is_sent: true,
           author_name: currentUser?.name || 'Vendedor',
-          created_at: new Date().toISOString()
+          created_at: savedNote.created_at || new Date().toISOString()
         }]);
       } else {
+        // Fallback: add message optimistically as sent
         setChatMessages(prev => [...prev, {
-          content: `[WhatsApp] ${textToSend}`,
+          id: `local_${Date.now()}`,
+          content: textToSend,
+          is_sent: true,
           author_name: currentUser?.name || 'Vendedor',
           created_at: new Date().toISOString()
         }]);

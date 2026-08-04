@@ -50,9 +50,20 @@ export default async function handler(req, res) {
   }
 
   try {
-    const currentUser = getAuthUser(req);
-    const { lead_phone, content } = req.body || {};
+    // Try JWT auth first; fall back to user_id from request body
+    let currentUser = null;
+    try {
+      currentUser = getAuthUser(req);
+    } catch (authErr) {
+      console.warn('[notes] JWT auth failed, using body.user_id fallback:', authErr.message);
+    }
+
+    const { lead_phone, content, user_id: bodyUserId, user_name: bodyUserName } = req.body || {};
     
+    // Use JWT user, or body-provided user_id, whichever is available
+    const resolvedUserId = currentUser?.userId || currentUser?.id || bodyUserId || null;
+    const resolvedUserName = currentUser?.name || bodyUserName || 'Vendedor';
+
     if (!lead_phone || !content) {
       return res.status(400).json({ error: 'lead_phone e content são obrigatórios' });
     }
@@ -63,11 +74,13 @@ export default async function handler(req, res) {
         `INSERT INTO crm_notes (lead_phone, user_id, content) 
          VALUES ($1, $2, $3) 
          RETURNING *`,
-        [lead_phone.trim(), currentUser?.id || null, content.trim()]
+        [lead_phone.trim(), resolvedUserId, content.trim()]
       );
       
       const newNote = result.rows[0];
-      newNote.author_name = currentUser?.name || 'Usuário';
+      newNote.author_name = resolvedUserName;
+      newNote.is_sent = resolvedUserId !== null;
+      newNote.user_id = resolvedUserId;
 
       return res.status(201).json({ note: newNote });
     } finally {
