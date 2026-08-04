@@ -217,6 +217,39 @@ export default function Crm() {
     }
   });
 
+  // Custom Tags Catalog States
+  const [availableTags, setAvailableTags] = useState(() => {
+    try {
+      const saved = localStorage.getItem('crm_available_tags');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return ['VIP', 'Cliente Quente', 'Aguardando Orçamento', 'Proposta Enviada', 'Contrato Fechado', 'Interesse Equipamento'];
+  });
+  const [newTagInput, setNewTagInput] = useState('');
+  const [isAddingTag, setIsAddingTag] = useState(false);
+
+  const handleAddNewTag = () => {
+    const trimmed = newTagInput.trim();
+    if (!trimmed) return;
+    if (availableTags.includes(trimmed)) {
+      alert('Esta etiqueta já existe no catálogo!');
+      return;
+    }
+    const updated = [...availableTags, trimmed];
+    setAvailableTags(updated);
+    localStorage.setItem('crm_available_tags', JSON.stringify(updated));
+    setNewTagInput('');
+    setIsAddingTag(false);
+  };
+
+  const handleDeleteTagFromCatalog = (tagToDelete) => {
+    if (confirm(`Deseja excluir a etiqueta "${tagToDelete}" do catálogo?`)) {
+      const updated = availableTags.filter(t => t !== tagToDelete);
+      setAvailableTags(updated);
+      localStorage.setItem('crm_available_tags', JSON.stringify(updated));
+    }
+  };
+
   // Cadastro Edit Form States inside Modal
   const [editLeadName, setEditLeadName] = useState('');
   const [editLeadCompany, setEditLeadCompany] = useState('');
@@ -573,14 +606,30 @@ export default function Crm() {
     }
   };
 
-  const toggleLeadTag = (phone, tag) => {
-    setLeadTags(prev => {
-      const current = prev[phone] || [];
-      const updated = current.includes(tag) ? current.filter(t => t !== tag) : [...current, tag];
-      const newObj = { ...prev, [phone]: updated };
-      localStorage.setItem('crm_lead_tags', JSON.stringify(newObj));
-      return newObj;
-    });
+  const toggleLeadTag = async (phone, tag) => {
+    const current = leadTags[phone] || [];
+    const updated = current.includes(tag) ? current.filter(t => t !== tag) : [...current, tag];
+    
+    const newObj = { ...leadTags, [phone]: updated };
+    setLeadTags(newObj);
+    localStorage.setItem('crm_lead_tags', JSON.stringify(newObj));
+
+    try {
+      await fetch('/api/crm/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          phone: phone,
+          label: updated.join(', ')
+        })
+      });
+      fetchLeads();
+    } catch (e) {
+      console.error('Erro ao salvar etiqueta no banco:', e);
+    }
   };
 
   const handleSaveLeadCadastro = async () => {
@@ -1417,6 +1466,21 @@ export default function Crm() {
                                       <span className="truncate">{formatTaskDateTime(lead.next_contact_at)}</span>
                                     </div>
                                   )}
+
+                                  {/* Selected Tags Badges on Kanban Card */}
+                                  {(() => {
+                                    const tags = leadTags[lead.phone] || (lead.label ? lead.label.split(',').map(s => s.trim()).filter(Boolean) : []);
+                                    if (tags.length === 0) return null;
+                                    return (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {tags.map(t => (
+                                          <span key={t} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[9px] font-bold">
+                                            {t}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               );
                             })
@@ -1877,24 +1941,84 @@ export default function Crm() {
               {/* TAB 4: ETIQUETAS */}
               {activeChatTab === 'etiquetas' && (
                 <div className="flex-1 p-6 overflow-y-auto space-y-4">
-                  <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
-                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Etiquetas do Negócio</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {['VIP', 'Cliente Quente', 'Aguardando Orçamento', 'Proposta Enviada', 'Contrato Fechado', 'Interesse Equipamento'].map(tag => {
-                        const isSelected = (leadTags[activeWhatsAppChatLead.phone] || []).includes(tag);
+                  <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-4">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center space-x-2">
+                          <Tag className="w-4 h-4 text-blue-600" />
+                          <span>Etiquetas do Negócio</span>
+                        </h4>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          Clique nas etiquetas para vincular ou desvincular deste lead.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingTag(!isAddingTag)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center space-x-1.5 ${
+                          isAddingTag
+                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
+                      >
+                        {isAddingTag ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                        <span>{isAddingTag ? 'Cancelar' : 'Nova Etiqueta'}</span>
+                      </button>
+                    </div>
+
+                    {/* Inline Add New Tag Form */}
+                    {isAddingTag && (
+                      <div className="bg-blue-50/50 p-3.5 rounded-xl border border-blue-200 flex items-center space-x-2 animate-fadeIn">
+                        <input
+                          type="text"
+                          placeholder="Digite o nome da nova etiqueta..."
+                          value={newTagInput}
+                          onChange={e => setNewTagInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewTag(); } }}
+                          className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddNewTag}
+                          disabled={!newTagInput.trim()}
+                          className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
+                        >
+                          Adicionar
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Tags List */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {availableTags.map(tag => {
+                        const currentLeadSelected = (leadTags[activeWhatsAppChatLead.phone] || []).includes(tag);
                         return (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => toggleLeadTag(activeWhatsAppChatLead.phone, tag)}
-                            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                              isSelected
-                                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                                : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
-                            }`}
-                          >
-                            {isSelected ? `✓ ${tag}` : `+ ${tag}`}
-                          </button>
+                          <div key={tag} className="group relative flex items-center">
+                            <button
+                              type="button"
+                              onClick={() => toggleLeadTag(activeWhatsAppChatLead.phone, tag)}
+                              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center space-x-1 ${
+                                currentLeadSelected
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                                  : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
+                              }`}
+                            >
+                              <span>{currentLeadSelected ? `✓ ${tag}` : `+ ${tag}`}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTagFromCatalog(tag);
+                              }}
+                              className="ml-1 p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+                              title={`Excluir "${tag}" do catálogo`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
                         );
                       })}
                     </div>
