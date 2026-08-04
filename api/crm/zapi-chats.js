@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL || "postgresql://neondb_owner:npg_DtfA7VXHw8ym@ep-winter-cloud-apstwhit-pooler.c-7.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require",
   ssl: {
     rejectUnauthorized: false
   }
@@ -24,15 +24,22 @@ export default async function handler(req, res) {
   let token = process.env.ZAPI_TOKEN || 'D4F38DEC6BD1906C37E044B4';
   let clientToken = process.env.ZAPI_CLIENT_TOKEN || '';
 
-  const dbClient = await pool.connect();
+  let dbClient;
+  try {
+    dbClient = await pool.connect();
+  } catch (e) {
+    console.error('[Z-API DB Connection Error]:', e);
+  }
 
   try {
-    const settingsRes = await dbClient.query(`SELECT key, value FROM settings WHERE key LIKE 'app_zapi%'`);
-    settingsRes.rows.forEach(r => {
-      if (r.key === 'app_zapi_instance_id' && r.value) instanceId = r.value;
-      if (r.key === 'app_zapi_token' && r.value) token = r.value;
-      if (r.key === 'app_zapi_client_token' && r.value) clientToken = r.value;
-    });
+    if (dbClient) {
+      const settingsRes = await dbClient.query(`SELECT key, value FROM settings WHERE key LIKE 'app_zapi%'`);
+      settingsRes.rows.forEach(r => {
+        if (r.key === 'app_zapi_instance_id' && r.value) instanceId = r.value;
+        if (r.key === 'app_zapi_token' && r.value) token = r.value;
+        if (r.key === 'app_zapi_client_token' && r.value) clientToken = r.value;
+      });
+    }
 
     const zapiHeaders = {};
     if (clientToken) zapiHeaders['Client-Token'] = clientToken;
@@ -82,13 +89,15 @@ export default async function handler(req, res) {
       });
 
       let dbNotes = [];
-      try {
-        const notesRes = await dbClient.query(
-          `SELECT id, lead_phone, user_id, content, created_at FROM crm_notes WHERE lead_phone = $1 ORDER BY created_at ASC`,
-          [phone]
-        );
-        dbNotes = notesRes.rows;
-      } catch (e) {}
+      if (dbClient) {
+        try {
+          const notesRes = await dbClient.query(
+            `SELECT id, lead_phone, user_id, content, created_at FROM crm_notes WHERE lead_phone = $1 ORDER BY created_at ASC`,
+            [phone]
+          );
+          dbNotes = notesRes.rows;
+        } catch (e) {}
+      }
 
       const allMsgs = [...dbNotes, ...formattedZapi];
       const seen = new Set();
@@ -105,35 +114,43 @@ export default async function handler(req, res) {
       return res.status(200).json({ messages: uniqueMsgs });
 
     } else if (req.method === 'POST') {
-      const chatsRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/chats?page=1&pageSize=50`, {
-        headers: zapiHeaders
-      });
+      let chatsRes;
+      try {
+        chatsRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/chats?page=1&pageSize=50`, {
+          headers: zapiHeaders
+        });
+      } catch (err) {
+        return res.status(500).json({ error: 'Falha de conexão com a Z-API: ' + err.message });
+      }
 
       if (!chatsRes.ok) {
-        return res.status(500).json({ error: 'Erro ao consultar Z-API.' });
+        const errText = await chatsRes.text();
+        return res.status(500).json({ error: `Erro Z-API HTTP ${chatsRes.status}: ${errText}` });
       }
 
       const chats = await chatsRes.json();
       const rawChats = Array.isArray(chats) ? chats : (chats.value || []);
       let syncedCount = 0;
 
-      for (const chat of rawChats) {
-        const rawPhone = chat.phone || chat.id || '';
-        const cleanPhone = rawPhone.replace(/\D/g, '');
-        if (!cleanPhone || cleanPhone.length < 10) continue;
+      if (dbClient) {
+        for (const chat of rawChats) {
+          const rawPhone = chat.phone || chat.id || '';
+          const cleanPhone = rawPhone.replace(/\D/g, '');
+          if (!cleanPhone || cleanPhone.length < 10) continue;
 
-        const name = chat.name || chat.contactName || `Lead ${cleanPhone}`;
+          const name = chat.name || chat.contactName || `Lead ${cleanPhone}`;
 
-        await dbClient.query(
-          `INSERT INTO leads (phone, name, stage, value)
-           VALUES ($1, $2, 'inbox', 0)
-           ON CONFLICT (phone) DO UPDATE 
-           SET name = EXCLUDED.name
-           WHERE leads.name IS NULL OR leads.name LIKE 'Lead%'`,
-          [cleanPhone, name]
-        );
+          await dbClient.query(
+            `INSERT INTO leads (phone, name, stage, value)
+             VALUES ($1, $2, 'inbox', 0)
+             ON CONFLICT (phone) DO UPDATE 
+             SET name = EXCLUDED.name
+             WHERE leads.name IS NULL OR leads.name LIKE 'Lead%'`,
+            [cleanPhone, name]
+          );
 
-        syncedCount++;
+          syncedCount++;
+        }
       }
 
       return res.status(200).json({ success: true, synced: syncedCount });
@@ -142,6 +159,6 @@ export default async function handler(req, res) {
     console.error('[Z-API Handler Error]:', err);
     return res.status(500).json({ error: err.message });
   } finally {
-    dbClient.release();
+    if (dbClient) dbClient.release();
   }
 }
