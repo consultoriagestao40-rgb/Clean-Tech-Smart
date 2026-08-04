@@ -218,6 +218,28 @@ export default function Crm() {
     }
   });
 
+  // Custom Tags Color Palettes
+  const TAG_PALETTES = [
+    { key: 'blue', bgSelected: 'bg-blue-600 text-white border-blue-600 shadow-xs', bgCard: 'bg-blue-50 text-blue-700 border-blue-200', bgUnselected: 'bg-blue-50/70 text-blue-800 border-blue-200 hover:bg-blue-100' },
+    { key: 'emerald', bgSelected: 'bg-emerald-600 text-white border-emerald-600 shadow-xs', bgCard: 'bg-emerald-50 text-emerald-700 border-emerald-200', bgUnselected: 'bg-emerald-50/70 text-emerald-800 border-emerald-200 hover:bg-emerald-100' },
+    { key: 'amber', bgSelected: 'bg-amber-500 text-white border-amber-500 shadow-xs', bgCard: 'bg-amber-50 text-amber-800 border-amber-200', bgUnselected: 'bg-amber-50/70 text-amber-800 border-amber-200 hover:bg-amber-100' },
+    { key: 'purple', bgSelected: 'bg-purple-600 text-white border-purple-600 shadow-xs', bgCard: 'bg-purple-50 text-purple-700 border-purple-200', bgUnselected: 'bg-purple-50/70 text-purple-800 border-purple-200 hover:bg-purple-100' },
+    { key: 'rose', bgSelected: 'bg-rose-600 text-white border-rose-600 shadow-xs', bgCard: 'bg-rose-50 text-rose-700 border-rose-200', bgUnselected: 'bg-rose-50/70 text-rose-800 border-rose-200 hover:bg-rose-100' },
+    { key: 'cyan', bgSelected: 'bg-cyan-600 text-white border-cyan-600 shadow-xs', bgCard: 'bg-cyan-50 text-cyan-700 border-cyan-200', bgUnselected: 'bg-cyan-50/70 text-cyan-800 border-cyan-200 hover:bg-cyan-100' },
+    { key: 'indigo', bgSelected: 'bg-indigo-600 text-white border-indigo-600 shadow-xs', bgCard: 'bg-indigo-50 text-indigo-700 border-indigo-200', bgUnselected: 'bg-indigo-50/70 text-indigo-800 border-indigo-200 hover:bg-indigo-100' },
+    { key: 'teal', bgSelected: 'bg-teal-600 text-white border-teal-600 shadow-xs', bgCard: 'bg-teal-50 text-teal-700 border-teal-200', bgUnselected: 'bg-teal-50/70 text-teal-800 border-teal-200 hover:bg-teal-100' }
+  ];
+
+  const getTagPalette = (tagName) => {
+    if (!tagName) return TAG_PALETTES[0];
+    let hash = 0;
+    for (let i = 0; i < tagName.length; i++) {
+      hash = tagName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % TAG_PALETTES.length;
+    return TAG_PALETTES[index];
+  };
+
   // Custom Tags Catalog States
   const [availableTags, setAvailableTags] = useState(() => {
     try {
@@ -369,6 +391,15 @@ export default function Crm() {
     if (taskDateStr < todayStr) return { label: 'Atrasado', bg: 'bg-red-50 text-red-700 border-red-200' };
     if (taskDateStr === todayStr) return { label: 'Hoje', bg: 'bg-amber-50 text-amber-700 border-amber-200' };
     return { label: 'Futuro', bg: 'bg-blue-50 text-blue-700 border-blue-200' };
+  };
+
+  const getActivityStatusInfo = (due_date) => {
+    if (!due_date) return { type: 'none', bg: 'bg-gray-200 text-gray-400 hover:bg-gray-300' };
+    const todayStr = new Date().toISOString().split('T')[0];
+    const taskDateStr = due_date.split('T')[0];
+    if (taskDateStr < todayStr) return { type: 'overdue', bg: 'bg-red-500 hover:bg-red-600 text-white shadow-xs' };
+    if (taskDateStr === todayStr) return { type: 'today', bg: 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs' };
+    return { type: 'future', bg: 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs' };
   };
 
   const openWhatsAppChatModal = (lead) => {
@@ -1441,36 +1472,41 @@ export default function Crm() {
                                           📞 {lead.phone}
                                         </p>
 
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActiveActivityLead(activeActivityLead?.phone === lead.phone ? null : lead);
-                                          }}
-                                          className={`w-5 h-5 rounded-full flex items-center justify-center transition-all shadow-xs ${
-                                            hasActivity 
-                                              ? 'bg-[#EF4444] text-white hover:bg-red-600' 
-                                              : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
-                                          }`}
-                                          title={hasActivity ? 'Ver Próxima Atividade' : 'Agendar Atividade'}
-                                        >
-                                          <ChevronRight className="w-3 h-3 stroke-[3] rotate-180" />
-                                        </button>
+                                        {(() => {
+                                          const actInfo = getActivityStatusInfo(lead.next_contact_at);
+                                          return (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setActiveActivityLead(activeActivityLead?.phone === lead.phone ? null : lead);
+                                                fetchLeadTasks(lead.phone);
+                                              }}
+                                              className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${actInfo.bg}`}
+                                              title={lead.next_contact_at ? 'Ver Próxima Atividade' : 'Agendar Atividade'}
+                                            >
+                                              <ChevronRight className="w-3 h-3 stroke-[3] rotate-180" />
+                                            </button>
+                                          );
+                                        })()}
                                       </div>
                                     </div>
                                   </div>
 
-                                  {/* Selected Tags Badges on Kanban Card */}
+                                  {/* Selected Tags Badges on Kanban Card with Unique Colors */}
                                   {(() => {
                                     const tags = leadTags[lead.phone] || (lead.label ? lead.label.split(',').map(s => s.trim()).filter(Boolean) : []);
                                     if (tags.length === 0) return null;
                                     return (
                                       <div className="flex flex-wrap gap-1 mt-1">
-                                        {tags.map(t => (
-                                          <span key={t} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[9px] font-bold">
-                                            {t}
-                                          </span>
-                                        ))}
+                                        {tags.map(t => {
+                                          const palette = getTagPalette(t);
+                                          return (
+                                            <span key={t} className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${palette.bgCard}`}>
+                                              {t}
+                                            </span>
+                                          );
+                                        })}
                                       </div>
                                     );
                                   })()}
@@ -1983,10 +2019,11 @@ export default function Crm() {
                       </div>
                     )}
 
-                    {/* Tags List */}
+                    {/* Tags List with Unique Colors */}
                     <div className="flex flex-wrap gap-2 pt-1">
                       {availableTags.map(tag => {
                         const currentLeadSelected = (leadTags[activeWhatsAppChatLead.phone] || []).includes(tag);
+                        const palette = getTagPalette(tag);
                         return (
                           <div key={tag} className="group relative flex items-center">
                             <button
@@ -1994,8 +2031,8 @@ export default function Crm() {
                               onClick={() => toggleLeadTag(activeWhatsAppChatLead.phone, tag)}
                               className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center space-x-1 ${
                                 currentLeadSelected
-                                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                                  : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
+                                  ? palette.bgSelected
+                                  : palette.bgUnselected
                               }`}
                             >
                               <span>{currentLeadSelected ? `✓ ${tag}` : `+ ${tag}`}</span>
@@ -2459,26 +2496,104 @@ export default function Crm() {
               </button>
             </div>
 
-            {activeActivityLead.next_contact_at ? (
-              <div className="flex items-start space-x-3 py-2 border-b border-gray-100">
-                <div className="w-5 h-5 rounded-full border-2 border-gray-300 mt-0.5 shrink-0 flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-transparent" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-gray-800 truncate">
-                    Retorno de Contato
-                  </p>
-                  <p className="text-xs text-gray-500 font-medium flex items-center space-x-1 mt-1">
-                    <Clock className="w-3.5 h-3.5 text-gray-400 inline mr-1" />
-                    <span>{formatTaskDateTime(activeActivityLead.next_contact_at)}</span>
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400 italic py-2">Nenhuma atividade agendada para este lead.</p>
-            )}
+            {/* List of activities / tasks for this lead */}
+            {(() => {
+              const pendingForLead = leadTasks.filter(t => !t.completed && (t.lead_phone === activeActivityLead.phone || t.lead_phone?.slice(-8) === activeActivityLead.phone?.slice(-8)));
 
-            <div className="pt-3 flex items-center justify-between">
+              const handleCompleteActivity = async (taskId) => {
+                if (taskId) {
+                  await handleToggleTaskComplete(taskId, false, activeActivityLead.phone);
+                }
+                await fetch('/api/crm/contact', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({
+                    phone: activeActivityLead.phone,
+                    next_contact_at: null
+                  })
+                });
+                fetchLeads();
+                fetchAllCrmTasks();
+                setActiveActivityLead(null);
+                alert('Atividade concluída (baixa realizada com sucesso)!');
+              };
+
+              if (pendingForLead.length > 0) {
+                return pendingForLead.map(t => (
+                  <div 
+                    key={t.id}
+                    onClick={() => handleCompleteActivity(t.id)}
+                    className="flex items-center justify-between py-2.5 px-3 border-b border-gray-100 cursor-pointer hover:bg-emerald-50/60 rounded-xl transition-all group"
+                    title="Clique para dar baixa nesta atividade"
+                  >
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCompleteActivity(t.id);
+                        }}
+                        className="w-5 h-5 rounded-full border-2 border-gray-300 group-hover:border-emerald-600 shrink-0 flex items-center justify-center transition-all bg-white group-hover:bg-emerald-500"
+                      >
+                        <Check className="w-3.5 h-3.5 text-white opacity-0 group-hover:opacity-100 transition-opacity stroke-[3]" />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-gray-800 group-hover:text-emerald-800 transition-colors truncate">
+                          {t.title}
+                        </p>
+                        <p className="text-[11px] text-gray-500 font-medium flex items-center space-x-1 mt-0.5">
+                          <Clock className="w-3 h-3 text-gray-400 inline mr-1" />
+                          <span>{formatTaskDateTime(t.due_date)}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 group-hover:bg-emerald-600 group-hover:text-white px-2 py-1 rounded-lg transition-all shrink-0 ml-2">
+                      Dar Baixa ✓
+                    </span>
+                  </div>
+                ));
+              }
+
+              if (activeActivityLead.next_contact_at) {
+                return (
+                  <div 
+                    onClick={() => handleCompleteActivity(null)}
+                    className="flex items-center justify-between py-2.5 px-3 border-b border-gray-100 cursor-pointer hover:bg-emerald-50/60 rounded-xl transition-all group"
+                    title="Clique para dar baixa nesta atividade"
+                  >
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <button
+                        type="button"
+                        className="w-5 h-5 rounded-full border-2 border-gray-300 group-hover:border-emerald-600 shrink-0 flex items-center justify-center transition-all bg-white group-hover:bg-emerald-500"
+                      >
+                        <Check className="w-3.5 h-3.5 text-white opacity-0 group-hover:opacity-100 transition-opacity stroke-[3]" />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-gray-800 group-hover:text-emerald-800 transition-colors truncate">
+                          Retorno de Contato
+                        </p>
+                        <p className="text-[11px] text-gray-500 font-medium flex items-center space-x-1 mt-0.5">
+                          <Clock className="w-3 h-3 text-gray-400 inline mr-1" />
+                          <span>{formatTaskDateTime(activeActivityLead.next_contact_at)}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 group-hover:bg-emerald-600 group-hover:text-white px-2 py-1 rounded-lg transition-all shrink-0 ml-2">
+                      Dar Baixa ✓
+                    </span>
+                  </div>
+                );
+              }
+
+              return <p className="text-xs text-gray-400 italic py-3 text-center">Nenhuma atividade agendada para este lead.</p>;
+            })()}
+
+            <div className="pt-3 flex items-center justify-between border-t border-gray-100 mt-2">
               <button
                 type="button"
                 onClick={() => {

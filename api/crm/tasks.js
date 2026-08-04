@@ -29,7 +29,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Optional auth verification with fallback
     let currentUser = null;
     try {
       currentUser = getAuthUser(req);
@@ -64,18 +63,28 @@ export default async function handler(req, res) {
         );
         return res.status(200).json({ tasks: result.rows });
       } else {
-        // Return ALL tasks across all leads (for CRM top bar summary)
+        // Return ALL tasks across all leads (using LIMIT 1 subquery for lead name to prevent duplicate rows)
         const result = await dbClient.query(
           `SELECT 
              t.id, 
              t.lead_phone, 
-             l.name as lead_name,
+             COALESCE(
+               (SELECT CASE 
+                         WHEN company IS NOT NULL AND contact_name IS NOT NULL THEN company || ' (' || contact_name || ')'
+                         WHEN company IS NOT NULL THEN company
+                         WHEN contact_name IS NOT NULL THEN contact_name
+                         ELSE name
+                       END 
+                FROM leads 
+                WHERE phone = t.lead_phone OR replace(phone, '-', '') LIKE '%' || right(replace(t.lead_phone, '-', ''), 8) 
+                LIMIT 1),
+               t.lead_phone
+             ) as lead_name,
              t.title, 
              t.completed, 
              to_char(t.due_date, 'YYYY-MM-DD"T"HH24:MI:SS') as due_date,
              to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') as created_at
            FROM crm_tasks t
-           LEFT JOIN leads l ON (t.lead_phone = l.phone OR replace(t.lead_phone, '-', '') LIKE '%' || right(replace(l.phone, '-', ''), 8))
            ORDER BY t.completed ASC, t.due_date ASC NULLS LAST, t.id DESC`
         );
         return res.status(200).json({ tasks: result.rows });
@@ -112,7 +121,6 @@ export default async function handler(req, res) {
         }
 
         const cleanPhone = lead_phone.trim();
-        // due_date can be string "2026-08-04T01:00" or similar
         const formattedDueDate = due_date ? due_date.replace('T', ' ').substring(0, 19) : null;
 
         const insertRes = await dbClient.query(
