@@ -1300,9 +1300,9 @@ export default function Crm() {
                       </div>
                     ) : (
                       chatMessages.map((msg, idx) => {
-                        const isSent = Boolean(msg.is_sent || msg.user_id || (msg.author_name && msg.author_name !== 'Cliente' && msg.author_name !== 'Lead'));
+                        const isSent = Boolean(msg.is_sent === true || (msg.user_id !== null && msg.user_id !== undefined && msg.user_id > 0) || msg.author_name === 'Você');
                         const cleanText = (msg.content || '').replace('[WhatsApp]', '').trim();
-                        const sender = isSent ? (msg.author_name || 'Você') : (activeWhatsAppChatLead?.name || 'Cliente');
+                        const senderName = isSent ? 'Você' : (activeWhatsAppChatLead?.name || 'Cliente');
                         const msgTime = msg.created_at ? new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Agora';
 
                         return (
@@ -1314,11 +1314,11 @@ export default function Crm() {
                               className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-xs text-xs space-y-1 ${
                                 isSent
                                   ? 'bg-[#D9FDD3] text-gray-900 rounded-tr-none border border-emerald-200/60'
-                                  : 'bg-white text-gray-900 rounded-tl-none border border-gray-200'
+                                  : 'bg-white text-gray-900 rounded-tl-none border border-gray-200 shadow-xs'
                               }`}
                             >
-                              <div className={`font-bold text-[11px] ${isSent ? 'text-emerald-800' : 'text-blue-800'}`}>
-                                *{sender}*:
+                              <div className={`font-bold text-[11px] ${isSent ? 'text-emerald-800' : 'text-blue-600'}`}>
+                                *{senderName}*:
                               </div>
                               <p className="whitespace-pre-wrap leading-relaxed text-gray-800">{cleanText}</p>
                               <div className="flex items-center justify-end space-x-1 text-[10px] text-gray-400 pt-0.5">
