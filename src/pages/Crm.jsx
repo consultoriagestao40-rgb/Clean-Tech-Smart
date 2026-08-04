@@ -1460,60 +1460,6 @@ export default function Crm() {
                                     </div>
                                   </div>
 
-                                  {/* Smartbid Activity Popover Card ("PRÓXIMA ATIVIDADE") */}
-                                  {activeActivityLead?.phone === lead.phone && (
-                                    <div
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="absolute right-2 top-10 w-64 bg-white rounded-2xl p-4 shadow-2xl border border-gray-200 z-30 animate-fadeIn text-left"
-                                    >
-                                      <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
-                                          Próxima Atividade
-                                        </span>
-                                        <button
-                                          type="button"
-                                          onClick={(e) => { e.stopPropagation(); setActiveActivityLead(null); }}
-                                          className="text-gray-400 hover:text-gray-600 p-0.5 rounded"
-                                        >
-                                          <X className="w-3.5 h-3.5" />
-                                        </button>
-                                      </div>
-
-                                      {lead.next_contact_at ? (
-                                        <div className="flex items-start space-x-2.5 py-1.5 border-b border-gray-100">
-                                          <div className="w-4 h-4 rounded-full border-2 border-gray-300 mt-0.5 shrink-0" />
-                                          <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-bold text-gray-800 truncate">
-                                              Retorno de Contato
-                                            </p>
-                                            <p className="text-[11px] text-gray-500 flex items-center space-x-1 mt-0.5">
-                                              <Clock className="w-3 h-3 text-gray-400 inline mr-1" />
-                                              <span>{formatTaskDateTime(lead.next_contact_at)}</span>
-                                            </p>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <p className="text-xs text-gray-400 italic py-1">Nenhuma atividade agendada</p>
-                                      )}
-
-                                      <div className="pt-2.5">
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActiveActivityLead(null);
-                                            openWhatsAppChatModal(lead);
-                                            setActiveChatTab('lembretes');
-                                            setIsCreatingReminder(true);
-                                          }}
-                                          className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center space-x-1 hover:underline"
-                                        >
-                                          <span>+ Agendar uma atividade</span>
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )}
-
                                   {/* Selected Tags Badges on Kanban Card */}
                                   {(() => {
                                     const tags = leadTags[lead.phone] || (lead.label ? lead.label.split(',').map(s => s.trim()).filter(Boolean) : []);
@@ -2483,6 +2429,83 @@ export default function Crm() {
           </div>
         </div>
       )}
+      {/* ---------------- SMARTBID PRÓXIMA ATIVIDADE MODAL ---------------- */}
+      {activeActivityLead && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setActiveActivityLead(null)}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl border border-gray-200 text-left animate-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-3">
+              <div>
+                <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block">
+                  Próxima Atividade
+                </span>
+                <h4 className="text-xs font-bold text-gray-900 truncate mt-0.5">
+                  {activeActivityLead.company && activeActivityLead.contact_name
+                    ? `${activeActivityLead.company} (${activeActivityLead.contact_name})`
+                    : activeActivityLead.company || activeActivityLead.name || activeActivityLead.phone}
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveActivityLead(null)}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {activeActivityLead.next_contact_at ? (
+              <div className="flex items-start space-x-3 py-2 border-b border-gray-100">
+                <div className="w-5 h-5 rounded-full border-2 border-gray-300 mt-0.5 shrink-0 flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-transparent" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-gray-800 truncate">
+                    Retorno de Contato
+                  </p>
+                  <p className="text-xs text-gray-500 font-medium flex items-center space-x-1 mt-1">
+                    <Clock className="w-3.5 h-3.5 text-gray-400 inline mr-1" />
+                    <span>{formatTaskDateTime(activeActivityLead.next_contact_at)}</span>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 italic py-2">Nenhuma atividade agendada para este lead.</p>
+            )}
+
+            <div className="pt-3 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  const leadToOpen = activeActivityLead;
+                  setActiveActivityLead(null);
+                  openWhatsAppChatModal(leadToOpen);
+                  setActiveChatTab('lembretes');
+                  setIsCreatingReminder(true);
+                }}
+                className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center space-x-1.5 hover:underline"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Agendar uma atividade</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveActivityLead(null)}
+                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition-all"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ---------------- RESUMO DE LEMBRETES DO CRM MODAL ---------------- */}
       {isRemindersSummaryOpen && (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
