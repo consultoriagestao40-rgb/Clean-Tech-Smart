@@ -22,7 +22,8 @@ import {
   Coins,
   ChevronLeft,
   ChevronRight,
-  Layout
+  Layout,
+  ShoppingCart
 } from 'lucide-react';
 
 export default function Sidebar() {
