@@ -63,7 +63,6 @@ export default function Sidebar() {
     { name: 'Gestão de Contratos', path: '/contratos', icon: <FileText size={20} /> },
     { name: 'Proposta Locação', path: '/proposta-locacao', icon: <FileText size={20} /> },
     { name: 'Proposta Venda', path: '/proposta-venda', icon: <ShoppingCart size={20} /> },
-    { name: 'Orçamentos (Serviços)', path: '/servicos', icon: <FileBox size={20} /> },
     { name: 'CRM', path: '/crm', icon: <Kanban size={20} /> },
     { name: 'Faturas', path: '/faturas', icon: <DollarSign size={20} /> },
     { name: 'Clientes', path: '/clientes', icon: <Users size={20} /> },
