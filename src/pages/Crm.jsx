@@ -1143,6 +1143,7 @@ export default function Crm() {
                           )}
                         </div>
                       </div>
+                    </div>
                     );
                   })}
                 </div>
@@ -1818,5 +1819,6 @@ export default function Crm() {
         </div>
       )}
     </div>
+  </div>
   );
 }
