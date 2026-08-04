@@ -20,10 +20,6 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  let instanceId = process.env.ZAPI_INSTANCE_ID || '3F718C3D9582E1963A49EAE0B2B942D4';
-  let token = process.env.ZAPI_TOKEN || 'D4F38DEC6BD1906C37E044B4';
-  let clientToken = process.env.ZAPI_CLIENT_TOKEN || 'F5c1b8f27f6b049c98c4e779d00f67552S';
-
   let dbClient;
   try {
     dbClient = await pool.connect();
@@ -32,170 +28,94 @@ export default async function handler(req, res) {
   }
 
   try {
-    if (dbClient) {
-      try {
-        const settingsRes = await dbClient.query(`SELECT key, value FROM system_settings WHERE key LIKE 'app_zapi%'`);
-        if (settingsRes && settingsRes.rows) {
+    if (req.method === 'GET') {
+      const { phone } = req.query || {};
+      if (!phone) {
+        return res.status(400).json({ error: 'Telefone é obrigatório.' });
+      }
+
+      if (!dbClient) {
+        return res.status(200).json({ messages: [] });
+      }
+
+      const digits = phone.replace(/\D/g, '');
+      const suffix = digits.length >= 8 ? digits.slice(-8) : digits;
+
+      const notesRes = await dbClient.query(
+        `SELECT id, lead_phone, user_id, content, created_at 
+         FROM crm_notes 
+         WHERE lead_phone = $1 OR replace(lead_phone, '-', '') LIKE $2 
+         ORDER BY created_at ASC`,
+        [phone, `%${suffix}`]
+      );
+
+      const formattedNotes = notesRes.rows.map(n => {
+        const isSent = n.user_id !== null && n.user_id !== undefined;
+        const rawContent = n.content || '';
+
+        const isFileMatch  = rawContent.match(/\[Arquivo:\s*([^\]]+)\]/);
+        const isImageMatch = rawContent.match(/\[Imagem(?::\s*([^\]]+))?\]/);
+        const isAudio      = /\[Áudio\]/i.test(rawContent);
+        const isVideo      = /\[Vídeo\]/i.test(rawContent);
+
+        const urlMatch = rawContent.match(/https?:\/\/[^\s]+/);
+        const mediaUrl = urlMatch ? urlMatch[0] : null;
+
+        let text = rawContent
+          .replace('[WhatsApp]', '')
+          .replace(/\[Arquivo:[^\]]*\]/g, '')
+          .replace(/\[Imagem:[^\]]*\]/g, '')
+          .replace(/\[Áudio\]/gi, '')
+          .replace(/\[Vídeo\]/gi, '')
+          .replace(/https?:\/\/[^\s]+/g, '')
+          .trim();
+
+        const isWhatsApp = rawContent.startsWith('[WhatsApp]') ||
+          isFileMatch !== null || isImageMatch !== null || isAudio || isVideo ||
+          n.user_id === null;
+
+        return {
+          id: `db_${n.id}`,
+          content: text,
+          author_name: isSent ? 'Você' : 'Cliente',
+          is_sent: isSent,
+          is_whatsapp: isWhatsApp,
+          user_id: n.user_id,
+          created_at: n.created_at,
+          is_file:  !!isFileMatch  && !isAudio,
+          is_image: !!isImageMatch && !isAudio,
+          is_audio: isAudio,
+          is_video: isVideo,
+          file_name: isFileMatch?.[1] || isImageMatch?.[1] || null,
+          media_url: mediaUrl
+        };
+      });
+
+      formattedNotes.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      return res.status(200).json({ messages: formattedNotes });
+
+    } else if (req.method === 'POST') {
+      // Sync chats from Z-API
+      let instanceId = '3F718C3D9582E1963A49EAE0B2B942D4';
+      let token = 'D4F38DEC6BD1906C37E044B4';
+      let clientToken = 'F5c1b8f27f6b049c98c4e779d00f67552S';
+
+      if (dbClient) {
+        try {
+          const settingsRes = await dbClient.query(`SELECT key, value FROM system_settings WHERE key LIKE 'app_zapi%'`);
           settingsRes.rows.forEach(r => {
             if (r.key === 'app_zapi_instance_id' && r.value) instanceId = r.value;
             if (r.key === 'app_zapi_token' && r.value) token = r.value;
             if (r.key === 'app_zapi_client_token' && r.value) clientToken = r.value;
           });
-        }
-      } catch (settingsErr) {
-        console.warn('[Z-API] system_settings query ignored:', settingsErr.message);
-      }
-    }
-
-    const zapiHeaders = {};
-    if (clientToken && clientToken.trim()) {
-      zapiHeaders['Client-Token'] = clientToken.trim();
-    }
-
-    if (req.method === 'GET') {
-      const { phone } = req.query;
-      if (!phone) {
-        return res.status(400).json({ error: 'Telefone obrigatório.' });
-      }
-
-      let cleanPhone = phone.replace(/\D/g, '');
-      if (cleanPhone.length === 11 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
-      if (cleanPhone.length === 10 && !cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
-
-      let zapiMsgs = [];
-
-      try {
-        const url1 = `https://api.z-api.io/instances/${instanceId}/token/${token}/chats/${cleanPhone}/messages?page=1&pageSize=40`;
-        const res1 = await fetch(url1, { headers: zapiHeaders });
-        if (res1.ok) {
-          const d1 = await res1.json();
-          zapiMsgs = Array.isArray(d1) ? d1 : (d1.messages || d1.value || []);
-        }
-      } catch (e) {}
-
-      if (zapiMsgs.length === 0) {
-        try {
-          const url2 = `https://api.z-api.io/instances/${instanceId}/token/${token}/chat-messages/${cleanPhone}`;
-          const res2 = await fetch(url2, { headers: zapiHeaders });
-          if (res2.ok) {
-            const d2 = await res2.json();
-            zapiMsgs = Array.isArray(d2) ? d2 : (d2.messages || d2.value || []);
-          }
         } catch (e) {}
       }
 
-      const formattedZapi = zapiMsgs.map(m => {
-        const isSent = m.fromMe || m.isSent;
-        const text = m.body || m.text?.message || m.caption || m.message || '';
-        return {
-          id: m.messageId || m.id || Math.random().toString(),
-          content: text,
-          author_name: isSent ? 'Você' : (m.senderName || 'Cliente'),
-          is_sent: isSent,
-          created_at: m.moment ? new Date(m.moment * 1000).toISOString() : (m.timestamp ? new Date(m.timestamp * 1000).toISOString() : new Date().toISOString())
-        };
-      });
-
-      let dbNotes = [];
-      if (dbClient) {
-        try {
-          const digits = phone.replace(/\D/g, '');
-          const suffix = digits.length >= 8 ? digits.slice(-8) : digits;
-          const notesRes = await dbClient.query(
-            `SELECT id, lead_phone, user_id, content, created_at 
-             FROM crm_notes 
-             WHERE lead_phone = $1 
-                OR replace(lead_phone, '-', '') LIKE $2 
-                OR replace($1, '-', '') LIKE '%' || right(replace(lead_phone, '-', ''), 8)
-             ORDER BY created_at ASC`,
-            [phone, `%${suffix}`]
-          );
-          dbNotes = notesRes.rows.map(n => {
-            const isSent = n.user_id !== null && n.user_id !== undefined;
-            const rawContent = n.content || '';
-
-            const isFileMatch  = rawContent.match(/\[Arquivo:\s*([^\]]+)\]/);
-            const isImageMatch = rawContent.match(/\[Imagem(?::\s*([^\]]+))?\]/);
-            const isAudio      = /\[Áudio\]/i.test(rawContent);
-            const isVideo      = /\[Vídeo\]/i.test(rawContent);
-
-            const urlMatch = rawContent.match(/https?:\/\/[^\s]+/);
-            const mediaUrl = urlMatch ? urlMatch[0] : null;
-
-            let text = rawContent
-              .replace('[WhatsApp]', '')
-              .replace(/\[Arquivo:[^\]]*\]/g, '')
-              .replace(/\[Imagem:[^\]]*\]/g, '')
-              .replace(/\[Áudio\]/gi, '')
-              .replace(/\[Vídeo\]/gi, '')
-              .replace(/https?:\/\/[^\s]+/g, '')
-              .trim();
-
-            const isWhatsApp = rawContent.startsWith('[WhatsApp]') ||
-              isFileMatch !== null || isImageMatch !== null || isAudio || isVideo ||
-              n.user_id === null;
-
-            return {
-              id: `db_${n.id}`,
-              content: text,
-              author_name: isSent ? 'Você' : 'Cliente',
-              is_sent: isSent,
-              is_whatsapp: isWhatsApp,
-              user_id: n.user_id,
-              created_at: n.created_at,
-              is_file:  !!isFileMatch  && !isAudio,
-              is_image: !!isImageMatch && !isAudio,
-              is_audio: isAudio,
-              is_video: isVideo,
-              file_name: isFileMatch?.[1] || isImageMatch?.[1] || null,
-              media_url: mediaUrl
-            };
-          });
-        } catch (e) { console.error('[zapi-chats] DB notes error:', e.message); }
+      const zapiHeaders = {};
+      if (clientToken && clientToken.trim()) {
+        zapiHeaders['Client-Token'] = clientToken.trim();
       }
 
-      // Auto-sync Z-API live messages into DB if missing
-      if (dbClient && formattedZapi.length > 0) {
-        const existingTexts = new Set(dbNotes.map(n => n.content.trim()));
-        for (const zm of formattedZapi) {
-          if (!zm.content || !zm.content.trim()) continue;
-          const trimmed = zm.content.trim();
-          if (!existingTexts.has(trimmed)) {
-            try {
-              const insertRes = await dbClient.query(
-                `INSERT INTO crm_notes (lead_phone, user_id, content, created_at)
-                 VALUES ($1, $2, $3, $4::timestamp)
-                 RETURNING id`,
-                [phone, zm.is_sent ? 1 : null, `[WhatsApp] ${trimmed}`, zm.created_at]
-              );
-              existingTexts.add(trimmed);
-              dbNotes.push({
-                id: `db_${insertRes.rows[0].id}`,
-                content: trimmed,
-                author_name: zm.author_name,
-                is_sent: zm.is_sent,
-                is_whatsapp: true,
-                user_id: zm.is_sent ? 1 : null,
-                created_at: zm.created_at,
-                is_file: false,
-                is_image: false,
-                is_audio: false,
-                is_video: false,
-                file_name: null,
-                media_url: null
-              });
-            } catch (insErr) {
-              console.error('[zapi-chats] Auto insert error:', insErr.message);
-            }
-          }
-        }
-      }
-
-      // Sort chronologically
-      dbNotes.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      return res.status(200).json({ messages: dbNotes });
-
-    } else if (req.method === 'POST') {
       let chatsRes;
       try {
         chatsRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/chats?page=1&pageSize=50`, {
