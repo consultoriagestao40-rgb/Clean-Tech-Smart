@@ -156,6 +156,15 @@ export default function Crm() {
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
   const chatMessagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const userHasScrolledUpRef = useRef(false);
+
+  const handleChatScroll = (e) => {
+    const el = e.target;
+    if (!el) return;
+    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    userHasScrolledUpRef.current = !isAtBottom;
+  };
 
   // Audio recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -196,7 +205,7 @@ export default function Crm() {
   };
 
   useEffect(() => {
-    if (activeChatTab === 'chat' && chatMessagesEndRef.current) {
+    if (activeChatTab === 'chat' && chatMessagesEndRef.current && !userHasScrolledUpRef.current) {
       chatMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages, activeChatTab]);
@@ -329,6 +338,7 @@ export default function Crm() {
   };
 
   const openWhatsAppChatModal = (lead) => {
+    userHasScrolledUpRef.current = false;
     setActiveWhatsAppChatLead(lead);
     setActiveChatTab('chat');
     setIsCreatingReminder(false);
@@ -407,6 +417,7 @@ export default function Crm() {
 
     const textToSend = chatInputText.trim();
     setIsSendingChatMessage(true);
+    userHasScrolledUpRef.current = false;
 
     try {
       const zapiInstance = localStorage.getItem('app_zapi_instance_id') || '3F718C3D9582E1963A49EAE0B2B942D4';
@@ -1366,7 +1377,9 @@ export default function Crm() {
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center justify-between gap-1">
                                         <h4 className="text-xs font-bold text-gray-900 leading-tight truncate" title={lead.name}>
-                                          {lead.name ? lead.name : `WhatsApp: ${lead.phone}`}
+                                          {lead.company && lead.contact_name
+                                            ? `${lead.company} (${lead.contact_name})`
+                                            : lead.company || lead.contact_name || lead.name || `WhatsApp: ${lead.phone}`}
                                         </h4>
                                         <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 shrink-0">
                                           {formatCurrency(leadVal)}
@@ -1401,7 +1414,7 @@ export default function Crm() {
                                   {lead.next_contact_at && (
                                     <div className="flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded mt-0.5">
                                       <Calendar className="w-3 h-3 mr-1 text-emerald-500 shrink-0" />
-                                      <span className="truncate">{new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                      <span className="truncate">{formatTaskDateTime(lead.next_contact_at)}</span>
                                     </div>
                                   )}
                                 </div>
@@ -1532,7 +1545,7 @@ export default function Crm() {
                 <div className="flex-1 flex flex-col min-h-0 bg-[#E5DDD5] relative">
                   
                   {/* Chat Messages History */}
-                  <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                  <div ref={chatContainerRef} onScroll={handleChatScroll} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     <div className="flex justify-center my-1">
                       <span className="bg-white/90 backdrop-blur-xs text-gray-500 text-[10px] font-bold px-3 py-1 rounded-full shadow-2xs uppercase">
                         Hoje
