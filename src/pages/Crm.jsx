@@ -1034,9 +1034,9 @@ export default function Crm() {
                           onDragOver={handleDragOver}
                           onDrop={(e) => handleDrop(e, stage.key)}
                           style={{ backgroundColor: bodyBg }}
-                          className="rounded-b-2xl rounded-t-none px-1.5 py-1.5 flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
+                          className="rounded-b-2xl rounded-t-none px-0.5 py-1 flex-1 h-full overflow-y-auto custom-scrollbar flex flex-col mt-[-1px] w-[246px] border-r border-white/80"
                         >
-                          <div className="space-y-1.5 flex-grow">
+                          <div className="space-y-1 flex-grow">
                             {stageLeads.length === 0 ? (
                               <div className="border-2 border-dashed border-gray-200/80 rounded-xl py-12 text-center text-xs text-gray-400 font-medium italic">
                                 Sem negócios nesta etapa
@@ -1052,82 +1052,53 @@ export default function Crm() {
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, lead.phone)}
                                   onClick={() => openWhatsAppChatModal(lead)}
-                                  className="group bg-white p-2.5 rounded-lg border border-gray-200/90 shadow-xs cursor-pointer hover:shadow-md hover:border-blue-400 transition-all space-y-1.5 text-left relative min-w-0"
+                                  className="group bg-white px-2 py-1.5 rounded-lg border border-gray-200/90 shadow-2xs cursor-pointer hover:shadow-md hover:border-blue-400 transition-all space-y-1 text-left relative min-w-0"
                                 >
-                                  <div className="flex items-start space-x-2 min-w-0">
-                                    {/* Avatar circle (Smartbid style W+ / initials) */}
-                                    <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 font-bold text-[11px] flex items-center justify-center shrink-0 border border-blue-200 shadow-2xs mt-0.5">
-                                      {getAvatarInitials(lead.name, lead.phone)}
-                                    </div>
-
-                                    {/* Lead Title & Phone Subtitle */}
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center justify-between gap-1">
-                                        <h4 className="text-xs font-bold text-gray-900 leading-tight truncate" title={lead.name}>
+                                  {/* Row 1: Avatar + Name/Phone + Value + Arrow */}
+                                  <div className="flex items-center justify-between gap-1 min-w-0">
+                                    <div className="flex items-center space-x-1.5 min-w-0 flex-1">
+                                      <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 font-bold text-[10px] flex items-center justify-center shrink-0 border border-blue-200 shadow-2xs">
+                                        {getAvatarInitials(lead.name, lead.phone)}
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <h4 className="text-[11px] font-bold text-gray-900 leading-tight truncate" title={lead.name}>
                                           {lead.name ? lead.name : `WhatsApp: ${lead.phone}`}
                                         </h4>
-                                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-md border border-blue-100 shrink-0">
-                                          {formatCurrency(leadVal)}
-                                        </span>
+                                        <p className="text-[10px] text-gray-400 truncate leading-none mt-0.5">
+                                          {lead.phone}
+                                        </p>
                                       </div>
-                                      <p className="text-[11px] text-gray-500 truncate leading-tight mt-0.5">
-                                        {lead.phone}
-                                      </p>
+                                    </div>
+
+                                    <div className="flex items-center space-x-1 shrink-0">
+                                      <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-100">
+                                        {formatCurrency(leadVal)}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveMoveLead(lead);
+                                        }}
+                                        className={`w-4 h-4 rounded-full flex items-center justify-center transition-all ${
+                                          hasActivity 
+                                            ? 'bg-[#22C55E] text-white hover:bg-emerald-600' 
+                                            : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
+                                        }`}
+                                        title={hasActivity ? 'Atividade Agendada' : 'Mover de Etapa / Opções'}
+                                      >
+                                        <ChevronRight className="w-3 h-3 stroke-[3]" />
+                                      </button>
                                     </div>
                                   </div>
 
-                                    {/* Status Circle Arrow Button (Pipedrive Green / Gray Circle) */}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveMoveLead(lead);
-                                      }}
-                                      className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-                                        hasActivity 
-                                          ? 'bg-[#22C55E] text-white shadow-xs hover:bg-emerald-600' 
-                                          : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
-                                      }`}
-                                      title={hasActivity ? 'Atividade Agendada' : 'Mover de Etapa / Opções'}
-                                    >
-                                      <ChevronRight className="w-3.5 h-3.5 stroke-[3]" />
-                                    </button>
-                                  </div>
-
-                                  {/* Scheduled Return Date Badge (if present) */}
+                                  {/* Row 2: Scheduled Return Date Badge (if present) */}
                                   {lead.next_contact_at && (
-                                    <div className="flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 p-1 rounded-md mt-0.5">
-                                      <Calendar className="w-3 h-3 mr-1 text-emerald-500 shrink-0" />
-                                      <span className="truncate">Atividade: {new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                    <div className="flex items-center text-[9px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-1 py-0.5 rounded mt-0.5">
+                                      <Calendar className="w-2.5 h-2.5 mr-1 text-emerald-500 shrink-0" />
+                                      <span className="truncate">{new Date(lead.next_contact_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
                                   )}
-
-                                  {/* Quick Action Toolbar on Hover */}
-                                  <div className="pt-0.5 flex justify-end space-x-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); setActiveReminderLead(lead); setActiveNoteLead(null); setActiveMoveLead(null); }}
-                                      className="p-1 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded transition-all"
-                                      title="Agendar Retorno / Atividade"
-                                    >
-                                      <Calendar className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); setActiveNoteLead(lead); setActiveReminderLead(null); setActiveMoveLead(null); }}
-                                      className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
-                                      title="Adicionar Nota"
-                                    >
-                                      <ClipboardList className="w-3.5 h-3.5" />
-                                    </button>
-                                    <a
-                                      href={`https://web.whatsapp.com/send?phone=${lead.phone.replace(/\D/g, '')}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="p-1 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded transition-all flex items-center"
-                                      title="Chat WhatsApp"
-                                    >
-                                      <MessageSquare className="w-3.5 h-3.5" />
-                                    </a>
-                                  </div>
                                 </div>
                               );
                             })
