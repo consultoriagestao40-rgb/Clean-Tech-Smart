@@ -851,18 +851,7 @@ export default function Crm() {
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm('Deseja restaurar as etapas padrão do Kanban?')) {
-                      setFunnelStages(DEFAULT_STAGES);
-                      localStorage.setItem('crm_stages', JSON.stringify(DEFAULT_STAGES));
-                    }
-                  }}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-semibold px-3 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all border border-blue-100"
-                >
-                  Restaurar Etapas
-                </button>
+
               </div>
             </div>
 
