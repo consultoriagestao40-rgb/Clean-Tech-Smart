@@ -1143,11 +1143,10 @@ export default function Crm() {
                           )}
                         </div>
                       </div>
-                    </div>
-              );
-            })}
-          </div>
-        </div>
+                    );
+                  })}
+                </div>
+              </div>
       </div>
     )}
 
