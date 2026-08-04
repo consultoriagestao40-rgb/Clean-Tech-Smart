@@ -17,7 +17,9 @@ import Configuracoes from './pages/Configuracoes';
 import TabelaLocacao from './pages/TabelaLocacao';
 import ModelosMaquinas from './pages/ModelosMaquinas';
 import PropostasLocacao from './pages/PropostasLocacao';
+import PropostasVenda from './pages/PropostasVenda';
 import VisualizarPropostaPublica from './pages/VisualizarPropostaPublica';
+import VisualizarPropostaVendaPublica from './pages/VisualizarPropostaVendaPublica';
 import VisualizarOrcamentoPublico from './pages/VisualizarOrcamentoPublico';
 import TecnicoPainel from './pages/TecnicoPainel';
 import Login from './pages/Login';
@@ -57,6 +59,7 @@ function App() {
           <Route path="tabela-locacao" element={<TabelaLocacao />} />
           <Route path="modelos-maquinas" element={<ModelosMaquinas />} />
           <Route path="proposta-locacao" element={<PropostasLocacao />} />
+          <Route path="proposta-venda" element={<PropostasVenda />} />
           
           {/* Outras Rotas (Placeholders) */}
           <Route path="disponibilidade" element={<Placeholder title="Disponibilidade" />} />
@@ -66,6 +69,7 @@ function App() {
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/visualizar-proposta/:id" element={<VisualizarPropostaPublica />} />
+        <Route path="/visualizar-proposta-venda/:id" element={<VisualizarPropostaVendaPublica />} />
         <Route path="/visualizar-orcamento/:id" element={<VisualizarOrcamentoPublico />} />
         <Route path="/tecnico" element={<TecnicoPainel />} />
       </Routes>

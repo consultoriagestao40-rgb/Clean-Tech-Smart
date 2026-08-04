@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, Save, Send, Loader2, ArrowLeft, X, Edit } from 'lucide-react';
+import { Plus, Trash2, Save, Send, Loader2, ArrowLeft, X, Edit, Link2 } from 'lucide-react';
 
 export default function NewBudget() {
   const navigate = useNavigate();
@@ -513,18 +513,32 @@ export default function NewBudget() {
             <h1 className="text-2xl font-bold text-gray-900">Novo Orçamento de Assistência</h1>
             <p className="text-sm text-gray-500 mt-1">Preencha os dados e os custos para a proposta técnica</p>
           </div>
-          <div className="flex space-x-3 mt-4 md:mt-0">
+          <div className="flex flex-wrap items-center gap-2.5 mt-4 md:mt-0">
             <Link 
               to="/" 
-              className="flex items-center px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-medium rounded-lg transition-colors"
+              className="flex items-center px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-medium rounded-lg transition-colors text-xs"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Voltar
             </Link>
+            {budgetId && (
+              <button 
+                type="button"
+                onClick={() => {
+                  const publicUrl = `${window.location.origin}/visualizar-orcamento/${budgetId}`;
+                  navigator.clipboard.writeText(publicUrl);
+                  alert(`Link público do Orçamento nº #${String(budgetId).padStart(4,'0')} copiado para a área de transferência!\n\n${publicUrl}`);
+                }}
+                className="flex items-center px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold rounded-lg transition-colors text-xs shadow-xs"
+              >
+                <Link2 className="w-4 h-4 mr-2 text-emerald-600" />
+                <span>Copiar Link do Orçamento</span>
+              </button>
+            )}
             <button 
               onClick={() => handleSubmit('Rascunho')}
               disabled={isSaving}
-              className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+              className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors text-xs"
             >
               <Save className="w-4 h-4 mr-2" />
               Salvar Rascunho
@@ -532,7 +546,7 @@ export default function NewBudget() {
             <button 
               onClick={() => handleSubmit('Pendente')} 
               disabled={isSaving}
-              className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors shadow-sm"
+              className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors text-xs shadow-sm"
             >
               {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
               {isSaving ? 'Salvando...' : 'Enviar para Aprovação'}
