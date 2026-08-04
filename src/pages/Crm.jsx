@@ -884,6 +884,8 @@ export default function Crm() {
                       ))}
                     </select>
                   </div>
+                )}
+
                 <button
                   type="button"
                   onClick={handleSyncWhatsAppChats}
@@ -898,7 +900,7 @@ export default function Crm() {
                   )}
                   <span>Sincronizar Z-API</span>
                 </button>
-            </div>
+              </div>
 
             {/* Compact Metrics Row */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
