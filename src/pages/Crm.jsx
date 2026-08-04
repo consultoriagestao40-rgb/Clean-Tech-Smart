@@ -24,7 +24,12 @@ import {
   Smartphone,
   Tag,
   Target,
-  ChevronRight
+  ChevronRight,
+  Clock,
+  Send,
+  Paperclip,
+  Smile,
+  CheckCheck
 } from 'lucide-react';
 
 const DEFAULT_STAGES = [
@@ -133,6 +138,174 @@ export default function Crm() {
 
   // Move Lead stage state
   const [activeMoveLead, setActiveMoveLead] = useState(null);
+
+  // WhatsApp Chat Modal (Smartbid Style)
+  const [activeWhatsAppChatLead, setActiveWhatsAppChatLead] = useState(null);
+  const [activeChatTab, setActiveChatTab] = useState('chat');
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInputText, setChatInputText] = useState('');
+  const [isSendingChatMessage, setIsSendingChatMessage] = useState(false);
+  const [leadTags, setLeadTags] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('crm_lead_tags') || '{}');
+    } catch (e) {
+      return {};
+    }
+  });
+
+  // Cadastro Edit Form States inside Modal
+  const [editLeadName, setEditLeadName] = useState('');
+  const [editLeadPhone, setEditLeadPhone] = useState('');
+  const [editLeadValue, setEditLeadValue] = useState('');
+  const [editLeadStage, setEditLeadStage] = useState('');
+  const [editLeadSeller, setEditLeadSeller] = useState('');
+
+  const getAvatarInitials = (name, phone) => {
+    if (name && !name.toLowerCase().includes('lead manual')) {
+      const cleanName = name.replace('[Amostra]', '').trim();
+      const parts = cleanName.split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      } else if (parts[0].length >= 2) {
+        return parts[0].substring(0, 2).toUpperCase();
+      }
+    }
+    return 'W+';
+  };
+
+  const openWhatsAppChatModal = (lead) => {
+    setActiveWhatsAppChatLead(lead);
+    setActiveChatTab('chat');
+    setEditLeadName(lead.name || '');
+    setEditLeadPhone(lead.phone || '');
+    setEditLeadValue(lead.value || '0');
+    setEditLeadStage(lead.stage || 'inbox');
+    setEditLeadSeller(lead.assigned_to || '');
+
+    fetchChatNotes(lead.phone);
+  };
+
+  const fetchChatNotes = async (phone) => {
+    try {
+      const res = await fetch(`/api/crm/notes?lead_phone=${encodeURIComponent(phone)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setChatMessages(data.notes || []);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar histórico de conversa:', err);
+    }
+  };
+
+  const handleSendChatMessage = async (e) => {
+    if (e) e.preventDefault();
+    if (!chatInputText.trim() || !activeWhatsAppChatLead) return;
+
+    const textToSend = chatInputText.trim();
+    setIsSendingChatMessage(true);
+
+    try {
+      const zapiInstance = localStorage.getItem('app_zapi_instance_id');
+      const zapiToken = localStorage.getItem('app_zapi_token');
+      const zapiClientToken = localStorage.getItem('app_zapi_client_token');
+
+      if (zapiInstance && zapiToken) {
+        const zapiHeaders = { 'Content-Type': 'application/json' };
+        if (zapiClientToken) zapiHeaders['Client-Token'] = zapiClientToken;
+
+        let cleanPhoneDigits = activeWhatsAppChatLead.phone.replace(/\D/g, '');
+        if (cleanPhoneDigits.length === 11 && !cleanPhoneDigits.startsWith('55')) {
+          cleanPhoneDigits = '55' + cleanPhoneDigits;
+        } else if (cleanPhoneDigits.length === 10 && !cleanPhoneDigits.startsWith('55')) {
+          cleanPhoneDigits = '55' + cleanPhoneDigits;
+        }
+
+        await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/send-text`, {
+          method: 'POST',
+          headers: zapiHeaders,
+          body: JSON.stringify({
+            phone: cleanPhoneDigits,
+            message: textToSend
+          })
+        });
+      }
+
+      const resNote = await fetch('/api/crm/notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          lead_phone: activeWhatsAppChatLead.phone,
+          content: `[WhatsApp] ${textToSend}`
+        })
+      });
+
+      if (resNote.ok) {
+        const noteData = await resNote.json();
+        setChatMessages(prev => [...prev, noteData.note || {
+          content: `[WhatsApp] ${textToSend}`,
+          author_name: currentUser?.name || 'Vendedor',
+          created_at: new Date().toISOString()
+        }]);
+      } else {
+        setChatMessages(prev => [...prev, {
+          content: `[WhatsApp] ${textToSend}`,
+          author_name: currentUser?.name || 'Vendedor',
+          created_at: new Date().toISOString()
+        }]);
+      }
+
+      setChatInputText('');
+    } catch (err) {
+      console.error('Erro ao enviar mensagem no chat:', err);
+    } finally {
+      setIsSendingChatMessage(false);
+    }
+  };
+
+  const toggleLeadTag = (phone, tag) => {
+    setLeadTags(prev => {
+      const current = prev[phone] || [];
+      const updated = current.includes(tag) ? current.filter(t => t !== tag) : [...current, tag];
+      const newObj = { ...prev, [phone]: updated };
+      localStorage.setItem('crm_lead_tags', JSON.stringify(newObj));
+      return newObj;
+    });
+  };
+
+  const handleSaveLeadCadastro = async () => {
+    if (!activeWhatsAppChatLead) return;
+    try {
+      const res = await fetch('/api/crm/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          phone: activeWhatsAppChatLead.phone,
+          name: editLeadName,
+          value: parseFloat(editLeadValue) || 0,
+          stage: editLeadStage,
+          assigned_to: editLeadSeller || null
+        })
+      });
+
+      if (res.ok) {
+        fetchLeads();
+        alert('Cadastro do lead atualizado com sucesso!');
+      } else {
+        alert('Erro ao atualizar cadastro.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao conectar com o servidor.');
+    }
+  };
 
   // Scroll sync refs for sticky header
   const headerScrollRef = useRef(null);
@@ -878,25 +1051,30 @@ export default function Crm() {
                                   key={lead.phone || lead.id || leadIdx}
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, lead.phone)}
-                                  className="group bg-white p-2.5 rounded-lg border border-gray-200/90 shadow-xs cursor-grab active:cursor-grabbing hover:shadow-md hover:border-gray-300 transition-all space-y-1 text-left relative min-w-0"
+                                  onClick={() => openWhatsAppChatModal(lead)}
+                                  className="group bg-white p-2.5 rounded-lg border border-gray-200/90 shadow-xs cursor-pointer hover:shadow-md hover:border-blue-400 transition-all space-y-1.5 text-left relative min-w-0"
                                 >
-                                  {/* Deal Title (Pipedrive format: [Amostra] Deal Name) */}
-                                  <h4 className="text-xs font-bold text-gray-900 leading-tight truncate" title={lead.name}>
-                                    {lead.name ? `[Amostra] ${lead.name}` : `[Amostra] Lead ${lead.phone}`}
-                                  </h4>
-
-                                  {/* Subtitle / Organization or Contact */}
-                                  <p className="text-[11px] text-gray-500 truncate leading-tight">
-                                    {lead.name ? `[Amostra] ${lead.name}, ${lead.phone}` : lead.phone}
-                                  </p>
-
-                                  {/* Card Footer Row: Owner Icon + Value on Left, Status Circle Arrow on Right */}
-                                  <div className="pt-1 flex items-center justify-between min-w-0">
-                                    {/* Owner Icon & Value */}
-                                    <div className="flex items-center space-x-1 text-xs font-semibold text-gray-700 min-w-0">
-                                      <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                                      <span className="truncate">{formatCurrency(leadVal)}</span>
+                                  <div className="flex items-start space-x-2 min-w-0">
+                                    {/* Avatar circle (Smartbid style W+ / initials) */}
+                                    <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 font-bold text-[11px] flex items-center justify-center shrink-0 border border-blue-200 shadow-2xs mt-0.5">
+                                      {getAvatarInitials(lead.name, lead.phone)}
                                     </div>
+
+                                    {/* Lead Title & Phone Subtitle */}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between gap-1">
+                                        <h4 className="text-xs font-bold text-gray-900 leading-tight truncate" title={lead.name}>
+                                          {lead.name ? lead.name : `WhatsApp: ${lead.phone}`}
+                                        </h4>
+                                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-md border border-blue-100 shrink-0">
+                                          {formatCurrency(leadVal)}
+                                        </span>
+                                      </div>
+                                      <p className="text-[11px] text-gray-500 truncate leading-tight mt-0.5">
+                                        {lead.phone}
+                                      </p>
+                                    </div>
+                                  </div>
 
                                     {/* Status Circle Arrow Button (Pipedrive Green / Gray Circle) */}
                                     <button
@@ -963,6 +1141,322 @@ export default function Crm() {
         </div>
       </div>
     )}
+
+      {/* ---------------- WHATSAPP ATENDIMENTO MODAL (Smartbid Style) ---------------- */}
+      {activeWhatsAppChatLead && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-4xl h-[88vh] shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
+            
+            {/* 1. Header (Dark Navy #0B141B style matching Smartbid) */}
+            <div className="bg-[#0B141B] text-white px-5 py-3 flex items-center justify-between shrink-0 shadow-md">
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-blue-600/30 border border-blue-400/40 text-blue-300 font-bold text-sm flex items-center justify-center shrink-0">
+                  {getAvatarInitials(activeWhatsAppChatLead.name, activeWhatsAppChatLead.phone)}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-sm text-white truncate">
+                    {activeWhatsAppChatLead.name || `WhatsApp: ${activeWhatsAppChatLead.phone}`}
+                  </h3>
+                  <p className="text-xs text-emerald-400 font-medium truncate flex items-center space-x-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>{activeWhatsAppChatLead.phone}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveChatTab('cadastro')}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition-all border border-white/10"
+                >
+                  <User className="w-3.5 h-3.5 text-blue-300" />
+                  <span>Cadastro</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveWhatsAppChatLead(null)}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+                  title="Fechar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* 2. Top Navigation Tabs Bar */}
+            <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center space-x-1 shrink-0 overflow-x-auto custom-scrollbar">
+              <button
+                onClick={() => setActiveChatTab('chat')}
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  activeChatTab === 'chat'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Chat</span>
+              </button>
+
+              <button
+                onClick={() => setActiveChatTab('anotacoes')}
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  activeChatTab === 'anotacoes'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <ClipboardList className="w-3.5 h-3.5" />
+                <span>Anotações</span>
+              </button>
+
+              <button
+                onClick={() => setActiveChatTab('lembretes')}
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  activeChatTab === 'lembretes'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Lembretes</span>
+              </button>
+
+              <button
+                onClick={() => setActiveChatTab('etiquetas')}
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  activeChatTab === 'etiquetas'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Tag className="w-3.5 h-3.5" />
+                <span>Etiquetas</span>
+              </button>
+
+              <button
+                onClick={() => setActiveChatTab('cadastro')}
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  activeChatTab === 'cadastro'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Edit className="w-3.5 h-3.5" />
+                <span>Cadastro</span>
+              </button>
+            </div>
+
+            {/* 3. Modal Body Content per Active Tab */}
+            <div className="flex-1 min-h-0 flex flex-col bg-gray-50 overflow-hidden">
+              
+              {/* TAB 1: CHAT */}
+              {activeChatTab === 'chat' && (
+                <div className="flex-1 flex flex-col min-h-0 bg-[#E5DDD5]/30 relative">
+                  
+                  {/* Chat Messages History */}
+                  <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                    <div className="flex justify-center my-1">
+                      <span className="bg-white/80 backdrop-blur-xs text-gray-500 text-[10px] font-bold px-3 py-1 rounded-full shadow-2xs uppercase">
+                        Hoje
+                      </span>
+                    </div>
+
+                    {chatMessages.length === 0 ? (
+                      <div className="text-center py-12 text-gray-500 text-xs italic bg-white/70 backdrop-blur-xs p-6 rounded-2xl border border-gray-200 max-w-sm mx-auto shadow-xs">
+                        Nenhuma mensagem registrada ainda. Envie a primeira mensagem abaixo via Z-API!
+                      </div>
+                    ) : (
+                      chatMessages.map((msg, idx) => {
+                        const isSent = msg.content?.startsWith('[WhatsApp]') || msg.user_id || msg.is_sent;
+                        const cleanText = msg.content?.replace('[WhatsApp]', '').trim() || msg.text || '';
+                        const sender = msg.author_name || currentUser?.name || 'Vendedor';
+                        const msgTime = msg.created_at ? new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Agora';
+
+                        return (
+                          <div
+                            key={msg.id || idx}
+                            className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div
+                              className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-xs text-xs space-y-1 ${
+                                isSent
+                                  ? 'bg-[#D9FDD3] text-gray-900 rounded-tr-none border border-emerald-200/60'
+                                  : 'bg-white text-gray-900 rounded-tl-none border border-gray-200'
+                              }`}
+                            >
+                              {isSent && (
+                                <div className="font-bold text-[11px] text-emerald-800">
+                                  *{sender}*:
+                                </div>
+                              )}
+                              <p className="whitespace-pre-wrap leading-relaxed text-gray-800">{cleanText}</p>
+                              <div className="flex items-center justify-end space-x-1 text-[10px] text-gray-400 pt-0.5">
+                                <span>{msgTime}</span>
+                                {isSent && <CheckCheck className="w-3.5 h-3.5 text-blue-500 inline" />}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Chat Bottom Bar */}
+                  <form onSubmit={handleSendChatMessage} className="bg-white px-4 py-3 border-t border-gray-200 flex items-center space-x-2 shrink-0 shadow-lg">
+                    <button type="button" className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all" title="Anexo">
+                      <Paperclip className="w-4 h-4" />
+                    </button>
+                    <button type="button" className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all" title="Emojis">
+                      <Smile className="w-4 h-4" />
+                    </button>
+
+                    <input
+                      type="text"
+                      placeholder="Digite uma mensagem..."
+                      value={chatInputText}
+                      onChange={(e) => setChatInputText(e.target.value)}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-emerald-500 focus:outline-none text-xs bg-gray-50/50"
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={isSendingChatMessage || !chatInputText.trim()}
+                      className="p-2.5 bg-[#00A884] hover:bg-[#008f70] text-white rounded-full transition-all disabled:opacity-50 shadow-md flex items-center justify-center"
+                      title="Enviar via Z-API"
+                    >
+                      {isSendingChatMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {/* TAB 2: ANOTAÇÕES */}
+              {activeChatTab === 'anotacoes' && (
+                <div className="flex-1 p-6 overflow-y-auto space-y-4">
+                  <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Nova Anotação Interna</h4>
+                    <textarea
+                      rows={3}
+                      placeholder="Digite detalhes importantes sobre a negociação..."
+                      value={quickNoteContent}
+                      onChange={(e) => setQuickNoteContent(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50/50"
+                    />
+                    <button
+                      onClick={() => handleSaveQuickNote(activeWhatsAppChatLead.phone)}
+                      disabled={isSavingQuick || !quickNoteContent.trim()}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
+                    >
+                      Salvar Anotação
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Histórico de Anotações</h4>
+                    {chatMessages.filter(m => !m.content?.startsWith('[WhatsApp]')).length === 0 ? (
+                      <div className="text-xs text-gray-400 italic bg-white p-4 rounded-xl border border-gray-100">Nenhuma anotação manual cadastrada.</div>
+                    ) : (
+                      chatMessages.filter(m => !m.content?.startsWith('[WhatsApp]')).map((note, idx) => (
+                        <div key={note.id || idx} className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs space-y-1">
+                          <p className="text-xs text-gray-800 whitespace-pre-wrap">{note.content}</p>
+                          <span className="text-[10px] text-gray-400 font-semibold">{note.author_name || 'Equipe'} · {new Date(note.created_at).toLocaleString('pt-BR')}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: LEMBRETES */}
+              {activeChatTab === 'lembretes' && (
+                <div className="flex-1 p-6 overflow-y-auto space-y-4">
+                  <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Agendar Retorno / Lembrete</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Data</label>
+                        <input type="date" value={taskDate} onChange={e => setTaskDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Hora</label>
+                        <input type="time" value={taskTime} onChange={e => setTaskTime(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Descrição</label>
+                      <input type="text" placeholder="Ex: Ligar para confirmar proposta" value={taskMessage} onChange={e => setTaskMessage(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+                    </div>
+                    <button
+                      onClick={() => handleSaveQuickReminder(activeWhatsAppChatLead.phone)}
+                      disabled={isSavingQuick}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
+                    >
+                      Agendar Lembrete
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: ETIQUETAS */}
+              {activeChatTab === 'etiquetas' && (
+                <div className="flex-1 p-6 overflow-y-auto space-y-4">
+                  <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Etiquetas do Negócio</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {['VIP', 'Cliente Quente', 'Aguardando Orçamento', 'Proposta Enviada', 'Contrato Fechado', 'Interesse Equipamento'].map(tag => {
+                        const isSelected = (leadTags[activeWhatsAppChatLead.phone] || []).includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => toggleLeadTag(activeWhatsAppChatLead.phone, tag)}
+                            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                              isSelected
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                                : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
+                            }`}
+                          >
+                            {isSelected ? `✓ ${tag}` : `+ ${tag}`}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 5: CADASTRO */}
+              {activeChatTab === 'cadastro' && (
+                <div className="flex-1 p-6 overflow-y-auto space-y-4">
+                  <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-4 max-w-xl">
+                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Editar Cadastro do Lead</h4>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Nome Completo / Empresa</label>
+                      <input type="text" value={editLeadName} onChange={e => setEditLeadName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Telefone WhatsApp</label>
+                      <input type="text" value={editLeadPhone} onChange={e => setEditLeadPhone(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Valor Estimado (R$)</label>
+                      <input type="number" step="0.01" value={editLeadValue} onChange={e => setEditLeadValue(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs bg-gray-50/50" />
+                    </div>
+                    <button
+                      onClick={handleSaveLeadCadastro}
+                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-md"
+                    >
+                      Salvar Alterações
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ---------------- QUICK NOTE MODAL (WaSeller Style) ---------------- */}
       {activeNoteLead && (
