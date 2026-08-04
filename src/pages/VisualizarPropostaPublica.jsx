@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
-  FileText, Loader2, CheckCircle2, XCircle, Printer, Clock, 
-  Check, ArrowRight, MessageSquare, ChevronRight, Info, FileSignature, X 
+  FileText, Loader2, CheckCircle2, XCircle, Printer, 
+  Check, MessageSquare, ChevronRight, Info, FileSignature, X
 } from 'lucide-react';
 
 export default function VisualizarPropostaPublica() {
@@ -144,11 +144,11 @@ export default function VisualizarPropostaPublica() {
 
   const p = proposal;
   const companyLogo = localStorage.getItem('app_company_logo') || '';
-  const companyName = localStorage.getItem('app_company_name') || 'CLEAN TECH SMART';
-  const companyCnpj = localStorage.getItem('app_company_cnpj') || '00.000.000/0001-00';
-  const companyAddress = localStorage.getItem('app_company_address') || 'Rua Barão de Campinas, 715 - São Paulo, SP';
-  const companyPhone = localStorage.getItem('app_company_phone') || '(11) 3320-8550';
-  const companyEmail = localStorage.getItem('app_company_email') || 'info.brasil@tennantco.com';
+  const companyName = localStorage.getItem('app_company_name') || 'CLEAN TECH PRO';
+  const companyCnpj = localStorage.getItem('app_company_cnpj') || '43.158.052/0001-01';
+  const companyAddress = localStorage.getItem('app_company_address') || 'Avenida Maringá, 1273 – Emiliano Perneta Pinhais/PR, CEP 83325-212';
+  const companyPhone = localStorage.getItem('app_company_phone') || '41 9 8508-3658';
+  const companyEmail = localStorage.getItem('app_company_email') || 'vendas@cleantechpro.com.br';
   const primaryColor = localStorage.getItem('app_pdf_color') || '#009AC7';
   const emissao = new Date(p.created_at || new Date()).toLocaleDateString('pt-BR');
   const isApproved = p.status === 'Aprovada' || p.status === 'Fechada';
@@ -157,137 +157,153 @@ export default function VisualizarPropostaPublica() {
   const mainPhoto = photoArray[0] || p.machine_image || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800';
 
   const parseSpecsToHTML = (rawSpecs) => {
-    if (!rawSpecs) return <p className="text-slate-400 italic text-xs">Consulte a ficha técnica anexa.</p>;
-    return rawSpecs.split('\n').map((line, idx) => {
-      const trimmed = line.trim();
-      if (!trimmed) return <div key={idx} className="h-1.5" />;
-      if (trimmed.includes(':')) {
-        const [key, ...valParts] = trimmed.split(':');
-        const val = valParts.join(':').trim();
-        const cleanKey = key.replace(/^[-\s*•]+/, '').trim();
-        return (
-          <div key={idx} className="flex border-b border-slate-100 py-1.5 text-xs hover:bg-slate-50/50">
-            <span className="font-semibold text-slate-500 w-1/2">{cleanKey}</span>
-            <span className="text-slate-900 w-1/2 font-bold">{val}</span>
-          </div>
-        );
-      }
-      return (
-        <div key={idx} className="flex items-start py-1 text-xs text-slate-700">
-          <span className="text-[#009AC7] mr-2 font-bold">•</span>
-          <span className="font-medium text-slate-800">{trimmed.replace(/^[-\s*•]+/, '')}</span>
-        </div>
-      );
-    });
+    if (!rawSpecs) return '<p class="italic text-slate-400">Consulte a ficha técnica anexa.</p>';
+    let htmlContent = rawSpecs;
+    if (rawSpecs.includes('{') && rawSpecs.includes('}')) {
+      try {
+        const parsed = JSON.parse(rawSpecs);
+        if (Array.isArray(parsed)) {
+          return `<ul class="list-none p-0">${parsed.map(item => `<li class="py-1 border-b border-slate-100"><strong>${item.label || item.key}:</strong> ${item.value}</li>`).join('')}</ul>`;
+        }
+      } catch (e) {}
+    }
+    return htmlContent.replace(/\n/g, '<br/>');
   };
 
+  const specsHTML = parseSpecsToHTML(p.machine_technical_description || p.machine_specs);
+
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-gray-800">
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
       
-      {/* SIDEBAR NAVIGATION - Azul Claro da Paleta (#009AC7) */}
-      <aside className="w-full md:w-80 bg-[#009AC7] text-white flex flex-col justify-between shrink-0 p-5 h-auto md:h-screen md:sticky md:top-0 border-r border-[#0088b3] shadow-md">
-        <div className="flex-1 flex flex-col min-h-0">
+      {/* 1. TOP HEADER BAR - FULL WIDTH ACROSS TOP (#009AC7) */}
+      <header className="fixed top-0 left-0 right-0 h-14 bg-[#009AC7] text-white px-6 flex items-center justify-between z-50 shadow-md no-print">
+        <div className="flex items-center space-x-3 text-left">
+          <span className="text-xs font-bold text-white">
+            📄 Proposta de Locação #{String(p.id).padStart(4, '0')} &mdash; {p.client_razao_social || p.client_name}
+          </span>
+        </div>
+
+        <button
+          onClick={() => window.print()}
+          className="px-4 py-1.5 bg-white text-[#009AC7] hover:bg-slate-50 text-xs font-extrabold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
+        >
+          <Printer className="w-4 h-4" />
+          <span>Salvar / Imprimir PDF</span>
+        </button>
+      </header>
+
+      {/* 2. SIDEBAR NAVIGATION - BELOW THE TOP BAR (WHITE BG) */}
+      <aside className="fixed top-14 left-0 w-72 bottom-0 bg-white border-r border-gray-200 p-5 flex flex-col justify-between z-40 overflow-y-auto no-print">
+        <div className="flex-1 flex flex-col min-h-0 text-left">
           
-          {/* Logotipo & Brand Header */}
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/20 shrink-0">
+          {/* Logo Brand Header (CLEANTECHPRO) */}
+          <div className="pb-4 mb-4 border-b border-gray-150">
             {companyLogo ? (
-              <img src={companyLogo} alt="Logo" className="h-10 max-w-[170px] object-contain bg-white/95 p-1.5 rounded-lg shadow-xs" />
+              <img src={companyLogo} alt="Logo" className="h-10 max-w-[180px] object-contain" />
             ) : (
               <div className="flex items-center gap-2">
                 <svg className="w-8 h-8 shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M30 15 L65 50 L50 65 L15 30 Z" fill="#ffffff" />
-                  <path d="M50 35 L85 70 L70 85 L35 50 Z" fill="#e0f2fe" opacity="0.95" />
+                  <path d="M30 15 L65 50 L50 65 L15 30 Z" fill="#009AC7" />
+                  <path d="M50 35 L85 70 L70 85 L35 50 Z" fill="#00c0f0" opacity="0.95" />
                 </svg>
-                <div className="text-left">
-                  <h2 className="font-extrabold text-sm tracking-wide text-white uppercase leading-tight">Clean Tech Pro</h2>
-                  <span className="text-cyan-100 text-[9px] font-bold uppercase tracking-wider block">Orçamento &amp; Contrato</span>
+                <div className="text-left leading-none">
+                  <span className="text-sm font-black text-[#004054] tracking-tight block">CLEANTECH<span className="text-[#009AC7]">PRO</span></span>
+                  <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest block mt-0.5">A REVOLUÇÃO NO MERCADO DE LOCAÇÕES</span>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Proposal Number & Client Name */}
-          <div className="mb-6 shrink-0 text-left">
-            <span className="text-xxs font-black text-white bg-white/20 border border-white/30 px-2 py-0.5 rounded uppercase tracking-wider block w-max">
-              Proposta nº #{String(p.id).padStart(4, '0')}
-            </span>
-            <h3 className="font-extrabold text-white text-sm mt-1.5 line-clamp-2 uppercase" title={p.client_razao_social || p.client_name}>
-              {p.client_razao_social || p.client_name}
-            </h3>
-          </div>
+          <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-3">
+            NAVEGAÇÃO DA PROPOSTA
+          </span>
 
-          {/* Sidebar Menu Tabs */}
-          <nav className="space-y-1.5 overflow-y-auto flex-1 pr-1 text-left">
-            <button 
+          {/* Proposal Navigation Tabs */}
+          <nav className="space-y-1.5 flex-1 pr-1">
+            <button
               onClick={() => setActiveTab('presentation')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'presentation' ? 'bg-white text-[#009AC7] shadow-md font-extrabold' : 'text-cyan-50 hover:bg-white/10 hover:text-white'}`}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
+                activeTab === 'presentation' 
+                  ? 'bg-sky-50 text-[#009AC7] border-l-4 border-[#009AC7] shadow-xs' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 <Info className="w-4 h-4" />
-                <span>1. Apresentação do Catálogo</span>
+                <span>1. Apresentação Catálogo</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('proposal')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'proposal' ? 'bg-white text-[#009AC7] shadow-md font-extrabold' : 'text-cyan-50 hover:bg-white/10 hover:text-white'}`}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
+                activeTab === 'proposal' 
+                  ? 'bg-sky-50 text-[#009AC7] border-l-4 border-[#009AC7] shadow-xs' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 <FileText className="w-4 h-4" />
                 <span>2. Proposta Comercial</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('minuta')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'minuta' ? 'bg-white text-[#009AC7] shadow-md font-extrabold' : 'text-cyan-50 hover:bg-white/10 hover:text-white'}`}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
+                activeTab === 'minuta' 
+                  ? 'bg-sky-50 text-[#009AC7] border-l-4 border-[#009AC7] shadow-xs' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 <FileSignature className="w-4 h-4" />
                 <span>3. Minuta de Contrato</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('chat')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'chat' ? 'bg-white text-[#009AC7] shadow-md font-extrabold' : 'text-cyan-50 hover:bg-white/10 hover:text-white'}`}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
+                activeTab === 'chat' 
+                  ? 'bg-sky-50 text-[#009AC7] border-l-4 border-[#009AC7] shadow-xs' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 <MessageSquare className="w-4 h-4" />
                 <span>4. Conversa &amp; Feedback</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </nav>
         </div>
 
         {/* Sidebar Decision/Status Footer */}
-        <div className="mt-6 pt-4 border-t border-white/20 shrink-0 bg-[#009AC7] w-full">
+        <div className="pt-4 border-t border-gray-150 shrink-0 bg-white w-full">
           {isApproved ? (
-            <div className="bg-white/20 border border-white/30 p-4 rounded-2xl text-center text-white">
-              <CheckCircle2 className="w-8 h-8 text-white mx-auto mb-2 animate-bounce" />
-              <span className="text-xxs font-black text-white uppercase tracking-widest block">Proposta Aprovada</span>
-              <p className="text-cyan-100 text-xxs mt-1 font-semibold leading-relaxed">
-                Assinatura eletrônica registrada com sucesso.
-              </p>
+            <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-center">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto mb-1" />
+              <span className="text-xxs font-black text-emerald-700 uppercase tracking-wider block">Proposta Aprovada</span>
+              <p className="text-slate-500 text-[10px] mt-0.5 font-medium">Assinatura eletrônica registrada.</p>
             </div>
           ) : (
             <div className="space-y-2">
               <button 
                 onClick={() => setIsApproveOpen(true)}
-                className="w-full py-2.5 bg-white text-[#009AC7] hover:bg-slate-50 font-extrabold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-[#009AC7] hover:bg-[#0088b3] text-white font-extrabold rounded-xl text-xs transition-all shadow-xs flex items-center justify-center gap-1.5"
               >
                 <Check className="w-4 h-4" />
                 Aprovar Proposta
               </button>
               <button 
                 onClick={() => setIsRejectOpen(true)}
-                className="w-full py-2.5 bg-white/15 hover:bg-white/25 text-white font-bold rounded-xl text-xs border border-white/20 transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs border border-slate-200 transition-all flex items-center justify-center gap-1.5"
               >
-                <XCircle className="w-4 h-4" />
+                <MessageSquare className="w-4 h-4" />
                 Solicitar Ajustes
               </button>
             </div>
@@ -295,32 +311,15 @@ export default function VisualizarPropostaPublica() {
         </div>
       </aside>
 
-      {/* MAIN VIEWPORT */}
-      <main className="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-y-auto">
-        {/* Top Header Bar - Azul Claro (#009AC7) */}
-        <div className="bg-[#009AC7] text-white px-6 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-md">
-          <div className="flex items-center space-x-3 text-left">
-            <span className="text-xs font-bold text-white">
-              📄 Proposta de Locação #{String(p.id).padStart(4, '0')} &mdash; {p.client_razao_social || p.client_name}
-            </span>
-          </div>
-
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-1.5 bg-white text-[#009AC7] hover:bg-slate-50 text-xs font-extrabold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Salvar / Imprimir PDF</span>
-          </button>
-        </div>
-
-        {/* Content Tabs - PDF Sheet Online */}
-        <div className="p-4 md:p-8 flex-1">
+      {/* 3. MAIN CONTENT VIEWPORT */}
+      <main className="pl-72 pt-14 min-h-screen bg-slate-100 p-6 flex justify-center">
+        <div className="w-full max-w-[870px] my-4">
           {activeTab === 'proposal' && (
-            <div className="max-w-[870px] mx-auto bg-white p-8 md:p-12 shadow-xl rounded-xl border border-gray-200 text-slate-800 text-xs leading-relaxed space-y-8 printable-page text-left">
+            <div className="space-y-6">
               
               {/* PAGE 1: Presentation & Technical Specs */}
-              <div>
+              <div className="bg-white p-8 md:p-12 shadow-xl rounded-xl border border-gray-200 text-slate-800 text-xs leading-relaxed space-y-6 printable-page text-left">
+                
                 {/* Header with Logo */}
                 <div className="flex items-center justify-between pb-5 border-b-2" style={{ borderColor: primaryColor }}>
                   <div className="flex-1 text-center">
@@ -337,7 +336,7 @@ export default function VisualizarPropostaPublica() {
                 </div>
 
                 {/* Proposal Title */}
-                <div className="text-center my-6 space-y-1">
+                <div className="text-center my-4 space-y-1">
                   <h2 className="text-base font-extrabold uppercase tracking-wider text-slate-900">
                     PROPOSTA COMERCIAL DE LOCAÇÃO DE EQUIPAMENTOS
                   </h2>
@@ -346,9 +345,9 @@ export default function VisualizarPropostaPublica() {
                 </div>
 
                 {/* Client Data Box */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-2 mb-8" style={{ borderLeft: `4px solid ${primaryColor}` }}>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-2" style={{ borderLeft: `4px solid ${primaryColor}` }}>
                   <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: primaryColor }}>
-                    Dados do Cliente
+                    DADOS DO CLIENTE
                   </span>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
                     <div><span className="font-bold text-slate-700">Cliente:</span> {p.client_razao_social || p.client_name || 'Não informado'}</div>
@@ -360,42 +359,33 @@ export default function VisualizarPropostaPublica() {
                   </div>
                 </div>
 
-                {/* 01 - DO OBJETO E ESCOPO */}
-                <div className="space-y-4 text-left">
-                  <h3 className="font-extrabold text-slate-900 border-b border-slate-200 pb-1 text-sm uppercase">
-                    01 - DO OBJETO E ESCOPO
-                  </h3>
-                  <p className="text-xs text-slate-700 font-medium">
-                    1.1. Constitui objeto desta Proposta Comercial a locação temporária do seguinte equipamento de alta performance:
-                  </p>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center pt-2">
-                    {/* Equipment Image: Floating without background box, vertically centered */}
-                    <div className="flex items-center justify-center self-center h-full w-full py-2">
-                      <img
-                        src={mainPhoto}
-                        alt={p.machine_name}
-                        className="max-h-[300px] w-auto max-w-full object-contain mix-blend-multiply"
-                        style={{ mixBlendMode: 'multiply' }}
-                      />
+                {/* Equipment Info Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start pt-2 text-left">
+                  <div className="md:col-span-5 space-y-4">
+                    <div className="h-56 bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-center">
+                      <img src={mainPhoto} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
                     </div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700 space-y-1.5">
+                      <h4 className="font-bold text-slate-900 uppercase text-[10px] border-b border-slate-200 pb-1 mb-1">DIFERENCIAIS</h4>
+                      <p>• Alta produtividade e eficiência em grandes áreas.</p>
+                      <p>• Facilidade de operação e controles simples.</p>
+                      <p>• Robustez construtiva Tennant reconhecida.</p>
+                      <p>• Suporte técnico e peças originais Alfa Tennant.</p>
+                    </div>
+                  </div>
 
-                    {/* Technical Specs & Equipment Name */}
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-extrabold text-slate-900 border-b-2 pb-1.5 uppercase" style={{ borderColor: primaryColor }}>
-                        {p.machine_name || 'Equipamento'}
-                      </h4>
-                      <p className="text-[11px] text-slate-500 italic leading-snug">
-                        {p.machine_technical_description || 'Equipamento de alta qualidade e rendimento, ideal para processos contínuos de higienização de pisos.'}
-                      </p>
-                      <div className="pt-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider block mb-2" style={{ color: primaryColor }}>
-                          Especificações Técnicas
-                        </span>
-                        <div className="space-y-1">
-                          {parseSpecsToHTML(p.machine_technical_description)}
-                        </div>
-                      </div>
+                  <div className="md:col-span-7 space-y-3">
+                    <h3 className="text-sm font-extrabold text-slate-900 border-b-2 pb-1.5 uppercase" style={{ borderColor: primaryColor }}>
+                      {p.machine_name || 'Equipamento'}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 italic leading-relaxed">
+                      {p.machine_technical_description || 'Equipamento de alta qualidade e rendimento, ideal para processos contínuos de higienização de pisos.'}
+                    </p>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider block mb-2" style={{ color: primaryColor }}>
+                        ESPECIFICAÇÕES TÉCNICAS
+                      </span>
+                      <div className="text-xs text-slate-700 space-y-1" dangerouslySetInnerHTML={{ __html: specsHTML }} />
                     </div>
                   </div>
                 </div>
@@ -403,110 +393,119 @@ export default function VisualizarPropostaPublica() {
               </div>
 
               {/* PAGE 2: Financial Terms & Conditions */}
-              <div className="pt-8 border-t border-slate-200 space-y-6 text-left">
-                <h3 className="text-sm font-extrabold uppercase tracking-wider font-serif" style={{ color: primaryColor }}>
-                  Valores e Condições de Locação
-                </h3>
-
-                <table className="w-full border-collapse border border-slate-300 text-xs">
-                  <tbody>
-                    <tr>
-                      <td className="w-48 p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">Valor Mensal</td>
-                      <td className="p-2.5 font-extrabold text-slate-900 border border-slate-300 bg-[#EEF2FF]" style={{ color: primaryColor }}>
-                        R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / mês
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">Tipo de Contrato*</td>
-                      <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.contract_type || '0 - Sem Cobertura'}</td>
-                    </tr>
-                    <tr>
-                      <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">Período de Locação</td>
-                      <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{formatPeriod(p.period_months)}</td>
-                    </tr>
-                    <tr>
-                      <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">Horas/Mês</td>
-                      <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.hours_per_month || 'Livre'}</td>
-                    </tr>
-                    <tr>
-                      <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">Região Utilizada</td>
-                      <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.region_used || 'São Paulo'}</td>
-                    </tr>
-                    <tr>
-                      <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">Tempo de Entrega</td>
-                      <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.delivery_time || 'A combinar'}</td>
-                    </tr>
-                    <tr>
-                      <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">Custo do Frete</td>
-                      <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">
-                        {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">Validade da proposta</td>
-                      <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.validity_days || '10 dias'}</td>
-                    </tr>
-                    {p.notes && (
-                      <tr>
-                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">OBSERVAÇÃO</td>
-                        <td className="p-2.5 font-normal text-slate-700 border border-slate-300 bg-[#EEF2FF] whitespace-pre-wrap">{p.notes}</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-
-                <p className="text-[10px] text-slate-600 leading-relaxed text-justify italic">
-                  Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <strong className="font-bold text-slate-900">3º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital – São Paulo</strong>, cuja cópia digitalizada está disponível no site: <u>www.alfatennant.com.br/terms</u> e também por e-mail ou correio quando solicitada. Os valores acima definidos englobam única e exclusivamente os impostos, taxas e demais encargos fiscais e tributários, incidentes nas alíquotas vigentes no Estado de origem (São Paulo) de responsabilidade da <strong className="font-bold text-slate-900">TENNANT COMPANY</strong>.
-                </p>
-
-                <div className="pt-2">
-                  <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block mb-2">* Tabela Descritiva de Tipos de Contrato</span>
-                  <table className="w-full border-collapse border border-slate-300 text-[10px]">
-                    <thead>
-                      <tr style={{ backgroundColor: primaryColor }} className="text-white">
-                        <th className="w-36 p-2 text-left font-bold">Tipo de Contrato</th>
-                        <th className="p-2 text-left font-bold">Descrição de Cobertura</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      <tr className={p.contract_type?.startsWith('0') ? 'bg-amber-100 font-bold text-amber-900' : ''}>
-                        <td className="p-2 font-bold">{p.contract_type?.startsWith('0') ? '★ ' : ''}0 - Sem Cobertura</td>
-                        <td className="p-2">Incluso: Somente locação do Equipamento. {p.contract_type?.startsWith('0') ? '(PLANO SELECIONADO)' : ''}</td>
-                      </tr>
-                      <tr className={p.contract_type?.startsWith('1') ? 'bg-amber-100 font-bold text-amber-900' : ''}>
-                        <td className="p-2 font-bold">{p.contract_type?.startsWith('1') ? '★ ' : ''}1 - Ouro</td>
-                        <td className="p-2">Incluso: Manutenção, Mão de Obra, Peças, Água Destilada e Deslocamento do técnico autorizado TENNANT COMPANY. Não incluso: Combustíveis e Químicos. {p.contract_type?.startsWith('1') ? '(PLANO SELECIONADO)' : ''}</td>
-                      </tr>
-                      <tr className={p.contract_type?.startsWith('2') ? 'bg-amber-100 font-bold text-amber-900' : ''}>
-                        <td className="p-2 font-bold">{p.contract_type?.startsWith('2') ? '★ ' : ''}2 - Prata</td>
-                        <td className="p-2">Incluso: Igual ao Ouro. Não incluso: Combustíveis, Químicos, Escovas e Discos. {p.contract_type?.startsWith('2') ? '(PLANO SELECIONADO)' : ''}</td>
-                      </tr>
-                      <tr className={p.contract_type?.startsWith('3') ? 'bg-amber-100 font-bold text-amber-900' : ''}>
-                        <td className="p-2 font-bold">{p.contract_type?.startsWith('3') ? '★ ' : ''}3 - Bronze</td>
-                        <td className="p-2">Incluso: Igual ao Ouro. Não incluso: Combustíveis, Água Destilada, Químicos, Escovas, Discos e Baterias. {p.contract_type?.startsWith('3') ? '(PLANO SELECIONADO)' : ''}</td>
-                      </tr>
-                      <tr className={p.contract_type?.startsWith('4') ? 'bg-amber-100 font-bold text-amber-900' : ''}>
-                        <td className="p-2 font-bold">{p.contract_type?.startsWith('4') ? '★ ' : ''}4 - MOB</td>
-                        <td className="p-2">Incluso: Somente Manutenção, Mão de Obra, e Deslocamento do técnico autorizado TENNANT COMPANY. {p.contract_type?.startsWith('4') ? '(PLANO SELECIONADO)' : ''}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+              <div className="bg-white p-8 md:p-12 shadow-xl rounded-xl border border-gray-200 text-slate-800 text-xs leading-relaxed space-y-6 printable-page text-left">
+                
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                  <span className="text-xs font-bold uppercase text-slate-500" style={{ color: primaryColor }}>Valores e Condições de Locação</span>
+                  <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" className="h-8 object-contain" />
                 </div>
 
-                {/* Seller Signature Block */}
-                <div className="pt-4 flex items-end justify-between border-t border-slate-200">
-                  <div className="bg-slate-50 border border-slate-300 p-3.5 rounded-lg max-w-xs text-xs text-slate-800 font-medium">
-                    <span className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: primaryColor }}>
-                      Dados do Vendedor
-                    </span>
-                    <div className="whitespace-pre-line leading-relaxed">{p.seller_info || 'Alfa Tennant\nAtendimento Comercial'}</div>
+                <div className="space-y-4">
+                  <h3 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: primaryColor }}>
+                    Valores e Condições de Locação
+                  </h3>
+
+                  <table className="w-full border-collapse border border-slate-300 text-xs">
+                    <tbody>
+                      <tr>
+                        <td className="w-48 p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">VALOR MENSAL</td>
+                        <td className="p-2.5 font-extrabold text-slate-900 border border-slate-300 bg-[#EEF2FF]" style={{ color: primaryColor }}>
+                          R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / mês
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">TIPO DE CONTRATO*</td>
+                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.contract_type || '0 - Sem Cobertura'}</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">PERÍODO DE LOCAÇÃO</td>
+                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{formatPeriod(p.period_months)}</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">HORAS/MÊS</td>
+                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.hours_per_month || '100 horas/mês'}</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">REGIÃO UTILIZADA</td>
+                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.region_used || 'Curitiba e Região'}</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">TEMPO DE ENTREGA</td>
+                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.delivery_time || '20 Dias'}</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">CUSTO DO FRETE</td>
+                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">
+                          {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">VALIDADE DA PROPOSTA</td>
+                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.validity_days || '10 dias'}</td>
+                      </tr>
+                      {p.notes && (
+                        <tr>
+                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">OBSERVAÇÃO</td>
+                          <td className="p-2.5 font-normal text-slate-700 border border-slate-300 bg-[#EEF2FF] whitespace-pre-wrap">{p.notes}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+
+                  <p className="text-[10px] text-slate-600 leading-relaxed text-justify italic">
+                    Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <strong className="font-bold text-slate-900">3º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital – São Paulo</strong>, cuja cópia digitalizada está disponível no site: <u>www.alfatennant.com.br/terms</u> e também por e-mail ou correio quando solicitada.
+                  </p>
+
+                  <div className="pt-2">
+                    <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block mb-2">* TABELA DESCRITIVA DE TIPOS DE CONTRATO</span>
+                    <table className="w-full border-collapse border border-slate-300 text-[10px]">
+                      <thead>
+                        <tr style={{ backgroundColor: primaryColor }} className="text-white">
+                          <th className="w-36 p-2 text-left font-bold">Tipo de Contrato</th>
+                          <th className="p-2 text-left font-bold">Descrição de Cobertura</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        <tr className={p.contract_type?.startsWith('0') ? 'bg-amber-100 font-bold text-amber-900' : ''}>
+                          <td className="p-2 font-bold">{p.contract_type?.startsWith('0') ? '★ ' : ''}0 - Sem Cobertura</td>
+                          <td className="p-2">Incluso: Somente locação do Equipamento. {p.contract_type?.startsWith('0') ? '(PLANO SELECIONADO)' : ''}</td>
+                        </tr>
+                        <tr className={p.contract_type?.startsWith('1') ? 'bg-amber-100 font-bold text-amber-900' : ''}>
+                          <td className="p-2 font-bold">{p.contract_type?.startsWith('1') ? '★ ' : ''}1 - Ouro</td>
+                          <td className="p-2">Incluso: Manutenção, Mão de Obra, Peças, Água Destilada e Deslocamento do técnico autorizado TENNANT COMPANY. Não incluso: Combustíveis e Químicos. {p.contract_type?.startsWith('1') ? '(PLANO SELECIONADO)' : ''}</td>
+                        </tr>
+                        <tr className={p.contract_type?.startsWith('2') ? 'bg-amber-100 font-bold text-amber-900' : ''}>
+                          <td className="p-2 font-bold">{p.contract_type?.startsWith('2') ? '★ ' : ''}2 - Prata</td>
+                          <td className="p-2">Incluso: Igual ao Ouro. Não incluso: Combustíveis, Químicos, Escovas e Discos. {p.contract_type?.startsWith('2') ? '(PLANO SELECIONADO)' : ''}</td>
+                        </tr>
+                        <tr className={p.contract_type?.startsWith('3') ? 'bg-amber-100 font-bold text-amber-900' : ''}>
+                          <td className="p-2 font-bold">{p.contract_type?.startsWith('3') ? '★ ' : ''}3 - Bronze</td>
+                          <td className="p-2">Incluso: Igual ao Ouro. Não incluso: Combustíveis, Água Destilada, Químicos, Escovas, Discos e Baterias. {p.contract_type?.startsWith('3') ? '(PLANO SELECIONADO)' : ''}</td>
+                        </tr>
+                        <tr className={p.contract_type?.startsWith('4') ? 'bg-amber-100 font-bold text-amber-900' : ''}>
+                          <td className="p-2 font-bold">{p.contract_type?.startsWith('4') ? '★ ' : ''}4 - MOB</td>
+                          <td className="p-2">Incluso: Somente Manutenção, Mão de Obra, e Deslocamento do técnico autorizado TENNANT COMPANY. {p.contract_type?.startsWith('4') ? '(PLANO SELECIONADO)' : ''}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
 
-                  <div className="text-right text-[10px] text-slate-400 space-y-1">
-                    <p className="font-bold text-slate-700">Clean Tech Smart</p>
-                    <p>Rua Barão de Campinas, 715 - São Paulo, SP</p>
-                    <p>Vendas: (11) 3320-8550</p>
+                  <div className="pt-4 flex items-end justify-between border-t border-slate-200">
+                    <div className="bg-slate-50 border border-slate-300 p-3.5 rounded-lg max-w-xs text-xs text-slate-800 font-medium">
+                      <span className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: primaryColor }}>
+                        Dados do Vendedor
+                      </span>
+                      <div className="whitespace-pre-line leading-relaxed">{p.seller_info || 'Alfa Tennant\nAtendimento Comercial'}</div>
+                    </div>
+
+                    <div className="text-right text-[10px] text-slate-400 space-y-1">
+                      <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" className="h-8 object-contain ml-auto mb-1" />
+                      <p className="font-bold text-slate-700">Rua Barão de Campinas, 715</p>
+                      <p>São Paulo, SP - 01201-902</p>
+                      <p>Vendas: (11) 3320-8550</p>
+                    </div>
                   </div>
+
                 </div>
 
               </div>
@@ -515,11 +514,11 @@ export default function VisualizarPropostaPublica() {
           )}
 
           {activeTab === 'presentation' && (
-            <div className="max-w-[870px] mx-auto bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
+            <div className="bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
               <h3 className="text-sm font-bold text-slate-900 border-b pb-2">Catálogo de Equipamentos</h3>
               <h4 className="text-base font-extrabold text-[#009AC7]">{p.machine_name}</h4>
               <div className="flex justify-center py-4">
-                <img src={mainPhoto} alt={p.machine_name} className="max-h-72 object-contain mix-blend-multiply" />
+                <img src={mainPhoto} alt={p.machine_name} className="max-h-72 object-contain" />
               </div>
               <div className="text-xs text-slate-700 leading-relaxed space-y-1">
                 {parseSpecsToHTML(p.machine_technical_description)}
@@ -528,7 +527,7 @@ export default function VisualizarPropostaPublica() {
           )}
 
           {activeTab === 'minuta' && (
-            <div className="max-w-[870px] mx-auto bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
+            <div className="bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
               <h3 className="text-sm font-bold text-slate-900 border-b pb-2">Minuta de Contrato de Locação</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Minuta padrão de contrato registrada perante o Registro de Títulos e Documentos.
@@ -537,7 +536,7 @@ export default function VisualizarPropostaPublica() {
           )}
 
           {activeTab === 'chat' && (
-            <div className="max-w-[870px] mx-auto bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
+            <div className="bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
               <h3 className="text-sm font-bold text-slate-900 border-b pb-2">Conversa &amp; Observações</h3>
               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs text-slate-700 whitespace-pre-wrap">
                 {p.notes || 'Sem observações registradas.'}
@@ -627,7 +626,7 @@ export default function VisualizarPropostaPublica() {
                 <textarea
                   rows={4}
                   required
-                  placeholder="Ex: Solicitamos alteração na forma de pagamento ou desconto..."
+                  placeholder="Ex: Solicitamos alteração na forma de pagamento..."
                   value={feedbackNotes}
                   onChange={e => setFeedbackNotes(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#009AC7] focus:outline-none"

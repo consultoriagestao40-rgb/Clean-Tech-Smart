@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   FileText, Loader2, CheckCircle2, XCircle, Printer, 
-  Check, MessageSquare, ChevronRight, Info, X
+  Check, MessageSquare, ChevronRight, X
 } from 'lucide-react';
 
 export default function VisualizarOrcamentoPublico() {
@@ -150,88 +150,105 @@ export default function VisualizarOrcamentoPublico() {
   const grandTotal = laborTotal + partsTotal + travelTotal;
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-gray-800">
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
       
-      {/* SIDEBAR NAVIGATION - Azul Claro da Paleta (#009AC7) */}
-      <aside className="w-full md:w-80 bg-[#009AC7] text-white flex flex-col justify-between shrink-0 p-5 h-auto md:h-screen md:sticky md:top-0 border-r border-[#0088b3] shadow-md">
-        <div className="flex-1 flex flex-col min-h-0">
+      {/* 1. TOP HEADER BAR - FULL WIDTH ACROSS TOP (#009AC7) */}
+      <header className="fixed top-0 left-0 right-0 h-14 bg-[#009AC7] text-white px-6 flex items-center justify-between z-50 shadow-md no-print">
+        <div className="flex items-center space-x-3 text-left">
+          <span className="text-xs font-bold text-white">
+            📄 Orçamento #{String(budget.id).padStart(4, '0')} &mdash; {budget.client_name || 'Clean Tech Pro'}
+          </span>
+        </div>
+
+        <button
+          onClick={() => window.print()}
+          className="px-4 py-1.5 bg-white text-[#009AC7] hover:bg-slate-50 text-xs font-extrabold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
+        >
+          <Printer className="w-4 h-4" />
+          <span>Salvar / Imprimir como PDF</span>
+        </button>
+      </header>
+
+      {/* 2. SIDEBAR NAVIGATION - BELOW THE TOP BAR (WHITE BG) */}
+      <aside className="fixed top-14 left-0 w-72 bottom-0 bg-white border-r border-gray-200 p-5 flex flex-col justify-between z-40 overflow-y-auto no-print">
+        <div className="flex-1 flex flex-col min-h-0 text-left">
           
-          {/* Logotipo & Brand Header */}
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/20 shrink-0">
+          {/* Logo Brand Header (CLEANTECHPRO) */}
+          <div className="pb-4 mb-4 border-b border-gray-150">
             {companyLogo ? (
-              <img src={companyLogo} alt="Logo" className="h-10 max-w-[170px] object-contain bg-white/95 p-1.5 rounded-lg shadow-xs" />
+              <img src={companyLogo} alt="Logo" className="h-10 max-w-[180px] object-contain" />
             ) : (
               <div className="flex items-center gap-2">
                 <svg className="w-8 h-8 shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M30 15 L65 50 L50 65 L15 30 Z" fill="#ffffff" />
-                  <path d="M50 35 L85 70 L70 85 L35 50 Z" fill="#e0f2fe" opacity="0.95" />
+                  <path d="M30 15 L65 50 L50 65 L15 30 Z" fill="#009AC7" />
+                  <path d="M50 35 L85 70 L70 85 L35 50 Z" fill="#00c0f0" opacity="0.95" />
                 </svg>
-                <div className="text-left">
-                  <h2 className="font-extrabold text-sm tracking-wide text-white uppercase leading-tight">Clean Tech Pro</h2>
-                  <span className="text-cyan-100 text-[9px] font-bold uppercase tracking-wider block">Orçamento &amp; Contrato</span>
+                <div className="text-left leading-none">
+                  <span className="text-sm font-black text-[#004054] tracking-tight block">CLEANTECH<span className="text-[#009AC7]">PRO</span></span>
+                  <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest block mt-0.5">A REVOLUÇÃO NO MERCADO DE LOCAÇÕES</span>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Proposal Number & Client Name */}
-          <div className="mb-6 shrink-0 text-left">
-            <span className="text-xxs font-black text-white bg-white/20 border border-white/30 px-2 py-0.5 rounded uppercase tracking-wider block w-max">
-              Orçamento nº #{String(budget.id).padStart(4, '0')}
-            </span>
-            <h3 className="font-extrabold text-white text-sm mt-1.5 line-clamp-2 uppercase" title={budget.client_name}>
-              {budget.client_name || 'Cliente'}
-            </h3>
-          </div>
+          <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-3">
+            NAVEGAÇÃO DA PROPOSTA
+          </span>
 
-          {/* Sidebar Menu Tabs */}
-          <nav className="space-y-1.5 overflow-y-auto flex-1 pr-1 text-left">
-            <button 
+          {/* Proposal Navigation Tabs */}
+          <nav className="space-y-1.5 flex-1 pr-1">
+            <button
               onClick={() => setActiveTab('budget')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'budget' ? 'bg-white text-[#009AC7] shadow-md font-extrabold' : 'text-cyan-50 hover:bg-white/10 hover:text-white'}`}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
+                activeTab === 'budget' 
+                  ? 'bg-sky-50 text-[#009AC7] border-l-4 border-[#009AC7] shadow-xs' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 <FileText className="w-4 h-4" />
                 <span>1. Orçamento Técnico</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('chat')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'chat' ? 'bg-white text-[#009AC7] shadow-md font-extrabold' : 'text-cyan-50 hover:bg-white/10 hover:text-white'}`}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
+                activeTab === 'chat' 
+                  ? 'bg-sky-50 text-[#009AC7] border-l-4 border-[#009AC7] shadow-xs' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 <MessageSquare className="w-4 h-4" />
                 <span>2. Conversa &amp; Feedback</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </nav>
         </div>
 
         {/* Sidebar Decision/Status Footer */}
-        <div className="mt-6 pt-4 border-t border-white/20 shrink-0 bg-[#009AC7] w-full">
+        <div className="pt-4 border-t border-gray-150 shrink-0 bg-white w-full">
           {isApproved ? (
-            <div className="bg-white/20 border border-white/30 p-4 rounded-2xl text-center text-white">
-              <CheckCircle2 className="w-8 h-8 text-white mx-auto mb-2 animate-bounce" />
-              <span className="text-xxs font-black text-white uppercase tracking-widest block">Orçamento Aprovado</span>
-              <p className="text-cyan-100 text-xxs mt-1 font-semibold leading-relaxed">
-                Assinatura eletrônica registrada com sucesso.
-              </p>
+            <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-center">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto mb-1" />
+              <span className="text-xxs font-black text-emerald-700 uppercase tracking-wider block">Orçamento Aprovado</span>
+              <p className="text-slate-500 text-[10px] mt-0.5 font-medium">Assinatura eletrônica registrada.</p>
             </div>
           ) : (
             <div className="space-y-2">
               <button 
                 onClick={() => setIsApproveOpen(true)}
-                className="w-full py-2.5 bg-white text-[#009AC7] hover:bg-slate-50 font-extrabold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-[#009AC7] hover:bg-[#0088b3] text-white font-extrabold rounded-xl text-xs transition-all shadow-xs flex items-center justify-center gap-1.5"
               >
                 <Check className="w-4 h-4" />
                 Aprovar Orçamento
               </button>
               <button 
                 onClick={() => setIsRejectOpen(true)}
-                className="w-full py-2.5 bg-white/15 hover:bg-white/25 text-white font-bold rounded-xl text-xs border border-white/20 transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs border border-slate-200 transition-all flex items-center justify-center gap-1.5"
               >
                 <MessageSquare className="w-4 h-4" />
                 Solicitar Ajustes
@@ -241,29 +258,11 @@ export default function VisualizarOrcamentoPublico() {
         </div>
       </aside>
 
-      {/* MAIN VIEWPORT */}
-      <main className="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-y-auto">
-        {/* Top Header Bar - Azul Claro (#009AC7) */}
-        <div className="bg-[#009AC7] text-white px-6 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-md">
-          <div className="flex items-center space-x-3 text-left">
-            <span className="text-xs font-bold text-white">
-              📄 Orçamento #{String(budget.id).padStart(4, '0')} &mdash; {budget.client_name || 'Clean Tech Pro'}
-            </span>
-          </div>
-
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-1.5 bg-white text-[#009AC7] hover:bg-slate-50 text-xs font-extrabold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Salvar / Imprimir como PDF</span>
-          </button>
-        </div>
-
-        {/* Content Tabs - Online PDF Sheet */}
-        <div className="p-4 md:p-8 flex-1">
+      {/* 3. MAIN CONTENT VIEWPORT */}
+      <main className="pl-72 pt-14 min-h-screen bg-slate-100 p-6 flex justify-center">
+        <div className="w-full max-w-[870px] my-4">
           {activeTab === 'budget' && (
-            <div className="max-w-[870px] mx-auto bg-white p-8 md:p-12 shadow-xl rounded-xl border border-gray-200 text-slate-800 text-xs leading-relaxed space-y-6 printable-page text-left">
+            <div className="bg-white p-8 md:p-12 shadow-xl rounded-xl border border-gray-200 text-slate-800 text-xs leading-relaxed space-y-6 printable-page text-left">
               
               {/* Header with Logo */}
               <div className="flex items-center justify-between pb-5 border-b-2" style={{ borderColor: primaryColor }}>
@@ -300,137 +299,168 @@ export default function VisualizarOrcamentoPublico() {
                   <div><span className="font-bold text-slate-700">Endereço:</span> {budget.client_address || '—'}</div>
                   <div><span className="font-bold text-slate-700">Contato:</span> {budget.contact_name || '—'}</div>
                   <div><span className="font-bold text-slate-700">Telefone:</span> {budget.contact_info || '—'}</div>
-                  <div><span className="font-bold text-slate-700">Serviço:</span> {budget.service_type || 'Manutenção'}</div>
+                  <div><span className="font-bold text-slate-700">Serviço:</span> {budget.service_type || 'Venda'}</div>
                 </div>
               </div>
 
               {/* Dados do Equipamento */}
-              {(budget.equipment_name || budget.equipment_model) && (
-                <div className="space-y-2 text-left">
-                  <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: primaryColor }}>
-                    DADOS DO EQUIPAMENTO
-                  </span>
-                  <table className="w-full border-collapse border border-slate-300 text-xs">
-                    <thead>
-                      <tr style={{ backgroundColor: primaryColor }} className="text-white">
-                        <th className="p-2 text-left font-bold">EQUIPAMENTO / ATIVO</th>
-                        <th className="p-2 text-left font-bold">MARCA</th>
-                        <th className="p-2 text-left font-bold">MODELO</th>
-                        <th className="p-2 text-left font-bold">Nº DE SÉRIE</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td className="p-2 font-semibold border border-slate-300">{budget.equipment_name || 'Nenhum equipamento associado'}</td>
-                        <td className="p-2 border border-slate-300">{budget.equipment_brand || '—'}</td>
-                        <td className="p-2 border border-slate-300">{budget.equipment_model || '—'}</td>
-                        <td className="p-2 border border-slate-300">{budget.equipment_serial_number || '—'}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              <div className="space-y-2 text-left">
+                <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: primaryColor }}>
+                  DADOS DO EQUIPAMENTO
+                </span>
+                <table className="w-full border-collapse border border-slate-300 text-xs">
+                  <thead>
+                    <tr style={{ backgroundColor: primaryColor }} className="text-white">
+                      <th className="p-2 text-left font-bold uppercase text-[10px]">EQUIPAMENTO / ATIVO</th>
+                      <th className="p-2 text-left font-bold uppercase text-[10px]">MARCA</th>
+                      <th className="p-2 text-left font-bold uppercase text-[10px]">MODELO</th>
+                      <th className="p-2 text-left font-bold uppercase text-[10px]">Nº DE SÉRIE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="p-2 font-semibold border border-slate-300">{budget.equipment_name || 'Nenhum equipamento associado'}</td>
+                      <td className="p-2 border border-slate-300">{budget.equipment_brand || '—'}</td>
+                      <td className="p-2 border border-slate-300">{budget.equipment_model || '—'}</td>
+                      <td className="p-2 border border-slate-300">{budget.equipment_serial_number || '—'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
-              {/* 01 - Mão de Obra */}
-              <div className="space-y-3 text-left">
-                <h3 className="font-extrabold text-slate-900 border-b border-slate-200 pb-1 text-sm uppercase">
-                  01 - MÃO DE OBRA E SERVIÇOS TÉCNICOS
-                </h3>
-                {laborItems.length === 0 ? (
-                  <p className="text-slate-400 italic text-xs">Nenhum serviço técnico cadastrado.</p>
-                ) : (
-                  <table className="w-full border-collapse border border-slate-300 text-xs">
-                    <thead>
-                      <tr className="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold">
-                        <th className="p-2 text-left border border-slate-300">DESCRIÇÃO DO SERVIÇO</th>
-                        <th className="p-2 text-center border border-slate-300 w-28">QTD (HORAS)</th>
-                        <th className="p-2 text-right border border-slate-300 w-32">TOTAL</th>
+              {/* Mão de Obra */}
+              <div className="space-y-2 text-left">
+                <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: primaryColor }}>
+                  MÃO DE OBRA
+                </span>
+                <table className="w-full border-collapse border border-slate-300 text-xs">
+                  <thead>
+                    <tr style={{ backgroundColor: primaryColor }} className="text-white">
+                      <th className="p-2 text-left font-bold uppercase text-[10px]">DESCRIÇÃO DO SERVIÇO</th>
+                      <th className="p-2 text-center font-bold uppercase text-[10px] w-24">HORAS</th>
+                      <th className="p-2 text-right font-bold uppercase text-[10px] w-32">VALOR/HORA</th>
+                      <th className="p-2 text-right font-bold uppercase text-[10px] w-32">TOTAL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {laborItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-2 text-slate-400 italic border border-slate-300">Nenhum serviço cadastrado</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {laborItems.map((item, idx) => (
+                    ) : (
+                      laborItems.map((item, idx) => (
                         <tr key={idx}>
                           <td className="p-2 font-semibold border border-slate-300">{item.description}</td>
-                          <td className="p-2 text-center border border-slate-300">{item.hours} hrs</td>
+                          <td className="p-2 text-center border border-slate-300">{item.hours}</td>
+                          <td className="p-2 text-right border border-slate-300">R$ {Number(item.unit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="p-2 text-right font-bold border border-slate-300">
                             R$ {Number((item.hours || 0) * (item.unit_price || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
 
-              {/* 02 - Peças */}
-              <div className="space-y-3 text-left">
-                <h3 className="font-extrabold text-slate-900 border-b border-slate-200 pb-1 text-sm uppercase">
-                  02 - PEÇAS E INSUMOS APLICADOS
-                </h3>
-                {partsItems.length === 0 ? (
-                  <p className="text-slate-400 italic text-xs">Nenhuma peça ou insumo cadastrado neste orçamento.</p>
-                ) : (
-                  <table className="w-full border-collapse border border-slate-300 text-xs">
-                    <thead>
-                      <tr className="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold">
-                        <th className="p-2 text-left border border-slate-300">NOME DA PEÇA / COMPONENTE</th>
-                        <th className="p-2 text-center border border-slate-300 w-28">QUANTIDADE</th>
-                        <th className="p-2 text-right border border-slate-300 w-32">TOTAL</th>
+              {/* Peças e Insumos */}
+              <div className="space-y-2 text-left">
+                <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: primaryColor }}>
+                  PEÇAS E INSUMOS
+                </span>
+                <table className="w-full border-collapse border border-slate-300 text-xs">
+                  <thead>
+                    <tr style={{ backgroundColor: primaryColor }} className="text-white">
+                      <th className="p-2 text-left font-bold uppercase text-[10px]">DESCRIÇÃO DA PEÇA</th>
+                      <th className="p-2 text-center font-bold uppercase text-[10px] w-24">QTD.</th>
+                      <th className="p-2 text-right font-bold uppercase text-[10px] w-32">VALOR UNIT.</th>
+                      <th className="p-2 text-right font-bold uppercase text-[10px] w-32">TOTAL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {partsItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-2 text-slate-400 italic border border-slate-300">Nenhuma peça cadastrada</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {partsItems.map((item, idx) => (
+                    ) : (
+                      partsItems.map((item, idx) => (
                         <tr key={idx}>
                           <td className="p-2 font-semibold border border-slate-300">{item.part_name}</td>
-                          <td className="p-2 text-center border border-slate-300">{item.quantity} un</td>
+                          <td className="p-2 text-center border border-slate-300">{item.quantity}</td>
+                          <td className="p-2 text-right border border-slate-300">R$ {Number(item.unit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                           <td className="p-2 text-right font-bold border border-slate-300">
                             R$ {Number((item.quantity || 0) * (item.unit_price || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
 
-              {/* Deslocamento */}
-              {travelKm > 0 && (
-                <div className="space-y-3 text-left">
-                  <h3 className="font-extrabold text-slate-900 border-b border-slate-200 pb-1 text-sm uppercase">
-                    03 - LOGÍSTICA E DESLOCAMENTO TÉCNICO
-                  </h3>
-                  <table className="w-full max-w-md border-collapse border border-slate-300 text-xs">
-                    <tbody>
-                      <tr>
-                        <td className="p-2 font-bold bg-slate-50 border border-slate-300">Quilometragem Total</td>
-                        <td className="p-2 border border-slate-300">{travelKm} km</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2 font-bold bg-slate-50 border border-slate-300">Valor por Quilômetro</td>
-                        <td className="p-2 border border-slate-300">R$ {Number(budget.price_per_km || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} /km</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2 font-bold bg-slate-50 border border-slate-300">Total Logística</td>
-                        <td className="p-2 font-bold border border-slate-300">R$ {Number(budget.total_logistics || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+              {/* Deslocamento / Logística */}
+              <div className="space-y-2 text-left">
+                <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: primaryColor }}>
+                  DESLOCAMENTO / LOGÍSTICA
+                </span>
+                <table className="w-full border-collapse border border-slate-300 text-xs">
+                  <thead>
+                    <tr style={{ backgroundColor: primaryColor }} className="text-white">
+                      <th className="p-2 text-center font-bold uppercase text-[10px]">KM INICIAL</th>
+                      <th className="p-2 text-center font-bold uppercase text-[10px]">KM FINAL</th>
+                      <th className="p-2 text-center font-bold uppercase text-[10px]">DISTÂNCIA</th>
+                      <th className="p-2 text-right font-bold uppercase text-[10px]">VALOR/KM</th>
+                      <th className="p-2 text-right font-bold uppercase text-[10px]">TOTAL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="p-2 text-center border border-slate-300">{budget.initial_km || 0}</td>
+                      <td className="p-2 text-center border border-slate-300">{budget.final_km || 0}</td>
+                      <td className="p-2 text-center border border-slate-300">{travelKm} km</td>
+                      <td className="p-2 text-right border border-slate-300">R$ {Number(budget.price_per_km || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td className="p-2 text-right font-bold border border-slate-300">R$ {travelTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Observações */}
+              {budget.notes && (
+                <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-3.5 text-left text-xs space-y-1">
+                  <span className="font-bold text-amber-900 uppercase text-[10px] block">OBSERVAÇÕES:</span>
+                  <p className="text-amber-900 font-semibold whitespace-pre-wrap">{budget.notes}</p>
                 </div>
               )}
 
-              {/* Total Box */}
-              <div className="pt-4 border-t border-slate-200 flex justify-end">
-                <div className="bg-[#EEF2FF] border border-slate-300 p-4 rounded-xl text-right max-w-xs space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 block">VALOR TOTAL DO ORÇAMENTO</span>
-                  <span className="text-xl font-extrabold" style={{ color: primaryColor }}>
-                    R$ {grandTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {/* Resumo Financeiro Box (Solid Cyan #009AC7) */}
+              <div className="pt-4 flex justify-end">
+                <div className="bg-[#009AC7] text-white p-5 rounded-2xl text-right w-72 shadow-md space-y-2 text-xs">
+                  <span className="font-bold uppercase tracking-wider text-cyan-100 text-[10px] block border-b border-white/20 pb-1">
+                    RESUMO FINANCEIRO
                   </span>
+                  <div className="flex justify-between text-cyan-50">
+                    <span>Mão de Obra</span>
+                    <span className="font-bold">R$ {laborTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between text-cyan-50">
+                    <span>Peças e Insumos</span>
+                    <span className="font-bold">R$ {partsTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between text-cyan-50">
+                    <span>Deslocamento</span>
+                    <span className="font-bold">R$ {travelTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="border-t border-white/30 pt-2 flex justify-between items-center text-sm">
+                    <span className="font-black text-white uppercase">Total Geral</span>
+                    <span className="font-extrabold text-white text-base">R$ {grandTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Seller / Footer Block */}
-              <div className="pt-4 border-t border-slate-200 flex items-end justify-between">
-                <div className="bg-slate-50 border border-slate-300 p-3.5 rounded-lg max-w-xs text-xs text-slate-800 font-medium text-left">
+              {/* Footer Block */}
+              <div className="pt-4 border-t border-slate-200 flex items-end justify-between text-left">
+                <div className="bg-slate-50 border border-slate-300 p-3.5 rounded-lg max-w-xs text-xs text-slate-800 font-medium">
                   <span className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: primaryColor }}>
                     Atenciosamente,
                   </span>
@@ -439,6 +469,7 @@ export default function VisualizarOrcamentoPublico() {
                 </div>
 
                 <div className="text-right text-[10px] text-slate-400 space-y-1">
+                  <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" className="h-8 object-contain ml-auto mb-1" />
                   <p className="font-bold text-slate-700">Clean Tech Smart</p>
                   <p>Avenida Maringá, 1273 – Pinhais/PR</p>
                   <p>Contato: (41) 9 8508-3658</p>
@@ -449,7 +480,7 @@ export default function VisualizarOrcamentoPublico() {
           )}
 
           {activeTab === 'chat' && (
-            <div className="max-w-[870px] mx-auto bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
+            <div className="bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
               <h3 className="text-sm font-bold text-slate-900 border-b pb-2">Conversa &amp; Observações</h3>
               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs text-slate-700 whitespace-pre-wrap">
                 {budget.notes || 'Sem observações registradas.'}

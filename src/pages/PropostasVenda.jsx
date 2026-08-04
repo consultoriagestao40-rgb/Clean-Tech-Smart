@@ -413,9 +413,9 @@ export default function PropostasVenda() {
 
         <button
           onClick={handleOpenCreateModal}
-          className="px-4 py-2.5 bg-[#009AC7] hover:bg-[#0088b3] text-white font-bold rounded-xl shadow-xs transition-all flex items-center space-x-2 text-sm shrink-0"
+          className="px-4 py-2.5 bg-[#009AC7] hover:bg-[#0088b3] text-white font-bold rounded-xl shadow-xs transition-all flex items-center space-x-2 text-sm shrink-0 whitespace-nowrap"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 shrink-0" />
           <span>Nova Proposta de Venda</span>
         </button>
       </div>

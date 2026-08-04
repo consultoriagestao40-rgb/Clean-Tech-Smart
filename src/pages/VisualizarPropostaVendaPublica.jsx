@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
-  FileText, Loader2, CheckCircle2, XCircle, Printer, Clock, 
-  Check, ArrowRight, MessageSquare, ChevronRight, Info, FileSignature, X, ShoppingCart
+  FileText, Loader2, CheckCircle2, XCircle, Printer, 
+  Check, MessageSquare, ChevronRight, Info, X
 } from 'lucide-react';
 
 export default function VisualizarPropostaVendaPublica() {
@@ -62,6 +62,7 @@ export default function VisualizarPropostaVendaPublica() {
       if (res.ok) {
         setIsApproveOpen(false);
         fetchProposalDetails();
+        setActiveTab('proposal');
       } else {
         alert('Erro ao enviar aprovação da proposta.');
       }
@@ -158,99 +159,120 @@ export default function VisualizarPropostaVendaPublica() {
   const specsHTML = parseSpecsToHTML(p.machine_description);
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row font-sans text-gray-800">
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
       
-      {/* SIDEBAR NAVIGATION - Azul Claro da Paleta (#009AC7) */}
-      <aside className="w-full md:w-80 bg-[#009AC7] text-white flex flex-col justify-between shrink-0 p-5 h-auto md:h-screen md:sticky md:top-0 border-r border-[#0088b3] shadow-md">
-        <div className="flex-1 flex flex-col min-h-0">
+      {/* 1. TOP HEADER BAR - FULL WIDTH ACROSS TOP (#009AC7) */}
+      <header className="fixed top-0 left-0 right-0 h-14 bg-[#009AC7] text-white px-6 flex items-center justify-between z-50 shadow-md no-print">
+        <div className="flex items-center space-x-3 text-left">
+          <span className="text-xs font-bold text-white">
+            📄 Proposta de Venda #{String(p.id).padStart(4, '0')} &mdash; {p.client_razao_social || p.client_name}
+          </span>
+        </div>
+
+        <button
+          onClick={() => window.print()}
+          className="px-4 py-1.5 bg-white text-[#009AC7] hover:bg-slate-50 text-xs font-extrabold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
+        >
+          <Printer className="w-4 h-4" />
+          <span>Salvar / Imprimir PDF</span>
+        </button>
+      </header>
+
+      {/* 2. SIDEBAR NAVIGATION - BELOW THE TOP BAR (WHITE BG) */}
+      <aside className="fixed top-14 left-0 w-72 bottom-0 bg-white border-r border-gray-200 p-5 flex flex-col justify-between z-40 overflow-y-auto no-print">
+        <div className="flex-1 flex flex-col min-h-0 text-left">
           
-          {/* Logotipo & Brand Header */}
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/20 shrink-0">
+          {/* Logo Brand Header (CLEANTECHPRO) */}
+          <div className="pb-4 mb-4 border-b border-gray-150">
             {companyLogo ? (
-              <img src={companyLogo} alt="Logo" className="h-10 max-w-[170px] object-contain bg-white/95 p-1.5 rounded-lg shadow-xs" />
+              <img src={companyLogo} alt="Logo" className="h-10 max-w-[180px] object-contain" />
             ) : (
               <div className="flex items-center gap-2">
                 <svg className="w-8 h-8 shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M30 15 L65 50 L50 65 L15 30 Z" fill="#ffffff" />
-                  <path d="M50 35 L85 70 L70 85 L35 50 Z" fill="#e0f2fe" opacity="0.95" />
+                  <path d="M30 15 L65 50 L50 65 L15 30 Z" fill="#009AC7" />
+                  <path d="M50 35 L85 70 L70 85 L35 50 Z" fill="#00c0f0" opacity="0.95" />
                 </svg>
-                <div className="text-left">
-                  <h2 className="font-extrabold text-sm tracking-wide text-white uppercase leading-tight">Clean Tech Pro</h2>
-                  <span className="text-cyan-100 text-[9px] font-bold uppercase tracking-wider block">Orçamento &amp; Contrato</span>
+                <div className="text-left leading-none">
+                  <span className="text-sm font-black text-[#004054] tracking-tight block">CLEANTECH<span className="text-[#009AC7]">PRO</span></span>
+                  <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest block mt-0.5">A REVOLUÇÃO NO MERCADO DE LOCAÇÕES</span>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Proposal Number & Client Name */}
-          <div className="mb-6 shrink-0 text-left">
-            <span className="text-xxs font-black text-white bg-white/20 border border-white/30 px-2 py-0.5 rounded uppercase tracking-wider block w-max">
-              Proposta de Venda nº #{String(p.id).padStart(4, '0')}
-            </span>
-            <h3 className="font-extrabold text-white text-sm mt-1.5 line-clamp-2 uppercase" title={p.client_razao_social || p.client_name}>
-              {p.client_razao_social || p.client_name}
-            </h3>
-          </div>
+          <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-3">
+            NAVEGAÇÃO DA PROPOSTA
+          </span>
 
-          {/* Sidebar Menu Tabs */}
-          <nav className="space-y-1.5 overflow-y-auto flex-1 pr-1 text-left">
-            <button 
+          {/* Proposal Navigation Tabs */}
+          <nav className="space-y-1.5 flex-1 pr-1">
+            <button
               onClick={() => setActiveTab('proposal')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'proposal' ? 'bg-white text-[#009AC7] shadow-md font-extrabold' : 'text-cyan-50 hover:bg-white/10 hover:text-white'}`}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
+                activeTab === 'proposal' 
+                  ? 'bg-sky-50 text-[#009AC7] border-l-4 border-[#009AC7] shadow-xs' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 <FileText className="w-4 h-4" />
                 <span>1. Proposta Comercial</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('specs')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'specs' ? 'bg-white text-[#009AC7] shadow-md font-extrabold' : 'text-cyan-50 hover:bg-white/10 hover:text-white'}`}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
+                activeTab === 'specs' 
+                  ? 'bg-sky-50 text-[#009AC7] border-l-4 border-[#009AC7] shadow-xs' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 <Info className="w-4 h-4" />
                 <span>2. Ficha Técnica</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
-            <button 
+            <button
               onClick={() => setActiveTab('chat')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'chat' ? 'bg-white text-[#009AC7] shadow-md font-extrabold' : 'text-cyan-50 hover:bg-white/10 hover:text-white'}`}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
+                activeTab === 'chat' 
+                  ? 'bg-sky-50 text-[#009AC7] border-l-4 border-[#009AC7] shadow-xs' 
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 <MessageSquare className="w-4 h-4" />
                 <span>3. Conversa &amp; Feedback</span>
               </div>
-              <ChevronRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </nav>
         </div>
 
         {/* Sidebar Decision/Status Footer */}
-        <div className="mt-6 pt-4 border-t border-white/20 shrink-0 bg-[#009AC7] w-full">
+        <div className="pt-4 border-t border-gray-150 shrink-0 bg-white w-full">
           {isApproved ? (
-            <div className="bg-white/20 border border-white/30 p-4 rounded-2xl text-center text-white">
-              <CheckCircle2 className="w-8 h-8 text-white mx-auto mb-2 animate-bounce" />
-              <span className="text-xxs font-black text-white uppercase tracking-widest block">Proposta Aprovada</span>
-              <p className="text-cyan-100 text-xxs mt-1 font-semibold leading-relaxed">
-                Assinatura eletrônica registrada com sucesso.
-              </p>
+            <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-center">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto mb-1" />
+              <span className="text-xxs font-black text-emerald-700 uppercase tracking-wider block">Proposta Aprovada</span>
+              <p className="text-slate-500 text-[10px] mt-0.5 font-medium">Assinatura eletrônica registrada.</p>
             </div>
           ) : (
             <div className="space-y-2">
               <button 
                 onClick={() => setIsApproveOpen(true)}
-                className="w-full py-2.5 bg-white text-[#009AC7] hover:bg-slate-50 font-extrabold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-[#009AC7] hover:bg-[#0088b3] text-white font-extrabold rounded-xl text-xs transition-all shadow-xs flex items-center justify-center gap-1.5"
               >
                 <Check className="w-4 h-4" />
                 Aprovar Proposta
               </button>
               <button 
                 onClick={() => setIsRejectOpen(true)}
-                className="w-full py-2.5 bg-white/15 hover:bg-white/25 text-white font-bold rounded-xl text-xs border border-white/20 transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs border border-slate-200 transition-all flex items-center justify-center gap-1.5"
               >
                 <MessageSquare className="w-4 h-4" />
                 Solicitar Ajustes
@@ -260,29 +282,11 @@ export default function VisualizarPropostaVendaPublica() {
         </div>
       </aside>
 
-      {/* MAIN VIEWPORT */}
-      <main className="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-y-auto">
-        {/* Top Header Bar - Azul Claro (#009AC7) */}
-        <div className="bg-[#009AC7] text-white px-6 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-md">
-          <div className="flex items-center space-x-3 text-left">
-            <span className="text-xs font-bold text-white">
-              📄 Proposta de Venda #{String(p.id).padStart(4, '0')} &mdash; {p.client_razao_social || p.client_name}
-            </span>
-          </div>
-
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-1.5 bg-white text-[#009AC7] hover:bg-slate-50 text-xs font-extrabold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Salvar / Imprimir PDF</span>
-          </button>
-        </div>
-
-        {/* Content Tabs - Online PDF Sheet */}
-        <div className="p-4 md:p-8 flex-1">
+      {/* 3. MAIN CONTENT VIEWPORT */}
+      <main className="pl-72 pt-14 min-h-screen bg-slate-100 p-6 flex justify-center">
+        <div className="w-full max-w-[870px] my-4">
           {activeTab === 'proposal' && (
-            <div className="max-w-[870px] mx-auto bg-white p-8 md:p-12 shadow-xl rounded-xl border border-gray-200 text-slate-800 text-xs leading-relaxed space-y-6 printable-page text-left">
+            <div className="bg-white p-8 md:p-12 shadow-xl rounded-xl border border-gray-200 text-slate-800 text-xs leading-relaxed space-y-6 printable-page text-left">
               
               {/* Header with Logo */}
               <div className="flex items-center justify-between pb-5 border-b-2" style={{ borderColor: primaryColor }}>
@@ -311,7 +315,7 @@ export default function VisualizarPropostaVendaPublica() {
               {/* Client Data Box */}
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left space-y-2" style={{ borderLeft: `4px solid ${primaryColor}` }}>
                 <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: primaryColor }}>
-                  Dados do Cliente
+                  DADOS DO CLIENTE
                 </span>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
                   <div><span className="font-bold text-slate-700">Cliente:</span> {p.client_razao_social || p.client_name || 'Não informado'}</div>
@@ -419,14 +423,14 @@ export default function VisualizarPropostaVendaPublica() {
           )}
 
           {activeTab === 'specs' && (
-            <div className="max-w-[870px] mx-auto bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
+            <div className="bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
               <h3 className="text-sm font-bold text-slate-900 border-b pb-2">Ficha Técnica Detalhada</h3>
               <div className="text-xs text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: specsHTML }} />
             </div>
           )}
 
           {activeTab === 'chat' && (
-            <div className="max-w-[870px] mx-auto bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
+            <div className="bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
               <h3 className="text-sm font-bold text-slate-900 border-b pb-2">Conversa &amp; Observações</h3>
               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs text-slate-700 whitespace-pre-wrap">
                 {p.notes || 'Sem observações registradas.'}
