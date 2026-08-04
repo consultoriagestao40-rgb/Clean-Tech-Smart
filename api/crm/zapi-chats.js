@@ -109,32 +109,26 @@ export default async function handler(req, res) {
             [phone, `%${suffix}`]
           );
           dbNotes = notesRes.rows.map(n => {
-            const isSent = n.user_id !== null;
+            // user_id NOT NULL = mensagem enviada pelo vendedor (DIREITA verde)
+            // user_id IS NULL  = mensagem recebida do cliente (ESQUERDA branco)
+            const isSent = n.user_id !== null && n.user_id !== undefined;
             const text = (n.content || '').replace('[WhatsApp]', '').trim();
             return {
-              id: n.id,
+              id: `db_${n.id}`,
               content: text,
               author_name: isSent ? 'Você' : 'Cliente',
               is_sent: isSent,
+              user_id: n.user_id,
               created_at: n.created_at
             };
           });
-        } catch (e) {}
+        } catch (e) { console.error('[zapi-chats] DB notes error:', e.message); }
       }
 
-      const allMsgs = [...dbNotes, ...formattedZapi];
-      const seen = new Set();
-      const uniqueMsgs = [];
-      for (const m of allMsgs) {
-        const cleanTxt = (m.content || '').replace('[WhatsApp]', '').trim();
-        if (cleanTxt && !seen.has(cleanTxt)) {
-          seen.add(cleanTxt);
-          uniqueMsgs.push(m);
-        }
-      }
-
-      uniqueMsgs.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      return res.status(200).json({ messages: uniqueMsgs });
+      // Use only DB notes (source of truth). No deduplication by text - use unique DB ids.
+      // Sort chronologically
+      dbNotes.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      return res.status(200).json({ messages: dbNotes });
 
     } else if (req.method === 'POST') {
       let chatsRes;

@@ -1306,9 +1306,9 @@ export default function Crm() {
                       </div>
                     ) : (
                       chatMessages.map((msg, idx) => {
-                        const isSent = Boolean(msg.is_sent === true || (msg.user_id !== null && msg.user_id !== undefined && msg.user_id > 0) || msg.author_name === 'Você');
+                        // is_sent vem diretamente da API: true = enviado por você (DIREITA verde), false = recebido do cliente (ESQUERDA branco)
+                        const isSent = msg.is_sent === true;
                         const cleanText = (msg.content || '').replace('[WhatsApp]', '').trim();
-                        const senderName = isSent ? (msg.author_name || 'Você') : '';
                         const msgTime = msg.created_at ? new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Agora';
 
                         return (
@@ -1317,19 +1317,14 @@ export default function Crm() {
                             className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}
                           >
                             <div
-                              className={`max-w-[75%] rounded-xl px-3.5 py-2.5 shadow-xs text-xs space-y-1 ${
+                              className={`max-w-[75%] rounded-xl px-3.5 py-2 shadow-sm text-xs ${
                                 isSent
-                                  ? 'bg-[#D9FDD3] text-gray-900 rounded-tr-none border border-emerald-200/60'
-                                  : 'bg-white text-gray-900 rounded-tl-none border border-gray-200 shadow-xs'
+                                  ? 'bg-[#D9FDD3] text-gray-900 rounded-tr-none'
+                                  : 'bg-white text-gray-900 rounded-tl-none'
                               }`}
                             >
-                              {isSent && senderName && (
-                                <div className="font-bold text-[11px] text-emerald-800">
-                                  *{senderName}*:
-                                </div>
-                              )}
-                              <p className="whitespace-pre-wrap leading-relaxed text-gray-800">{cleanText}</p>
-                              <div className="flex items-center justify-end space-x-1 text-[10px] text-gray-500 pt-0.5 float-right ml-3">
+                              <p className="whitespace-pre-wrap leading-relaxed text-[13px] text-gray-900">{cleanText}</p>
+                              <div className="flex items-center justify-end space-x-1 text-[11px] text-gray-500 pt-0.5 mt-1">
                                 <span>{msgTime}</span>
                                 {isSent && <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb] inline" />}
                               </div>
