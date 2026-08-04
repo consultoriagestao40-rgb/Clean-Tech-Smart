@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, Check, Link2, ShoppingCart } from 'lucide-react';
+import { Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, Check, Link2, ShoppingCart, Clock } from 'lucide-react';
 
 export default function PropostasVenda() {
   const [proposals, setProposals] = useState([]);
@@ -32,9 +32,11 @@ export default function PropostasVenda() {
     status: 'Rascunho'
   });
 
-  // Share Modal State
+  // Share Validity Modal States (Identical to PropostasLocacao)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareProposalId, setShareProposalId] = useState(null);
+  const [shareValidityDays, setShareValidityDays] = useState('10 dias');
+  const [isSavingShare, setIsSavingShare] = useState(false);
 
   useEffect(() => {
     fetchProposals();
@@ -163,15 +165,32 @@ export default function PropostasVenda() {
 
   function handleShareProposalLink(p) {
     setShareProposalId(p.id);
+    setShareValidityDays(p.validity_days || '10 dias');
     setIsShareModalOpen(true);
   }
 
-  function copyPublicLink(id) {
-    const publicUrl = `${window.location.origin}/visualizar-proposta-venda/${id}`;
-    navigator.clipboard.writeText(publicUrl);
-    alert(`Link da Proposta de Venda nº #${String(id).padStart(4,'0')} copiado para a área de transferência!\n\n${publicUrl}`);
-    setIsShareModalOpen(false);
-  }
+  const handleConfirmShare = async (e) => {
+    e.preventDefault();
+    if (!shareProposalId) return;
+    setIsSavingShare(true);
+    try {
+      await fetch('/api/update-proposal-validity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: shareProposalId, validity_days: shareValidityDays, type: 'sales' })
+      });
+      const publicUrl = `${window.location.origin}/visualizar-proposta-venda/${shareProposalId}`;
+      navigator.clipboard.writeText(publicUrl);
+      alert(`Link público da Proposta de Venda nº #${String(shareProposalId).padStart(4, '0')} copiado para a área de transferência!\n\nValidade atualizada para ${shareValidityDays}.\n\n${publicUrl}`);
+      setIsShareModalOpen(false);
+      fetchProposals();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao atualizar validade da proposta.');
+    } finally {
+      setIsSavingShare(false);
+    }
+  };
 
   const filteredProposals = proposals.filter(p => {
     const term = searchTerm.toLowerCase();
@@ -215,7 +234,7 @@ export default function PropostasVenda() {
 
     return (
       <div className="min-h-screen bg-slate-100 font-sans pb-12">
-        {/* Print Bar */}
+        {/* Top Print Bar - Identical to PropostasLocacao */}
         <div className="fixed top-0 left-0 right-0 bg-[#009AC7] text-white px-6 py-3 flex items-center justify-between z-50 shadow-md no-print">
           <div className="flex items-center space-x-3">
             <button
@@ -226,7 +245,7 @@ export default function PropostasVenda() {
               <span>Voltar para Lista</span>
             </button>
             <span className="text-xs font-bold text-white">
-              Proposta de Venda nº #{String(p.id).padStart(4, '0')} — {p.client_name}
+              📄 Proposta de Venda #{String(p.id).padStart(4, '0')} &mdash; {p.client_razao_social || p.client_name}
             </span>
           </div>
           <button
@@ -234,7 +253,7 @@ export default function PropostasVenda() {
             className="px-4 py-1.5 bg-white text-[#009AC7] hover:bg-slate-50 text-xs font-extrabold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
           >
             <Printer className="w-4 h-4" />
-            <span>Salvar / Imprimir PDF</span>
+            <span>🖨️&nbsp; Salvar / Imprimir PDF</span>
           </button>
         </div>
 
@@ -321,7 +340,7 @@ export default function PropostasVenda() {
                   </tr>
                   <tr>
                     <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">Valor da Proposta</td>
-                    <td className="p-2.5 font-extrabold text-slate-900 border border-slate-300 bg-[#EEF2FF]">{p.proposal_value || ''}</td>
+                    <td className="p-2.5 font-extrabold text-slate-900 border border-slate-300 bg-[#EEF2FF]">{p.proposal_value ? `R$ ${p.proposal_value}` : ''}</td>
                   </tr>
                   <tr>
                     <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">Forma de Pagamento</td>
@@ -711,44 +730,68 @@ export default function PropostasVenda() {
         </div>
       )}
 
-      {/* ---------------- MODAL SHARE LINK ---------------- */}
+      {/* ---------------- MODAL DEFINE VALIDITY & SHARE LINK (Identical 1:1 to PropostasLocacao) ---------------- */}
       {isShareModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-200 text-left space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-gray-900 flex items-center space-x-2">
-                <Link2 className="w-4 h-4 text-[#009AC7]" />
-                <span>Link da Proposta de Venda #{String(shareProposalId).padStart(4,'0')}</span>
-              </h3>
-              <button onClick={() => setIsShareModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-gray-500">
-              Copie o link público para enviar diretamente ao cliente via WhatsApp ou Email:
-            </p>
-
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 break-all">
-              {`${window.location.origin}/visualizar-proposta-venda/${shareProposalId}`}
-            </div>
-
-            <div className="flex items-center justify-end space-x-2 pt-2">
-              <button
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-left">
+            <div className="flex justify-between items-center p-5 border-b border-gray-100">
+              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-blue-600" />
+                Definir Validade &amp; Compartilhar Link
+              </h2>
+              <button 
                 type="button"
-                onClick={() => setIsShareModalOpen(false)}
-                className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl"
+                onClick={() => setIsShareModalOpen(false)} 
+                className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                Fechar
-              </button>
-              <button
-                type="button"
-                onClick={() => copyPublicLink(shareProposalId)}
-                className="px-4 py-2 bg-[#009AC7] hover:bg-[#0088b3] text-white text-xs font-bold rounded-xl shadow-xs"
-              >
-                Copiar Link
+                <X className="w-5 h-5" />
               </button>
             </div>
+            
+            <form onSubmit={handleConfirmShare}>
+              <div className="p-6 space-y-4">
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Defina o prazo de validade/expiração do link público antes de compartilhá-lo com seu cliente.
+                </p>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">PRAZO DE VALIDADE</label>
+                  <select 
+                    value={shareValidityDays} 
+                    onChange={e => setShareValidityDays(e.target.value)}
+                    className="w-full h-10 px-3 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="5 dias">5 dias</option>
+                    <option value="10 dias">10 dias</option>
+                    <option value="15 dias">15 dias</option>
+                    <option value="30 dias">30 dias</option>
+                    <option value="60 dias">60 dias</option>
+                  </select>
+                </div>
+
+                <div className="p-3 bg-cyan-50/50 border border-cyan-100 rounded-lg text-[11px] text-cyan-800 italic leading-relaxed">
+                  * Ao confirmar, a validade da proposta comercial será atualizada no banco de dados e o link público será copiado automaticamente para sua área de transferência.
+                </div>
+              </div>
+
+              <div className="p-4 bg-gray-50 flex justify-end space-x-2 border-t border-gray-100">
+                <button 
+                  type="button" 
+                  onClick={() => setIsShareModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSavingShare}
+                  className="px-4 py-2 text-xs font-bold text-white bg-[#009AC7] hover:bg-[#0088b3] rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                  {isSavingShare ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                  Confirmar &amp; Copiar Link
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
