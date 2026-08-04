@@ -793,52 +793,19 @@ export default function Crm() {
           content: noteText,
           user_id: currentUser?.id || currentUser?.userId || 3,
           user_name: currentUser?.name || 'Vendedor'
+          // ⚠️ ANOTAÇÕES INTERNAS — NUNCA enviadas via WhatsApp
         })
       });
 
       if (res.ok) {
-        // Enviar via WhatsApp (Z-API) se ativado e credenciais configuradas
-        if (sendViaWhatsapp) {
-          const zapiInstance = localStorage.getItem('app_zapi_instance_id');
-          const zapiToken = localStorage.getItem('app_zapi_token');
-          const zapiClientToken = localStorage.getItem('app_zapi_client_token');
-
-          if (zapiInstance && zapiToken) {
-            const zapiHeaders = { 'Content-Type': 'application/json' };
-            if (zapiClientToken) {
-              zapiHeaders['Client-Token'] = zapiClientToken;
-            }
-            
-            // Clean phone for Brazil
-            let cleanPhoneDigits = leadPhone.replace(/\D/g, '');
-            if (cleanPhoneDigits.length === 11 && !cleanPhoneDigits.startsWith('55')) {
-              cleanPhoneDigits = '55' + cleanPhoneDigits;
-            } else if (cleanPhoneDigits.length === 10 && !cleanPhoneDigits.startsWith('55')) {
-              cleanPhoneDigits = '55' + cleanPhoneDigits;
-            }
-
-            try {
-              const whatsRes = await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/send-text`, {
-                method: 'POST',
-                headers: zapiHeaders,
-                body: JSON.stringify({
-                  phone: cleanPhoneDigits,
-                  message: noteText
-                })
-              });
-              if (!whatsRes.ok) {
-                console.error('Erro ao enviar mensagem via Z-API:', await whatsRes.text());
-              }
-            } catch (whatsErr) {
-              console.error('Erro de rede na Z-API:', whatsErr);
-            }
-          }
-        }
-
         setActiveNoteLead(null);
         setQuickNoteContent('');
         setSendViaWhatsapp(false);
-        alert('Anotação salva com sucesso!');
+        // Reload chat messages so the new note appears in history
+        if (activeWhatsAppChatLead?.phone) {
+          fetchChatNotes(activeWhatsAppChatLead.phone);
+        }
+        alert('Anotação salva! (Somente registro interno — não enviado ao cliente)');
       } else {
         alert('Erro ao salvar anotação.');
       }
