@@ -28,17 +28,23 @@ export default async function handler(req, res) {
   try {
     dbClient = await pool.connect();
   } catch (e) {
-    console.error('[Z-API DB Connection Error]:', e);
+    console.error('[Z-API DB Connection Error]:', e.message);
   }
 
   try {
     if (dbClient) {
-      const settingsRes = await dbClient.query(`SELECT key, value FROM settings WHERE key LIKE 'app_zapi%'`);
-      settingsRes.rows.forEach(r => {
-        if (r.key === 'app_zapi_instance_id' && r.value) instanceId = r.value;
-        if (r.key === 'app_zapi_token' && r.value) token = r.value;
-        if (r.key === 'app_zapi_client_token' && r.value) clientToken = r.value;
-      });
+      try {
+        const settingsRes = await dbClient.query(`SELECT key, value FROM settings WHERE key LIKE 'app_zapi%'`);
+        if (settingsRes && settingsRes.rows) {
+          settingsRes.rows.forEach(r => {
+            if (r.key === 'app_zapi_instance_id' && r.value) instanceId = r.value;
+            if (r.key === 'app_zapi_token' && r.value) token = r.value;
+            if (r.key === 'app_zapi_client_token' && r.value) clientToken = r.value;
+          });
+        }
+      } catch (settingsErr) {
+        console.warn('[Z-API] Settings query ignored:', settingsErr.message);
+      }
     }
 
     const zapiHeaders = {};
@@ -140,16 +146,19 @@ export default async function handler(req, res) {
 
           const name = chat.name || chat.contactName || `Lead ${cleanPhone}`;
 
-          await dbClient.query(
-            `INSERT INTO leads (phone, name, stage, value)
-             VALUES ($1, $2, 'inbox', 0)
-             ON CONFLICT (phone) DO UPDATE 
-             SET name = EXCLUDED.name
-             WHERE leads.name IS NULL OR leads.name LIKE 'Lead%'`,
-            [cleanPhone, name]
-          );
-
-          syncedCount++;
+          try {
+            await dbClient.query(
+              `INSERT INTO leads (phone, name, stage, value)
+               VALUES ($1, $2, 'inbox', 0)
+               ON CONFLICT (phone) DO UPDATE 
+               SET name = EXCLUDED.name
+               WHERE leads.name IS NULL OR leads.name LIKE 'Lead%'`,
+              [cleanPhone, name]
+            );
+            syncedCount++;
+          } catch (dbErr) {
+            console.warn('[Z-API Lead Insert Warning]:', dbErr.message);
+          }
         }
       }
 
