@@ -145,6 +145,13 @@ export default function Crm() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInputText, setChatInputText] = useState('');
   const [isSendingChatMessage, setIsSendingChatMessage] = useState(false);
+  const chatMessagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (activeChatTab === 'chat' && chatMessagesEndRef.current) {
+      chatMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, activeChatTab]);
   const [leadTags, setLeadTags] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('crm_lead_tags') || '{}');
