@@ -1176,22 +1176,21 @@ export default function Crm() {
 
       {/* ---------------- WHATSAPP ATENDIMENTO MODAL (Smartbid Style) ---------------- */}
       {activeWhatsAppChatLead && (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-6 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-4xl h-[88vh] shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-6 animate-in fade-in duration-200">
+          <div className="bg-[#0B141B] rounded-2xl w-full max-w-4xl h-[90vh] shadow-2xl border border-gray-800 flex flex-col overflow-hidden">
             
             {/* 1. Header (Dark Navy #0B141B style matching Smartbid) */}
-            <div className="bg-[#0B141B] text-white px-5 py-3 flex items-center justify-between shrink-0 shadow-md">
+            <div className="bg-[#0B141B] text-white px-5 py-3 flex items-center justify-between shrink-0 border-b border-gray-800">
               <div className="flex items-center space-x-3 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-blue-600/30 border border-blue-400/40 text-blue-300 font-bold text-sm flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-full bg-[#1E293B] border border-gray-700 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0">
                   {getAvatarInitials(activeWhatsAppChatLead.name, activeWhatsAppChatLead.phone)}
                 </div>
                 <div className="min-w-0">
                   <h3 className="font-bold text-sm text-white truncate">
-                    {activeWhatsAppChatLead.name || `WhatsApp: ${activeWhatsAppChatLead.phone}`}
+                    WhatsApp: {activeWhatsAppChatLead.phone || activeWhatsAppChatLead.name}
                   </h3>
-                  <p className="text-xs text-emerald-400 font-medium truncate flex items-center space-x-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>{activeWhatsAppChatLead.phone}</span>
+                  <p className="text-xs text-emerald-400 font-medium truncate">
+                    {activeWhatsAppChatLead.phone}
                   </p>
                 </div>
               </div>
@@ -1200,15 +1199,15 @@ export default function Crm() {
                 <button
                   type="button"
                   onClick={() => setActiveChatTab('cadastro')}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition-all border border-white/10"
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#1E293B] hover:bg-[#334155] text-white rounded-lg text-xs font-semibold transition-all border border-gray-700"
                 >
-                  <User className="w-3.5 h-3.5 text-blue-300" />
+                  <User className="w-3.5 h-3.5 text-gray-300" />
                   <span>Cadastro</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveWhatsAppChatLead(null)}
-                  className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
                   title="Fechar"
                 >
                   <X className="w-5 h-5" />
@@ -1216,14 +1215,14 @@ export default function Crm() {
               </div>
             </div>
 
-            {/* 2. Top Navigation Tabs Bar */}
-            <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center space-x-1 shrink-0 overflow-x-auto custom-scrollbar">
+            {/* 2. Top Navigation Tabs Bar (Dark Navy matching Smartbid) */}
+            <div className="bg-[#0B141B] border-b border-gray-800 px-4 py-2 flex items-center space-x-2 shrink-0 overflow-x-auto custom-scrollbar">
               <button
                 onClick={() => setActiveChatTab('chat')}
-                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   activeChatTab === 'chat'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-[#1E293B] text-white shadow-xs'
+                    : 'text-gray-400 hover:text-white hover:bg-[#1E293B]/50'
                 }`}
               >
                 <MessageSquare className="w-3.5 h-3.5" />
@@ -1232,10 +1231,10 @@ export default function Crm() {
 
               <button
                 onClick={() => setActiveChatTab('anotacoes')}
-                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   activeChatTab === 'anotacoes'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-[#1E293B] text-white shadow-xs'
+                    : 'text-gray-400 hover:text-white hover:bg-[#1E293B]/50'
                 }`}
               >
                 <ClipboardList className="w-3.5 h-3.5" />
@@ -1244,10 +1243,10 @@ export default function Crm() {
 
               <button
                 onClick={() => setActiveChatTab('lembretes')}
-                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   activeChatTab === 'lembretes'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-[#1E293B] text-white shadow-xs'
+                    : 'text-gray-400 hover:text-white hover:bg-[#1E293B]/50'
                 }`}
               >
                 <Clock className="w-3.5 h-3.5" />
@@ -1256,10 +1255,10 @@ export default function Crm() {
 
               <button
                 onClick={() => setActiveChatTab('etiquetas')}
-                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   activeChatTab === 'etiquetas'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-[#1E293B] text-white shadow-xs'
+                    : 'text-gray-400 hover:text-white hover:bg-[#1E293B]/50'
                 }`}
               >
                 <Tag className="w-3.5 h-3.5" />
@@ -1268,10 +1267,10 @@ export default function Crm() {
 
               <button
                 onClick={() => setActiveChatTab('cadastro')}
-                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   activeChatTab === 'cadastro'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-[#1E293B] text-white shadow-xs'
+                    : 'text-gray-400 hover:text-white hover:bg-[#1E293B]/50'
                 }`}
               >
                 <Edit className="w-3.5 h-3.5" />
@@ -1280,29 +1279,29 @@ export default function Crm() {
             </div>
 
             {/* 3. Modal Body Content per Active Tab */}
-            <div className="flex-1 min-h-0 flex flex-col bg-gray-50 overflow-hidden">
+            <div className="flex-1 min-h-0 flex flex-col bg-[#0B141B] overflow-hidden">
               
               {/* TAB 1: CHAT */}
               {activeChatTab === 'chat' && (
-                <div className="flex-1 flex flex-col min-h-0 bg-[#E5DDD5]/30 relative">
+                <div className="flex-1 flex flex-col min-h-0 bg-[#E5DDD5] relative">
                   
                   {/* Chat Messages History */}
                   <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     <div className="flex justify-center my-1">
-                      <span className="bg-white/80 backdrop-blur-xs text-gray-500 text-[10px] font-bold px-3 py-1 rounded-full shadow-2xs uppercase">
+                      <span className="bg-white/90 backdrop-blur-xs text-gray-500 text-[10px] font-bold px-3 py-1 rounded-full shadow-2xs uppercase">
                         Hoje
                       </span>
                     </div>
 
                     {chatMessages.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500 text-xs italic bg-white/70 backdrop-blur-xs p-6 rounded-2xl border border-gray-200 max-w-sm mx-auto shadow-xs">
+                      <div className="text-center py-12 text-gray-500 text-xs italic bg-white/80 backdrop-blur-xs p-6 rounded-2xl border border-gray-200 max-w-sm mx-auto shadow-xs">
                         Nenhuma mensagem registrada ainda. Envie a primeira mensagem abaixo via Z-API!
                       </div>
                     ) : (
                       chatMessages.map((msg, idx) => {
                         const isSent = Boolean(msg.is_sent === true || (msg.user_id !== null && msg.user_id !== undefined && msg.user_id > 0) || msg.author_name === 'Você');
                         const cleanText = (msg.content || '').replace('[WhatsApp]', '').trim();
-                        const senderName = isSent ? 'Você' : (activeWhatsAppChatLead?.name || 'Cliente');
+                        const senderName = isSent ? (msg.author_name || 'Você') : '';
                         const msgTime = msg.created_at ? new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Agora';
 
                         return (
@@ -1311,33 +1310,36 @@ export default function Crm() {
                             className={`flex ${isSent ? 'justify-end' : 'justify-start'}`}
                           >
                             <div
-                              className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-xs text-xs space-y-1 ${
+                              className={`max-w-[75%] rounded-xl px-3.5 py-2.5 shadow-xs text-xs space-y-1 ${
                                 isSent
                                   ? 'bg-[#D9FDD3] text-gray-900 rounded-tr-none border border-emerald-200/60'
                                   : 'bg-white text-gray-900 rounded-tl-none border border-gray-200 shadow-xs'
                               }`}
                             >
-                              <div className={`font-bold text-[11px] ${isSent ? 'text-emerald-800' : 'text-blue-600'}`}>
-                                *{senderName}*:
-                              </div>
+                              {isSent && senderName && (
+                                <div className="font-bold text-[11px] text-emerald-800">
+                                  *{senderName}*:
+                                </div>
+                              )}
                               <p className="whitespace-pre-wrap leading-relaxed text-gray-800">{cleanText}</p>
-                              <div className="flex items-center justify-end space-x-1 text-[10px] text-gray-400 pt-0.5">
+                              <div className="flex items-center justify-end space-x-1 text-[10px] text-gray-500 pt-0.5 float-right ml-3">
                                 <span>{msgTime}</span>
-                                {isSent && <CheckCheck className="w-3.5 h-3.5 text-blue-500 inline" />}
+                                {isSent && <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb] inline" />}
                               </div>
                             </div>
                           </div>
                         );
                       })
                     )}
+                    <div ref={chatMessagesEndRef} />
                   </div>
 
                   {/* Chat Bottom Bar */}
-                  <form onSubmit={handleSendChatMessage} className="bg-white px-4 py-3 border-t border-gray-200 flex items-center space-x-2 shrink-0 shadow-lg">
-                    <button type="button" className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all" title="Anexo">
+                  <form onSubmit={handleSendChatMessage} className="bg-[#F0F2F5] px-4 py-3 border-t border-gray-200 flex items-center space-x-2 shrink-0 rounded-b-2xl">
+                    <button type="button" className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-200/60 transition-all" title="Anexo">
                       <Paperclip className="w-4 h-4" />
                     </button>
-                    <button type="button" className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all" title="Emojis">
+                    <button type="button" className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200/60 transition-all" title="Emojis">
                       <Smile className="w-4 h-4" />
                     </button>
 
@@ -1346,13 +1348,13 @@ export default function Crm() {
                       placeholder="Digite uma mensagem..."
                       value={chatInputText}
                       onChange={(e) => setChatInputText(e.target.value)}
-                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-emerald-500 focus:outline-none text-xs bg-gray-50/50"
+                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white placeholder-gray-400"
                     />
 
                     <button
                       type="submit"
                       disabled={isSendingChatMessage || !chatInputText.trim()}
-                      className="p-2.5 bg-[#00A884] hover:bg-[#008f70] text-white rounded-full transition-all disabled:opacity-50 shadow-md flex items-center justify-center"
+                      className="p-2.5 bg-[#0B141B] hover:bg-[#1E293B] text-white rounded-full transition-all disabled:opacity-50 shadow-md flex items-center justify-center"
                       title="Enviar via Z-API"
                     >
                       {isSendingChatMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
