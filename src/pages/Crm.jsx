@@ -209,6 +209,14 @@ export default function Crm() {
     }
   };
 
+  useEffect(() => {
+    if (!activeWhatsAppChatLead) return;
+    const interval = setInterval(() => {
+      fetchChatNotes(activeWhatsAppChatLead.phone);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [activeWhatsAppChatLead]);
+
   const handleSyncWhatsAppChats = async () => {
     setIsSyncingWhatsApp(true);
     try {
@@ -242,13 +250,13 @@ export default function Crm() {
     setIsSendingChatMessage(true);
 
     try {
-      const zapiInstance = localStorage.getItem('app_zapi_instance_id');
-      const zapiToken = localStorage.getItem('app_zapi_token');
-      const zapiClientToken = localStorage.getItem('app_zapi_client_token');
+      const zapiInstance = localStorage.getItem('app_zapi_instance_id') || '3F718C3D9582E1963A49EAE0B2B942D4';
+      const zapiToken = localStorage.getItem('app_zapi_token') || 'D4F38DEC6BD1906C37E044B4';
+      const zapiClientToken = localStorage.getItem('app_zapi_client_token') || '';
 
       if (zapiInstance && zapiToken) {
         const zapiHeaders = { 'Content-Type': 'application/json' };
-        if (zapiClientToken) zapiHeaders['Client-Token'] = zapiClientToken;
+        if (zapiClientToken && zapiClientToken.trim()) zapiHeaders['Client-Token'] = zapiClientToken.trim();
 
         let cleanPhoneDigits = activeWhatsAppChatLead.phone.replace(/\D/g, '');
         if (cleanPhoneDigits.length === 11 && !cleanPhoneDigits.startsWith('55')) {
@@ -257,14 +265,29 @@ export default function Crm() {
           cleanPhoneDigits = '55' + cleanPhoneDigits;
         }
 
-        await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/send-text`, {
-          method: 'POST',
-          headers: zapiHeaders,
-          body: JSON.stringify({
-            phone: cleanPhoneDigits,
-            message: textToSend
-          })
-        });
+        try {
+          const sendRes = await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/send-text`, {
+            method: 'POST',
+            headers: zapiHeaders,
+            body: JSON.stringify({
+              phone: cleanPhoneDigits,
+              message: textToSend
+            })
+          });
+
+          if (!sendRes.ok && zapiHeaders['Client-Token']) {
+            await fetch(`https://api.z-api.io/instances/${zapiInstance}/token/${zapiToken}/send-text`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                phone: cleanPhoneDigits,
+                message: textToSend
+              })
+            });
+          }
+        } catch (e) {
+          console.warn('[Z-API Send Error]:', e);
+        }
       }
 
       const resNote = await fetch('/api/crm/notes', {
