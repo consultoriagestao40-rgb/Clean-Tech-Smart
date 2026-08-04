@@ -161,6 +161,37 @@ export default function VisualizarPropostaVendaPublica() {
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
       
+      {/* Print-only CSS to hide sidebar, top bar, and force 100% width document */}
+      <style>{`
+        @media print {
+          header, aside, .no-print {
+            display: none !important;
+          }
+          body {
+            background: #ffffff !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          main {
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          .printable-page {
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          @page {
+            margin: 10mm 12mm;
+          }
+        }
+      `}</style>
+      
       {/* 1. TOP HEADER BAR - FULL WIDTH ACROSS TOP (#009AC7) */}
       <header className="fixed top-0 left-0 right-0 h-14 bg-[#009AC7] text-white px-6 flex items-center justify-between z-50 shadow-md no-print">
         <div className="flex items-center space-x-3 text-left">
@@ -182,25 +213,7 @@ export default function VisualizarPropostaVendaPublica() {
       <aside className="fixed top-14 left-0 w-72 bottom-0 bg-white border-r border-gray-200 p-5 flex flex-col justify-between z-40 overflow-y-auto no-print">
         <div className="flex-1 flex flex-col min-h-0 text-left">
           
-          {/* Logo Brand Header (CLEANTECHPRO) */}
-          <div className="pb-4 mb-4 border-b border-gray-150">
-            {companyLogo ? (
-              <img src={companyLogo} alt="Logo" className="h-10 max-w-[180px] object-contain" />
-            ) : (
-              <div className="flex items-center gap-2">
-                <svg className="w-8 h-8 shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M30 15 L65 50 L50 65 L15 30 Z" fill="#009AC7" />
-                  <path d="M50 35 L85 70 L70 85 L35 50 Z" fill="#00c0f0" opacity="0.95" />
-                </svg>
-                <div className="text-left leading-none">
-                  <span className="text-sm font-black text-[#004054] tracking-tight block">CLEANTECH<span className="text-[#009AC7]">PRO</span></span>
-                  <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest block mt-0.5">A REVOLUÇÃO NO MERCADO DE LOCAÇÕES</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-3">
+          <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-3 pt-2">
             NAVEGAÇÃO DA PROPOSTA
           </span>
 

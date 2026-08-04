@@ -153,8 +153,19 @@ export default function VisualizarPropostaPublica() {
   const emissao = new Date(p.created_at || new Date()).toLocaleDateString('pt-BR');
   const isApproved = p.status === 'Aprovada' || p.status === 'Fechada';
 
-  const photoArray = p.machine_photo_urls || [];
-  const mainPhoto = photoArray[0] || p.machine_image || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800';
+  // Parse Machine Photo properly without factory workers default
+  let rawPhotos = [];
+  if (p.machine_photo_urls) {
+    rawPhotos = Array.isArray(p.machine_photo_urls) ? p.machine_photo_urls : [p.machine_photo_urls];
+  } else if (p.machine_photos) {
+    try {
+      rawPhotos = typeof p.machine_photos === 'string' ? JSON.parse(p.machine_photos) : p.machine_photos;
+    } catch(e) {}
+  }
+  let mainPhoto = (Array.isArray(rawPhotos) && rawPhotos[0]) || p.machine_image || '';
+  if (!mainPhoto || mainPhoto.includes('unsplash.com')) {
+    mainPhoto = 'https://www.tennantco.com/content/dam/tennant/tennantco/products/machines/scrubbers/brava/brava-rider-scrubber-hero.png';
+  }
 
   const parseSpecsToHTML = (rawSpecs) => {
     if (!rawSpecs) return '<p class="italic text-slate-400">Consulte a ficha técnica anexa.</p>';
@@ -175,6 +186,37 @@ export default function VisualizarPropostaPublica() {
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
       
+      {/* Print-only CSS to hide sidebar, top bar, and force 100% width document */}
+      <style>{`
+        @media print {
+          header, aside, .no-print {
+            display: none !important;
+          }
+          body {
+            background: #ffffff !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          main {
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          .printable-page {
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          @page {
+            margin: 10mm 12mm;
+          }
+        }
+      `}</style>
+      
       {/* 1. TOP HEADER BAR - FULL WIDTH ACROSS TOP (#009AC7) */}
       <header className="fixed top-0 left-0 right-0 h-14 bg-[#009AC7] text-white px-6 flex items-center justify-between z-50 shadow-md no-print">
         <div className="flex items-center space-x-3 text-left">
@@ -192,29 +234,11 @@ export default function VisualizarPropostaPublica() {
         </button>
       </header>
 
-      {/* 2. SIDEBAR NAVIGATION - BELOW THE TOP BAR (WHITE BG) */}
+      {/* 2. SIDEBAR NAVIGATION - BELOW THE TOP BAR (WHITE BG) - NO LOGO */}
       <aside className="fixed top-14 left-0 w-72 bottom-0 bg-white border-r border-gray-200 p-5 flex flex-col justify-between z-40 overflow-y-auto no-print">
         <div className="flex-1 flex flex-col min-h-0 text-left">
           
-          {/* Logo Brand Header (CLEANTECHPRO) */}
-          <div className="pb-4 mb-4 border-b border-gray-150">
-            {companyLogo ? (
-              <img src={companyLogo} alt="Logo" className="h-10 max-w-[180px] object-contain" />
-            ) : (
-              <div className="flex items-center gap-2">
-                <svg className="w-8 h-8 shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M30 15 L65 50 L50 65 L15 30 Z" fill="#009AC7" />
-                  <path d="M50 35 L85 70 L70 85 L35 50 Z" fill="#00c0f0" opacity="0.95" />
-                </svg>
-                <div className="text-left leading-none">
-                  <span className="text-sm font-black text-[#004054] tracking-tight block">CLEANTECH<span className="text-[#009AC7]">PRO</span></span>
-                  <span className="text-[7px] font-bold text-gray-400 uppercase tracking-widest block mt-0.5">A REVOLUÇÃO NO MERCADO DE LOCAÇÕES</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-3">
+          <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block mb-3 pt-2">
             NAVEGAÇÃO DA PROPOSTA
           </span>
 
@@ -363,7 +387,7 @@ export default function VisualizarPropostaPublica() {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start pt-2 text-left">
                   <div className="md:col-span-5 space-y-4">
                     <div className="h-56 bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-center">
-                      <img src={mainPhoto} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
+                      <img src={mainPhoto} alt={p.machine_name} className="max-h-full max-w-full object-contain mix-blend-multiply" />
                     </div>
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700 space-y-1.5">
                       <h4 className="font-bold text-slate-900 uppercase text-[10px] border-b border-slate-200 pb-1 mb-1">DIFERENCIAIS</h4>
@@ -514,24 +538,98 @@ export default function VisualizarPropostaPublica() {
           )}
 
           {activeTab === 'presentation' && (
-            <div className="bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
+            <div className="bg-white p-8 md:p-12 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
               <h3 className="text-sm font-bold text-slate-900 border-b pb-2">Catálogo de Equipamentos</h3>
               <h4 className="text-base font-extrabold text-[#009AC7]">{p.machine_name}</h4>
               <div className="flex justify-center py-4">
-                <img src={mainPhoto} alt={p.machine_name} className="max-h-72 object-contain" />
+                <img src={mainPhoto} alt={p.machine_name} className="max-h-72 object-contain mix-blend-multiply" />
               </div>
-              <div className="text-xs text-slate-700 leading-relaxed space-y-1">
-                {parseSpecsToHTML(p.machine_technical_description)}
-              </div>
+              <div className="text-xs text-slate-700 leading-relaxed space-y-1" dangerouslySetInnerHTML={{ __html: specsHTML }} />
             </div>
           )}
 
           {activeTab === 'minuta' && (
-            <div className="bg-white p-8 rounded-xl shadow-md border border-slate-200 space-y-4 text-left">
-              <h3 className="text-sm font-bold text-slate-900 border-b pb-2">Minuta de Contrato de Locação</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Minuta padrão de contrato registrada perante o Registro de Títulos e Documentos.
-              </p>
+            <div className="bg-white p-8 md:p-12 shadow-xl rounded-xl border border-gray-200 text-slate-800 text-xs leading-relaxed space-y-6 printable-page text-left">
+              <div className="text-center border-b pb-4 mb-6">
+                <h2 className="text-base font-extrabold uppercase tracking-wider text-slate-900">
+                  MINUTA DO CONTRATO PADRÃO DE LOCAÇÃO DE BENS MÓVEIS E OUTROS
+                </h2>
+                <p className="text-xs font-bold text-slate-600 mt-1">Registrado perante o 3º Oficial de Registro de Títulos e Documentos da Capital – São Paulo</p>
+              </div>
+
+              {/* Preâmbulo */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider block text-[#009AC7]">
+                  PREÂMBULO DO CONTRATO DE LOCAÇÃO Nº #{String(p.id).padStart(4, '0')}
+                </span>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
+                  <div><span className="font-bold text-slate-700">LOCADORA:</span> {companyName} (CNPJ: {companyCnpj})</div>
+                  <div><span className="font-bold text-slate-700">LOCATÁRIA:</span> {p.client_razao_social || p.client_name} (CNPJ: {p.client_document || '—'})</div>
+                  <div><span className="font-bold text-slate-700">OBJETO:</span> Locação de 01 {p.machine_name}</div>
+                  <div><span className="font-bold text-slate-700">VIGÊNCIA:</span> {formatPeriod(p.period_months)}</div>
+                  <div><span className="font-bold text-slate-700">PREÇO MENSAL:</span> R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / mês</div>
+                  <div><span className="font-bold text-slate-700">FORO:</span> Pinhais / PR</div>
+                </div>
+              </div>
+
+              {/* Cláusulas Contratuais Completas */}
+              <div className="space-y-4 text-xs text-slate-700 leading-relaxed pt-2">
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] border-b pb-1 mb-1">CLÁUSULA I – DO(S) BEM(NS) MÓVEL(IS)</h4>
+                  <p>1.1. A LOCADORA é legítima proprietária do(s) bem(ns) móvel(is) descritos no preâmbulo do presente Contrato.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] border-b pb-1 mb-1">CLÁUSULA II - DO OBJETO</h4>
+                  <p>2.1. Constitui objeto do presente contrato a locação do(s) bem(ns) móvel(is) descrito(s) na Cláusula I, de propriedade da LOCADORA, que serão explorados pela LOCATÁRIA para fins presentes em seu escopo de atuação.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] border-b pb-1 mb-1">CLÁUSULA III - DO PRAZO</h4>
+                  <p>3.1. O prazo de vigência do presente contrato será aquele estabelecido no preâmbulo deste Instrumento, comprometendo-se a LOCATÁRIA a devolver o(s) bem(s) ao fim da vigência nas mesmas condições do recebimento, salvo desgastes do uso natural.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] border-b pb-1 mb-1">CLÁUSULA IV - DA RENOVAÇÃO</h4>
+                  <p>4.1. Findo o prazo de vigência do presente contrato, as Partes, de comum acordo, deliberarão sobre a renovação da locação em questão.</p>
+                  <p>4.2. Caso as partes decidam pela prorrogação do prazo, sem alterações no contrato vigente, tal renovação poderá ser feita automaticamente por igual período mediante manifestação por e-mail.</p>
+                  <p>4.3. Caso a LOCATÁRIA decida pela não renovação, deverá emitir Nota Fiscal de retorno referente à nota fiscal de remessa de locação recebida no momento da entrega do equipamento.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] border-b pb-1 mb-1">CLÁUSULA V - DO VALOR DA LOCAÇÃO</h4>
+                  <p>5.1. A LOCATÁRIA pagará pela locação o valor definido no preâmbulo deste Contrato, mediante depósito bancário ou boleto bancário emitido pela LOCADORA.</p>
+                  <p>5.2. O não pagamento do aluguel na respectiva data de vencimento implicará na incidência de multa moratória de 2% (dois por cento), além de juros de mora de 1% (um por cento) ao mês.</p>
+                  <p>5.3. Na hipótese de o equipamento permanecer inoperante por período superior a 48 horas úteis após o chamado técnico, a LOCATÁRIA ficará isenta do pagamento do aluguel proporcional aos dias de inoperância ou fará jus à substituição imediata do equipamento.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] border-b pb-1 mb-1">CLÁUSULA VI - DO REAJUSTE</h4>
+                  <p>6.1. O valor do aluguel será reajustado anualmente (a cada 12 meses) conforme variação do Índice IPCA do mesmo período, ou por outro índice oficial que venha substituí-lo.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] border-b pb-1 mb-1">CLÁUSULA VII – MANUTENÇÃO DOS BENS LOCADOS</h4>
+                  <p>7.1. A LOCADORA efetuará a manutenção do(s) bem(ns) decorrentes do uso e desgaste natural, conforme modalidade contratada ({p.contract_type || '0 - Sem Cobertura'}).</p>
+                  <p>7.2. O prazo máximo para o início do atendimento técnico será de até 48 horas úteis e o prazo máximo para solução definitiva do problema será de 72 horas úteis.</p>
+                  <p>7.3. A LOCATÁRIA arcará com custos de manutenção corretiva decorrente de mau uso ou uso inadequado dos bens, em desconformidade com o manual do operador.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] border-b pb-1 mb-1">CLÁUSULA VIII – OBRIGAÇÕES DAS PARTES</h4>
+                  <p>8.1. A LOCADORA se obriga a entregar o equipamento testado e apto para uso, fornecendo manual de instrução e suporte técnico especializado.</p>
+                  <p>8.2. A LOCATÁRIA se obriga a guardar e zelar pela segurança do equipamento em local coberto e seguro, realizando as checagens diárias de nível de bateria e água.</p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-900 uppercase text-[11px] border-b pb-1 mb-1">CLÁUSULA IX – DO FORO</h4>
+                  <p>9.1. As partes elegem o foro da Comarca de Pinhais/PR para dirimir quaisquer dúvidas oriundas do presente contrato.</p>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-slate-200 text-center text-xs font-semibold text-slate-600">
+                Pinhais, {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}.
+              </div>
             </div>
           )}
 

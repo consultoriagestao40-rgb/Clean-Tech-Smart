@@ -398,12 +398,12 @@ export default function PropostasVenda() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Top Title Bar - System Blue Palette */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="font-sans text-gray-800 space-y-6">
+      {/* Top Title Bar - Header Card */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100 gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 flex items-center space-x-2.5">
-            <ShoppingCart className="w-7 h-7 text-[#009AC7]" />
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center space-x-2.5">
+            <ShoppingCart className="w-6 h-6 text-[#009AC7]" />
             <span>Propostas de Venda</span>
           </h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -413,12 +413,12 @@ export default function PropostasVenda() {
 
         <button
           onClick={handleOpenCreateModal}
-          className="px-4 py-2.5 bg-[#009AC7] hover:bg-[#0088b3] text-white font-bold rounded-xl shadow-xs transition-all flex items-center space-x-2 text-sm shrink-0 whitespace-nowrap"
+          className="flex items-center px-4 py-2.5 bg-[#009AC7] hover:bg-[#0088b3] text-white font-bold rounded-lg transition-colors shadow-sm shrink-0 whitespace-nowrap text-sm mt-4 md:mt-0"
         >
-          <Plus className="w-4 h-4 shrink-0" />
+          <Plus className="w-4 h-4 mr-2 shrink-0" />
           <span>Nova Proposta de Venda</span>
         </button>
-      </div>
+      </header>
 
       {/* Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs flex items-center space-x-3">
