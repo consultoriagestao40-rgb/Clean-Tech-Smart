@@ -295,6 +295,66 @@ export default function Crm() {
     return 'W+';
   };
 
+  // WhatsApp Avatar Profile Pictures
+  const [avatarCache, setAvatarCache] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('crm_avatar_cache') || '{}');
+    } catch (e) {
+      return {};
+    }
+  });
+
+  const fetchContactAvatar = async (phone) => {
+    if (!phone || avatarCache[phone]) return;
+    try {
+      const res = await fetch(`/api/crm/profile-pic?phone=${encodeURIComponent(phone)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.profile_pic_url) {
+          setAvatarCache(prev => {
+            const updated = { ...prev, [phone]: data.profile_pic_url };
+            localStorage.setItem('crm_avatar_cache', JSON.stringify(updated));
+            return updated;
+          });
+        }
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    if (leads && leads.length > 0) {
+      leads.slice(0, 35).forEach(l => {
+        if (l.phone && !l.profile_pic_url && !avatarCache[l.phone]) {
+          fetchContactAvatar(l.phone);
+        }
+      });
+    }
+  }, [leads]);
+
+  const renderContactAvatar = (lead, sizeClasses = 'w-8 h-8 text-xs') => {
+    const phone = lead?.phone;
+    const avatarUrl = lead?.profile_pic_url || (phone ? avatarCache[phone] : null);
+
+    if (avatarUrl) {
+      return (
+        <img
+          src={avatarUrl}
+          alt={lead?.name || 'Contato'}
+          className={`${sizeClasses} rounded-full object-cover border border-gray-200 shrink-0 shadow-2xs`}
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
+        />
+      );
+    }
+
+    return (
+      <div className={`${sizeClasses} rounded-full bg-blue-50 text-blue-600 font-bold flex items-center justify-center shrink-0 border border-blue-200 shadow-2xs mt-0.5`}>
+        {getAvatarInitials(lead?.name, phone)}
+      </div>
+    );
+  };
+
   // Tasks / Lembretes states
   const [leadTasks, setLeadTasks] = useState([]);
   const [allCrmTasks, setAllCrmTasks] = useState([]);
@@ -1451,9 +1511,7 @@ export default function Crm() {
                                 >
                                   {/* Smartbid Card Layout: Avatar on Left, Title/Phone/Value on Right */}
                                   <div className="flex items-start space-x-2.5 min-w-0">
-                                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200 shadow-2xs mt-0.5">
-                                      {getAvatarInitials(lead.name, lead.phone)}
-                                    </div>
+                                    {renderContactAvatar(lead, "w-8 h-8 text-xs")}
 
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center justify-between gap-1">
@@ -1532,9 +1590,7 @@ export default function Crm() {
             {/* 1. Header (Dark Navy #0B141B style matching Smartbid) */}
             <div className="bg-[#0B141B] text-white px-5 py-3 flex items-center justify-between shrink-0 border-b border-gray-800">
               <div className="flex items-center space-x-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-[#1E293B] border border-gray-700 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0">
-                  {getAvatarInitials(activeWhatsAppChatLead.name, activeWhatsAppChatLead.phone)}
-                </div>
+                {renderContactAvatar(activeWhatsAppChatLead, "w-9 h-9 text-xs")}
                 <div className="min-w-0">
                   <h3 className="font-bold text-sm text-white truncate">
                     {activeWhatsAppChatLead.company && activeWhatsAppChatLead.contact_name

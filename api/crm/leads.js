@@ -54,6 +54,7 @@ export default async function handler(req, res) {
         l.value,
         l.assigned_to,
         l.label,
+        l.profile_pic_url,
         to_char(l.next_contact_at, 'YYYY-MM-DD"T"HH24:MI:SS') as next_contact_at,
         to_char(l.created_at, 'YYYY-MM-DD"T"HH24:MI:SS') as created_at,
         to_char(l.updated_at, 'YYYY-MM-DD"T"HH24:MI:SS') as updated_at,
