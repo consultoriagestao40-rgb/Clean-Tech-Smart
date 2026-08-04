@@ -314,7 +314,7 @@ export default function VisualizarPropostaPublica() {
           <nav className="space-y-1.5 overflow-y-auto flex-1 pr-1 scrollbar-thin">
             <button 
               onClick={() => setActiveTab('presentation')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'presentation' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'presentation' ? 'bg-[#009AC7] text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
             >
               <div className="flex items-center gap-2.5">
                 <Info className="w-4 h-4" />
@@ -325,7 +325,7 @@ export default function VisualizarPropostaPublica() {
 
             <button 
               onClick={() => setActiveTab('proposal')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'proposal' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'proposal' ? 'bg-[#009AC7] text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
             >
               <div className="flex items-center gap-2.5">
                 <FileText className="w-4 h-4" />
@@ -336,7 +336,7 @@ export default function VisualizarPropostaPublica() {
 
             <button 
               onClick={() => setActiveTab('minuta')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'minuta' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'minuta' ? 'bg-[#009AC7] text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
             >
               <div className="flex items-center gap-2.5">
                 <FileSignature className="w-4 h-4" />
@@ -347,11 +347,11 @@ export default function VisualizarPropostaPublica() {
 
             <button 
               onClick={() => setActiveTab('chat')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'chat' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'chat' ? 'bg-[#009AC7] text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
             >
               <div className="flex items-center gap-2.5">
                 <MessageSquare className="w-4 h-4" />
-                <span>4. Conversa & Feedback</span>
+                <span>4. Conversa &amp; Feedback</span>
               </div>
               <ChevronRight className="w-3.5 h-3.5 opacity-50 group-hover:translate-x-0.5 transition-transform" />
             </button>
@@ -380,7 +380,7 @@ export default function VisualizarPropostaPublica() {
             <div className="space-y-2">
               <button 
                 onClick={() => setIsApproveOpen(true)}
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-md active:scale-98 flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-[#009AC7] hover:bg-[#0088b3] text-white font-bold rounded-xl text-xs transition-all shadow-md active:scale-98 flex items-center justify-center gap-1.5"
               >
                 <Check className="w-4 h-4" />
                 Aprovar Proposta
@@ -591,11 +591,16 @@ export default function VisualizarPropostaPublica() {
                     </p>
                     
                     {/* Machine Photo and Paragraph Description Grid matching the PDF Print layout */}
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start mt-4 pl-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center mt-4 pl-4 mb-4">
                       
-                      {/* Left: Machine Photo */}
-                      <div className="md:col-span-4 bg-white border border-gray-150 rounded-xl p-3 flex items-center justify-center h-48 shadow-xxs">
-                        <img src={mainPhoto} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
+                      {/* Left: Machine Photo (Clean without border box, vertically centered) */}
+                      <div className="md:col-span-4 flex items-center justify-center self-center h-full py-2">
+                        <img
+                          src={mainPhoto}
+                          alt={p.machine_name}
+                          className="max-h-[260px] w-auto max-w-full object-contain mix-blend-multiply"
+                          style={{ mixBlendMode: 'multiply' }}
+                        />
                       </div>
 
                       {/* Right: Machine Title & Description */}

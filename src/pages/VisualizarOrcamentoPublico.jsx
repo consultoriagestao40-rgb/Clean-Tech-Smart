@@ -270,6 +270,7 @@ export default function VisualizarOrcamentoPublico() {
               <button 
                 onClick={() => setActiveTab('presentation')}
                 className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'presentation' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+                className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'presentation' ? 'bg-[#009AC7] text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
               >
                 <div className="flex items-center gap-2.5">
                   <Info className="w-4 h-4" />
@@ -281,7 +282,7 @@ export default function VisualizarOrcamentoPublico() {
 
             <button 
               onClick={() => setActiveTab('budget')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'budget' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'budget' ? 'bg-[#009AC7] text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
             >
               <div className="flex items-center gap-2.5">
                 <FileText className="w-4 h-4" />
@@ -292,7 +293,7 @@ export default function VisualizarOrcamentoPublico() {
 
             <button 
               onClick={() => setActiveTab('chat')}
-              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'chat' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${activeTab === 'chat' ? 'bg-[#009AC7] text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
             >
               <div className="flex items-center gap-2.5">
                 <MessageSquare className="w-4 h-4" />
@@ -325,7 +326,7 @@ export default function VisualizarOrcamentoPublico() {
             <div className="space-y-2">
               <button 
                 onClick={() => setIsApproveOpen(true)}
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-md active:scale-98 flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-[#009AC7] hover:bg-[#0088b3] text-white font-bold rounded-xl text-xs transition-all shadow-md active:scale-98 flex items-center justify-center gap-1.5"
               >
                 <Check className="w-4 h-4" />
                 Aprovar Orçamento

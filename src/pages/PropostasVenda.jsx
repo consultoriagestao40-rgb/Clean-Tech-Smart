@@ -300,7 +300,7 @@ export default function PropostasVenda() {
             </div>
 
             {/* 3. Equipment Info & Image */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start py-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center py-2">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 border-b pb-1 mb-2">
                   {p.machine_name || 'Equipamento'}
@@ -312,8 +312,13 @@ export default function PropostasVenda() {
               </div>
 
               {firstImage && (
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-center h-56">
-                  <img src={firstImage} alt={p.machine_name} className="max-h-full max-w-full object-contain" />
+                <div className="flex items-center justify-center self-center h-full w-full py-2">
+                  <img
+                    src={firstImage}
+                    alt={p.machine_name}
+                    className="max-h-[340px] w-auto max-w-full object-contain mix-blend-multiply"
+                    style={{ mixBlendMode: 'multiply' }}
+                  />
                 </div>
               )}
             </div>
