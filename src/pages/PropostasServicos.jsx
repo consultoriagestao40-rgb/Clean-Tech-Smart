@@ -44,6 +44,7 @@ export default function PropostasServicos() {
   useEffect(() => {
     fetchProposals();
     fetchClients();
+    fetchMachineModels();
   }, []);
 
   const fetchProposals = async () => {
@@ -73,6 +74,19 @@ export default function PropostasServicos() {
     }
   };
 
+  const fetchMachineModels = async () => {
+    try {
+      const res = await fetch('/api/get-machine-models');
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.models || data.machines || []);
+        setMachineModels(list);
+      }
+    } catch (e) {
+      console.error('Erro ao buscar catálogo de máquinas:', e);
+    }
+  };
+
   const parseEquipmentsList = (raw) => {
     if (!raw) return [{ qty: '02 un.', name: 'Lavadoras de Piso Industriais — Modelo Brava' }];
     if (typeof raw === 'string' && raw.trim().startsWith('[')) {
@@ -90,6 +104,11 @@ export default function PropostasServicos() {
       }
       return { qty: '01 un.', name: line };
     });
+  };
+
+  const formatEquipmentsSummary = (raw) => {
+    const list = parseEquipmentsList(raw);
+    return list.map(item => `${item.qty ? item.qty + ' ' : ''}${item.name}`).join(' | ');
   };
 
   const [equipmentItems, setEquipmentItems] = useState([
@@ -475,7 +494,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                       <span className="text-[11px] text-gray-400 block">{p.client_cnpj || ''}</span>
                     </td>
                     <td className="px-5 py-4 min-w-[200px]">
-                      <span className="font-semibold text-gray-800 block truncate">{p.machines_included || '—'}</span>
+                      <span className="font-semibold text-gray-800 block truncate">{formatEquipmentsSummary(p.machines_included)}</span>
                     </td>
                     <td className="px-5 py-4 font-bold text-[#009AC7] whitespace-nowrap">
                       {p.monthly_value || 'R$ 3.000,00'}
@@ -603,7 +622,28 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                           className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#009AC7] focus:outline-none bg-white text-xs font-bold text-[#009AC7]"
                         />
                       </div>
-                      <div className="col-span-8">
+                      <div className="col-span-8 space-y-1">
+                        {machineModels.length > 0 && (
+                          <select
+                            onChange={e => {
+                              if (e.target.value) {
+                                handleUpdateEquipmentRow(idx, 'name', e.target.value);
+                              }
+                            }}
+                            className="w-full px-2.5 py-1 text-[11px] font-medium border border-slate-200 rounded-md bg-slate-100/80 text-slate-600 focus:ring-1 focus:ring-[#009AC7] focus:outline-none"
+                          >
+                            <option value="">-- Selecionar do Catálogo de Máquinas --</option>
+                            {machineModels.map(m => {
+                              const modelLabel = m.name || m.model_name || m.model || '';
+                              const brandLabel = m.brand ? ` (${m.brand})` : '';
+                              return (
+                                <option key={m.id} value={`${modelLabel}${brandLabel}`}>
+                                  {modelLabel}{brandLabel}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        )}
                         <input
                           type="text"
                           required
