@@ -6,6 +6,7 @@ import {
 export default function PropostasServicos() {
   const [proposals, setProposals] = useState([]);
   const [clients, setClients] = useState([]);
+  const [machineModels, setMachineModels] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
