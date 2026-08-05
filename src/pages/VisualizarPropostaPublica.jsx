@@ -174,40 +174,236 @@ export default function VisualizarPropostaPublica() {
 
   const specsHTML = parseSpecsToHTML(p.machine_technical_description || p.machine_specs);
 
+  const formatPeriod = (months) => {
+    const m = Number(months);
+    if (m === 1) return 'Diário (1 dia)';
+    if (m === 7) return 'Semanal (7 dias)';
+    if (m === 15) return 'Quinzenal (15 dias)';
+    if (m === 30) return 'Mensal Avulso';
+    return `${m} Meses`;
+  };
+
+  // Generate EXACT same PDF HTML as PropostasLocacao.jsx system view
+  const handlePrintPDF = () => {
+    const colorLight = '#e0f5fb';
+    const introText = 'Equipamento de alta qualidade e rendimento, ideal para processos contínuos de higienização de pisos.';
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Proposta de Locação #${String(p.id).padStart(4,'0')}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:12px;line-height:1.5}
+.page{background:#fff;max-width:870px;margin:20px auto;padding:52px 60px;box-shadow:0 4px 24px rgba(0,0,0,.08);border-radius:12px;position:relative}
+.header{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid #e2e8f0;margin-bottom:20px}
+.tagline{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:2px;text-transform:uppercase}
+.logo-img{max-height:60px;object-fit:contain}
+.box-title{font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;color:${primaryColor};text-transform:uppercase;margin-bottom:15px;letter-spacing:0.5px;border-bottom:2px solid ${primaryColor};padding-bottom:6px}
+.table-rental{width:100%;border-collapse:collapse;margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}
+.table-rental td{padding:10px 14px;border:1px solid #e2e8f0}
+.table-rental td.label-col{font-weight:700;color:#475569;background:#f8fafc;width:250px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+.table-rental td.value-col{font-weight:600;color:#0f172a;font-size:12px}
+.legal-text{font-size:10px;color:#64748b;line-height:1.5;margin-bottom:25px;text-align:justify}
+.table-comparison{width:100%;border-collapse:collapse;margin-bottom:25px;border:1px solid #e2e8f0;font-size:10px}
+.table-comparison th{background:${primaryColor};color:#fff;padding:6px 10px;font-weight:600;text-align:left}
+.table-comparison td{padding:6px 10px;border:1px solid #e2e8f0;color:#475569}
+.footer-cols{display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:end;margin-top:35px;border-top:1px solid #e2e8f0;padding-top:15px}
+.seller-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px 16px;font-size:11px}
+.seller-box b{display:block;margin-bottom:4px;color:${primaryColor};text-transform:uppercase;font-size:9px;letter-spacing:0.5px}
+.brand-footer{text-align:right}
+.brand-footer img{max-height:40px;margin-bottom:6px;object-fit:contain}
+.brand-footer-text{font-size:9px;color:#94a3b8;line-height:1.3}
+@media print{
+  body{background:#fff}
+  .page{box-shadow:none;margin:0;padding:20px 30px;border-radius:0;max-width:100%}
+  @page{margin:10mm 12mm}
+}
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: Presentation & Technical Specs -->
+<div class="page">
+  <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid ${primaryColor}; padding-bottom: 20px; margin-bottom: 25px;">
+    ${companyLogo ? `<div style="width: 180px; display: block;"></div>` : ''}
+    <div style="flex: 1; text-align: center;">
+      <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">${companyName}</h1>
+      <div style="font-size: 11px; font-weight: bold; color: #1e293b; margin-top: 4px;">CNPJ: ${companyCnpj}</div>
+      <div style="font-size: 10px; color: #475569; margin-top: 2px;">${companyAddress}</div>
+      <div style="font-size: 10px; color: #475569; margin-top: 2px;">Telefone: ${companyPhone}</div>
+      ${companyEmail ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">Email: ${companyEmail}</div>` : ''}
+    </div>
+    ${companyLogo ? `
+      <div style="width: 180px; display: flex; justify-content: flex-end;">
+        <img src="${companyLogo}" alt="Logo" style="max-height: 100px; max-width: 180px; object-fit: contain;" />
+      </div>
+    ` : ''}
+  </div>
+
+  <div style="text-align: center; margin-bottom: 25px;">
+    <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin: 0 0 4px 0; letter-spacing: 0.5px;">Proposta Comercial de Locação de Equipamentos</h2>
+    <div style="font-size: 11px; font-weight: bold; color: #475569;">Proposta nº #${String(p.id).padStart(4,'0')}</div>
+    <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Data: ${emissao}</div>
+  </div>
+
+  <div class="box" style="margin-bottom: 25px; border-left: 4px solid ${primaryColor}; border-radius: 4px; padding: 15px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-left-width: 4px; text-align: left;">
+    <div class="box-title" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: ${primaryColor}; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-align: left; letter-spacing: 0.5px;">Dados do Cliente</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 30px;">
+      <div class="row"><b>Cliente:</b> ${p.client_razao_social || p.client_name || 'Não informado'}</div>
+      <div class="row"><b>CNPJ/CPF:</b> ${p.client_document || '&mdash;'}</div>
+      <div class="row"><b>Endereço:</b> ${p.client_address || '&mdash;'}</div>
+      <div class="row"><b>Contato:</b> ${p.client_contact || (p.client_email ? p.client_email.split('@')[0] : '&mdash;')}</div>
+      <div class="row"><b>Telefone:</b> ${p.client_phone || p.client_email || '&mdash;'}</div>
+      <div class="row"><b>Serviço:</b> Locação de Equipamento</div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px; margin-top: 20px; align-items: start;">
+    <!-- Coluna Esquerda: Imagem e Diferenciais -->
+    <div style="display: flex; flex-direction: column; gap: 15px;">
+      <div style="height: 220px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 10px;">
+        <img src="${mainPhoto}" alt="${p.machine_name}" style="max-height: 100%; max-width: 100%; object-fit: contain; mix-blend-mode: multiply;" />
+      </div>
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 11px; color: #475569; line-height: 1.5;">
+        <h4 style="font-weight: 700; color: #0f172a; margin-bottom: 6px; text-transform: uppercase; font-size: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">Diferenciais</h4>
+        <p style="margin-bottom: 4px;">• Alta produtividade e eficiência em grandes áreas.</p>
+        <p style="margin-bottom: 4px;">• Facilidade de operação e controles simples.</p>
+        <p style="margin-bottom: 4px;">• Robustez construtiva Tennant reconhecida.</p>
+        <p>• Suporte técnico e peças originais Alfa Tennant.</p>
+      </div>
+    </div>
+
+    <!-- Coluna Direita: Nome e Ficha Técnica -->
+    <div>
+      <h3 style="font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 8px; border-bottom: 2px solid ${primaryColor}; padding-bottom: 6px; text-transform: uppercase;">
+        ${p.machine_name}
+      </h3>
+      <p style="font-size: 11px; color: #64748b; line-height: 1.4; margin-bottom: 12px; font-style: italic;">
+        ${introText}
+      </p>
+      <div>
+        <div style="font-size: 10px; font-weight: 700; color: ${primaryColor}; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; letter-spacing: 0.5px;">Especificações Técnicas</div>
+        ${specsHTML || '<p style="color: #94a3b8; font-style: italic;">Consulte a ficha técnica anexa.</p>'}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2: Financial Terms & Conditions -->
+<div class="page" style="page-break-before: always; margin-top: 30px;">
+  <div class="header">
+    <span class="tagline">Valores e Condições de Locação</span>
+    <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" class="logo-img" />
+  </div>
+
+  <h3 class="box-title">Valores e Condições de Locação</h3>
+
+  <table class="table-rental">
+    <tr>
+      <td class="label-col">Valor Mensal</td>
+      <td class="value-col" style="font-size: 14px; color: ${primaryColor}; font-weight: 800;">R$ ${Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / mês</td>
+    </tr>
+    <tr>
+      <td class="label-col">Tipo de Contrato*</td>
+      <td class="value-col" style="font-weight: 700;">${p.contract_type || '—'}</td>
+    </tr>
+    <tr>
+      <td class="label-col">Período de Locação</td>
+      <td class="value-col">${formatPeriod(p.period_months)}</td>
+    </tr>
+    <tr>
+      <td class="label-col">Horas/Mês</td>
+      <td class="value-col">${p.hours_per_month || '—'}</td>
+    </tr>
+    <tr>
+      <td class="label-col">Região Utilizada</td>
+      <td class="value-col">${p.region_used || '—'}</td>
+    </tr>
+    <tr>
+      <td class="label-col">Tempo de Entrega</td>
+      <td class="value-col">${p.delivery_time || '—'}</td>
+    </tr>
+    <tr>
+      <td class="label-col">Custo do Frete</td>
+      <td class="value-col">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
+    </tr>
+    <tr>
+      <td class="label-col">Validade da proposta</td>
+      <td class="value-col">${p.validity_days || '—'}</td>
+    </tr>
+    ${p.notes ? `<tr><td class="label-col">OBSERVAÇÃO</td><td class="value-col" style="font-weight: 400; color: #475569;">${p.notes}</td></tr>` : ''}
+  </table>
+
+  <p class="legal-text">
+    Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <b>3º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital &ndash; São Paulo</b>, cuja cópia digitalizada está disponível no site: <i>www.alfatennant.com.br/terms</i> e também por e-mail ou correio quando solicitada.
+  </p>
+
+  <div style="font-size: 9px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px;">* Tabela Descritiva de Tipos de Contrato</div>
+  <table class="table-comparison">
+    <thead>
+      <tr>
+        <th style="width: 140px;">Tipo de Contrato</th>
+        <th>Descrição de Cobertura</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ${p.contract_type?.startsWith('0') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('0') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('0') ? '★ ' : ''}0 - Sem Cobertura</td>
+        <td ${p.contract_type?.startsWith('0') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Somente locação do Equipamento. ${p.contract_type?.startsWith('0') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      </tr>
+      <tr ${p.contract_type?.startsWith('1') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('1') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('1') ? '★ ' : ''}1 - Ouro</td>
+        <td ${p.contract_type?.startsWith('1') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Manutenção, Mão de Obra, Peças, Água Destilada e Deslocamento do técnico autorizado TENNANT COMPANY. Não incluso: Combustíveis e Químicos. ${p.contract_type?.startsWith('1') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      </tr>
+      <tr ${p.contract_type?.startsWith('2') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('2') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('2') ? '★ ' : ''}2 - Prata</td>
+        <td ${p.contract_type?.startsWith('2') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Químicos, Escovas e Discos. ${p.contract_type?.startsWith('2') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      </tr>
+      <tr ${p.contract_type?.startsWith('3') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('3') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('3') ? '★ ' : ''}3 - Bronze</td>
+        <td ${p.contract_type?.startsWith('3') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Água Destilada, Químicos, Escovas, Discos e Baterias. ${p.contract_type?.startsWith('3') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      </tr>
+      <tr ${p.contract_type?.startsWith('4') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('4') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('4') ? '★ ' : ''}4 - MOB</td>
+        <td ${p.contract_type?.startsWith('4') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Somente Manutenção, Mão de Obra, e Deslocamento do técnico autorizado TENNANT COMPANY. ${p.contract_type?.startsWith('4') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer-cols">
+    <div class="seller-box">
+      <b>Dados do Vendedor</b>
+      <div style="white-space: pre-line; color: #334155; line-height: 1.4;">${p.seller_info || 'Alfa Tennant\nAtendimento Comercial'}</div>
+    </div>
+    <div class="brand-footer">
+      <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" style="max-height: 40px; margin-bottom: 6px; object-fit: contain;" />
+      <div class="brand-footer-text">
+        Rua Barão de Campinas, 715<br>
+        São Paulo, SP - 01201-902<br>
+        Vendas: (11) 3320-8550
+      </div>
+    </div>
+  </div>
+</div>
+<script>window.onload=function(){window.print();}</script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    } else {
+      alert('O bloqueador de pop-ups impediu a abertura. Por favor, permita pop-ups para este site.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
-      
-      {/* Print-only CSS to hide sidebar, top bar, and force 100% width document */}
-      <style>{`
-        @media print {
-          header, aside, .no-print {
-            display: none !important;
-          }
-          body {
-            background: #ffffff !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          main {
-            padding: 0 !important;
-            margin: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-          .printable-page {
-            box-shadow: none !important;
-            border: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-          @page {
-            margin: 10mm 12mm;
-          }
-        }
-      `}</style>
-      
+
       {/* 1. TOP HEADER BAR - FULL WIDTH ACROSS TOP (#009AC7) */}
       <header className="fixed top-0 left-0 right-0 h-14 bg-[#009AC7] text-white px-6 flex items-center justify-between z-50 shadow-md no-print">
         <div className="flex items-center space-x-3 text-left">
@@ -217,7 +413,7 @@ export default function VisualizarPropostaPublica() {
         </div>
 
         <button
-          onClick={() => window.print()}
+          onClick={handlePrintPDF}
           className="px-4 py-1.5 bg-white text-[#009AC7] hover:bg-slate-50 text-xs font-extrabold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
         >
           <Printer className="w-4 h-4" />
