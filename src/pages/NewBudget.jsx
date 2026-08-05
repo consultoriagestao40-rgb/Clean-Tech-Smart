@@ -558,13 +558,13 @@ export default function NewBudget() {
         <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h2 className="text-lg font-semibold mb-4 text-gray-800">Dados do Cliente</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0">
               <label className="text-sm font-medium text-gray-600 mb-1">Cliente *</label>
-              <div className="flex space-x-2">
+              <div className="flex items-center space-x-2 min-w-0">
                 <select 
                   value={clientData.client} 
                   onChange={(e) => handleClientChange(e.target.value)}
-                  className="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white"
+                  className="flex-1 min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white truncate"
                 >
                   <option value="">Selecione o Cliente</option>
                   {clients.map(c => (
@@ -574,7 +574,7 @@ export default function NewBudget() {
                 <button 
                   type="button"
                   onClick={() => setIsClientModalOpen(true)}
-                  className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg transition-colors flex items-center justify-center shadow-sm"
+                  className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded-lg transition-colors flex items-center justify-center shadow-sm shrink-0"
                   title="Cadastrar Novo Cliente"
                 >
                   <Plus className="w-5 h-5" />
@@ -582,14 +582,14 @@ export default function NewBudget() {
               </div>
             </div>
             
-            <div className="flex flex-col lg:col-span-2">
+            <div className="flex flex-col min-w-0">
               <label className="text-sm font-medium text-gray-600 mb-1">Ativo / Equipamento *</label>
-              <div className="flex space-x-2">
+              <div className="flex items-center space-x-2 min-w-0">
                 <select 
                   value={clientData.equipmentId}
                   disabled={!clientData.client}
                   onChange={(e) => setClientData({...clientData, equipmentId: e.target.value})}
-                  className="flex-grow px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+                  className="flex-1 min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white disabled:bg-gray-50 disabled:cursor-not-allowed truncate"
                 >
                   <option value="">
                     {!clientData.client ? 'Selecione o Cliente' : 'Selecione o Ativo'}
@@ -604,7 +604,7 @@ export default function NewBudget() {
                   type="button"
                   disabled={!clientData.client}
                   onClick={() => setIsEqModalOpen(true)}
-                  className="p-2 bg-blue-50 hover:bg-blue-100 disabled:bg-gray-50 text-blue-600 disabled:text-gray-400 border border-blue-200 disabled:border-gray-200 rounded-lg transition-colors flex items-center justify-center shadow-sm"
+                  className="p-2 bg-blue-50 hover:bg-blue-100 disabled:bg-gray-50 text-blue-600 disabled:text-gray-400 border border-blue-200 disabled:border-gray-200 rounded-lg transition-colors flex items-center justify-center shadow-sm shrink-0"
                   title="Cadastrar Novo Equipamento"
                 >
                   <Plus className="w-5 h-5" />
