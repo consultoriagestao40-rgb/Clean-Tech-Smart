@@ -23,7 +23,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Layout,
-  ShoppingCart
+  ShoppingCart,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -63,6 +64,7 @@ export default function Sidebar() {
     { name: 'Gestão de Contratos', path: '/contratos', icon: <FileText size={20} /> },
     { name: 'Proposta Locação', path: '/proposta-locacao', icon: <FileText size={20} /> },
     { name: 'Proposta Venda', path: '/proposta-venda', icon: <ShoppingCart size={20} /> },
+    { name: 'Proposta Serviços', path: '/proposta-servico', icon: <ShieldCheck size={20} /> },
     { name: 'CRM', path: '/crm', icon: <Kanban size={20} /> },
     { name: 'Faturas', path: '/faturas', icon: <DollarSign size={20} /> },
     { name: 'Clientes', path: '/clientes', icon: <Users size={20} /> },
