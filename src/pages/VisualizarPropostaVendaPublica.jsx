@@ -256,8 +256,21 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
 
   <p class="legal">Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <b>9º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital – São Paulo</b>, cuja cópia digitalizada está disponível no site: <u>www.alfatennant.com.br/terms</u> e também por e-mail ou correio quando solicitada. Os valores acima definidos englobam <b>única e exclusivamente os impostos, taxas e demais encargos fiscais e tributários</b>, incidentes nas alíquotas vigentes no Estado de origem (São Paulo) <b>de responsabilidade da TENNANT COMPANY</b>. Os demais tributos, inclusive os diferenciais de alíquota, que a lei atribuir como <b>responsabilidade do comprador</b>, quer por sua localização, quer por sua classificação (consumidor final, regime do simples, revenda, não contribuinte, dentre outros) não acarretarão quaisquer descontos nos valores acima definidos, nem mesmo serão atribuídas quaisquer responsabilidades pelo seu pagamento à <b>TENNANT COMPANY</b>.</p>
   <p class="thanks">Agradecemos mais uma vez a oportunidade e nos colocamos à disposição para maiores esclarecimentos.</p>
-  <p style="font-size:12px;font-weight:600;color:#0f172a;margin-bottom:8px">Atenciosamente,</p>
-  <div class="seller-box">${p.seller_info || ''}</div>
+  
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:30px;border-top:1px solid #e2e8f0;padding-top:15px">
+    <div style="background:#EEF2FF;border:1px solid #cbd5e1;border-radius:6px;padding:12px 16px;font-size:11px;max-width:280px">
+      <b style="color:${primaryColor};text-transform:uppercase;font-size:10px;display:block;margin-bottom:4px">Atenciosamente,</b>
+      <div style="white-space:pre-wrap">${p.seller_info || 'Alfa Tennant\nAtendimento Comercial'}</div>
+    </div>
+    <div style="text-align:right">
+      <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" style="max-height:40px;margin-bottom:6px;object-fit:contain" />
+      <div style="font-size:9px;color:#94a3b8;line-height:1.3">
+        Rua Barão de Campinas, 715<br>
+        São Paulo, SP - 01201-902<br>
+        Vendas: (11) 3320-8550
+      </div>
+    </div>
+  </div>
 </div>
 <script>window.onload=function(){window.print();}</script>
 </body>
