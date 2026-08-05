@@ -140,6 +140,27 @@ export default function VisualizarPropostaServicoPublica() {
   const emissao = new Date(p.created_at || new Date()).toLocaleDateString('pt-BR');
   const isApproved = p.status === 'Aprovada' || p.status === 'Fechada';
 
+  const parseEquipmentsList = (raw) => {
+    if (!raw) return [{ qty: '02 un.', name: 'Lavadoras de Piso Industriais — Modelo Brava' }];
+    if (typeof raw === 'string' && raw.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch(e) {}
+    }
+    const lines = String(raw).split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return [{ qty: '02 un.', name: 'Lavadoras de Piso Industriais — Modelo Brava' }];
+    return lines.map(line => {
+      const match = line.match(/^(\d+\s*(?:un\.|unidades|pcs)?)\s*[-—–]?\s*(.*)$/i);
+      if (match) {
+        return { qty: match[1], name: match[2] || line };
+      }
+      return { qty: '01 un.', name: line };
+    });
+  };
+
+  const eqList = parseEquipmentsList(p.machines_included);
+
   const handlePrintPDF = () => {
     const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -206,7 +227,22 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
   </div>
 
   <div class="sec-title">1. EQUIPAMENTOS COBERTOS</div>
-  <div class="scope-text" style="font-weight:600;color:#0f172a">${p.machines_included || '02 Lavadoras de Piso Industriais — Modelo Brava'}</div>
+  <table class="table-cond">
+    <thead>
+      <tr>
+        <th style="width:80px;text-align:center">Qtd</th>
+        <th>Equipamento / Modelo</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${eqList.map(eq => `
+        <tr>
+          <td style="text-align:center"><b>${eq.qty || '01 un.'}</b></td>
+          <td><b>${eq.name || ''}</b></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
 
   <div class="sec-title">2. ESCOPO DOS SERVIÇOS</div>
   <div class="subsec-title">2.1. Manutenção Preventiva</div>
@@ -428,13 +464,26 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
               </div>
 
               {/* 1. Equipamentos Cobertos */}
-              <div className="space-y-1 text-left">
+              <div className="space-y-2 text-left">
                 <h3 className="text-xs font-bold uppercase tracking-wider border-b pb-1 text-[#009AC7]">
                   1. EQUIPAMENTOS COBERTOS
                 </h3>
-                <p className="text-xs font-semibold text-slate-900 pt-1">
-                  {p.machines_included || '02 Lavadoras de Piso Industriais — Modelo Brava'}
-                </p>
+                <table className="w-full border-collapse border border-slate-300 text-xs">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-700">
+                      <th className="p-2 text-center w-24 font-bold uppercase text-[10px] border border-slate-300">QTD</th>
+                      <th className="p-2 text-left font-bold uppercase text-[10px] border border-slate-300">EQUIPAMENTO / MODELO</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {eqList.map((eq, idx) => (
+                      <tr key={idx}>
+                        <td className="p-2 text-center font-bold border border-slate-300 text-[#009AC7]">{eq.qty || '01 un.'}</td>
+                        <td className="p-2 font-semibold border border-slate-300 text-slate-800">{eq.name}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
               {/* 2. Escopo Resumido */}

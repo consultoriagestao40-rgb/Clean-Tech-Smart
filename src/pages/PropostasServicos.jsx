@@ -73,16 +73,41 @@ export default function PropostasServicos() {
     }
   };
 
+  const parseEquipmentsList = (raw) => {
+    if (!raw) return [{ qty: '02 un.', name: 'Lavadoras de Piso Industriais — Modelo Brava' }];
+    if (typeof raw === 'string' && raw.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch(e) {}
+    }
+    const lines = String(raw).split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return [{ qty: '02 un.', name: 'Lavadoras de Piso Industriais — Modelo Brava' }];
+    return lines.map(line => {
+      const match = line.match(/^(\d+\s*(?:un\.|unidades|pcs)?)\s*[-—–]?\s*(.*)$/i);
+      if (match) {
+        return { qty: match[1], name: match[2] || line };
+      }
+      return { qty: '01 un.', name: line };
+    });
+  };
+
+  const [equipmentItems, setEquipmentItems] = useState([
+    { qty: '02 un.', name: 'Lavadoras de Piso Industriais — Modelo Brava' }
+  ]);
+
   const handleOpenCreateModal = () => {
     setFormData(defaultFormData);
+    setEquipmentItems([{ qty: '02 un.', name: 'Lavadoras de Piso Industriais — Modelo Brava' }]);
     setIsModalOpen(true);
   };
 
   const handleOpenEditModal = (p) => {
+    const eqList = parseEquipmentsList(p.machines_included);
     setFormData({
       id: p.id,
       client_id: p.client_id || '',
-      machines_included: p.machines_included || defaultFormData.machines_included,
+      machines_included: JSON.stringify(eqList),
       preventive_scope: p.preventive_scope || defaultFormData.preventive_scope,
       corrective_scope: p.corrective_scope || defaultFormData.corrective_scope,
       extra_hours_scope: p.extra_hours_scope || defaultFormData.extra_hours_scope,
@@ -97,7 +122,27 @@ export default function PropostasServicos() {
       seller_info: p.seller_info || defaultFormData.seller_info,
       status: p.status || 'Rascunho'
     });
+    setEquipmentItems(eqList);
     setIsModalOpen(true);
+  };
+
+  const handleAddEquipmentRow = () => {
+    const updated = [...equipmentItems, { qty: '01 un.', name: '' }];
+    setEquipmentItems(updated);
+    setFormData(prev => ({ ...prev, machines_included: JSON.stringify(updated) }));
+  };
+
+  const handleRemoveEquipmentRow = (index) => {
+    if (equipmentItems.length <= 1) return;
+    const updated = equipmentItems.filter((_, i) => i !== index);
+    setEquipmentItems(updated);
+    setFormData(prev => ({ ...prev, machines_included: JSON.stringify(updated) }));
+  };
+
+  const handleUpdateEquipmentRow = (index, field, value) => {
+    const updated = equipmentItems.map((item, i) => i === index ? { ...item, [field]: value } : item);
+    setEquipmentItems(updated);
+    setFormData(prev => ({ ...prev, machines_included: JSON.stringify(updated) }));
   };
 
   const handleSaveProposal = async (e) => {
@@ -107,12 +152,17 @@ export default function PropostasServicos() {
       return;
     }
 
+    const payload = {
+      ...formData,
+      machines_included: JSON.stringify(equipmentItems)
+    };
+
     setIsSaving(true);
     try {
       const res = await fetch('/api/save-service-proposal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
@@ -158,6 +208,7 @@ export default function PropostasServicos() {
     const companyEmail = localStorage.getItem('app_company_email') || 'vendas@cleantechpro.com.br';
     const primaryColor = localStorage.getItem('app_pdf_color') || '#009AC7';
     const emissao = new Date(p.created_at || new Date()).toLocaleDateString('pt-BR');
+    const eqList = parseEquipmentsList(p.machines_included);
 
     const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -224,7 +275,22 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
   </div>
 
   <div class="sec-title">1. EQUIPAMENTOS COBERTOS</div>
-  <div class="scope-text" style="font-weight:600;color:#0f172a">${p.machines_included || '02 Lavadoras de Piso Industriais — Modelo Brava'}</div>
+  <table class="table-cond">
+    <thead>
+      <tr>
+        <th style="width:80px;text-align:center">Qtd</th>
+        <th>Equipamento / Modelo</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${eqList.map(eq => `
+        <tr>
+          <td style="text-align:center"><b>${eq.qty || '01 un.'}</b></td>
+          <td><b>${eq.name || ''}</b></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
 
   <div class="sec-title">2. ESCOPO DOS SERVIÇOS</div>
   <div class="subsec-title">2.1. Manutenção Preventiva</div>
@@ -497,16 +563,64 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
               </div>
 
               {/* 1. Equipamentos Cobertos */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">1. Equipamentos Cobertos *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.machines_included}
-                  onChange={e => setFormData({ ...formData, machines_included: e.target.value })}
-                  placeholder="Ex: 02 Lavadoras de Piso Industriais — Modelo Brava"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
-                />
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block font-bold text-[#009AC7] text-xs uppercase tracking-wider">
+                    1. EQUIPAMENTOS COBERTOS (CADA TIPO EM UMA LINHA) *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddEquipmentRow}
+                    className="px-2.5 py-1 bg-[#009AC7] hover:bg-[#0088b3] text-white text-[11px] font-bold rounded-lg transition-colors flex items-center space-x-1 shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Adicionar Equipamento</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-500 uppercase px-1">
+                    <div className="col-span-3">Qtd</div>
+                    <div className="col-span-8">Descrição / Equipamento / Modelo</div>
+                    <div className="col-span-1 text-center">Ação</div>
+                  </div>
+
+                  {equipmentItems.map((item, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-3">
+                        <input
+                          type="text"
+                          required
+                          value={item.qty}
+                          onChange={e => handleUpdateEquipmentRow(idx, 'qty', e.target.value)}
+                          placeholder="Ex: 02 un."
+                          className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#009AC7] focus:outline-none bg-white text-xs font-bold text-[#009AC7]"
+                        />
+                      </div>
+                      <div className="col-span-8">
+                        <input
+                          type="text"
+                          required
+                          value={item.name}
+                          onChange={e => handleUpdateEquipmentRow(idx, 'name', e.target.value)}
+                          placeholder="Ex: Lavadoras de Piso Industriais — Modelo Brava"
+                          className="w-full px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#009AC7] focus:outline-none bg-white text-xs font-semibold"
+                        />
+                      </div>
+                      <div className="col-span-1 flex justify-center">
+                        <button
+                          type="button"
+                          disabled={equipmentItems.length <= 1}
+                          onClick={() => handleRemoveEquipmentRow(idx)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 disabled:opacity-30 transition-colors"
+                          title="Remover linha"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* 2. Escopos dos Serviços */}
