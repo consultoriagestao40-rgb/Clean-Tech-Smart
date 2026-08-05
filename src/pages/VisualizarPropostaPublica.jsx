@@ -153,19 +153,10 @@ export default function VisualizarPropostaPublica() {
   const emissao = new Date(p.created_at || new Date()).toLocaleDateString('pt-BR');
   const isApproved = p.status === 'Aprovada' || p.status === 'Fechada';
 
-  // Parse Machine Photo properly without factory workers default
-  let rawPhotos = [];
-  if (p.machine_photo_urls) {
-    rawPhotos = Array.isArray(p.machine_photo_urls) ? p.machine_photo_urls : [p.machine_photo_urls];
-  } else if (p.machine_photos) {
-    try {
-      rawPhotos = typeof p.machine_photos === 'string' ? JSON.parse(p.machine_photos) : p.machine_photos;
-    } catch(e) {}
-  }
-  let mainPhoto = (Array.isArray(rawPhotos) && rawPhotos[0]) || p.machine_image || '';
-  if (!mainPhoto || mainPhoto.includes('unsplash.com')) {
-    mainPhoto = 'https://www.tennantco.com/content/dam/tennant/tennantco/products/machines/scrubbers/brava/brava-rider-scrubber-hero.png';
-  }
+  // Parse Machine Photo — same logic as PDF generator in PropostasLocacao.jsx
+  // machine_photos is a newline-separated string from mm.photo_urls
+  const photosList = (p.machine_photos || p.machine_image || '').split('\n').map(u => u.trim()).filter(Boolean);
+  const mainPhoto = photosList.length > 0 ? photosList[0] : 'https://placehold.co/400x300?text=Equipamento';
 
   const parseSpecsToHTML = (rawSpecs) => {
     if (!rawSpecs) return '<p class="italic text-slate-400">Consulte a ficha técnica anexa.</p>';
