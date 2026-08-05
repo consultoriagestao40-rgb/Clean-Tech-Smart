@@ -149,39 +149,170 @@ export default function VisualizarOrcamentoPublico() {
   const travelTotal = Number(budget.total_logistics || 0);
   const grandTotal = laborTotal + partsTotal + travelTotal;
 
+  const handlePrintPDF = () => {
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Orçamento #${String(budget.id).padStart(4,'0')}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:12px;line-height:1.5}
+.page{background:#fff;max-width:870px;margin:20px auto;padding:52px 60px;box-shadow:0 4px 24px rgba(0,0,0,.08);border-radius:12px;position:relative}
+.header{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:2px solid ${primaryColor};margin-bottom:20px}
+.logo-img{max-height:60px;object-fit:contain}
+.box-title{font-size:11px;font-weight:700;text-transform:uppercase;color:${primaryColor};letter-spacing:0.5px;margin-bottom:8px}
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;color:${primaryColor};margin-bottom:6px;display:block}
+.table-custom{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:11px}
+.table-custom th{background:${primaryColor};color:#fff;padding:8px;text-align:left;font-weight:700;font-size:10px;text-transform:uppercase}
+.table-custom td{padding:8px;border:1px solid #cbd5e1}
+.summary-box{background:${primaryColor};color:#fff;padding:16px;border-radius:12px;width:280px;margin-left:auto;margin-top:16px;font-size:11px}
+.summary-row{display:flex;justify-content:space-between;margin-bottom:6px}
+.summary-total{display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.3);padding-top:8px;font-size:14px;font-weight:800}
+@media print{
+  body{background:#fff}
+  .page{box-shadow:none;margin:0;padding:20px 30px;border-radius:0;max-width:100%}
+  @page{margin:10mm 12mm}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div style="flex:1;text-align:center">
+      <h1 style="font-size:20px;font-weight:800;color:#0f172a;text-transform:uppercase;margin:0">${companyName}</h1>
+      <div style="font-size:11px;font-weight:bold;color:#1e293b;margin-top:4px">CNPJ: ${companyCnpj}</div>
+      <div style="font-size:10px;color:#475569;margin-top:2px">${companyAddress}</div>
+      <div style="font-size:10px;color:#475569;margin-top:2px">Telefone: ${companyPhone} ${companyEmail ? '· Email: ' + companyEmail : ''}</div>
+    </div>
+    ${companyLogo ? `<div style="width:180px;display:flex;justify-content:flex-end"><img src="${companyLogo}" alt="Logo" class="logo-img" /></div>` : ''}
+  </div>
+
+  <div style="text-align:center;margin-bottom:20px">
+    <h2 style="font-size:15px;font-weight:800;color:#0f172a;text-transform:uppercase;margin:0 0 4px 0">PROPOSTA COMERCIAL DE PRESTAÇÃO DE SERVIÇOS</h2>
+    <div style="font-size:11px;font-weight:bold;color:#475569">Proposta nº #${String(budget.id).padStart(4,'0')}</div>
+    <div style="font-size:10px;color:#64748b;margin-top:2px">Data: ${emissao}</div>
+  </div>
+
+  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid ${primaryColor};border-radius:4px;padding:14px 18px;margin-bottom:20px">
+    <div class="box-title">Dados do Cliente</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;font-size:11px">
+      <div><b>Cliente:</b> ${budget.client_name || 'Não informado'}</div>
+      <div><b>CNPJ/CPF:</b> ${budget.client_document || '—'}</div>
+      <div><b>Endereço:</b> ${budget.client_address || '—'}</div>
+      <div><b>Contato:</b> ${budget.contact_name || '—'}</div>
+      <div><b>Telefone:</b> ${budget.contact_info || '—'}</div>
+      <div><b>Serviço:</b> ${budget.service_type || 'Venda'}</div>
+    </div>
+  </div>
+
+  <span class="section-label">Dados do Equipamento</span>
+  <table class="table-custom">
+    <thead>
+      <tr><th>EQUIPAMENTO / ATIVO</th><th>MARCA</th><th>MODELO</th><th>Nº DE SÉRIE</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>${budget.equipment_name || 'Nenhum equipamento associado'}</b></td>
+        <td>${budget.equipment_brand || '—'}</td>
+        <td>${budget.equipment_model || '—'}</td>
+        <td>${budget.equipment_serial_number || '—'}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <span class="section-label">Mão de Obra</span>
+  <table class="table-custom">
+    <thead>
+      <tr><th>DESCRIÇÃO DO SERVIÇO</th><th style="text-align:center;width:80px">HORAS</th><th style="text-align:right;width:110px">VALOR/HORA</th><th style="text-align:right;width:110px">TOTAL</th></tr>
+    </thead>
+    <tbody>
+      ${laborItems.length === 0 ? '<tr><td colSpan="4" style="color:#94a3b8;font-style:italic">Nenhum serviço cadastrado</td></tr>' : laborItems.map(item => `
+        <tr>
+          <td><b>${item.description}</b></td>
+          <td style="text-align:center">${item.hours}</td>
+          <td style="text-align:right">R$ ${Number(item.unit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td style="text-align:right"><b>R$ ${Number((item.hours || 0) * (item.unit_price || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</b></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <span class="section-label">Peças e Insumos</span>
+  <table class="table-custom">
+    <thead>
+      <tr><th>DESCRIÇÃO DA PEÇA</th><th style="text-align:center;width:80px">QTD.</th><th style="text-align:right;width:110px">VALOR UNIT.</th><th style="text-align:right;width:110px">TOTAL</th></tr>
+    </thead>
+    <tbody>
+      ${partsItems.length === 0 ? '<tr><td colSpan="4" style="color:#94a3b8;font-style:italic">Nenhuma peça cadastrada</td></tr>' : partsItems.map(item => `
+        <tr>
+          <td><b>${item.part_name}</b></td>
+          <td style="text-align:center">${item.quantity}</td>
+          <td style="text-align:right">R$ ${Number(item.unit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+          <td style="text-align:right"><b>R$ ${Number((item.quantity || 0) * (item.unit_price || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</b></td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <span class="section-label">Deslocamento / Logística</span>
+  <table class="table-custom">
+    <thead>
+      <tr><th style="text-align:center">KM INICIAL</th><th style="text-align:center">KM FINAL</th><th style="text-align:center">DISTÂNCIA</th><th style="text-align:right">VALOR/KM</th><th style="text-align:right">TOTAL</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="text-align:center">${budget.initial_km || 0}</td>
+        <td style="text-align:center">${budget.final_km || 0}</td>
+        <td style="text-align:center">${travelKm} km</td>
+        <td style="text-align:right">R$ ${Number(budget.price_per_km || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+        <td style="text-align:right"><b>R$ ${travelTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</b></td>
+      </tr>
+    </tbody>
+  </table>
+
+  ${budget.notes ? `
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px;margin-bottom:16px;font-size:11px;color:#78350f">
+      <b>OBSERVAÇÕES:</b><br/>${budget.notes}
+    </div>
+  ` : ''}
+
+  <div class="summary-box">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.3);padding-bottom:4px;margin-bottom:8px">RESUMO FINANCEIRO</div>
+    <div class="summary-row"><span>Mão de Obra</span><b>R$ ${laborTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</b></div>
+    <div class="summary-row"><span>Peças e Insumos</span><b>R$ ${partsTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</b></div>
+    <div class="summary-row"><span>Deslocamento</span><b>R$ ${travelTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</b></div>
+    <div class="summary-total"><span>Total Geral</span><span>R$ ${grandTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:30px;border-top:1px solid #e2e8f0;padding-top:15px">
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;font-size:11px;max-width:280px">
+      <b style="color:${primaryColor};text-transform:uppercase;font-size:10px;display:block;margin-bottom:4px">Atenciosamente,</b>
+      <b>Clean Tech Pro</b><br/>
+      <span style="color:#64748b">Atendimento Técnico Especializado</span>
+    </div>
+    <div style="text-align:right;font-size:10px;color:#94a3b8">
+      <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" style="max-height:35px;margin-bottom:4px;object-fit:contain" /><br/>
+      <b>Clean Tech Smart</b><br/>
+      Avenida Maringá, 1273 – Pinhais/PR<br/>
+      Contato: (41) 9 8508-3658
+    </div>
+  </div>
+</div>
+<script>window.onload=function(){window.print();}</script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
-      
-      {/* Print-only CSS to hide sidebar, top bar, and force 100% width document */}
-      <style>{`
-        @media print {
-          header, aside, .no-print {
-            display: none !important;
-          }
-          body {
-            background: #ffffff !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          main {
-            padding: 0 !important;
-            margin: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-          .printable-page {
-            box-shadow: none !important;
-            border: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-          @page {
-            margin: 10mm 12mm;
-          }
-        }
-      `}</style>
       
       {/* 1. TOP HEADER BAR - FULL WIDTH ACROSS TOP (#009AC7) */}
       <header className="fixed top-0 left-0 right-0 h-14 bg-[#009AC7] text-white px-6 flex items-center justify-between z-50 shadow-md no-print">
@@ -192,7 +323,7 @@ export default function VisualizarOrcamentoPublico() {
         </div>
 
         <button
-          onClick={() => window.print()}
+          onClick={handlePrintPDF}
           className="px-4 py-1.5 bg-white text-[#009AC7] hover:bg-slate-50 text-xs font-extrabold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
         >
           <Printer className="w-4 h-4" />
