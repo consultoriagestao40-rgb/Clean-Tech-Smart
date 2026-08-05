@@ -174,15 +174,6 @@ export default function VisualizarPropostaPublica() {
 
   const specsHTML = parseSpecsToHTML(p.machine_technical_description || p.machine_specs);
 
-  const formatPeriod = (months) => {
-    const m = Number(months);
-    if (m === 1) return 'Diário (1 dia)';
-    if (m === 7) return 'Semanal (7 dias)';
-    if (m === 15) return 'Quinzenal (15 dias)';
-    if (m === 30) return 'Mensal Avulso';
-    return `${m} Meses`;
-  };
-
   // Generate EXACT same PDF HTML as PropostasLocacao.jsx system view
   const handlePrintPDF = () => {
     const colorLight = '#e0f5fb';
