@@ -158,39 +158,118 @@ export default function VisualizarPropostaVendaPublica() {
 
   const specsHTML = parseSpecsToHTML(p.machine_description);
 
+  // Generate EXACT same PDF HTML as PropostasVenda.jsx system view
+  const handlePrintPDF = () => {
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Proposta de Venda #${String(p.id).padStart(4,'0')}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:12px;line-height:1.5}
+.page{background:#fff;max-width:870px;margin:20px auto;padding:52px 60px;box-shadow:0 4px 24px rgba(0,0,0,.08);border-radius:12px}
+.header-bar{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid ${primaryColor};padding-bottom:20px;margin-bottom:25px}
+.company-info{flex:1;text-align:left}
+.company-name{font-size:20px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:0.5px;margin:0}
+.company-meta{font-size:10px;color:#475569;margin-top:3px}
+.logo-img{max-height:80px;max-width:180px;object-fit:contain}
+.title-block{text-align:center;margin-bottom:20px}
+.title-block h2{font-size:15px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 4px 0}
+.title-block .sub{font-size:11px;font-weight:600;color:#475569}
+.title-block .date{font-size:10px;color:#64748b;margin-top:2px}
+.client-box{background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid ${primaryColor};border-radius:4px;padding:14px 18px;margin-bottom:20px}
+.client-box .box-label{font-size:10px;font-weight:700;text-transform:uppercase;color:${primaryColor};letter-spacing:0.5px;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:5px}
+.client-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 28px;font-size:11px}
+.client-grid b{color:#334155}
+.eq-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center;margin-bottom:20px}
+.eq-title{font-size:14px;font-weight:700;color:#0f172a;border-bottom:2px solid ${primaryColor};padding-bottom:6px;margin-bottom:10px;text-transform:uppercase}
+.spec-label{font-size:10px;font-weight:700;text-transform:uppercase;color:${primaryColor};letter-spacing:0.5px;margin-bottom:6px}
+.spec-content{font-size:11px;color:#475569;line-height:1.55}
+.machine-img{max-height:320px;max-width:100%;object-fit:contain;display:block;margin:0 auto}
+.conditions-title{font-size:13px;font-weight:800;text-transform:uppercase;color:${primaryColor};letter-spacing:0.5px;margin-bottom:12px;font-family:'Outfit',sans-serif}
+.table-cond{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:18px}
+.table-cond td{padding:8px 12px;border:1px solid #cbd5e1}
+.table-cond td:first-child{font-weight:700;color:#334155;background:#fff;width:170px}
+.table-cond td:last-child{background:#EEF2FF;color:#0f172a}
+.legal{font-size:9.5px;color:#64748b;line-height:1.55;text-align:justify;font-style:italic;margin-bottom:14px}
+.legal b{font-style:normal;color:#0f172a}
+.thanks{font-size:12px;color:#0f172a;font-style:normal;margin-bottom:12px}
+.seller-box{background:#EEF2FF;border:1px solid #cbd5e1;border-radius:6px;padding:12px 16px;font-size:11px;max-width:280px;white-space:pre-wrap}
+@media print{body{background:#fff}@page{margin:10mm 12mm}.page{box-shadow:none;margin:0;border-radius:0;padding:20mm 22mm}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header-bar">
+    <div class="company-info">
+      <h1 class="company-name">${companyName}</h1>
+      <div class="company-meta">CNPJ: ${companyCnpj}</div>
+      <div class="company-meta">${companyAddress}</div>
+      <div class="company-meta">Telefone: ${companyPhone}${companyEmail ? ' · Email: ' + companyEmail : ''}</div>
+    </div>
+    ${companyLogo ? `<img src="${companyLogo}" alt="Logo" class="logo-img" />` : ''}
+  </div>
+
+  <div class="title-block">
+    <h2>PROPOSTA COMERCIAL DE VENDA DE EQUIPAMENTOS</h2>
+    <div class="sub">Proposta nº #${String(p.id).padStart(4,'0')}</div>
+    <div class="date">Data de Emissão: ${emissao}</div>
+  </div>
+
+  <div class="client-box">
+    <div class="box-label">Dados do Cliente</div>
+    <div class="client-grid">
+      <div><b>Cliente:</b> ${p.client_razao_social || p.client_name || 'Não informado'}</div>
+      <div><b>CNPJ/CPF:</b> ${p.client_cnpj || '—'}</div>
+      <div><b>Endereço:</b> ${p.client_address || '—'}</div>
+      <div><b>Contato:</b> ${p.client_contact || '—'}</div>
+      <div><b>Telefone:</b> ${p.client_phone || '—'}</div>
+      <div><b>Serviço:</b> Venda de Equipamento</div>
+    </div>
+  </div>
+
+  <div class="eq-grid">
+    <div>
+      <div class="eq-title">${p.machine_name || 'Equipamento'}</div>
+      <div class="spec-label">Especificações Técnicas</div>
+      <div class="spec-content">${specsHTML}</div>
+    </div>
+    ${firstImage ? `<div style="display:flex;align-items:center;justify-content:center;height:100%"><img src="${firstImage}" alt="${p.machine_name}" class="machine-img" style="mix-blend-mode:multiply" /></div>` : ''}
+  </div>
+
+  <div class="conditions-title">VALORES E CONDIÇÕES DE VENDA</div>
+  <table class="table-cond">
+    <tbody>
+      <tr><td>Preço FOB</td><td>${p.fob_price || 'A consultar'}</td></tr>
+      <tr><td>Preço CIF</td><td>${p.cif_price || 'A consultar'}</td></tr>
+      <tr><td>Impostos</td><td>${p.taxes_info || 'Conforme texto abaixo'}</td></tr>
+      <tr><td>Valor da Proposta</td><td><b>${p.proposal_value ? 'R$ ' + p.proposal_value : ''}</b></td></tr>
+      <tr><td>Forma de Pagamento</td><td>${p.payment_terms || ''}</td></tr>
+      <tr><td>Prazo de entrega</td><td>${p.delivery_time || ''}</td></tr>
+      <tr><td>Garantia</td><td>${p.warranty || '12 Meses'}</td></tr>
+      <tr><td>Validade da proposta</td><td>${p.validity_days || '10 Dias'}</td></tr>
+      <tr><td></td><td style="white-space:pre-wrap;min-height:60px">${p.notes || ''}</td></tr>
+    </tbody>
+  </table>
+
+  <p class="legal">Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <b>9º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital – São Paulo</b>, cuja cópia digitalizada está disponível no site: <u>www.alfatennant.com.br/terms</u> e também por e-mail ou correio quando solicitada. Os valores acima definidos englobam <b>única e exclusivamente os impostos, taxas e demais encargos fiscais e tributários</b>, incidentes nas alíquotas vigentes no Estado de origem (São Paulo) <b>de responsabilidade da TENNANT COMPANY</b>. Os demais tributos, inclusive os diferenciais de alíquota, que a lei atribuir como <b>responsabilidade do comprador</b>, quer por sua localização, quer por sua classificação (consumidor final, regime do simples, revenda, não contribuinte, dentre outros) não acarretarão quaisquer descontos nos valores acima definidos, nem mesmo serão atribuídas quaisquer responsabilidades pelo seu pagamento à <b>TENNANT COMPANY</b>.</p>
+  <p class="thanks">Agradecemos mais uma vez a oportunidade e nos colocamos à disposição para maiores esclarecimentos.</p>
+  <p style="font-size:12px;font-weight:600;color:#0f172a;margin-bottom:8px">Atenciosamente,</p>
+  <div class="seller-box">${p.seller_info || ''}</div>
+</div>
+<script>window.onload=function(){window.print();}</script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
-      
-      {/* Print-only CSS to hide sidebar, top bar, and force 100% width document */}
-      <style>{`
-        @media print {
-          header, aside, .no-print {
-            display: none !important;
-          }
-          body {
-            background: #ffffff !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          main {
-            padding: 0 !important;
-            margin: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-          .printable-page {
-            box-shadow: none !important;
-            border: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-          @page {
-            margin: 10mm 12mm;
-          }
-        }
-      `}</style>
       
       {/* 1. TOP HEADER BAR - FULL WIDTH ACROSS TOP (#009AC7) */}
       <header className="fixed top-0 left-0 right-0 h-14 bg-[#009AC7] text-white px-6 flex items-center justify-between z-50 shadow-md no-print">
@@ -201,7 +280,7 @@ export default function VisualizarPropostaVendaPublica() {
         </div>
 
         <button
-          onClick={() => window.print()}
+          onClick={handlePrintPDF}
           className="px-4 py-1.5 bg-white text-[#009AC7] hover:bg-slate-50 text-xs font-extrabold rounded-lg flex items-center space-x-2 transition-all shadow-sm"
         >
           <Printer className="w-4 h-4" />
