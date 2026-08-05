@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'ID e validade são obrigatórios.' });
   }
 
-  const table = type === 'sales' ? 'sales_proposals' : 'rental_proposals';
+  const table = type === 'sales' ? 'sales_proposals' : (type === 'service' ? 'service_proposals' : 'rental_proposals');
 
   try {
     const { rows } = await pool.query(`
