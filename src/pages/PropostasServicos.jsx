@@ -26,7 +26,7 @@ export default function PropostasServicos() {
     quantity: '02 un.',
     monthly_value: 'R$ 3.000,00',
     contract_months: '12 (doze) meses',
-    payment_terms: 'Mensal via boleto bancário / PIX',
+    payment_terms: 'Faturamento até todo dia 25 de cada mês com vencimento até o 5º dia útil do mês subsequente',
     validity_days: '15 dias',
     parts_notes: 'Peças de Reposição: Peças com desgaste natural ou danificadas serão orçadas e faturadas à parte, mediante aprovação prévia do cliente no portal.',
     notes: '',
@@ -345,7 +345,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
   <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px 16px;margin-bottom:16px space-y-1">
     <div class="info-row"><span><b>Peças de Reposição:</b></span><span>${p.parts_notes || 'Faturadas à parte mediante aprovação.'}</span></div>
     <div class="info-row"><span><b>Vigência do Contrato:</b></span><span><b>${p.contract_months || '12 meses'}</b></span></div>
-    <div class="info-row"><span><b>Forma de Pagamento:</b></span><span>${p.payment_terms || 'Mensal via boleto bancário / PIX'}</span></div>
+    <div class="info-row"><span><b>Condição de Faturamento:</b></span><span>${p.payment_terms || 'Faturamento até todo dia 25 de cada mês com vencimento até o 5º dia útil do mês subsequente'}</span></div>
     <div class="info-row"><span><b>Validade da Proposta:</b></span><span>${p.validity_days || '15 dias'}</span></div>
   </div>
 
@@ -772,11 +772,12 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Forma de Pagamento</label>
-                    <input
-                      type="text"
+                    <label className="block font-bold text-slate-700 mb-1">Condição de Faturamento / Pagamento</label>
+                    <textarea
+                      rows={2}
                       value={formData.payment_terms}
                       onChange={e => setFormData({ ...formData, payment_terms: e.target.value })}
+                      placeholder="Ex: Faturamento até todo dia 25 de cada mês com vencimento até o 5º dia útil do mês subsequente"
                       className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#009AC7] focus:outline-none"
                     />
                   </div>

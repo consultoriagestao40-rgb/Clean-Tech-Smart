@@ -277,7 +277,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
   <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px 16px;margin-bottom:16px space-y-1">
     <div class="info-row"><span><b>Peças de Reposição:</b></span><span>${p.parts_notes || 'Faturadas à parte mediante aprovação.'}</span></div>
     <div class="info-row"><span><b>Vigência do Contrato:</b></span><span><b>${p.contract_months || '12 meses'}</b></span></div>
-    <div class="info-row"><span><b>Forma de Pagamento:</b></span><span>${p.payment_terms || 'Mensal via boleto bancário / PIX'}</span></div>
+    <div class="info-row"><span><b>Condição de Faturamento:</b></span><span>${p.payment_terms || 'Faturamento até todo dia 25 de cada mês com vencimento até o 5º dia útil do mês subsequente'}</span></div>
     <div class="info-row"><span><b>Validade da Proposta:</b></span><span>${p.validity_days || '15 dias'}</span></div>
   </div>
 
@@ -536,7 +536,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-1.5">
                   <div><span className="font-bold text-slate-700">Peças de Reposição:</span> {p.parts_notes}</div>
                   <div><span className="font-bold text-slate-700">Vigência do Contrato:</span> <strong>{p.contract_months || '12 meses'}</strong></div>
-                  <div><span className="font-bold text-slate-700">Forma de Pagamento:</span> {p.payment_terms || 'Mensal via boleto bancário / PIX'}</div>
+                  <div><span className="font-bold text-slate-700">Condição de Faturamento:</span> {p.payment_terms || 'Faturamento até todo dia 25 de cada mês com vencimento até o 5º dia útil do mês subsequente'}</div>
                   <div><span className="font-bold text-slate-700">Validade da Proposta:</span> {p.validity_days || '15 dias'}</div>
                 </div>
               </div>
