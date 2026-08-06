@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { sendTicketWhatsappGroupNotification, sendTicketEmailNotification } from './_utils/notifications.js';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || "postgresql://neondb_owner:npg_DtfA7VXHw8ym@ep-winter-cloud-apstwhit-pooler.c-7.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require",
@@ -37,10 +38,11 @@ export default async function handler(req, res) {
     const finalEquipmentId = equipment_id ? Number(equipment_id) : null;
     const finalScheduledDate = scheduled_date ? new Date(scheduled_date) : null;
     const finalTechnicianId = technician_id ? Number(technician_id) : null;
+    const isUpdate = !!id;
 
     let result;
 
-    if (id) {
+    if (isUpdate) {
       // Update ticket
       result = await client.query(`
         UPDATE service_tickets
@@ -101,6 +103,8 @@ export default async function handler(req, res) {
       ]);
     }
 
+    const savedTicket = result.rows[0];
+
     // Auto-link equipment to client if not linked yet
     if (finalEquipmentId && finalClientId) {
       await client.query(`
@@ -110,7 +114,50 @@ export default async function handler(req, res) {
       `, [finalClientId, finalEquipmentId]);
     }
 
-    return res.status(200).json({ success: true, ticket: result.rows[0] });
+    // Fetch Client Name & Address
+    let clientName = 'Cliente';
+    let clientAddress = '';
+    if (finalClientId) {
+      const cRes = await client.query('SELECT name, address FROM clients WHERE id = $1', [finalClientId]);
+      if (cRes.rows.length > 0) {
+        clientName = cRes.rows[0].name;
+        clientAddress = cRes.rows[0].address;
+      }
+    }
+
+    // Fetch Technician Name
+    let techName = technician_name || '';
+    if (finalTechnicianId) {
+      const tRes = await client.query('SELECT name FROM technicians WHERE id = $1', [finalTechnicianId]);
+      if (tRes.rows.length > 0) {
+        techName = tRes.rows[0].name;
+      }
+    }
+
+    // Fetch Equipment Details
+    let eqInfo = '';
+    if (finalEquipmentId) {
+      const eRes = await client.query('SELECT name, brand, model, serial_number FROM equipments WHERE id = $1', [finalEquipmentId]);
+      if (eRes.rows.length > 0) {
+        const eq = eRes.rows[0];
+        eqInfo = `${eq.name || ''} ${eq.model ? `(${eq.model})` : ''} ${eq.serial_number ? `S/N: ${eq.serial_number}` : ''}`.trim();
+      }
+    }
+
+    // Trigger Async WhatsApp & Email Notifications in background
+    try {
+      const ticketWithDetails = {
+        ...savedTicket,
+        address: clientAddress,
+        equipment_info: eqInfo
+      };
+      sendTicketWhatsappGroupNotification(client, ticketWithDetails, clientName, techName, isUpdate ? 'update' : 'create').catch(e => console.error('Erro async notificacao zapi:', e));
+      sendTicketEmailNotification(client, ticketWithDetails, clientName, techName, isUpdate ? 'update' : 'create').catch(e => console.error('Erro async notificacao email:', e));
+    } catch (notifErr) {
+      console.error('Erro ao acionar notificações:', notifErr);
+    }
+
+    return res.status(200).json({ success: true, ticket: savedTicket });
   } catch (error) {
     console.error('Erro ao salvar chamado:', error);
     return res.status(500).json({ error: 'Erro interno ao salvar chamado: ' + (error.message || String(error)) });
