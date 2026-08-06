@@ -56,6 +56,27 @@ export default function TecnicoPainel() {
     }
   };
 
+  const handleQuickStatusUpdate = async (ticket, newStatus) => {
+    try {
+      const res = await fetch('/api/save-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...ticket,
+          status: newStatus
+        })
+      });
+      if (res.ok) {
+        fetchTickets();
+      } else {
+        alert('Erro ao atualizar status do chamado.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro de conexão.');
+    }
+  };
+
   // Filter tickets by selected technician
   const activeTickets = tickets.filter(t => {
     if (!selectedTechId) return false;
@@ -331,13 +352,39 @@ export default function TecnicoPainel() {
 
                         {/* Navigation Actions Row */}
                         <div className="grid grid-cols-2 gap-2 border-t border-gray-100 pt-3">
+                          <button
+                            type="button"
+                            onClick={() => handleQuickStatusUpdate(t, 'Em Rota')}
+                            disabled={t.status === 'Em Rota'}
+                            className={`h-9 border rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors ${
+                              t.status === 'Em Rota'
+                                ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200'
+                            }`}
+                          >
+                            <Navigation className="w-3.5 h-3.5" /> {t.status === 'Em Rota' ? '🚗 Em Rota' : '🚗 Iniciar Rota'}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleQuickStatusUpdate(t, 'Em Atendimento')}
+                            disabled={t.status === 'Em Atendimento'}
+                            className={`h-9 border rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors ${
+                              t.status === 'Em Atendimento'
+                                ? 'bg-purple-100 text-purple-800 border-purple-300'
+                                : 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200'
+                            }`}
+                          >
+                            <Wrench className="w-3.5 h-3.5" /> {t.status === 'Em Atendimento' ? '🛠️ Atendendo' : '🛠️ Cheguei'}
+                          </button>
+
                           <a 
                             href={`https://waze.com/ul?q=${encodeURIComponent(t.client_address)}&navigate=yes`}
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="h-9 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl text-[10px] font-black uppercase text-teal-700 tracking-wider flex items-center justify-center gap-1.5 transition-colors"
                           >
-                            <Navigation className="w-3.5 h-3.5" /> Rota Waze
+                            <Navigation className="w-3.5 h-3.5" /> Waze
                           </a>
                           <a 
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.client_address)}`}
@@ -345,14 +392,14 @@ export default function TecnicoPainel() {
                             rel="noopener noreferrer"
                             className="h-9 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl text-[10px] font-black uppercase text-blue-700 tracking-wider flex items-center justify-center gap-1.5 transition-colors"
                           >
-                            <MapPin className="w-3.5 h-3.5" /> Rota Maps
+                            <MapPin className="w-3.5 h-3.5" /> Maps
                           </a>
                           
                           <button 
                             onClick={() => handleOpenTicket(t)}
                             className="col-span-2 h-10 mt-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm active:scale-98"
                           >
-                            <Edit2 className="w-4 h-4" /> Executar Chamado (OS)
+                            <CheckCircle2 className="w-4 h-4" /> Finalizar Chamado / OS
                           </button>
                         </div>
                       </div>

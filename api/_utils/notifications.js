@@ -11,7 +11,7 @@ async function getSystemSettings(dbClient) {
 }
 
 // WhatsApp Group notification helper
-export async function sendTicketWhatsappGroupNotification(dbClient, ticket, clientName, technicianName, actionType) {
+export async function sendTicketWhatsappGroupNotification(dbClient, ticket, clientName, technicianName, actionType, changesList = []) {
   try {
     const settings = await getSystemSettings(dbClient);
     const instanceId = settings.app_zapi_instance_id;
@@ -28,60 +28,85 @@ export async function sendTicketWhatsappGroupNotification(dbClient, ticket, clie
       zapiHeaders['Client-Token'] = clientToken;
     }
 
-    console.log('[Z-API] Buscando JID do grupo de chamados...');
-    let groupJid = settings.app_zapi_ticket_group_id || null;
-
-    // Se o grupo não estiver hardcoded ou configurado nas configurações, busca na Z-API
-    if (!groupJid) {
-      try {
-        const chatsRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/chats?page=1&pageSize=50`, {
-          headers: zapiHeaders
-        });
-        if (chatsRes.ok) {
-          const chats = await chatsRes.json();
-          if (Array.isArray(chats)) {
-            const found = chats.find(c => c.isGroup && c.name && c.name.trim().toUpperCase().includes('CHAMADOS CLEAN TECH'))
-                       || chats.find(c => c.isGroup && c.name && c.name.trim().toUpperCase().includes('CHAMADOS'));
-            if (found) {
-              groupJid = found.phone || found.id;
-              console.log('[Z-API] Grupo encontrado via /chats:', groupJid, found.name);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('[Z-API] Erro ao buscar grupos via /chats:', err);
-      }
-    }
-
-    // Fallback padrão se não encontrou dinamico
-    if (!groupJid) {
-      groupJid = '120363419495845420-group'; // JID do grupo CHAMADOS CLEAN TECH
-    }
-
-    // Format notification label
-    let actionLabel = '🆕 NOVO CHAMADO ABERTO';
-    if (actionType === 'update') actionLabel = '⚠️ CHAMADO ATUALIZADO';
-    if (actionType === 'close' || ticket.status === 'Concluído') actionLabel = '✅ CHAMADO FINALIZADO';
+    let groupJid = settings.app_zapi_ticket_group_id || '120363419495845420-group';
 
     const cleanAddress = ticket.address || 'Não informado';
     const serviceTypeLabel = getServiceTypeLabel(ticket.ticket_type || ticket.service_type);
     const dateFormatted = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    const scheduledFormatted = ticket.scheduled_date ? new Date(ticket.scheduled_date).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'Não agendado';
 
-    const message = `*${actionLabel}* 🛠️
+    let message = '';
+
+    if (actionType === 'close' || ticket.status === 'Concluído') {
+      message = `*✅ CHAMADO FINALIZADO / CONCLUÍDO* 🛠️
 *Data/Hora:* ${dateFormatted}
 *Chamado ID:* #${ticket.id}
 *Cliente:* ${clientName || 'Não cadastrado'}
 *Endereço:* ${cleanAddress}
 *Equipamento:* ${ticket.equipment_info || 'Não informado'}
-*Tipo:* ${serviceTypeLabel}
+*Técnico Responsável:* ${technicianName || 'Não atribuído'}
+*Recebido por:* ${ticket.signed_by_name ? `${ticket.signed_by_name} (${ticket.signed_by_document || 'Sem documento'})` : 'Não assinado'}
+
+*Laudo Técnico / Resolução:*
+${ticket.resolution_notes || 'Serviço concluído pelo técnico.'}
+
+_Mensagem automática gerada pelo sistema Clean Tech Smart._`;
+    } else if (ticket.status === 'Em Rota') {
+      message = `*🚗 TÉCNICO EM ROTA PARA ATENDIMENTO* 🛠️
+*Data/Hora:* ${dateFormatted}
+*Chamado ID:* #${ticket.id}
+*Cliente:* ${clientName || 'Não cadastrado'}
+*Endereço:* ${cleanAddress}
+*Equipamento:* ${ticket.equipment_info || 'Não informado'}
+*Técnico:* ${technicianName || 'Não atribuído'}
+
+ℹ️ *O técnico iniciou o deslocamento para o local do cliente.*
+
+_Mensagem automática gerada pelo sistema Clean Tech Smart._`;
+    } else if (ticket.status === 'Em Atendimento') {
+      message = `*🛠️ TÉCNICO INICIOU ATENDIMENTO NO CLIENTE* 🛠️
+*Data/Hora:* ${dateFormatted}
+*Chamado ID:* #${ticket.id}
+*Cliente:* ${clientName || 'Não cadastrado'}
+*Endereço:* ${cleanAddress}
+*Equipamento:* ${ticket.equipment_info || 'Não informado'}
+*Técnico:* ${technicianName || 'Não atribuído'}
+
+ℹ️ *O técnico chegou no local e iniciou a manutenção.*
+
+_Mensagem automática gerada pelo sistema Clean Tech Smart._`;
+    } else if (actionType === 'update') {
+      const changesText = changesList.length > 0 ? changesList.map(c => `• ${c}`).join('\n') : '• Detalhes do chamado atualizados.';
+      message = `*⚠️ CHAMADO ATUALIZADO* 🛠️
+*Data/Hora:* ${dateFormatted}
+*Chamado ID:* #${ticket.id}
+*Cliente:* ${clientName || 'Não cadastrado'}
+*Equipamento:* ${ticket.equipment_info || 'Não informado'}
+*Status Atual:* ${ticket.status || 'Aberto'}
+
+*Alterações Realizadas:*
+${changesText}
+
+_Mensagem automática gerada pelo sistema Clean Tech Smart._`;
+    } else {
+      // Novo Chamado
+      message = `*🆕 NOVO CHAMADO DE MANUTENÇÃO* 🛠️
+*Data/Hora:* ${dateFormatted}
+*Chamado ID:* #${ticket.id}
+*Cliente:* ${clientName || 'Não cadastrado'}
+*Endereço:* ${cleanAddress}
+*Equipamento:* ${ticket.equipment_info || 'Não informado'}
+*Tipo de Serviço:* ${serviceTypeLabel}
+*Agendamento:* ${scheduledFormatted}
 *Técnico Responsável:* ${technicianName || 'Não atribuído'}
 *Prioridade:* ${ticket.priority || 'Média'}
 *Status:* ${ticket.status || 'Aberto'}
 *Defeito / Solicitação:* ${ticket.description || 'Nenhum detalhe informado'}
 
 _Mensagem automática gerada pelo sistema Clean Tech Smart._`;
+    }
 
-    console.log(`[Z-API] Enviando notificação de chamado para grupo ${groupJid}...`);
+    console.log(`[Z-API] Enviando notificação para o grupo ${groupJid}...`);
     const sendRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`, {
       method: 'POST',
       headers: zapiHeaders,
@@ -95,7 +120,7 @@ _Mensagem automática gerada pelo sistema Clean Tech Smart._`;
       const errTxt = await sendRes.text();
       console.error('[Z-API] Falha ao enviar mensagem para o grupo:', errTxt);
     } else {
-      console.log('[Z-API] Notificação enviada com sucesso para o grupo de WhatsApp!');
+      console.log('[Z-API] Notificação enviada com sucesso para o grupo do WhatsApp!');
     }
   } catch (error) {
     console.error('[Z-API] Erro ao processar notificação de grupo:', error);
@@ -116,7 +141,6 @@ export async function sendTicketEmailNotification(dbClient, ticket, clientName, 
     const recipientEmail = settings.smtp_recipient_email;
 
     if (!host || !user || !pass || !recipientEmail) {
-      console.warn('[SMTP] Credenciais SMTP não configuradas. E-mail não enviado.');
       return;
     }
 
@@ -202,7 +226,6 @@ export async function sendTicketEmailNotification(dbClient, ticket, clientName, 
       html: htmlContent
     });
 
-    console.log('[SMTP] Notificação de e-mail enviada com sucesso.');
   } catch (error) {
     console.error('[SMTP] Erro ao enviar e-mail de notificação:', error);
   }
