@@ -42,6 +42,41 @@ export default function PropostasServicos() {
   const [shareValidityDays, setShareValidityDays] = useState('15 dias');
   const [isSavingShare, setIsSavingShare] = useState(false);
 
+  // Quick Machine Model Modal state
+  const [isMachineModelModalOpen, setIsMachineModelModalOpen] = useState(false);
+  const [isSavingMachineModel, setIsSavingMachineModel] = useState(false);
+  const [newMachineModelName, setNewMachineModelName] = useState('');
+
+  const handleSaveQuickMachineModel = async (e) => {
+    e.preventDefault();
+    if (!newMachineModelName.trim()) {
+      alert('Por favor, informe o nome do modelo.');
+      return;
+    }
+    setIsSavingMachineModel(true);
+    try {
+      const res = await fetch('/api/save-machine-model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newMachineModelName.trim() })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsMachineModelModalOpen(false);
+        setNewMachineModelName('');
+        await fetchMachineModels();
+      } else {
+        const err = await res.json();
+        alert('Erro ao cadastrar modelo: ' + (err.error || 'Erro desconhecido'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro de conexão ao salvar modelo.');
+    } finally {
+      setIsSavingMachineModel(false);
+    }
+  };
+
   useEffect(() => {
     fetchProposals();
     fetchClients();
@@ -624,14 +659,14 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                         />
                       </div>
                       <div className="col-span-8 space-y-1">
-                        {machineModels.length > 0 && (
+                        <div className="flex items-center space-x-1">
                           <select
                             onChange={e => {
                               if (e.target.value) {
                                 handleUpdateEquipmentRow(idx, 'name', e.target.value);
                               }
                             }}
-                            className="w-full px-2.5 py-1 text-[11px] font-medium border border-slate-200 rounded-md bg-slate-100/80 text-slate-600 focus:ring-1 focus:ring-[#009AC7] focus:outline-none"
+                            className="flex-1 min-w-0 w-full px-2.5 py-1 text-[11px] font-medium border border-slate-200 rounded-md bg-slate-100/80 text-slate-600 focus:ring-1 focus:ring-[#009AC7] focus:outline-none"
                           >
                             <option value="">-- Selecionar do Catálogo de Máquinas --</option>
                             {machineModels.map(m => {
@@ -644,7 +679,16 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                               );
                             })}
                           </select>
-                        )}
+                          <button
+                            type="button"
+                            onClick={() => setIsMachineModelModalOpen(true)}
+                            className="px-2 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded text-[11px] font-bold flex items-center gap-1 shrink-0"
+                            title="Cadastrar Novo Modelo no Catálogo"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Novo</span>
+                          </button>
+                        </div>
                         <input
                           type="text"
                           required
@@ -904,6 +948,65 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                 >
                   {isSavingShare ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                   Confirmar &amp; Copiar Link
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Create Machine Model Modal */}
+      {isMachineModelModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden text-left animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-5 border-b border-gray-100">
+              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <Plus className="w-5 h-5 text-blue-600" />
+                Cadastrar Novo Modelo no Catálogo
+              </h2>
+              <button 
+                type="button" 
+                onClick={() => setIsMachineModelModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveQuickMachineModel} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                  Nome do Modelo / Equipamento *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Lavadora de Piso Tennant T300 / Brava"
+                  value={newMachineModelName}
+                  onChange={e => setNewMachineModelName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
+                />
+              </div>
+
+              <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-[11px] text-blue-800 leading-relaxed">
+                ℹ️ Este novo modelo ficará gravado no seu <strong>Catálogo de Máquinas</strong> (`/modelos-maquinas`) e estará disponível em todas as propostas.
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsMachineModelModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingMachineModel}
+                  className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-1.5 shadow-sm disabled:opacity-50 transition-colors"
+                >
+                  {isSavingMachineModel ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  <span>Salvar Modelo</span>
                 </button>
               </div>
             </form>
