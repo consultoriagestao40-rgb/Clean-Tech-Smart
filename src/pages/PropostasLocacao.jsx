@@ -12,6 +12,7 @@ export default function PropostasLocacao() {
   const [clients, setClients] = useState([]);
   const [machineModels, setMachineModels] = useState([]);
   const [rentalPrices, setRentalPrices] = useState([]);
+  const [equipments, setEquipments] = useState([]);
 
   // Modal / Form state
   const [isModalOpen, setIsModalOpen] = useState(false);
