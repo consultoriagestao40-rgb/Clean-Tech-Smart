@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     if (id) {
       // Update ticket
       result = await client.query(`
-        UPDATE tickets
+        UPDATE service_tickets
         SET client_id = $1,
             equipment_id = $2,
             ticket_type = $3,
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     } else {
       // Insert ticket
       result = await client.query(`
-        INSERT INTO tickets (
+        INSERT INTO service_tickets (
           client_id,
           equipment_id,
           ticket_type,
@@ -113,7 +113,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, ticket: result.rows[0] });
   } catch (error) {
     console.error('Erro ao salvar chamado:', error);
-    return res.status(500).json({ error: 'Erro interno ao salvar chamado' });
+    return res.status(500).json({ error: 'Erro interno ao salvar chamado: ' + (error.message || String(error)) });
   } finally {
     client.release();
   }
