@@ -41,61 +41,76 @@ export default async function handler(req, res) {
     let result;
 
     if (id) {
-      // Atualizar chamado existente
+      // Update ticket
       result = await client.query(`
-        UPDATE service_tickets
-        SET client_id = $1, equipment_id = $2, ticket_type = $3, status = $4, priority = $5,
-            description = $6, technician_name = $7, scheduled_date = $8, internal_notes = $9,
-            technician_id = $10, updated_at = NOW()
+        UPDATE tickets
+        SET client_id = $1,
+            equipment_id = $2,
+            ticket_type = $3,
+            status = $4,
+            priority = $5,
+            description = $6,
+            technician_name = $7,
+            technician_id = $8,
+            scheduled_date = $9,
+            internal_notes = $10,
+            updated_at = NOW()
         WHERE id = $11
-        RETURNING *;
+        RETURNING *
       `, [
-        finalClientId, finalEquipmentId, ticket_type, status || 'Aberto', priority || 'Média',
-        description || null, technician_name || null, finalScheduledDate, internal_notes || null,
-        finalTechnicianId, id
+        finalClientId,
+        finalEquipmentId,
+        ticket_type,
+        status || 'Aberto',
+        priority || 'Média',
+        description || '',
+        technician_name || null,
+        finalTechnicianId,
+        finalScheduledDate,
+        internal_notes || '',
+        id
       ]);
     } else {
-      // Criar novo chamado
+      // Insert ticket
       result = await client.query(`
-        INSERT INTO service_tickets (
-          client_id, equipment_id, ticket_type, status, priority,
-          description, technician_name, scheduled_date, internal_notes, technician_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING *;
+        INSERT INTO tickets (
+          client_id,
+          equipment_id,
+          ticket_type,
+          status,
+          priority,
+          description,
+          technician_name,
+          technician_id,
+          scheduled_date,
+          internal_notes
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING *
       `, [
-        finalClientId, finalEquipmentId, ticket_type, status || 'Aberto', priority || 'Média',
-        description || null, technician_name || null, finalScheduledDate, internal_notes || null,
-        finalTechnicianId
+        finalClientId,
+        finalEquipmentId,
+        ticket_type,
+        status || 'Aberto',
+        priority || 'Média',
+        description || '',
+        technician_name || null,
+        finalTechnicianId,
+        finalScheduledDate,
+        internal_notes || ''
       ]);
     }
 
-    const ticket = result.rows[0];
-
-    // Buscar dados complementares para as notificações
-    try {
-      const clientRes = await client.query('SELECT name, address FROM clients WHERE id = $1', [finalClientId]);
-      const clientRow = clientRes.rows[0];
-      const clientName = clientRow ? clientRow.name : 'Desconhecido';
-      const clientAddress = clientRow ? clientRow.address : 'Desconhecido';
-      ticket.address = clientAddress;
-
-      const isNew = !id;
-      const actionType = isNew ? 'create' : 'update';
-
-      // Importar dinamicamente os helpers de notificação
-      const { sendTicketWhatsappGroupNotification, sendTicketEmailNotification } = await import('./_utils/notifications.js');
-
-      // Disparar de forma assíncrona (não-bloqueante)
-      sendTicketWhatsappGroupNotification(client, ticket, clientName, technician_name || 'Não atribuído', actionType)
-        .catch(err => console.error('Erro ao enviar notificação WhatsApp:', err));
-      
-      sendTicketEmailNotification(client, ticket, clientName, technician_name || 'Não atribuído', actionType)
-        .catch(err => console.error('Erro ao enviar notificação E-mail:', err));
-    } catch (notifErr) {
-      console.error('Falha ao processar notificações:', notifErr);
+    // Auto-link equipment to client if not linked yet
+    if (finalEquipmentId && finalClientId) {
+      await client.query(`
+        UPDATE equipments
+        SET client_id = $1
+        WHERE id = $2 AND (client_id IS NULL OR client_id != $1)
+      `, [finalClientId, finalEquipmentId]);
     }
 
-    return res.status(200).json({ success: true, ticket });
+    return res.status(200).json({ success: true, ticket: result.rows[0] });
   } catch (error) {
     console.error('Erro ao salvar chamado:', error);
     return res.status(500).json({ error: 'Erro interno ao salvar chamado' });

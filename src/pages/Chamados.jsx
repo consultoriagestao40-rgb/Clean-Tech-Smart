@@ -1180,12 +1180,31 @@ export default function Chamados() {
                     value={formData.equipment_id} 
                     onChange={e => setFormData({ ...formData, equipment_id: e.target.value })} 
                     disabled={!formData.client_id}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white disabled:bg-gray-100 font-medium"
                   >
-                    <option value="">Selecione o Equipamento</option>
-                    {clientEquipments.map(e => (
-                      <option key={e.id} value={e.id}>{e.name} ({e.brand} {e.model} {e.serial_number ? `S/N: ${e.serial_number}` : ''})</option>
-                    ))}
+                    <option value="">Selecione o Equipamento / Ativo...</option>
+                    
+                    {/* Equipamentos vinculados ao cliente */}
+                    {equipments.filter(e => String(e.client_id) === String(formData.client_id)).length > 0 && (
+                      <optgroup label="Equipamentos Vinculados a este Cliente">
+                        {equipments.filter(e => String(e.client_id) === String(formData.client_id)).map(e => (
+                          <option key={e.id} value={e.id}>
+                            {e.name} (Série/Ativo: {e.serial_number || 'S/N'}) — {e.ownership_type === 'sublocado' ? 'SUBLOCADO' : 'PRÓPRIO'} — [{e.status || 'Locado'}]
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+
+                    {/* Outros Equipamentos do Park de Máquinas */}
+                    {equipments.filter(e => String(e.client_id) !== String(formData.client_id)).length > 0 && (
+                      <optgroup label="Outros Equipamentos do Park de Máquinas (Vincular ao Cliente)">
+                        {equipments.filter(e => String(e.client_id) !== String(formData.client_id)).map(e => (
+                          <option key={e.id} value={e.id}>
+                            {e.name} (Série/Ativo: {e.serial_number || 'S/N'}) — {e.ownership_type === 'sublocado' ? 'SUBLOCADO' : 'PRÓPRIO'} — [{e.status || 'Disponível'}{e.client_name ? ' - ' + e.client_name : ''}]
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
               </div>

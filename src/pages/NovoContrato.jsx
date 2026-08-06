@@ -903,11 +903,16 @@ export default function NovoContrato() {
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="">Selecione um equipamento...</option>
-                  {dbEquipments.map(eq => (
-                    <option key={eq.id} value={eq.id}>
-                      {eq.name} (Série: {eq.serial_number}) - Disp: {eq.status}
-                    </option>
-                  ))}
+                  {dbEquipments.map(eq => {
+                    const isLocado = eq.status === 'Locado' || eq.status === 'Alocado';
+                    const ownershipBadge = eq.ownership_type === 'sublocado' ? `SUBLOCADO${eq.supplier_name ? ' (' + eq.supplier_name + ')' : ''}` : 'PRÓPRIO';
+                    const statusText = isLocado ? `[LOCADO${eq.client_name ? ' p/ ' + eq.client_name : ''}]` : `[${eq.status || 'Disponível'}]`;
+                    return (
+                      <option key={eq.id} value={eq.id}>
+                        {eq.name} (Série: {eq.serial_number || 'S/N'}) — {ownershipBadge} — {statusText}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               <div>

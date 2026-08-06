@@ -20,6 +20,7 @@ export default function PropostasLocacao() {
     id: null,
     client_id: '',
     machine_model_id: '',
+    equipment_id: '',
     rental_price_id: '',
     period_months: 36,
     monthly_value: '',
@@ -58,10 +59,12 @@ export default function PropostasLocacao() {
     clientContact: '',
     clientEmail: '',
     machineName: '',
+    machineSerialNumber: '',
     localUtilizacao: '',
     startDate: '',
     periodMonths: 12,
-    monthlyValue: ''
+    monthlyValue: '',
+    observacoes: ''
   });
 
   useEffect(() => {
@@ -76,7 +79,7 @@ export default function PropostasLocacao() {
       const data = await res.json();
       if (data.proposals) setProposals(data.proposals);
     } catch (error) {
-      console.error('Erro ao buscar propostas:', error);
+      console.error('Erro ao buscar propostas de locação:', error);
     } finally {
       setIsLoading(false);
     }
@@ -91,6 +94,10 @@ export default function PropostasLocacao() {
       const machinesRes = await fetch('/api/get-machine-models');
       const machinesData = await machinesRes.json();
       if (machinesData.machineModels) setMachineModels(machinesData.machineModels);
+
+      const eqRes = await fetch('/api/get-equipments');
+      const eqData = await eqRes.json();
+      if (eqData.equipments) setEquipments(eqData.equipments);
 
       const pricingRes = await fetch('/api/get-rental-prices');
       const pricingData = await pricingRes.json();
@@ -198,6 +205,7 @@ export default function PropostasLocacao() {
       id: item.id,
       client_id: item.client_id || '',
       machine_model_id: item.machine_model_id || '',
+      equipment_id: item.equipment_id || '',
       rental_price_id: item.rental_price_id || '',
       period_months: item.period_months || 36,
       monthly_value: item.monthly_value || '',
@@ -222,6 +230,7 @@ export default function PropostasLocacao() {
       id: null,
       client_id: '',
       machine_model_id: '',
+      equipment_id: '',
       rental_price_id: '',
       period_months: 36,
       monthly_value: '',
@@ -1305,7 +1314,16 @@ body{padding-top:60px}
                 {filtered.map(p => (
                   <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4 font-semibold text-gray-900">{p.client_name}</td>
-                    <td className="px-6 py-4 text-gray-600">{p.machine_name || 'Desconhecida'}</td>
+                    <td className="px-6 py-4 text-gray-600">
+                      <div className="font-semibold text-gray-900">{p.machine_name || 'Desconhecida'}</div>
+                      {p.equipment_name && (
+                        <div className="text-[11px] text-blue-600 font-bold flex items-center gap-1 mt-0.5">
+                          <span>Ativo: {p.equipment_name}</span>
+                          {p.equipment_serial && <span className="text-gray-400 font-medium">(S/N: {p.equipment_serial})</span>}
+                          {p.equipment_ownership === 'sublocado' && <span className="px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded text-[9px] font-bold">SUBLOCADO</span>}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-gray-600 font-medium">{formatPeriod(p.period_months)}</td>
                     <td className="px-6 py-4 text-right font-bold text-blue-600">R$ {Number(p.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                     <td className="px-6 py-4 text-gray-500 text-xs">{p.contract_type}</td>
@@ -1379,16 +1397,68 @@ body{padding-top:60px}
 
                 {/* Machine Catalog Model selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Equipamento (Catálogo) *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Modelo da Máquina (Catálogo) *</label>
                   <select 
                     required
                     value={formData.machine_model_id} 
                     onChange={e => setFormData({...formData, machine_model_id: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white"
                   >
-                    <option value="">Selecione o Equipamento</option>
+                    <option value="">Selecione o Modelo</option>
                     {machineModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
+                </div>
+
+                {/* Physical Equipment Asset from Park de Máquinas */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ativo Físico do Park de Máquinas (Próprio / Sublocado)
+                  </label>
+                  <select 
+                    value={formData.equipment_id} 
+                    onChange={e => {
+                      const selectedEqId = e.target.value;
+                      const selectedEq = equipments.find(eq => String(eq.id) === String(selectedEqId));
+                      let matchedModelId = formData.machine_model_id;
+                      if (selectedEq) {
+                        const matched = machineModels.find(m => 
+                          (m.name && selectedEq.name && m.name.toLowerCase().includes(selectedEq.name.toLowerCase())) ||
+                          (m.name && selectedEq.model && m.name.toLowerCase().includes(selectedEq.model.toLowerCase())) ||
+                          (m.model && selectedEq.model && m.model.toLowerCase().includes(selectedEq.model.toLowerCase()))
+                        );
+                        if (matched) matchedModelId = matched.id;
+                      }
+                      setFormData({
+                        ...formData, 
+                        equipment_id: selectedEqId,
+                        machine_model_id: matchedModelId || formData.machine_model_id
+                      });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm bg-white font-medium"
+                  >
+                    <option value="">Vincular Ativo Físico do Park de Máquinas (Opcional)...</option>
+                    {equipments.map(eq => {
+                      const isLocado = eq.status === 'Locado' || eq.status === 'Alocado';
+                      const ownershipBadge = eq.ownership_type === 'sublocado' ? `SUBLOCADO${eq.supplier_name ? ' (' + eq.supplier_name + ')' : ''}` : 'PRÓPRIO';
+                      const statusText = isLocado ? `[LOCADO${eq.client_name ? ' p/ ' + eq.client_name : ''}]` : `[${eq.status || 'Disponível'}]`;
+                      return (
+                        <option key={eq.id} value={eq.id}>
+                          {eq.name} (Série/Ativo: {eq.serial_number || 'S/N'}) — {ownershipBadge} — {statusText}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {formData.equipment_id && (() => {
+                    const selEq = equipments.find(eq => String(eq.id) === String(formData.equipment_id));
+                    if (selEq && (selEq.status === 'Locado' || selEq.status === 'Alocado')) {
+                      return (
+                        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2 mt-1.5 font-medium">
+                          ⚠️ <strong>Atenção:</strong> Este equipamento consta como <strong>LOCADO</strong>{selEq.client_name ? ` para o cliente ${selEq.client_name}` : ''}. Ao confirmar a proposta, ele será vinculado ao novo cliente.
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
 

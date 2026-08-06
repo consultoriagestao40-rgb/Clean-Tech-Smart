@@ -16,12 +16,18 @@ export default async function handler(req, res) {
     const { rows } = await pool.query(`
       SELECT rp.*, 
              c.name as client_name, 
+             c.razao_social as client_razao_social,
              mm.name as machine_name,
-             r.code as rental_code
+             r.code as rental_code,
+             eq.name as equipment_name,
+             eq.serial_number as equipment_serial,
+             eq.ownership_type as equipment_ownership,
+             eq.status as equipment_status
       FROM rental_proposals rp
       LEFT JOIN clients c ON rp.client_id::text = c.id::text
       LEFT JOIN machine_models mm ON rp.machine_model_id = mm.id
       LEFT JOIN rental_prices r ON rp.rental_price_id = r.id
+      LEFT JOIN equipments eq ON rp.equipment_id = eq.id
       ORDER BY rp.created_at DESC
     `);
     return res.status(200).json({ proposals: rows });

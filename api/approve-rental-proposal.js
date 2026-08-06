@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
   try {
     const timeStr = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-    const auditMsg = status === 'Fechada' 
+    const auditMsg = status === 'Fechada' || status === 'Aprovada'
       ? `Aprovado por: ${approved_by || 'Cliente'} em ${timeStr}. Feedback: ${client_feedback || 'Nenhum'}`
       : `Recusado em ${timeStr}. Motivo/Ajustes solicitados: ${client_feedback || 'Nenhum'}`;
 
@@ -37,6 +37,15 @@ export default async function handler(req, res) {
 
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Proposta não encontrada.' });
+    }
+
+    // Update physical equipment status if linked
+    if (rows[0] && rows[0].equipment_id && (status === 'Aprovada' || status === 'Fechada')) {
+      await pool.query(`
+        UPDATE equipments
+        SET client_id = $1, status = 'Locado'
+        WHERE id = $2
+      `, [rows[0].client_id, rows[0].equipment_id]);
     }
 
     return res.status(200).json({ success: true, proposal: rows[0] });

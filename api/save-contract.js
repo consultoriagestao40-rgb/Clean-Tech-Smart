@@ -73,6 +73,20 @@ export default async function handler(req, res) {
         INSERT INTO contract_history (contract_id, action, status) VALUES ($1, $2, $3)
       `, [result.rows[0].id, 'Contrato criado', result.rows[0].status]);
     }
+
+    // Auto-update physical equipment assets in equipments table to Locado and link client_id
+    if (equipments && Array.isArray(equipments)) {
+      for (const eqItem of equipments) {
+        const eqId = eqItem.equipment_id || eqItem.id;
+        if (eqId) {
+          await client.query(`
+            UPDATE equipments
+            SET client_id = $1, status = 'Locado'
+            WHERE id = $2
+          `, [client_id, eqId]);
+        }
+      }
+    }
     
     return res.status(200).json({ success: true, contract: result.rows[0] });
   } catch (error) {
