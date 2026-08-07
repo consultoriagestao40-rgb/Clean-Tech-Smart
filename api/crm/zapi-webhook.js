@@ -22,7 +22,7 @@ async function findLeadByPhone(dbClient, cleanPhone) {
 function extractPayloadInfo(payload) {
   const msg = payload.message || payload;
 
-  // Phone (sender)
+  // Phone (sender or chat)
   let phone =
     payload.phone || payload.participantPhone || payload.from || payload.chatId ||
     msg.phone || msg.from || msg.chatId || '';
@@ -32,7 +32,7 @@ function extractPayloadInfo(payload) {
     payload.senderName || payload.senderShortName || payload.pushName ||
     msg.senderName || msg.pushName || '';
 
-  // Determine if this message was sent BY US (fromMe) — ignore to avoid duplicate saves
+  // Determine if this message was sent BY US (fromMe)
   const fromMe = payload.fromMe === true || msg.fromMe === true;
 
   // ── Text message ─────────────────────────────────────────────
@@ -114,16 +114,9 @@ export default async function handler(req, res) {
 
   try {
     const payload = req.body || {};
-
-    // Log full payload for debugging
-    console.log('[Z-API Webhook]', JSON.stringify(payload).substring(0, 500));
+    console.log('[Z-API Webhook Payload]:', JSON.stringify(payload).substring(0, 500));
 
     const { phone, senderName, fromMe, messageText, mediaType, fileName, mediaUrl, mimeType } = extractPayloadInfo(payload);
-
-    // Skip messages we sent (fromMe) — they're already saved when sent via the CRM
-    if (fromMe) {
-      return res.status(200).json({ success: true, skipped: 'fromMe' });
-    }
 
     if (!phone) {
       return res.status(200).json({ success: true, message: 'No phone detected' });
@@ -155,7 +148,6 @@ export default async function handler(req, res) {
     let contentToSave = null;
 
     if (mediaType) {
-      // Media message received from client
       let label;
       if (mediaType === 'document') {
         label = `[Arquivo: ${fileName || 'documento'}]`;
@@ -169,7 +161,6 @@ export default async function handler(req, res) {
         label = `[${mediaType}]`;
       }
 
-      // Append media URL so it can be displayed/downloaded
       const urlPart = mediaUrl ? ` ${mediaUrl}` : '';
       const captionPart = messageText ? ` ${messageText}` : '';
       contentToSave = `${label}${urlPart}${captionPart}`.trim();
@@ -179,25 +170,28 @@ export default async function handler(req, res) {
     }
 
     if (contentToSave) {
-      // Dedup: same phone + same content within last 10 seconds
-      const tenSecondsAgo = new Date(Date.now() - 10000).toISOString();
+      // Dedup: same phone + same content within last 15 seconds
+      const dedupTime = new Date(Date.now() - 15000).toISOString();
       const noteCheck = await dbClient.query(
         `SELECT id FROM crm_notes WHERE lead_phone = $1 AND content = $2 AND created_at > $3`,
-        [leadPhone, contentToSave, tenSecondsAgo]
+        [leadPhone, contentToSave, dedupTime]
       );
 
       if (noteCheck.rows.length === 0) {
+        // If fromMe is true, save user_id non-null so it renders as sent by us (on right side)
+        const userIdToSave = fromMe ? (lead?.assigned_to || 1) : null;
+
         await dbClient.query(
-          `INSERT INTO crm_notes (lead_phone, content, user_id, created_at) VALUES ($1, $2, NULL, NOW())`,
-          [leadPhone, contentToSave]
+          `INSERT INTO crm_notes (lead_phone, content, user_id, created_at) VALUES ($1, $2, $3, NOW())`,
+          [leadPhone, contentToSave, userIdToSave]
         );
-        console.log(`[Webhook] Saved ${mediaType || 'text'} message for ${leadPhone}`);
+        console.log(`[Webhook] Saved message for ${leadPhone} (fromMe: ${fromMe}, user_id: ${userIdToSave})`);
       } else {
-        console.log('[Webhook] Duplicate message, skipped');
+        console.log('[Webhook] Duplicate message within 15s window, skipped duplicate insert');
       }
     }
 
-    return res.status(200).json({ success: true, phone: cleanPhone, mediaType: mediaType || 'text' });
+    return res.status(200).json({ success: true, phone: cleanPhone, fromMe, mediaType: mediaType || 'text' });
   } catch (err) {
     console.error('[Z-API Webhook Error]:', err);
     return res.status(500).json({ error: err.message });

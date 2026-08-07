@@ -155,6 +155,89 @@ export default function Crm() {
   const [chatInputText, setChatInputText] = useState('');
   const [isSendingChatMessage, setIsSendingChatMessage] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+
+  // CRM Deals (Negócios do Lead) state
+  const [leadDeals, setLeadDeals] = useState([]);
+  const [isDealsLoading, setIsDealsLoading] = useState(false);
+  const [isCreatingDeal, setIsCreatingDeal] = useState(false);
+  const [newDealForm, setNewDealForm] = useState({ title: '', value: '', stage: 'qualificado', proposal_type: 'locacao', description: '' });
+
+  const fetchLeadDeals = async (phone) => {
+    if (!phone) return;
+    setIsDealsLoading(true);
+    try {
+      const res = await fetch(`/api/crm/deals?phone=${encodeURIComponent(phone)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLeadDeals(data.deals || []);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar negócios do lead:', err);
+    } finally {
+      setIsDealsLoading(false);
+    }
+  };
+
+  const handleSaveDeal = async (e) => {
+    e.preventDefault();
+    if (!newDealForm.title) return;
+    try {
+      const res = await fetch('/api/crm/deals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newDealForm,
+          lead_phone: activeWhatsAppChatLead.phone
+        })
+      });
+      if (res.ok) {
+        setIsCreatingDeal(false);
+        setNewDealForm({ title: '', value: '', stage: 'qualificado', proposal_type: 'locacao', description: '' });
+        fetchLeadDeals(activeWhatsAppChatLead.phone);
+        fetchLeads();
+      } else {
+        alert('Erro ao salvar negócio.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro de conexão ao salvar negócio.');
+    }
+  };
+
+  const handleUpdateDealStatus = async (dealId, updateFields) => {
+    try {
+      const targetDeal = leadDeals.find(d => d.id === dealId);
+      if (!targetDeal) return;
+      const res = await fetch('/api/crm/deals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...targetDeal,
+          ...updateFields
+        })
+      });
+      if (res.ok) {
+        fetchLeadDeals(activeWhatsAppChatLead.phone);
+        fetchLeads();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteDeal = async (dealId) => {
+    if (!confirm('Deseja realmente excluir este negócio?')) return;
+    try {
+      const res = await fetch(`/api/crm/deals?id=${dealId}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchLeadDeals(activeWhatsAppChatLead.phone);
+        fetchLeads();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fileInputRef = useRef(null);
   const chatMessagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -1644,6 +1727,21 @@ export default function Crm() {
               </button>
 
               <button
+                onClick={() => {
+                  setActiveChatTab('negocios');
+                  if (activeWhatsAppChatLead?.phone) fetchLeadDeals(activeWhatsAppChatLead.phone);
+                }}
+                className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeChatTab === 'negocios'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-emerald-400 hover:text-white hover:bg-[#1E293B]/50'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5" />
+                <span>💼 Negócios</span>
+              </button>
+
+              <button
                 onClick={() => setActiveChatTab('anotacoes')}
                 className={`flex items-center space-x-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   activeChatTab === 'anotacoes'
@@ -1862,6 +1960,222 @@ export default function Crm() {
                       </button>
                     </form>
                   </div>
+                </div>
+              )}
+
+              {/* TAB: NEGÓCIOS (DEALS DO CLIENTE) */}
+              {activeChatTab === 'negocios' && (
+                <div className="flex-1 p-6 overflow-y-auto space-y-6 bg-slate-900 text-slate-100">
+                  
+                  {/* Top Bar Summary & Add Deal Button */}
+                  <div className="bg-slate-800/90 border border-slate-700 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
+                    <div>
+                      <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                        <DollarSign className="w-5 h-5 text-emerald-400" />
+                        <span>Negócios &amp; Oportunidades do Cliente</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Gerencie múltiplos pedidos, propostas e vendas ativas para {activeWhatsAppChatLead.company || activeWhatsAppChatLead.name}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsCreatingDeal(!isCreatingDeal)}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 active:scale-98"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>{isCreatingDeal ? 'Cancelar' : 'Novo Negócio'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Form para Criar / Registrar Novo Negócio */}
+                  {isCreatingDeal && (
+                    <form onSubmit={handleSaveDeal} className="bg-slate-800 border border-emerald-500/40 p-5 rounded-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                      <h4 className="text-xs font-black uppercase text-emerald-400 tracking-wider">
+                        ➕ Cadastrar Novo Negócio / Oportunidade
+                      </h4>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Título do Negócio *</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Ex: Locação 2ª Lavadora A500, Compra de Peças..."
+                            value={newDealForm.title}
+                            onChange={e => setNewDealForm({ ...newDealForm, title: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-700 rounded-xl text-xs bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Valor Estimado (R$)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="0,00"
+                            value={newDealForm.value}
+                            onChange={e => setNewDealForm({ ...newDealForm, value: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-700 rounded-xl text-xs bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Etapa no Funil</label>
+                          <select
+                            value={newDealForm.stage}
+                            onChange={e => setNewDealForm({ ...newDealForm, stage: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-700 rounded-xl text-xs bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          >
+                            {funnelStages.map(s => (
+                              <option key={s.key} value={s.key}>{s.title}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Tipo de Negócio</label>
+                          <select
+                            value={newDealForm.proposal_type}
+                            onChange={e => setNewDealForm({ ...newDealForm, proposal_type: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-700 rounded-xl text-xs bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          >
+                            <option value="locacao">📑 Proposta de Locação</option>
+                            <option value="venda">🛍️ Proposta de Venda</option>
+                            <option value="servico">🛠️ Proposta de Serviços Recorrentes</option>
+                            <option value="orcamento">⚙️ Orçamento Assistência Técnica</option>
+                            <option value="outro">📋 Negócio Geral / Outro</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Observações / Detalhes</label>
+                        <textarea
+                          rows={2}
+                          placeholder="Detalhes adicionais sobre esta nova oportunidade..."
+                          value={newDealForm.description}
+                          onChange={e => setNewDealForm({ ...newDealForm, description: e.target.value })}
+                          className="w-full px-3 py-2 border border-slate-700 rounded-xl text-xs bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsCreatingDeal(false)}
+                          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-xs font-bold"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md active:scale-98"
+                        >
+                          Salvar Negócio
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Listagem de Negócios */}
+                  {isDealsLoading ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+                    </div>
+                  ) : leadDeals.length === 0 ? (
+                    <div className="bg-slate-800/50 border border-dashed border-slate-700 rounded-2xl p-8 text-center text-xs text-slate-400 space-y-3">
+                      <p>Nenhum negócio registrado ainda para este contato.</p>
+                      <p className="text-[11px] text-slate-500">
+                        Clique em <strong>+ Novo Negócio</strong> para criar uma nova oportunidade de venda ou locação!
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {leadDeals.map(d => (
+                        <div key={d.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-4 text-xs space-y-3 shadow-sm hover:border-slate-600 transition-colors">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                Negócio #{d.id} • {d.proposal_type ? d.proposal_type.toUpperCase() : 'GERAL'}
+                              </span>
+                              <h4 className="font-extrabold text-sm text-white mt-0.5">{d.title}</h4>
+                            </div>
+
+                            <div className="text-right">
+                              <span className="font-extrabold text-emerald-400 text-sm block">
+                                R$ {Number(d.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                              <span className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full inline-block mt-1 ${
+                                d.status === 'ganho' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' :
+                                d.status === 'perdido' ? 'bg-rose-950 text-rose-400 border border-rose-800' :
+                                'bg-blue-950 text-blue-400 border border-blue-800'
+                              }`}>
+                                {d.status === 'ganho' ? '🎉 Fechado / Ganho' : d.status === 'perdido' ? '❌ Perdido' : '🟢 Em Aberto'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {d.description && (
+                            <p className="text-slate-400 italic bg-slate-900/60 p-2.5 rounded-xl text-xs">
+                              “{d.description}”
+                            </p>
+                          )}
+
+                          {/* Action controls inside Deal card */}
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-700/80 pt-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase">Etapa:</span>
+                              <select
+                                value={d.stage || 'qualificado'}
+                                onChange={e => handleUpdateDealStatus(d.id, { stage: e.target.value })}
+                                className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1 font-semibold focus:outline-none"
+                              >
+                                {funnelStages.map(s => (
+                                  <option key={s.key} value={s.key}>{s.title}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {d.status !== 'ganho' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateDealStatus(d.id, { status: 'ganho' })}
+                                  className="px-2.5 py-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-800 rounded-lg text-[11px] font-bold transition-all"
+                                >
+                                  🎉 Marcar como Ganho
+                                </button>
+                              )}
+                              {d.status !== 'perdido' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateDealStatus(d.id, { status: 'perdido' })}
+                                  className="px-2.5 py-1 bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-800 rounded-lg text-[11px] font-bold transition-all"
+                                >
+                                  ❌ Perdeu
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteDeal(d.id)}
+                                className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
+                                title="Excluir negócio"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                 </div>
               )}
 
