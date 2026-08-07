@@ -41,12 +41,20 @@ export default async function handler(req, res) {
       const digits = phone.replace(/\D/g, '');
       const suffix = digits.length >= 8 ? digits.slice(-8) : digits;
 
+      const queryParams = [phone];
+      let sqlWhere = `WHERE lead_phone = $1`;
+
+      if (suffix && suffix.length >= 8) {
+        sqlWhere += ` OR right(regexp_replace(lead_phone, '\\D', '', 'g'), 8) = $2`;
+        queryParams.push(suffix);
+      }
+
       const notesRes = await dbClient.query(
         `SELECT id, lead_phone, user_id, content, created_at 
          FROM crm_notes 
-         WHERE lead_phone = $1 OR replace(lead_phone, '-', '') LIKE $2 
+         ${sqlWhere}
          ORDER BY created_at ASC`,
-        [phone, `%${suffix}`]
+        queryParams
       );
 
       const formattedNotes = notesRes.rows.map(n => {
@@ -147,8 +155,8 @@ export default async function handler(req, res) {
           const suffix = cleanPhone.length >= 8 ? cleanPhone.slice(-8) : cleanPhone;
 
           const leadCheck = await dbClient.query(
-            `SELECT phone FROM leads WHERE phone = $1 OR replace(phone, '-', '') LIKE $2 LIMIT 1`,
-            [cleanPhone, `%${suffix}`]
+            `SELECT phone FROM leads WHERE phone = $1 OR right(regexp_replace(phone, '\\D', '', 'g'), 8) = $2 LIMIT 1`,
+            [cleanPhone, suffix]
           );
 
           if (leadCheck.rows.length === 0) {
