@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { sendProposalApprovalWhatsappGroupNotification } from './_utils/notifications.js';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || "postgresql://neondb_owner:npg_DtfA7VXHw8ym@ep-winter-cloud-apstwhit-pooler.c-7.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require",
@@ -39,16 +40,53 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Proposta não encontrada.' });
     }
 
+    const proposal = rows[0];
+
     // Update physical equipment status if linked
-    if (rows[0] && rows[0].equipment_id && (status === 'Aprovada' || status === 'Fechada')) {
+    if (proposal.equipment_id && (status === 'Aprovada' || status === 'Fechada')) {
       await pool.query(`
         UPDATE equipments
         SET client_id = $1, status = 'Locado'
         WHERE id = $2
-      `, [rows[0].client_id, rows[0].equipment_id]);
+      `, [proposal.client_id, proposal.equipment_id]);
     }
 
-    return res.status(200).json({ success: true, proposal: rows[0] });
+    // Trigger WhatsApp notification in background
+    try {
+      // Query client & machine model details
+      const detailsRes = await pool.query(`
+        SELECT c.name as client_name, mm.name as machine_name, eq.name as equipment_name, eq.serial_number
+        FROM rental_proposals rp
+        LEFT JOIN clients c ON rp.client_id::text = c.id::text
+        LEFT JOIN machine_models mm ON rp.machine_model_id = mm.id
+        LEFT JOIN equipments eq ON rp.equipment_id = eq.id
+        WHERE rp.id = $1
+      `, [proposal.id]);
+
+      const details = detailsRes.rows[0] || {};
+      const itemDetails = details.equipment_name
+        ? `${details.machine_name || ''} (Ativo: ${details.equipment_name} S/N: ${details.serial_number || 'S/N'})`
+        : details.machine_name || 'Equipamento de Locação';
+
+      const formattedVal = proposal.monthly_value
+        ? `R$ ${Number(proposal.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês (${proposal.period_months || 36} meses)`
+        : '';
+
+      sendProposalApprovalWhatsappGroupNotification(pool, {
+        type: 'locacao',
+        id: proposal.id,
+        clientName: details.client_name || 'Cliente',
+        itemDetails: itemDetails,
+        value: formattedVal,
+        approvedBy: approved_by || 'Cliente (Link Público)',
+        feedback: client_feedback || null,
+        status: status
+      }).catch(err => console.error('Erro notificacao WhatsApp locacao:', err));
+    } catch (notifErr) {
+      console.error('Erro ao montar notificacao de locacao:', notifErr);
+    }
+
+    return res.status(200).json({ success: true, proposal: proposal });
   } catch (error) {
     console.error('Erro ao aprovar/recusar proposta:', error);
     return res.status(500).json({ error: 'Erro interno ao salvar decisão.' });

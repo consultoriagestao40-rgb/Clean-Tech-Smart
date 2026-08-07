@@ -10,7 +10,7 @@ async function getSystemSettings(dbClient) {
   return settings;
 }
 
-// WhatsApp Group notification helper
+// WhatsApp Group notification for Ticket updates
 export async function sendTicketWhatsappGroupNotification(dbClient, ticket, clientName, technicianName, actionType, changesList = []) {
   try {
     const settings = await getSystemSettings(dbClient);
@@ -124,6 +124,86 @@ _Mensagem automática gerada pelo sistema Clean Tech Smart._`;
     }
   } catch (error) {
     console.error('[Z-API] Erro ao processar notificação de grupo:', error);
+  }
+}
+
+// WhatsApp Group notification for Proposal / Budget Approvals
+export async function sendProposalApprovalWhatsappGroupNotification(dbClient, data) {
+  try {
+    const {
+      type, // 'locacao' | 'venda' | 'servico' | 'orcamento'
+      id,
+      clientName,
+      itemDetails,
+      value,
+      approvedBy,
+      feedback,
+      status // 'Aprovada' | 'Fechada' | 'Aprovado' | 'Recusado' | 'Negociação'
+    } = data;
+
+    const settings = await getSystemSettings(dbClient);
+    const instanceId = settings.app_zapi_instance_id;
+    const token = settings.app_zapi_token;
+    const clientToken = settings.app_zapi_client_token;
+
+    if (!instanceId || !token) {
+      console.warn('[Z-API] Instância ou Token não configurados.');
+      return;
+    }
+
+    const zapiHeaders = { 'Content-Type': 'application/json' };
+    if (clientToken) zapiHeaders['Client-Token'] = clientToken;
+
+    const groupJid = settings.app_zapi_ticket_group_id || '120363419495845420-group';
+    const dateFormatted = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+    const isApproved = ['Aprovada', 'Fechada', 'Aprovado'].includes(status);
+
+    let typeTitle = 'PROPOSTA COMERCIAL';
+    let icon = '📄';
+
+    if (type === 'locacao') { typeTitle = 'PROPOSTA DE LOCAÇÃO'; icon = '📑'; }
+    else if (type === 'venda') { typeTitle = 'PROPOSTA DE VENDA'; icon = '🛍️'; }
+    else if (type === 'servico') { typeTitle = 'PROPOSTA DE SERVIÇOS RECORRENTES'; icon = '🛠️'; }
+    else if (type === 'orcamento') { typeTitle = 'ORÇAMENTO DE ASSISTÊNCIA TÉCNICA'; icon = '⚙️'; }
+
+    let message = '';
+
+    if (isApproved) {
+      message = `*🎉 ${typeTitle} APROVADA PELO CLIENTE!* ${icon}✍️
+*Data/Hora:* ${dateFormatted}
+*Código / ID:* #${String(id).padStart(4, '0')}
+*Cliente:* ${clientName || 'Não informado'}
+${itemDetails ? `*Item / Equipamento:* ${itemDetails}\n` : ''}${value ? `*Valor:* ${value}\n` : ''}*Aprovado por:* ${approvedBy || 'Cliente via aceite digital'}
+${feedback ? `*Observações / Feedback:* ${feedback}\n` : ''}
+_Mensagem automática gerada pelo sistema Clean Tech Smart._`;
+    } else {
+      message = `*⚠️ ${typeTitle} - RECUSADA / AJUSTE SOLICITADO* 🚨
+*Data/Hora:* ${dateFormatted}
+*Código / ID:* #${String(id).padStart(4, '0')}
+*Cliente:* ${clientName || 'Não informado'}
+*Status Atual:* ${status || 'Em Negociação'}
+${feedback ? `*Motivo / Solicitação de Ajustes:* ${feedback}\n` : ''}
+_Mensagem automática gerada pelo sistema Clean Tech Smart._`;
+    }
+
+    console.log(`[Z-API] Enviando notificação de aprovação de ${type} para o grupo ${groupJid}...`);
+    const sendRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`, {
+      method: 'POST',
+      headers: zapiHeaders,
+      body: JSON.stringify({
+        phone: groupJid,
+        message: message
+      })
+    });
+
+    if (!sendRes.ok) {
+      console.error('[Z-API] Erro ao enviar notificação para o grupo:', await sendRes.text());
+    } else {
+      console.log(`[Z-API] Notificação de aprovação de ${type} enviada com sucesso para o WhatsApp!`);
+    }
+  } catch (error) {
+    console.error('[Z-API] Erro ao processar notificação de aprovação:', error);
   }
 }
 
