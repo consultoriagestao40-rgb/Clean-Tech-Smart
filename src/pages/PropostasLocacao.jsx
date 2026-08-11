@@ -425,6 +425,48 @@ export default function PropostasLocacao() {
     return `${m} Meses`;
   };
 
+  const getRentalValueInfo = (months) => {
+    const m = Number(months);
+    if (m === 1) {
+      return {
+        label: 'VALOR DIÁRIO',
+        labelTitle: 'Valor Diário (R$)',
+        priceTitle: 'PREÇO DIÁRIO:',
+        suffix: '/ dia',
+        unit: 'dia',
+        shortUnit: 'dia'
+      };
+    }
+    if (m === 7) {
+      return {
+        label: 'VALOR SEMANAL',
+        labelTitle: 'Valor Semanal (R$)',
+        priceTitle: 'PREÇO SEMANAL:',
+        suffix: '/ semana',
+        unit: 'semana',
+        shortUnit: 'sem'
+      };
+    }
+    if (m === 15) {
+      return {
+        label: 'VALOR QUINZENAL',
+        labelTitle: 'Valor Quinzenal (R$)',
+        priceTitle: 'PREÇO QUINZENAL:',
+        suffix: '/ quinzena',
+        unit: 'quinzena',
+        shortUnit: 'quinzena'
+      };
+    }
+    return {
+      label: 'VALOR MENSAL',
+      labelTitle: 'Valor Mensal (R$)',
+      priceTitle: 'PREÇO MENSAL:',
+      suffix: '/ mês',
+      unit: 'mês',
+      shortUnit: 'mês'
+    };
+  };
+
   const handleOpenMinutaModal = async (proposalId) => {
     try {
       const res = await fetch(`/api/get-rental-proposal-details?id=${proposalId}`);
@@ -875,6 +917,7 @@ export default function PropostasLocacao() {
         return htmlContent;
       };
 
+      const valInfo = getRentalValueInfo(p.period_months);
       const introText = 'Equipamento de alta qualidade e rendimento, ideal para processos contínuos de higienização de pisos.';
       const specsHTML = parseSpecsToHTML(p.machine_specs);
 
@@ -1012,8 +1055,8 @@ body{padding-top:60px}
 
   <table class="table-rental">
     <tr>
-      <td class="label-col">Valor Mensal</td>
-      <td class="value-col" style="font-size: 14px; color: ${primaryColor}; font-weight: 800;">R$ ${Number(p.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / mês</td>
+      <td class="label-col">${valInfo.label}</td>
+      <td class="value-col" style="font-size: 14px; color: ${primaryColor}; font-weight: 800;">R$ ${Number(p.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${valInfo.suffix}</td>
     </tr>
     <tr>
       <td class="label-col">Tipo de Contrato*</td>
@@ -1289,7 +1332,7 @@ body{padding-top:60px}
                           <div className="flex justify-between items-center my-2 text-xxs font-bold bg-gray-50/50 p-2 rounded-lg border border-gray-100/70">
                             <span className="text-gray-500 uppercase">{formatPeriod(p.period_months)}</span>
                             <span className="text-blue-600 font-extrabold">
-                              R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {getRentalValueInfo(p.period_months).suffix}
                             </span>
                           </div>
                           
@@ -1349,7 +1392,7 @@ body{padding-top:60px}
                   <th className="px-6 py-4 font-bold text-gray-700">Cliente</th>
                   <th className="px-6 py-4 font-bold text-gray-700">Máquina</th>
                   <th className="px-6 py-4 font-bold text-gray-700">Período</th>
-                  <th className="px-6 py-4 font-bold text-gray-700 text-right">Valor Mensal</th>
+                  <th className="px-6 py-4 font-bold text-gray-700 text-right">Valor da Locação</th>
                   <th className="px-6 py-4 font-bold text-gray-700">Contrato</th>
                   <th className="px-6 py-4 font-bold text-gray-700 text-right">Ações</th>
                 </tr>
@@ -1369,7 +1412,7 @@ body{padding-top:60px}
                       )}
                     </td>
                     <td className="px-6 py-4 text-gray-600 font-medium">{formatPeriod(p.period_months)}</td>
-                    <td className="px-6 py-4 text-right font-bold text-blue-600">R$ {Number(p.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td className="px-6 py-4 text-right font-bold text-blue-600">R$ {Number(p.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {getRentalValueInfo(p.period_months).suffix}</td>
                     <td className="px-6 py-4 text-gray-500 text-xs">{p.contract_type}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end space-x-2">
@@ -1619,7 +1662,7 @@ body{padding-top:60px}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Monthly Rent Override */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Valor Mensal (R$) *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{getRentalValueInfo(formData.period_months).labelTitle} *</label>
                   <input 
                     required
                     type="number" 

@@ -119,6 +119,48 @@ export default function VisualizarPropostaPublica() {
     return `${m} Meses`;
   };
 
+  const getRentalValueInfo = (months) => {
+    const m = Number(months);
+    if (m === 1) {
+      return {
+        label: 'VALOR DIÁRIO',
+        labelTitle: 'Valor Diário (R$)',
+        priceTitle: 'PREÇO DIÁRIO:',
+        suffix: '/ dia',
+        unit: 'dia',
+        shortUnit: 'dia'
+      };
+    }
+    if (m === 7) {
+      return {
+        label: 'VALOR SEMANAL',
+        labelTitle: 'Valor Semanal (R$)',
+        priceTitle: 'PREÇO SEMANAL:',
+        suffix: '/ semana',
+        unit: 'semana',
+        shortUnit: 'sem'
+      };
+    }
+    if (m === 15) {
+      return {
+        label: 'VALOR QUINZENAL',
+        labelTitle: 'Valor Quinzenal (R$)',
+        priceTitle: 'PREÇO QUINZENAL:',
+        suffix: '/ quinzena',
+        unit: 'quinzena',
+        shortUnit: 'quinzena'
+      };
+    }
+    return {
+      label: 'VALOR MENSAL',
+      labelTitle: 'Valor Mensal (R$)',
+      priceTitle: 'PREÇO MENSAL:',
+      suffix: '/ mês',
+      unit: 'mês',
+      shortUnit: 'mês'
+    };
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
@@ -143,6 +185,7 @@ export default function VisualizarPropostaPublica() {
   }
 
   const p = proposal;
+  const valInfo = getRentalValueInfo(p.period_months);
   const companyLogo = localStorage.getItem('app_company_logo') || '';
   const companyName = localStorage.getItem('app_company_name') || 'CLEAN TECH PRO';
   const companyCnpj = localStorage.getItem('app_company_cnpj') || '43.158.052/0001-01';
@@ -294,8 +337,8 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
 
   <table class="table-rental">
     <tr>
-      <td class="label-col">Valor Mensal</td>
-      <td class="value-col" style="font-size: 14px; color: ${primaryColor}; font-weight: 800;">R$ ${Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / mês</td>
+      <td class="label-col">${valInfo.label}</td>
+      <td class="value-col" style="font-size: 14px; color: ${primaryColor}; font-weight: 800;">R$ ${Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${valInfo.suffix}</td>
     </tr>
     <tr>
       <td class="label-col">Tipo de Contrato*</td>
@@ -610,9 +653,9 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                   <table className="w-full border-collapse border border-slate-300 text-xs">
                     <tbody>
                       <tr>
-                        <td className="w-48 p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">VALOR MENSAL</td>
+                        <td className="w-48 p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">{valInfo.label}</td>
                         <td className="p-2.5 font-extrabold text-slate-900 border border-slate-300 bg-[#EEF2FF]" style={{ color: primaryColor }}>
-                          R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / mês
+                          R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {valInfo.suffix}
                         </td>
                       </tr>
                       <tr>
@@ -746,7 +789,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                   <div><span className="font-bold text-slate-700">LOCATÁRIA:</span> {p.client_razao_social || p.client_name} (CNPJ: {p.client_document || '—'})</div>
                   <div><span className="font-bold text-slate-700">OBJETO:</span> Locação de 01 {p.machine_name}</div>
                   <div><span className="font-bold text-slate-700">VIGÊNCIA:</span> {formatPeriod(p.period_months)}</div>
-                  <div><span className="font-bold text-slate-700">PREÇO MENSAL:</span> R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / mês</div>
+                  <div><span className="font-bold text-slate-700">{valInfo.priceTitle}</span> R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {valInfo.suffix}</div>
                   <div><span className="font-bold text-slate-700">FORO:</span> Pinhais / PR</div>
                 </div>
               </div>
