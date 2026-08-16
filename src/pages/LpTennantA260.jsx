@@ -78,11 +78,30 @@ export default function LpTennantA260() {
     return localStorage.getItem('lp_a260_video_urls') || DEFAULT_VIDEOS.join('\n');
   });
 
-  const parseYouTubeEmbed = (url) => {
+  // Helper universal para vídeos: Google Drive, YouTube ou MP4 direto
+  const parseVideoEmbed = (url) => {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : url;
+    const trimmed = url.trim();
+
+    // 1. Google Drive (drive.google.com/file/d/... ou drive.google.com/open?id=...)
+    const driveMatch1 = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveMatch1 && driveMatch1[1]) {
+      return `https://drive.google.com/file/d/${driveMatch1[1]}/preview`;
+    }
+
+    const driveMatch2 = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (driveMatch2 && driveMatch2[1] && trimmed.includes('drive.google.com')) {
+      return `https://drive.google.com/file/d/${driveMatch2[1]}/preview`;
+    }
+
+    // 2. YouTube
+    const ytMatch = trimmed.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+    if (ytMatch && ytMatch[2].length === 11) {
+      return `https://www.youtube.com/embed/${ytMatch[2]}`;
+    }
+
+    // 3. Fallback / URL Direta
+    return trimmed;
   };
 
   const videoList = useMemo(() => {
@@ -90,7 +109,7 @@ export default function LpTennantA260() {
     return lines.map((link, idx) => ({
       id: idx,
       url: link,
-      embedUrl: parseYouTubeEmbed(link),
+      embedUrl: parseVideoEmbed(link),
       title: idx === 0 ? "Demonstração da Tennant A260: Operação & Sucção Linatex" : `Vídeo Demonstrativo da Lavadora Tennant #${idx + 1}`
     }));
   }, [videoUrlsText]);
@@ -490,14 +509,20 @@ export default function LpTennantA260() {
                 <div key={vid.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm flex flex-col justify-between">
                   <div>
                     <div className="aspect-video bg-black w-full relative">
-                      {vid.embedUrl.includes('youtube.com/embed') ? (
+                      {vid.embedUrl && (vid.embedUrl.includes('drive.google.com') || vid.embedUrl.includes('youtube.com') || vid.embedUrl.includes('/preview')) ? (
                         <iframe
                           src={vid.embedUrl}
                           title={vid.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; allow-same-origin; allow-scripts"
                           allowFullScreen
                           className="w-full h-full border-0"
                         ></iframe>
+                      ) : vid.url.endsWith('.mp4') || vid.url.endsWith('.webm') ? (
+                        <video
+                          src={vid.url}
+                          controls
+                          className="w-full h-full object-contain"
+                        />
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-white p-4 text-center">
                           <Play className="w-12 h-12 text-[#eb6420] mb-2" />

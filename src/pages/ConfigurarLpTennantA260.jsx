@@ -131,20 +131,23 @@ export default function ConfigurarLpTennantA260() {
           />
         </div>
 
-        {/* Bloco 2: Vídeos do YouTube */}
+        {/* Bloco 2: Vídeos do Google Drive / YouTube */}
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
           <div className="flex items-center gap-2 font-bold text-gray-900 text-sm">
             <Video className="w-5 h-5 text-[#eb6420]" />
-            Vídeos Demonstrativos (Links do YouTube)
+            Vídeos Demonstrativos (Links do Google Drive ou YouTube)
           </div>
           <p className="text-xs text-gray-500">
-            Cole os links do YouTube dos vídeos da A260 (ex: <code>https://www.youtube.com/watch?v=...</code> ou <code>https://youtu.be/...</code>), <strong>um por linha</strong>.
+            Cole os <strong>links de compartilhamento do Google Drive</strong> (ex: <code>https://drive.google.com/file/d/SEU_CODIGO/view?usp=sharing</code>) ou links do YouTube/MP4, <strong>um por linha</strong>. O sistema converte e roda o vídeo automaticamente na página!
           </p>
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 p-2.5 rounded text-[11px]">
+            💡 <strong>Dica Google Drive:</strong> Certifique-se de que o vídeo no Google Drive esteja com o acesso configurado como <em>"Qualquer pessoa com o link pode ver"</em>.
+          </div>
           <textarea
-            rows={3}
+            rows={4}
             value={videoUrls}
             onChange={(e) => setVideoUrls(e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=CODIGO1&#10;https://www.youtube.com/watch?v=CODIGO2"
+            placeholder="https://drive.google.com/file/d/1A2B3C4D5E6F7G8H9I0J/view?usp=sharing&#10;https://www.youtube.com/watch?v=CODIGO_YOUTUBE"
             className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg text-xs font-mono text-gray-800 focus:outline-none focus:border-[#007481]"
           />
         </div>
