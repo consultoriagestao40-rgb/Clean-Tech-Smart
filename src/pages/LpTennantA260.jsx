@@ -455,6 +455,16 @@ export default function LpTennantA260() {
                 </h2>
               </div>
 
+              {/* Headline Comercial de Alto Impacto */}
+              <div className="border-l-4 border-[#007481] pl-3.5 py-1.5 bg-teal-50/60 rounded-r-md">
+                <h3 className="text-base sm:text-lg font-extrabold text-[#007481] leading-snug">
+                  Substitua até 4 operadores manuais, reduza em até 60% os custos de limpeza e lave 2.000 m²/hora com secagem imediata.
+                </h3>
+                <p className="text-xs text-gray-600 mt-1 font-medium">
+                  Disponível para <strong className="text-gray-900">Locação Flexível</strong> (com manutenção e peças 100% inclusas) ou <strong className="text-gray-900">Venda Direta 0km</strong> com assistência autorizada em Curitiba e Região.
+                </p>
+              </div>
+
               {/* Descrição Exata do Print */}
               <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
                 A lavadora de pisos A260 à bateria foi desenvolvida para ambientes que requerem excelente resultado de limpeza com agilidade e facilidade de operação. Com nível de ruído de 69 dBA, é ideal para hospitais, lojas de varejo, shoppings, indústrias e qualquer outro ambiente pequeno e médio com fluxo de pessoas.
@@ -473,11 +483,11 @@ export default function LpTennantA260() {
                 </div>
               </div>
 
-              {/* Botão Oficial Laranja Tennant (#eb6420) com abertura direta de WhatsApp */}
+              {/* Botão Oficial Laranja Tennant Arredondado (Pill Button / Rounded Full) */}
               <div className="pt-4">
                 <button
                   onClick={() => handleWhatsAppRedirect("Olá! Gostaria de SOLICITAR INFORMAÇÕES e proposta para a Lavadora Tennant A260.")}
-                  className="bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-sm tracking-wider uppercase px-8 py-3.5 rounded-md shadow-sm transition-colors cursor-pointer"
+                  className="bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-sm tracking-wider uppercase px-9 py-3.5 rounded-full shadow-sm hover:shadow transition-all cursor-pointer inline-flex items-center justify-center"
                 >
                   SOLICITAR INFORMAÇÕES
                 </button>
