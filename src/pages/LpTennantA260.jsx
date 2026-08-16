@@ -321,25 +321,8 @@ export default function LpTennantA260() {
           </div>
 
         </div>
-      </header>
-
       {/* ========================================================================= */}
-      {/* 3. BREADCRUMBS OFICIAIS (Idêntico ao Print)                               */}
-      {/* ========================================================================= */}
-      <div className="bg-white py-3 px-4 text-xs text-gray-500 max-w-7xl mx-auto">
-        <div className="flex items-center gap-1.5 text-[#007481]">
-          <a href="#hero-pdp" className="hover:underline">Home</a>
-          <span className="text-gray-400">/</span>
-          <a href="#hero-pdp" className="hover:underline">Máquinas</a>
-          <span className="text-gray-400">/</span>
-          <a href="#hero-pdp" className="hover:underline">Lavadoras</a>
-          <span className="text-gray-400">/</span>
-          <span className="text-gray-600 font-normal">A260 Lavadora de piso de operação a pé</span>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 4. PRODUCT DISPLAY (CLONE EXATO DO PRINT ENVIADO)                          */}
+      {/* 3. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
       <section id="hero-pdp" className="py-6 sm:py-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -400,38 +383,17 @@ export default function LpTennantA260() {
 
             </div>
 
-            {/* RIGHT COLUMN: HEADLINE PRINCIPAL EM DESTAQUE + NOME DA MÁQUINA + ESPECIFICAÇÕES + BOTÃO */}
-            <div className="lg:col-span-6 space-y-6 pt-1">
+            {/* RIGHT COLUMN: HEADLINE ELEGANTE + NOME DA MÁQUINA + ESPECIFICAÇÕES + BOTÃO */}
+            <div className="lg:col-span-6 space-y-5 pt-1">
               
-              {/* ========================================================================= */}
-              {/* 🌟 HEADLINE PRINCIPAL DE ALTO IMPACTO (ANTES DO NOME E ESPECIFICAÇÕES)    */}
-              {/* ========================================================================= */}
-              <div className="space-y-4 border-b border-gray-200 pb-6">
-                
-                {/* Badge de Autoridade */}
-                <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-300/80 text-amber-950 text-xs font-black uppercase px-3.5 py-1 rounded-full tracking-wider shadow-sm">
-                  <Star className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
-                  <span>A Lavadora de Pisos Mais Vendida do Mercado</span>
-                </div>
-
-                {/* Título Principal em Destaque */}
-                <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black text-gray-900 tracking-tight leading-[1.15]">
-                  A Lavadora Mais Vendida com o <span className="text-[#007481] underline decoration-[#eb6420] decoration-4 underline-offset-4">Melhor Custo-Benefício</span> para sua Empresa
+              {/* Headline Comercial Limpa e de Alto Impacto */}
+              <div className="space-y-1.5 pb-1">
+                <span className="text-[#eb6420] text-xs font-bold uppercase tracking-wider block">
+                  ★ A Lavadora Mais Vendida • Melhor Custo-Benefício
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                  Substitua até 4 auxiliares de limpeza e reduza em até 60% os custos da sua empresa.
                 </h1>
-
-                {/* Sub-Headline Formatada com Valor Claro */}
-                <div className="bg-slate-50 border-l-4 border-[#007481] p-3.5 rounded-r-lg space-y-2">
-                  <p className="text-sm sm:text-base font-bold text-gray-800 leading-snug">
-                    Lave e seque até <span className="text-gray-900 font-extrabold">2.000 m²/hora</span>, substitua até <span className="text-[#007481] font-extrabold">4 auxiliares de limpeza</span> e reduza em até <span className="text-[#eb6420] font-extrabold">60% seus custos</span> operacionais em Curitiba e Região.
-                  </p>
-                  
-                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-gray-700">
-                    <span className="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-xs text-[#007481]">✓ Piso 100% Seco na Hora</span>
-                    <span className="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-xs text-[#007481]">✓ Locação ou Venda 0km</span>
-                    <span className="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-xs text-[#007481]">✓ Assistência Autorizada em Curitiba</span>
-                  </div>
-                </div>
-
               </div>
 
               {/* Nome da Máquina e Categoria Oficial */}
@@ -439,14 +401,14 @@ export default function LpTennantA260() {
                 <h2 className="text-3xl sm:text-4xl font-bold text-[#212529] tracking-tight">
                   A260
                 </h2>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-700 mt-1">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mt-0.5">
                   Lavadora de piso de operação a pé
                 </h3>
               </div>
 
               {/* Descrição Exata do Fabricante */}
               <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
-                A lavadora de pisos A260 à bateria foi desenvolvida para ambientes que requerem excelente resultado de limpeza com agilidade e facilidade de operação. Com nível de ruído de 69 dBA, é ideal para hospitais, lojas de varejo, shoppings, indústrias e qualquer outro ambiente pequeno e médio com fluxo de pessoas.
+                A lavadora de pisos A260 à bateria foi desenvolvida para ambientes que requerem excelente resultado de limpeza com agilidade e facilidade de operação. Com nível de ruído de 69 dBA e produtividade de até 2.000 m²/h, é ideal para hospitais, lojas de varejo, shoppings, indústrias e qualquer outro ambiente pequeno e médio com fluxo de pessoas.
               </p>
 
               {/* Especificações em Caixa Alta (Exato do Print) */}
@@ -625,7 +587,7 @@ export default function LpTennantA260() {
           <div className="flex items-center gap-2 border-b border-gray-300 pb-px mb-8 overflow-x-auto">
             {[
               { id: 'locacao', label: 'Planos de Locação (Diário a 60 Meses)' },
-              { id: 'venda', label: 'Venda 0km & Financiamento' },
+              { id: 'venda', label: 'Venda de Máquinas Novas' },
               { id: 'assistencia', label: 'Assistência Técnica Autorizada' },
               { id: 'roi', label: 'Calculadora de ROI & Mão de Obra' },
               { id: 'especificacoes', label: 'Ficha Técnica Completa' }
@@ -720,11 +682,11 @@ export default function LpTennantA260() {
             </div>
           )}
 
-          {/* ABA 2: VENDA 0KM */}
+          {/* ABA 2: VENDA DE MÁQUINA NOVA */}
           {activeTab === 'venda' && (
             <div className="bg-gray-50 border border-gray-200 rounded p-8 shadow-sm space-y-6">
               <div className="max-w-3xl">
-                <h3 className="text-xl font-bold text-gray-900">Aquisição Direta Tennant A260 0km</h3>
+                <h3 className="text-xl font-bold text-gray-900">Aquisição Direta de Máquina Nova Tennant A260</h3>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
                   Compre com garantia de fábrica, entrega técnica autorizada e treinamento gratuito no seu estabelecimento.
                 </p>
@@ -749,10 +711,10 @@ export default function LpTennantA260() {
               </div>
 
               <button
-                onClick={() => handleWhatsAppRedirect("Olá! Gostaria de receber uma proposta de COMPRA/VENDA da Tennant A260 0km.")}
+                onClick={() => handleWhatsAppRedirect("Olá! Gostaria de receber uma proposta para COMPRA de Máquina Nova Tennant A260.")}
                 className="bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-xs uppercase px-6 py-3 rounded shadow-sm cursor-pointer"
               >
-                Solicitar Cotação de Venda no WhatsApp
+                Solicitar Cotação de Máquina Nova no WhatsApp
               </button>
             </div>
           )}
