@@ -26,6 +26,7 @@ import VisualizarOrcamentoPublico from './pages/VisualizarOrcamentoPublico';
 import TecnicoPainel from './pages/TecnicoPainel';
 import Login from './pages/Login';
 import Usuarios from './pages/Usuarios';
+import LpTennantA260 from './pages/LpTennantA260';
 
 function Placeholder({ title }) {
   return (
@@ -76,6 +77,11 @@ function App() {
         <Route path="/visualizar-proposta-servico/:id" element={<VisualizarPropostaServicoPublica />} />
         <Route path="/visualizar-orcamento/:id" element={<VisualizarOrcamentoPublico />} />
         <Route path="/tecnico" element={<TecnicoPainel />} />
+        
+        {/* Landing Pages Públicas de Alta Conversão */}
+        <Route path="/lp/tennant-a260" element={<LpTennantA260 />} />
+        <Route path="/tennant-a260" element={<LpTennantA260 />} />
+        <Route path="/lavadora-tennant-a260" element={<LpTennantA260 />} />
       </Routes>
     </BrowserRouter>
   );
