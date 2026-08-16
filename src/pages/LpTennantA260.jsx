@@ -28,7 +28,12 @@ import {
   ChevronRight, 
   Edit,
   ExternalLink,
-  HelpCircle
+  HelpCircle,
+  Video,
+  Star,
+  Maximize2,
+  X,
+  Plus
 } from 'lucide-react';
 
 export default function LpTennantA260() {
@@ -44,7 +49,7 @@ export default function LpTennantA260() {
   const [companyLogo] = useState(localStorage.getItem('app_company_logo') || '');
 
   // =========================================================================
-  // 📷 FOTOS OFICIAIS DO PRODUTO (Links exatos do catálogo / Tennant)
+  // 1. 📷 FOTOS OFICIAIS DA MÁQUINA (Links exatos do catálogo / Tennant)
   // =========================================================================
   const DEFAULT_PHOTOS = [
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-main.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
@@ -59,13 +64,61 @@ export default function LpTennantA260() {
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isEditingPhotos, setIsEditingPhotos] = useState(false);
 
-  // Lista de URLs de fotos
   const photoList = useMemo(() => {
     const list = photoUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
     return list.length > 0 ? list : DEFAULT_PHOTOS;
   }, [photoUrlsText]);
 
-  // Carrega links do catálogo do sistema se cadastrados
+  // =========================================================================
+  // 2. 🎥 VÍDEOS DEMONSTRATIVOS (Cole aqui links do YouTube ou MP4)
+  // =========================================================================
+  const DEFAULT_VIDEOS = [
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Substitua pelo link real do YouTube da A260
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  ];
+
+  const [videoUrlsText, setVideoUrlsText] = useState(() => {
+    return localStorage.getItem('lp_a260_video_urls') || DEFAULT_VIDEOS.join('\n');
+  });
+  const [isEditingVideos, setIsEditingVideos] = useState(false);
+
+  // Helper para extrair o ID de vídeo do YouTube
+  const parseYouTubeEmbed = (url) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : url;
+  };
+
+  const videoList = useMemo(() => {
+    const lines = videoUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
+    return lines.map((link, idx) => ({
+      id: idx,
+      url: link,
+      embedUrl: parseYouTubeEmbed(link),
+      title: idx === 0 ? "Demonstração da Tennant A260: Operação & Sucção Linatex" : `Vídeo Demonstrativo da Lavadora Tennant #${idx + 1}`
+    }));
+  }, [videoUrlsText]);
+
+  // =========================================================================
+  // 3. 💬 PRINTS DE DEPOIMENTOS DE CLIENTES (Cole aqui os links das imagens)
+  // =========================================================================
+  const DEFAULT_TESTIMONIALS = [
+    "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-in-use.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg"
+  ];
+
+  const [testimonialUrlsText, setTestimonialUrlsText] = useState(() => {
+    return localStorage.getItem('lp_a260_testimonials_urls') || DEFAULT_TESTIMONIALS.join('\n');
+  });
+  const [isEditingTestimonials, setIsEditingTestimonials] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState(null);
+
+  const testimonialList = useMemo(() => {
+    const list = testimonialUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
+    return list.length > 0 ? list : DEFAULT_TESTIMONIALS;
+  }, [testimonialUrlsText]);
+
+  // Carrega fotos automáticas cadastradas no catálogo de máquinas do sistema
   useEffect(() => {
     async function loadCatalog() {
       try {
@@ -89,11 +142,24 @@ export default function LpTennantA260() {
     loadCatalog();
   }, []);
 
+  // Funções de salvamento
   const handleSavePhotoUrls = (e) => {
     e.preventDefault();
     localStorage.setItem('lp_a260_photo_urls', photoUrlsText);
     setIsEditingPhotos(false);
     setActivePhotoIndex(0);
+  };
+
+  const handleSaveVideoUrls = (e) => {
+    e.preventDefault();
+    localStorage.setItem('lp_a260_video_urls', videoUrlsText);
+    setIsEditingVideos(false);
+  };
+
+  const handleSaveTestimonialUrls = (e) => {
+    e.preventDefault();
+    localStorage.setItem('lp_a260_testimonials_urls', testimonialUrlsText);
+    setIsEditingTestimonials(false);
   };
 
   const nextPhoto = () => {
@@ -105,7 +171,7 @@ export default function LpTennantA260() {
   };
 
   // Tabs de Conteúdo
-  const [activeTab, setActiveTab] = useState('geral');
+  const [activeTab, setActiveTab] = useState('locacao');
 
   // ROI Calculator States
   const [selectedArea, setSelectedArea] = useState(2500); // m²
@@ -243,7 +309,8 @@ export default function LpTennantA260() {
             <a href="#locacao" className="hover:text-[#007481] transition-colors">Planos de Locação</a>
             <a href="#venda" className="hover:text-[#007481] transition-colors">Vendas</a>
             <a href="#assistencia" className="hover:text-[#007481] transition-colors">Assistência Técnica</a>
-            <a href="#especificacoes" className="hover:text-[#007481] transition-colors">Recursos & Ficha</a>
+            <a href="#videos-depoimentos" className="hover:text-[#007481] transition-colors">Vídeos & Depoimentos</a>
+            <a href="#especificacoes" className="hover:text-[#007481] transition-colors">Ficha Técnica</a>
           </nav>
 
           {/* Search Box Pill (Idêntico ao do site Tennant) */}
@@ -345,7 +412,7 @@ export default function LpTennantA260() {
                   className="text-[11px] font-semibold text-gray-500 hover:text-[#007481] flex items-center gap-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1.5 rounded shrink-0"
                 >
                   <Edit className="w-3.5 h-3.5" />
-                  <span>Links das Fotos ({photoList.length})</span>
+                  <span>Configurar Fotos ({photoList.length})</span>
                 </button>
               </div>
 
@@ -353,7 +420,7 @@ export default function LpTennantA260() {
               {isEditingPhotos && (
                 <div className="bg-gray-50 border border-gray-300 rounded p-4 space-y-2 mt-2">
                   <div className="flex justify-between items-center text-xs font-bold text-gray-800">
-                    <span>Editar URLs das Fotos (Uma por linha):</span>
+                    <span>Editar URLs das Fotos da Máquina (Uma por linha):</span>
                     <button onClick={() => setIsEditingPhotos(false)} className="text-gray-400 hover:text-gray-700">Fechar</button>
                   </div>
                   <textarea
@@ -448,9 +515,189 @@ export default function LpTennantA260() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 5. TABS INFORMATIVAS (Planos de Locação, Venda, Assistência, ROI)          */}
+      {/* 5. SEÇÃO DE VÍDEOS & PRINTS DE DEPOIMENTOS DE CLIENTES                    */}
       {/* ========================================================================= */}
-      <section className="py-12 bg-gray-50 border-t border-gray-200">
+      <section id="videos-depoimentos" className="py-14 bg-gray-50 border-t border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          
+          {/* BLOCO 1: VÍDEOS DEMONSTRATIVOS */}
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <span className="text-[#007481] text-xs font-bold uppercase tracking-wider">Demonstrações em Vídeo</span>
+                <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Vídeos da Lavadora Tennant A260</h2>
+              </div>
+
+              {/* Botão de Configurar Vídeos */}
+              <button
+                onClick={() => setIsEditingVideos(!isEditingVideos)}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 px-3.5 py-2 rounded shadow-sm"
+              >
+                <Video className="w-4 h-4 text-[#eb6420]" />
+                <span>Colocar Links de Vídeos ({videoList.length})</span>
+              </button>
+            </div>
+
+            {/* Caixa para Inserir Links dos Vídeos */}
+            {isEditingVideos && (
+              <div className="bg-white border border-gray-300 rounded p-4 space-y-3 mb-6 shadow-sm animate-fadeIn">
+                <div className="flex justify-between items-center text-xs font-bold text-gray-800">
+                  <span>Cole os Links do YouTube dos Vídeos (Um por linha):</span>
+                  <button onClick={() => setIsEditingVideos(false)} className="text-gray-400 hover:text-gray-700">Fechar</button>
+                </div>
+                <textarea
+                  rows={3}
+                  value={videoUrlsText}
+                  onChange={(e) => setVideoUrlsText(e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded text-xs font-mono"
+                  placeholder="https://www.youtube.com/watch?v=CODIGO_DO_VIDEO_1&#10;https://www.youtube.com/watch?v=CODIGO_DO_VIDEO_2"
+                />
+                <div className="flex justify-between items-center text-[11px] text-gray-500">
+                  <span>💡 Aceita links normais do YouTube ou links curtos youtu.be</span>
+                  <button
+                    onClick={handleSaveVideoUrls}
+                    className="bg-[#eb6420] text-white text-xs font-bold px-4 py-1.5 rounded"
+                  >
+                    Salvar Vídeos
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Grid de Players de Vídeo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {videoList.map((vid) => (
+                <div key={vid.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div className="aspect-video bg-black w-full relative">
+                      {vid.embedUrl.includes('youtube.com/embed') ? (
+                        <iframe
+                          src={vid.embedUrl}
+                          title={vid.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="w-full h-full border-0"
+                        ></iframe>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-white p-4 text-center">
+                          <Play className="w-12 h-12 text-[#eb6420] mb-2" />
+                          <span className="text-xs">{vid.url}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-gray-900 text-sm">{vid.title}</h3>
+                    </div>
+                  </div>
+
+                  <div className="p-4 pt-0">
+                    <button
+                      onClick={() => handleWhatsAppRedirect(`Olá! Assisti ao vídeo da Tennant A260 e gostaria de agendar uma demonstração no meu local.`)}
+                      className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded transition-colors"
+                    >
+                      Agendar Demonstração Prática no Local
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* BLOCO 2: PRINTS DE DEPOIMENTOS DE CLIENTES */}
+          <div className="pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <span className="text-[#eb6420] text-xs font-bold uppercase tracking-wider">Prova Social & Avaliações</span>
+                <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Depoimentos & Prints de Clientes Satisfeitos</h2>
+                <p className="text-xs text-gray-500 mt-1">Veja o que síndicos, gerentes de facilities e diretores de indústrias dizem sobre nosso atendimento.</p>
+              </div>
+
+              {/* Botão de Configurar Prints */}
+              <button
+                onClick={() => setIsEditingTestimonials(!isEditingTestimonials)}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 px-3.5 py-2 rounded shadow-sm"
+              >
+                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <span>Colocar Prints dos Clientes ({testimonialList.length})</span>
+              </button>
+            </div>
+
+            {/* Caixa para Inserir Links dos Prints */}
+            {isEditingTestimonials && (
+              <div className="bg-white border border-gray-300 rounded p-4 space-y-3 mb-6 shadow-sm animate-fadeIn">
+                <div className="flex justify-between items-center text-xs font-bold text-gray-800">
+                  <span>Cole as URLs das Imagens dos Prints (Uma por linha):</span>
+                  <button onClick={() => setIsEditingTestimonials(false)} className="text-gray-400 hover:text-gray-700">Fechar</button>
+                </div>
+                <textarea
+                  rows={4}
+                  value={testimonialUrlsText}
+                  onChange={(e) => setTestimonialUrlsText(e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded text-xs font-mono"
+                  placeholder="https://exemplo.com/print-whatsapp-cliente-1.jpg&#10;https://exemplo.com/print-avaliacao-cliente-2.jpg"
+                />
+                <div className="flex justify-between items-center text-[11px] text-gray-500">
+                  <span>💡 Cole links diretos de imagens JPG/PNG dos prints do WhatsApp ou avaliações</span>
+                  <button
+                    onClick={handleSaveTestimonialUrls}
+                    className="bg-[#eb6420] text-white text-xs font-bold px-4 py-1.5 rounded"
+                  >
+                    Salvar Prints
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Grid de Prints de Depoimentos */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {testimonialList.map((url, idx) => (
+                <div 
+                  key={idx} 
+                  className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow group relative cursor-pointer"
+                  onClick={() => setZoomedImage(url)}
+                >
+                  <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden relative">
+                    <img src={url} alt={`Depoimento Cliente ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                      <Maximize2 className="w-4 h-4" /> Clique para Ampliar
+                    </div>
+                  </div>
+                  <div className="p-3 text-xs bg-white flex items-center justify-between">
+                    <span className="font-semibold text-gray-800 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Cliente Verificado Curitiba
+                    </span>
+                    <span className="text-[10px] text-gray-400">Ver Print</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* Modal de Zoom de Imagem */}
+      {zoomedImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setZoomedImage(null)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh] bg-white rounded-lg p-2 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setZoomedImage(null)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <img src={zoomedImage} alt="Depoimento Ampliado" className="max-h-[80vh] w-auto mx-auto object-contain rounded" />
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 6. TABS INFORMATIVAS (Planos de Locação, Venda, Assistência, ROI)          */}
+      {/* ========================================================================= */}
+      <section className="py-12 bg-white border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Seletor de Abas */}
@@ -467,7 +714,7 @@ export default function LpTennantA260() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-5 py-3 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
                   activeTab === tab.id
-                    ? 'border-[#007481] text-[#007481] bg-white rounded-t'
+                    ? 'border-[#007481] text-[#007481] bg-gray-50 rounded-t'
                     : 'border-transparent text-gray-500 hover:text-gray-800'
                 }`}
               >
@@ -482,14 +729,14 @@ export default function LpTennantA260() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
                 {/* Curto Prazo */}
-                <div className="bg-white border border-gray-200 rounded p-6 shadow-sm flex flex-col justify-between">
+                <div className="bg-gray-50 border border-gray-200 rounded p-6 shadow-sm flex flex-col justify-between">
                   <div>
                     <span className="text-xs font-bold uppercase text-gray-500">Curto Prazo</span>
                     <h3 className="text-lg font-bold text-gray-900 mt-1">Diária / Semanal / Quinzenal</h3>
                     <p className="text-xs text-gray-600 mt-2">
                       Ideal para limpezas pós-obra, paradas industriais, auditorias e demandas pontuais.
                     </p>
-                    <div className="my-4 py-3 border-y border-gray-100">
+                    <div className="my-4 py-3 border-y border-gray-200">
                       <div className="text-lg font-bold text-gray-900">Consulte Valores</div>
                       <div className="text-[11px] text-gray-500">Entrega técnica rápida em Curitiba e Região</div>
                     </div>
@@ -528,14 +775,14 @@ export default function LpTennantA260() {
                 </div>
 
                 {/* Longo Prazo 12 a 60 Meses */}
-                <div className="bg-white border border-gray-200 rounded p-6 shadow-sm flex flex-col justify-between">
+                <div className="bg-gray-50 border border-gray-200 rounded p-6 shadow-sm flex flex-col justify-between">
                   <div>
                     <span className="text-xs font-bold uppercase text-gray-500">Frotas Corporativas</span>
                     <h3 className="text-lg font-bold text-gray-900 mt-1">12 a 60 Meses</h3>
                     <p className="text-xs text-gray-600 mt-2">
                       Descontos progressivos da nossa tabela para contratos de longo prazo.
                     </p>
-                    <div className="my-4 py-3 border-y border-gray-100">
+                    <div className="my-4 py-3 border-y border-gray-200">
                       <div className="text-lg font-bold text-gray-900">Menor Parcela Mensal</div>
                       <div className="text-[11px] text-gray-500">Gestão de manutenção preventiva inclusa</div>
                     </div>
@@ -554,7 +801,7 @@ export default function LpTennantA260() {
 
           {/* ABA 2: VENDA 0KM */}
           {activeTab === 'venda' && (
-            <div className="bg-white border border-gray-200 rounded p-8 shadow-sm space-y-6">
+            <div className="bg-gray-50 border border-gray-200 rounded p-8 shadow-sm space-y-6">
               <div className="max-w-3xl">
                 <h3 className="text-xl font-bold text-gray-900">Aquisição Direta Tennant A260 0km</h3>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
@@ -563,17 +810,17 @@ export default function LpTennantA260() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                <div className="border border-gray-200 p-4 rounded">
+                <div className="bg-white border border-gray-200 p-4 rounded">
                   <ShieldCheck className="w-5 h-5 text-[#007481] mb-2" />
                   <div className="font-bold text-gray-900">Garantia Oficial Tennant</div>
                   <p className="text-gray-500 mt-1">Proteção completa e técnicos treinados na fábrica.</p>
                 </div>
-                <div className="border border-gray-200 p-4 rounded">
+                <div className="bg-white border border-gray-200 p-4 rounded">
                   <DollarSign className="w-5 h-5 text-emerald-600 mb-2" />
                   <div className="font-bold text-gray-900">Financiamento BNDES / FINAME</div>
                   <p className="text-gray-500 mt-1">Linhas facilitadas para empresas e indústrias.</p>
                 </div>
-                <div className="border border-gray-200 p-4 rounded">
+                <div className="bg-white border border-gray-200 p-4 rounded">
                   <CheckCircle2 className="w-5 h-5 text-[#eb6420] mb-2" />
                   <div className="font-bold text-gray-900">Entrega Técnica Grátis</div>
                   <p className="text-gray-500 mt-1">Desembarque e treinamento de operadores no local.</p>
@@ -591,7 +838,7 @@ export default function LpTennantA260() {
 
           {/* ABA 3: ASSISTÊNCIA TÉCNICA */}
           {activeTab === 'assistencia' && (
-            <div className="bg-white border border-gray-200 rounded p-8 shadow-sm space-y-6">
+            <div className="bg-gray-50 border border-gray-200 rounded p-8 shadow-sm space-y-6">
               <div className="max-w-3xl">
                 <h3 className="text-xl font-bold text-gray-900">Assistência Técnica Autorizada Tennant em Curitiba</h3>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
@@ -600,14 +847,14 @@ export default function LpTennantA260() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded space-y-1">
+                <div className="p-4 bg-white border border-gray-200 rounded space-y-1">
                   <div className="font-bold text-gray-900 flex items-center gap-1.5">
                     <Wrench className="w-4 h-4 text-[#007481]" /> Atendimento In-Company
                   </div>
                   <p className="text-gray-600">Nossa van equipada vai até o seu galpão para diagnóstico e reparo imediato.</p>
                 </div>
 
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded space-y-1">
+                <div className="p-4 bg-white border border-gray-200 rounded space-y-1">
                   <div className="font-bold text-gray-900 flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" /> Peças Originais a Pronta Entrega
                   </div>
@@ -626,7 +873,7 @@ export default function LpTennantA260() {
 
           {/* ABA 4: CALCULADORA DE ROI */}
           {activeTab === 'roi' && (
-            <div className="bg-white border border-gray-200 rounded p-6 sm:p-8 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="bg-gray-50 border border-gray-200 rounded p-6 sm:p-8 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-6 space-y-5">
                 <h3 className="text-lg font-bold text-gray-900">Simulador de Economia de Mão de Obra</h3>
                 
@@ -729,14 +976,14 @@ export default function LpTennantA260() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 6. FAQ SIMPLES (Dúvidas Rápidas)                                          */}
+      {/* 7. FAQ SIMPLES (Dúvidas Rápidas)                                          */}
       {/* ========================================================================= */}
-      <section className="py-12 bg-white border-t border-gray-200">
+      <section className="py-12 bg-gray-50 border-t border-gray-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">Perguntas Frequentes</h2>
           <div className="space-y-2">
             {faqs.map((faq, idx) => (
-              <div key={idx} className="border border-gray-200 rounded">
+              <div key={idx} className="border border-gray-200 rounded bg-white">
                 <button
                   onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
                   className="w-full p-3.5 text-left flex items-center justify-between text-xs sm:text-sm font-bold text-gray-800"
@@ -756,7 +1003,7 @@ export default function LpTennantA260() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 7. FOOTER CORPORATIVO (Sem formulários - Apenas Contato Direto)           */}
+      {/* 8. FOOTER CORPORATIVO (Sem formulários - Apenas Contato Direto)           */}
       {/* ========================================================================= */}
       <footer className="bg-gray-900 text-gray-400 py-10 text-xs border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -797,7 +1044,7 @@ export default function LpTennantA260() {
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={() => handleWhatsAppRedirect()}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 transition-transform active:scale-95"
+          className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-3 rounded-full shadow-2xl flex items-center gap-2 transition-transform active:scale-95 cursor-pointer"
         >
           <MessageSquare className="w-5 h-5" />
           <span className="hidden sm:inline text-xs">Fale no WhatsApp</span>
