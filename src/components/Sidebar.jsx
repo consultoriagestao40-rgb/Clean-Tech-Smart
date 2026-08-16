@@ -24,7 +24,8 @@ import {
   ChevronRight,
   Layout,
   ShoppingCart,
-  ShieldCheck
+  ShieldCheck,
+  Globe
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -72,6 +73,7 @@ export default function Sidebar() {
     { name: 'Equipamentos', path: '/equipamentos', icon: <Package size={20} /> },
     { name: 'Tabela Locação', path: '/tabela-locacao', icon: <Coins size={20} /> },
     { name: 'Catálogo Máquinas', path: '/modelos-maquinas', icon: <Layout size={20} /> },
+    { name: 'Landing Pages (LPs)', path: '/configurar-lp-a260', icon: <Globe size={20} /> },
     { name: 'Estoque', path: '/estoque', icon: <Boxes size={20} /> },
     { name: 'Chamados', path: '/chamados', icon: <ClipboardList size={20} /> },
     { name: 'Painel do Técnico (OS)', path: '/tecnico', icon: <Wrench size={20} /> },

@@ -27,6 +27,7 @@ import TecnicoPainel from './pages/TecnicoPainel';
 import Login from './pages/Login';
 import Usuarios from './pages/Usuarios';
 import LpTennantA260 from './pages/LpTennantA260';
+import ConfigurarLpTennantA260 from './pages/ConfigurarLpTennantA260';
 
 function Placeholder({ title }) {
   return (
@@ -59,6 +60,8 @@ function App() {
           <Route path="chamados" element={<Chamados />} />
           <Route path="tecnicos" element={<Tecnicos />} />
           <Route path="configuracoes" element={<Configuracoes />} />
+          <Route path="configurar-lp-a260" element={<ConfigurarLpTennantA260 />} />
+          <Route path="marketing-lp" element={<ConfigurarLpTennantA260 />} />
           <Route path="tabela-locacao" element={<TabelaLocacao />} />
           <Route path="modelos-maquinas" element={<ModelosMaquinas />} />
           <Route path="proposta-locacao" element={<PropostasLocacao />} />

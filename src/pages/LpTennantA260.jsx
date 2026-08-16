@@ -26,30 +26,28 @@ import {
   Search, 
   ChevronLeft, 
   ChevronRight, 
-  Edit,
   ExternalLink,
   HelpCircle,
   Video,
   Star,
   Maximize2,
-  X,
-  Plus
+  X
 } from 'lucide-react';
 
 export default function LpTennantA260() {
   // =========================================================================
   // 📞 DADOS DE CONTATO & EMPRESA (100% WhatsApp & E-mail - Sem formulários)
   // =========================================================================
-  const WHATSAPP_NUMBER = "5541985083658";
-  const WHATSAPP_DISPLAY = "(41) 98508-3658";
-  const EMAIL_CONTATO = "vendas@cleantechpro.com.br";
+  const WHATSAPP_NUMBER = localStorage.getItem('lp_a260_whatsapp') || "5541985083658";
+  const WHATSAPP_DISPLAY = localStorage.getItem('lp_a260_whatsapp_display') || "(41) 98508-3658";
+  const EMAIL_CONTATO = localStorage.getItem('lp_a260_email') || "vendas@cleantechpro.com.br";
 
   // Logos Oficiais
   const LOGO_ALFA_TENNANT = "https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png";
   const [companyLogo] = useState(localStorage.getItem('app_company_logo') || '');
 
   // =========================================================================
-  // 1. 📷 FOTOS OFICIAIS DA MÁQUINA (Links exatos do catálogo / Tennant)
+  // 1. 📷 FOTOS OFICIAIS DA MÁQUINA
   // =========================================================================
   const DEFAULT_PHOTOS = [
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-main.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
@@ -62,7 +60,6 @@ export default function LpTennantA260() {
     return localStorage.getItem('lp_a260_photo_urls') || DEFAULT_PHOTOS.join('\n');
   });
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-  const [isEditingPhotos, setIsEditingPhotos] = useState(false);
 
   const photoList = useMemo(() => {
     const list = photoUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
@@ -70,19 +67,17 @@ export default function LpTennantA260() {
   }, [photoUrlsText]);
 
   // =========================================================================
-  // 2. 🎥 VÍDEOS DEMONSTRATIVOS (Cole aqui links do YouTube ou MP4)
+  // 2. 🎥 VÍDEOS DEMONSTRATIVOS (Links do YouTube configurados no painel)
   // =========================================================================
   const DEFAULT_VIDEOS = [
-    "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Substitua pelo link real do YouTube da A260
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
   ];
 
-  const [videoUrlsText, setVideoUrlsText] = useState(() => {
+  const [videoUrlsText] = useState(() => {
     return localStorage.getItem('lp_a260_video_urls') || DEFAULT_VIDEOS.join('\n');
   });
-  const [isEditingVideos, setIsEditingVideos] = useState(false);
 
-  // Helper para extrair o ID de vídeo do YouTube
   const parseYouTubeEmbed = (url) => {
     if (!url) return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -101,16 +96,15 @@ export default function LpTennantA260() {
   }, [videoUrlsText]);
 
   // =========================================================================
-  // 3. 💬 PRINTS DE DEPOIMENTOS DE CLIENTES (Cole aqui os links das imagens)
+  // 3. 💬 PRINTS DE DEPOIMENTOS DE CLIENTES (Configurados no painel)
   // =========================================================================
   const DEFAULT_TESTIMONIALS = [
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-in-use.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg"
   ];
 
-  const [testimonialUrlsText, setTestimonialUrlsText] = useState(() => {
+  const [testimonialUrlsText] = useState(() => {
     return localStorage.getItem('lp_a260_testimonials_urls') || DEFAULT_TESTIMONIALS.join('\n');
   });
-  const [isEditingTestimonials, setIsEditingTestimonials] = useState(false);
   const [zoomedImage, setZoomedImage] = useState(null);
 
   const testimonialList = useMemo(() => {
@@ -118,7 +112,7 @@ export default function LpTennantA260() {
     return list.length > 0 ? list : DEFAULT_TESTIMONIALS;
   }, [testimonialUrlsText]);
 
-  // Carrega fotos automáticas cadastradas no catálogo de máquinas do sistema
+  // Sincroniza fotos com o catálogo de máquinas do banco de dados
   useEffect(() => {
     async function loadCatalog() {
       try {
@@ -141,26 +135,6 @@ export default function LpTennantA260() {
     }
     loadCatalog();
   }, []);
-
-  // Funções de salvamento
-  const handleSavePhotoUrls = (e) => {
-    e.preventDefault();
-    localStorage.setItem('lp_a260_photo_urls', photoUrlsText);
-    setIsEditingPhotos(false);
-    setActivePhotoIndex(0);
-  };
-
-  const handleSaveVideoUrls = (e) => {
-    e.preventDefault();
-    localStorage.setItem('lp_a260_video_urls', videoUrlsText);
-    setIsEditingVideos(false);
-  };
-
-  const handleSaveTestimonialUrls = (e) => {
-    e.preventDefault();
-    localStorage.setItem('lp_a260_testimonials_urls', testimonialUrlsText);
-    setIsEditingTestimonials(false);
-  };
 
   const nextPhoto = () => {
     setActivePhotoIndex((prev) => (prev + 1) % photoList.length);
@@ -251,7 +225,7 @@ export default function LpTennantA260() {
 
             <button
               onClick={() => handleWhatsAppRedirect()}
-              className="flex items-center gap-1.5 hover:text-white font-semibold transition-colors"
+              className="flex items-center gap-1.5 hover:text-white font-semibold transition-colors cursor-pointer"
             >
               <MessageSquare className="w-3.5 h-3.5" />
               <span>Entre em contato conosco ({WHATSAPP_DISPLAY})</span>
@@ -369,7 +343,7 @@ export default function LpTennantA260() {
                 {photoList.length > 1 && (
                   <button
                     onClick={prevPhoto}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-800 p-2 transition-colors"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-800 p-2 transition-colors cursor-pointer"
                     aria-label="Foto anterior"
                   >
                     <ChevronLeft className="w-8 h-8" />
@@ -380,7 +354,7 @@ export default function LpTennantA260() {
                 {photoList.length > 1 && (
                   <button
                     onClick={nextPhoto}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-800 p-2 transition-colors"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-800 p-2 transition-colors cursor-pointer"
                     aria-label="Próxima foto"
                   >
                     <ChevronRight className="w-8 h-8" />
@@ -389,89 +363,62 @@ export default function LpTennantA260() {
               </div>
 
               {/* Faixa de Miniaturas (Idêntico ao print) */}
-              <div className="flex items-center justify-between gap-3 pt-2">
-                <div className="flex items-center gap-3 overflow-x-auto py-1">
-                  {photoList.map((url, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActivePhotoIndex(idx)}
-                      className={`w-16 h-16 sm:w-20 sm:h-20 border p-1 bg-white transition-all flex items-center justify-center shrink-0 ${
-                        activePhotoIndex === idx 
-                          ? 'border-[#007481] border-2 shadow-sm' 
-                          : 'border-gray-200 hover:border-gray-400'
-                      }`}
-                    >
-                      <img src={url} alt="" className="max-h-full max-w-full object-contain" />
-                    </button>
-                  ))}
-                </div>
-
-                {/* Botão de Ajuste Rápido de Fotos */}
-                <button
-                  onClick={() => setIsEditingPhotos(!isEditingPhotos)}
-                  className="text-[11px] font-semibold text-gray-500 hover:text-[#007481] flex items-center gap-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1.5 rounded shrink-0"
-                >
-                  <Edit className="w-3.5 h-3.5" />
-                  <span>Configurar Fotos ({photoList.length})</span>
-                </button>
+              <div className="flex items-center gap-3 overflow-x-auto py-1">
+                {photoList.map((url, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActivePhotoIndex(idx)}
+                    className={`w-16 h-16 sm:w-20 sm:h-20 border p-1 bg-white transition-all flex items-center justify-center shrink-0 cursor-pointer ${
+                      activePhotoIndex === idx 
+                        ? 'border-[#007481] border-2 shadow-sm' 
+                        : 'border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    <img src={url} alt="" className="max-h-full max-w-full object-contain" />
+                  </button>
+                ))}
               </div>
-
-              {/* Caixa para Adicionar/Editar Links das Fotos */}
-              {isEditingPhotos && (
-                <div className="bg-gray-50 border border-gray-300 rounded p-4 space-y-2 mt-2">
-                  <div className="flex justify-between items-center text-xs font-bold text-gray-800">
-                    <span>Editar URLs das Fotos da Máquina (Uma por linha):</span>
-                    <button onClick={() => setIsEditingPhotos(false)} className="text-gray-400 hover:text-gray-700">Fechar</button>
-                  </div>
-                  <textarea
-                    rows={4}
-                    value={photoUrlsText}
-                    onChange={(e) => setPhotoUrlsText(e.target.value)}
-                    className="w-full p-2 bg-white border border-gray-300 rounded text-xs font-mono"
-                    placeholder="https://.../a260-main.jpg&#10;https://.../a260-tank.jpg"
-                  />
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={handleSavePhotoUrls}
-                      className="bg-[#eb6420] text-white text-xs font-bold px-4 py-1.5 rounded"
-                    >
-                      Salvar Fotos
-                    </button>
-                  </div>
-                </div>
-              )}
 
             </div>
 
-            {/* RIGHT COLUMN: TEXTOS, ESPECIFICAÇÕES E BOTÃO LARANJA OFICIAL */}
-            <div className="lg:col-span-6 space-y-6 pt-2">
+            {/* RIGHT COLUMN: HEADLINE PRINCIPAL EM DESTAQUE + NOME DA MÁQUINA + ESPECIFICAÇÕES + BOTÃO */}
+            <div className="lg:col-span-6 space-y-6 pt-1">
               
-              <div>
-                <h1 className="text-4xl sm:text-5xl font-bold text-[#212529] tracking-tight">
-                  A260
-                </h1>
-                <h2 className="text-2xl sm:text-3xl font-bold text-[#212529] mt-2">
-                  Lavadora de piso de operação a pé
-                </h2>
-              </div>
+              {/* ========================================================================= */}
+              {/* 🌟 HEADLINE PRINCIPAL DE ALTO IMPACTO (ANTES DO NOME E ESPECIFICAÇÕES)    */}
+              {/* ========================================================================= */}
+              <div className="space-y-3 border-b border-gray-200 pb-5">
+                <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-extrabold uppercase px-3 py-1 rounded-full tracking-wide shadow-sm">
+                  <Star className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                  A LAVADORA DE PISOS MAIS VENDIDA DO MERCADO
+                </div>
 
-              {/* Headline Comercial de Alto Impacto */}
-              <div className="border-l-4 border-[#007481] pl-3.5 py-1.5 bg-teal-50/60 rounded-r-md">
-                <h3 className="text-base sm:text-lg font-extrabold text-[#007481] leading-snug">
-                  Substitua até 4 operadores manuais, reduza em até 60% os custos de limpeza e lave 2.000 m²/hora com secagem imediata.
-                </h3>
-                <p className="text-xs text-gray-600 mt-1 font-medium">
-                  Disponível para <strong className="text-gray-900">Locação Flexível</strong> (com manutenção e peças 100% inclusas) ou <strong className="text-gray-900">Venda Direta 0km</strong> com assistência autorizada em Curitiba e Região.
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight leading-tight">
+                  A Lavadora Mais Vendida com o <span className="text-[#007481] underline decoration-[#eb6420] decoration-4 underline-offset-4">Melhor Custo-Benefício</span> para sua Empresa
+                </h1>
+
+                <p className="text-sm sm:text-base font-semibold text-gray-700 leading-snug">
+                  Lave e seque até <strong className="text-gray-900">2.000 m²/hora</strong>, substitua até <strong className="text-[#007481]">4 operadores manuais</strong> e reduza em até <strong className="text-[#eb6420]">60% seus custos</strong> operacionais em Curitiba e Região.
                 </p>
               </div>
 
-              {/* Descrição Exata do Print */}
+              {/* Nome da Máquina e Categoria Oficial */}
+              <div>
+                <h2 className="text-3xl sm:text-4xl font-bold text-[#212529] tracking-tight">
+                  A260
+                </h2>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-700 mt-1">
+                  Lavadora de piso de operação a pé
+                </h3>
+              </div>
+
+              {/* Descrição Exata do Fabricante */}
               <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
                 A lavadora de pisos A260 à bateria foi desenvolvida para ambientes que requerem excelente resultado de limpeza com agilidade e facilidade de operação. Com nível de ruído de 69 dBA, é ideal para hospitais, lojas de varejo, shoppings, indústrias e qualquer outro ambiente pequeno e médio com fluxo de pessoas.
               </p>
 
               {/* Especificações em Caixa Alta (Exato do Print) */}
-              <div className="space-y-4 pt-2">
+              <div className="space-y-3 pt-2">
                 <div className="flex items-baseline gap-2">
                   <span className="text-xs font-bold text-gray-900 uppercase tracking-wide">FAIXA DE LIMPEZA</span>
                   <span className="text-xs font-bold text-gray-700">510 MM</span>
@@ -484,7 +431,7 @@ export default function LpTennantA260() {
               </div>
 
               {/* Botão Oficial Laranja Tennant Arredondado (Pill Button / Rounded Full) */}
-              <div className="pt-4">
+              <div className="pt-2">
                 <button
                   onClick={() => handleWhatsAppRedirect("Olá! Gostaria de SOLICITAR INFORMAÇÕES e proposta para a Lavadora Tennant A260.")}
                   className="bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-sm tracking-wider uppercase px-9 py-3.5 rounded-full shadow-sm hover:shadow transition-all cursor-pointer inline-flex items-center justify-center"
@@ -494,24 +441,24 @@ export default function LpTennantA260() {
               </div>
 
               {/* 3 Links em Azul-Petróleo embaixo do botão (Exatos do Print) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 pt-4 text-xs font-bold text-[#007481]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 pt-2 text-xs font-bold text-[#007481]">
                 <button 
                   onClick={() => handleWhatsAppRedirect("Olá! Gostaria de explorar as OPÇÕES DE LOCAÇÃO da Tennant A260.")}
-                  className="text-left hover:underline flex items-center gap-1"
+                  className="text-left hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   Explore as opções de locação <ArrowRight className="w-3.5 h-3.5" />
                 </button>
 
                 <button 
                   onClick={() => handleWhatsAppRedirect("Olá! Gostaria de cotação para PEÇAS E CONSUMÍVEIS da Tennant A260.")}
-                  className="text-left hover:underline flex items-center gap-1"
+                  className="text-left hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   Encontre peças e consumíveis <ArrowRight className="w-3.5 h-3.5" />
                 </button>
 
                 <button 
                   onClick={() => handleWhatsAppRedirect("Olá! Gostaria de informações sobre o PLANO DE SERVIÇOS E ASSISTÊNCIA TÉCNICA Tennant.")}
-                  className="text-left hover:underline flex items-center gap-1"
+                  className="text-left hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   Plano de serviços & Assistência <ArrowRight className="w-3.5 h-3.5" />
                 </button>
@@ -532,47 +479,10 @@ export default function LpTennantA260() {
           
           {/* BLOCO 1: VÍDEOS DEMONSTRATIVOS */}
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <div>
-                <span className="text-[#007481] text-xs font-bold uppercase tracking-wider">Demonstrações em Vídeo</span>
-                <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Vídeos da Lavadora Tennant A260</h2>
-              </div>
-
-              {/* Botão de Configurar Vídeos */}
-              <button
-                onClick={() => setIsEditingVideos(!isEditingVideos)}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 px-3.5 py-2 rounded shadow-sm"
-              >
-                <Video className="w-4 h-4 text-[#eb6420]" />
-                <span>Colocar Links de Vídeos ({videoList.length})</span>
-              </button>
+            <div className="mb-6">
+              <span className="text-[#007481] text-xs font-bold uppercase tracking-wider">Demonstrações em Vídeo</span>
+              <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Vídeos da Lavadora Tennant A260</h2>
             </div>
-
-            {/* Caixa para Inserir Links dos Vídeos */}
-            {isEditingVideos && (
-              <div className="bg-white border border-gray-300 rounded p-4 space-y-3 mb-6 shadow-sm animate-fadeIn">
-                <div className="flex justify-between items-center text-xs font-bold text-gray-800">
-                  <span>Cole os Links do YouTube dos Vídeos (Um por linha):</span>
-                  <button onClick={() => setIsEditingVideos(false)} className="text-gray-400 hover:text-gray-700">Fechar</button>
-                </div>
-                <textarea
-                  rows={3}
-                  value={videoUrlsText}
-                  onChange={(e) => setVideoUrlsText(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded text-xs font-mono"
-                  placeholder="https://www.youtube.com/watch?v=CODIGO_DO_VIDEO_1&#10;https://www.youtube.com/watch?v=CODIGO_DO_VIDEO_2"
-                />
-                <div className="flex justify-between items-center text-[11px] text-gray-500">
-                  <span>💡 Aceita links normais do YouTube ou links curtos youtu.be</span>
-                  <button
-                    onClick={handleSaveVideoUrls}
-                    className="bg-[#eb6420] text-white text-xs font-bold px-4 py-1.5 rounded"
-                  >
-                    Salvar Vídeos
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Grid de Players de Vídeo */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -603,7 +513,7 @@ export default function LpTennantA260() {
                   <div className="p-4 pt-0">
                     <button
                       onClick={() => handleWhatsAppRedirect(`Olá! Assisti ao vídeo da Tennant A260 e gostaria de agendar uma demonstração no meu local.`)}
-                      className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded transition-colors"
+                      className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded transition-colors cursor-pointer"
                     >
                       Agendar Demonstração Prática no Local
                     </button>
@@ -615,48 +525,11 @@ export default function LpTennantA260() {
 
           {/* BLOCO 2: PRINTS DE DEPOIMENTOS DE CLIENTES */}
           <div className="pt-6 border-t border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <div>
-                <span className="text-[#eb6420] text-xs font-bold uppercase tracking-wider">Prova Social & Avaliações</span>
-                <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Depoimentos & Prints de Clientes Satisfeitos</h2>
-                <p className="text-xs text-gray-500 mt-1">Veja o que síndicos, gerentes de facilities e diretores de indústrias dizem sobre nosso atendimento.</p>
-              </div>
-
-              {/* Botão de Configurar Prints */}
-              <button
-                onClick={() => setIsEditingTestimonials(!isEditingTestimonials)}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 px-3.5 py-2 rounded shadow-sm"
-              >
-                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                <span>Colocar Prints dos Clientes ({testimonialList.length})</span>
-              </button>
+            <div className="mb-6">
+              <span className="text-[#eb6420] text-xs font-bold uppercase tracking-wider">Prova Social & Avaliações</span>
+              <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Depoimentos & Prints de Clientes Satisfeitos</h2>
+              <p className="text-xs text-gray-500 mt-1">Veja o que síndicos, gerentes de facilities e diretores de indústrias dizem sobre nosso atendimento.</p>
             </div>
-
-            {/* Caixa para Inserir Links dos Prints */}
-            {isEditingTestimonials && (
-              <div className="bg-white border border-gray-300 rounded p-4 space-y-3 mb-6 shadow-sm animate-fadeIn">
-                <div className="flex justify-between items-center text-xs font-bold text-gray-800">
-                  <span>Cole as URLs das Imagens dos Prints (Uma por linha):</span>
-                  <button onClick={() => setIsEditingTestimonials(false)} className="text-gray-400 hover:text-gray-700">Fechar</button>
-                </div>
-                <textarea
-                  rows={4}
-                  value={testimonialUrlsText}
-                  onChange={(e) => setTestimonialUrlsText(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-300 rounded text-xs font-mono"
-                  placeholder="https://exemplo.com/print-whatsapp-cliente-1.jpg&#10;https://exemplo.com/print-avaliacao-cliente-2.jpg"
-                />
-                <div className="flex justify-between items-center text-[11px] text-gray-500">
-                  <span>💡 Cole links diretos de imagens JPG/PNG dos prints do WhatsApp ou avaliações</span>
-                  <button
-                    onClick={handleSaveTestimonialUrls}
-                    className="bg-[#eb6420] text-white text-xs font-bold px-4 py-1.5 rounded"
-                  >
-                    Salvar Prints
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Grid de Prints de Depoimentos */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -695,7 +568,7 @@ export default function LpTennantA260() {
           <div className="relative max-w-3xl max-h-[90vh] bg-white rounded-lg p-2 overflow-hidden" onClick={e => e.stopPropagation()}>
             <button 
               onClick={() => setZoomedImage(null)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black"
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -722,7 +595,7 @@ export default function LpTennantA260() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-3 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
+                className={`px-5 py-3 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
                   activeTab === tab.id
                     ? 'border-[#007481] text-[#007481] bg-gray-50 rounded-t'
                     : 'border-transparent text-gray-500 hover:text-gray-800'
@@ -753,7 +626,7 @@ export default function LpTennantA260() {
                   </div>
                   <button
                     onClick={() => handleWhatsAppRedirect("Olá! Gostaria de consultar valores para LOCAÇÃO DIÁRIA/SEMANAL da Tennant A260.")}
-                    className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs uppercase rounded transition-colors"
+                    className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs uppercase rounded transition-colors cursor-pointer"
                   >
                     Cotar no WhatsApp
                   </button>
@@ -777,7 +650,7 @@ export default function LpTennantA260() {
                   </div>
                   <button
                     onClick={() => handleWhatsAppRedirect("Olá! Gostaria de contratar a LOCAÇÃO MENSAL da Tennant A260 a partir de R$ 3.890/mês.")}
-                    className="w-full py-2.5 bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-xs uppercase rounded transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-2.5 bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-xs uppercase rounded transition-colors flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <MessageSquare className="w-4 h-4" />
                     Contratar no WhatsApp
@@ -799,7 +672,7 @@ export default function LpTennantA260() {
                   </div>
                   <button
                     onClick={() => handleWhatsAppRedirect("Olá! Gostaria de consultar a tabela de 12 a 60 meses para a Tennant A260.")}
-                    className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs uppercase rounded transition-colors"
+                    className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs uppercase rounded transition-colors cursor-pointer"
                   >
                     Consultar Tabela 12-60M
                   </button>
@@ -839,7 +712,7 @@ export default function LpTennantA260() {
 
               <button
                 onClick={() => handleWhatsAppRedirect("Olá! Gostaria de receber uma proposta de COMPRA/VENDA da Tennant A260 0km.")}
-                className="bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-xs uppercase px-6 py-3 rounded shadow-sm"
+                className="bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-xs uppercase px-6 py-3 rounded shadow-sm cursor-pointer"
               >
                 Solicitar Cotação de Venda no WhatsApp
               </button>
@@ -874,7 +747,7 @@ export default function LpTennantA260() {
 
               <button
                 onClick={() => handleWhatsAppRedirect("Olá! Preciso de ASSISTÊNCIA TÉCNICA / PEÇAS para lavadora Tennant em Curitiba.")}
-                className="bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs uppercase px-6 py-3 rounded"
+                className="bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs uppercase px-6 py-3 rounded cursor-pointer"
               >
                 Chamar Técnico Autorizado no WhatsApp
               </button>
@@ -930,7 +803,7 @@ export default function LpTennantA260() {
                 </div>
                 <button
                   onClick={() => handleWhatsAppRedirect(`Olá! Simulei na calculadora uma área de ${selectedArea}m² com ${selectedCleaners} operadores e gostaria de proposta para a Tennant A260.`)}
-                  className="w-full py-2.5 bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-xs uppercase rounded"
+                  className="w-full py-2.5 bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-xs uppercase rounded cursor-pointer"
                 >
                   Validar Estudo no WhatsApp
                 </button>
@@ -996,7 +869,7 @@ export default function LpTennantA260() {
               <div key={idx} className="border border-gray-200 rounded bg-white">
                 <button
                   onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full p-3.5 text-left flex items-center justify-between text-xs sm:text-sm font-bold text-gray-800"
+                  className="w-full p-3.5 text-left flex items-center justify-between text-xs sm:text-sm font-bold text-gray-800 cursor-pointer"
                 >
                   <span>{faq.q}</span>
                   <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${openFaq === idx ? 'rotate-180' : ''}`} />
