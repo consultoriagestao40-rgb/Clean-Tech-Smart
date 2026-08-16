@@ -52,7 +52,7 @@ export default function LpTennantA260() {
   const DEFAULT_PHOTOS = [
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-main.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-solution-tank.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
-    "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-handle.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
+    "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-handle.jpg",
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-in-use.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg"
   ];
 
@@ -406,19 +406,32 @@ export default function LpTennantA260() {
               {/* ========================================================================= */}
               {/* 🌟 HEADLINE PRINCIPAL DE ALTO IMPACTO (ANTES DO NOME E ESPECIFICAÇÕES)    */}
               {/* ========================================================================= */}
-              <div className="space-y-3 border-b border-gray-200 pb-5">
-                <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-extrabold uppercase px-3 py-1 rounded-full tracking-wide shadow-sm">
+              <div className="space-y-4 border-b border-gray-200 pb-6">
+                
+                {/* Badge de Autoridade */}
+                <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-300/80 text-amber-950 text-xs font-black uppercase px-3.5 py-1 rounded-full tracking-wider shadow-sm">
                   <Star className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
-                  A LAVADORA DE PISOS MAIS VENDIDA DO MERCADO
+                  <span>A Lavadora de Pisos Mais Vendida do Mercado</span>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight leading-tight">
+                {/* Título Principal em Destaque */}
+                <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-black text-gray-900 tracking-tight leading-[1.15]">
                   A Lavadora Mais Vendida com o <span className="text-[#007481] underline decoration-[#eb6420] decoration-4 underline-offset-4">Melhor Custo-Benefício</span> para sua Empresa
                 </h1>
 
-                <p className="text-sm sm:text-base font-semibold text-gray-700 leading-snug">
-                  Lave e seque até <strong className="text-gray-900">2.000 m²/hora</strong>, substitua até <strong className="text-[#007481]">4 operadores manuais</strong> e reduza em até <strong className="text-[#eb6420]">60% seus custos</strong> operacionais em Curitiba e Região.
-                </p>
+                {/* Sub-Headline Formatada com Valor Claro */}
+                <div className="bg-slate-50 border-l-4 border-[#007481] p-3.5 rounded-r-lg space-y-2">
+                  <p className="text-sm sm:text-base font-bold text-gray-800 leading-snug">
+                    Lave e seque até <span className="text-gray-900 font-extrabold">2.000 m²/hora</span>, substitua até <span className="text-[#007481] font-extrabold">4 auxiliares de limpeza</span> e reduza em até <span className="text-[#eb6420] font-extrabold">60% seus custos</span> operacionais em Curitiba e Região.
+                  </p>
+                  
+                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-gray-700">
+                    <span className="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-xs text-[#007481]">✓ Piso 100% Seco na Hora</span>
+                    <span className="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-xs text-[#007481]">✓ Locação ou Venda 0km</span>
+                    <span className="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-xs text-[#007481]">✓ Assistência Autorizada em Curitiba</span>
+                  </div>
+                </div>
+
               </div>
 
               {/* Nome da Máquina e Categoria Oficial */}
@@ -800,7 +813,7 @@ export default function LpTennantA260() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs font-bold text-gray-800">
                     <span>Funcionários na Limpeza Manual:</span>
-                    <span className="font-mono text-emerald-700">{selectedCleaners} operadores</span>
+                    <span className="font-mono text-emerald-700">{selectedCleaners} auxiliares</span>
                   </div>
                   <input 
                     type="range" min="1" max="8" step="1" value={selectedCleaners}
@@ -810,7 +823,7 @@ export default function LpTennantA260() {
                 </div>
 
                 <div className="text-xs text-gray-600 bg-orange-50 p-3 rounded border border-orange-200">
-                  💡 <strong>1 Lavadora Tennant A260</strong> faz o trabalho de 3 a 4 pessoas com balde/mop, limpando 2.000 m²/h com piso seco na hora.
+                  💡 <strong>1 Lavadora Tennant A260</strong> faz o trabalho de 3 a 4 auxiliares de limpeza com balde/mop, limpando 2.000 m²/h com piso seco na hora.
                 </div>
               </div>
 
@@ -827,7 +840,7 @@ export default function LpTennantA260() {
                   </div>
                 </div>
                 <button
-                  onClick={() => handleWhatsAppRedirect(`Olá! Simulei na calculadora uma área de ${selectedArea}m² com ${selectedCleaners} operadores e gostaria de proposta para a Tennant A260.`)}
+                  onClick={() => handleWhatsAppRedirect(`Olá! Simulei na calculadora uma área de ${selectedArea}m² com ${selectedCleaners} auxiliares de limpeza e gostaria de proposta para a Tennant A260.`)}
                   className="w-full py-2.5 bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-xs uppercase rounded cursor-pointer"
                 >
                   Validar Estudo no WhatsApp
