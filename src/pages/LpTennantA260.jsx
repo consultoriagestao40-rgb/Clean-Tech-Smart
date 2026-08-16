@@ -52,7 +52,7 @@ export default function LpTennantA260() {
   const DEFAULT_PHOTOS = [
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-main.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-solution-tank.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
-    "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-handle.jpg",
+    "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-handle.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-in-use.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg"
   ];
 
@@ -388,13 +388,15 @@ export default function LpTennantA260() {
             {/* RIGHT COLUMN: HEADLINE ELEGANTE + NOME DA MÁQUINA + ESPECIFICAÇÕES + BOTÃO */}
             <div className="lg:col-span-6 space-y-5 pt-1">
               
-              {/* Headline Comercial Limpa e de Alto Impacto */}
+              {/* Headline Comercial Limpa e de Alto Impacto com cores em destaque */}
               <div className="space-y-1.5 pb-1">
-                <span className="text-[#eb6420] text-xs font-bold uppercase tracking-wider block">
-                  ★ A Lavadora Mais Vendida • Melhor Custo-Benefício
-                </span>
+                <div className="flex items-center gap-1.5 text-[#eb6420] text-xs font-black uppercase tracking-wider">
+                  <span>★ A Lavadora Mais Vendida</span>
+                  <span>•</span>
+                  <span>Melhor Custo-Benefício</span>
+                </div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                  Substitua até 4 auxiliares de limpeza e reduza em até 60% os custos da sua empresa.
+                  Substitua até <span className="text-[#007481] font-black">4 auxiliares de limpeza</span> e reduza em até <span className="text-[#eb6420] font-black">60% os custos</span> da sua empresa.
                 </h1>
               </div>
 
