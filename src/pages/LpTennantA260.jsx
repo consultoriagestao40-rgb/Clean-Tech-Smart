@@ -936,9 +936,6 @@ Gostaria de receber uma proposta para ${leadInterest} da Lavadora Tennant A260.
           
           {/* Header da Seção */}
           <div className="text-center max-w-3xl mx-auto space-y-2">
-            <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#007481] bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
-              💼 Flexibilidade Comercial & Estratégica
-            </span>
             <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
               Modelos de Negócio: <span className="text-[#007481]">Como Adquirir a Tennant A260</span>
             </h2>
