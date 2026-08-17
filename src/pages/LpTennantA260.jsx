@@ -129,22 +129,7 @@ export default function LpTennantA260() {
     }));
   }, [videoUrlsText]);
 
-  // =========================================================================
-  // 3. 💬 PRINTS DE DEPOIMENTOS DE CLIENTES (Configurados no painel)
-  // =========================================================================
-  const DEFAULT_TESTIMONIALS = [
-    "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-in-use.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg"
-  ];
 
-  const [testimonialUrlsText] = useState(() => {
-    return localStorage.getItem('lp_a260_testimonials_urls') || DEFAULT_TESTIMONIALS.join('\n');
-  });
-  const [zoomedImage, setZoomedImage] = useState(null);
-
-  const testimonialList = useMemo(() => {
-    const list = testimonialUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
-    return list.length > 0 ? list : DEFAULT_TESTIMONIALS;
-  }, [testimonialUrlsText]);
 
   // Sincroniza fotos com o catálogo de máquinas do banco de dados
   useEffect(() => {
@@ -869,32 +854,14 @@ export default function LpTennantA260() {
                     >
                       Agendar Demonstração Prática no Local
                     </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
         </div>
       </section>
-
-
-
-
-
-      {/* Modal de Zoom de Imagem */}
-      {zoomedImage && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setZoomedImage(null)}
-        >
-          <div className="relative max-w-3xl max-h-[90vh] bg-white rounded-lg p-2 overflow-hidden" onClick={e => e.stopPropagation()}>
-            <button 
-              onClick={() => setZoomedImage(null)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <img src={zoomedImage} alt="Depoimento Ampliado" className="max-h-[80vh] w-auto mx-auto object-contain rounded" />
-          </div>
-        </div>
-      )}
 
       {/* ========================================================================= */}
       {/* 6. TABS INFORMATIVAS (Planos de Locação, Venda, Assistência, ROI)          */}
