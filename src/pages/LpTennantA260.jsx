@@ -281,32 +281,32 @@ export default function LpTennantA260() {
       {/* 1. TOP BAR INSTITUCIONAL CONGELADA (NOTRANSLATE ANTI-TRADUTOR SAFARI/CHROME)*/}
       {/* ========================================================================= */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-md w-full notranslate" translate="no">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 md:h-20 flex items-center justify-between gap-2 sm:gap-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 md:h-24 flex items-center justify-between gap-2 sm:gap-6">
           
-          {/* Logos Co-branded (Alfa Tennant + Clean Tech) */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0 notranslate" translate="no">
+          {/* Logos Co-branded (Alfa Tennant + Clean Tech) - Maiores e com Cores Originais */}
+          <div className="flex items-center gap-2.5 sm:gap-4 shrink-0 notranslate" translate="no">
             <img 
               src={LOGO_ALFA_TENNANT} 
               alt="Alfa by Tennant Company" 
-              className="h-6 sm:h-8 md:h-10 object-contain brightness-0 invert"
+              className="h-8 sm:h-11 md:h-14 object-contain"
             />
             
-            <div className="h-5 sm:h-6 md:h-8 w-px bg-teal-300/40"></div>
+            <div className="h-7 sm:h-10 md:h-12 w-px bg-teal-300/40"></div>
             
             {companyLogo ? (
               <img 
                 src={companyLogo} 
-                alt="Clean Tech Smart" 
-                className="h-6 sm:h-8 md:h-9 object-contain brightness-0 invert max-w-[85px] sm:max-w-[130px]" 
+                alt="Clean Tech Pro" 
+                className="h-8 sm:h-11 md:h-14 object-contain max-w-[130px] sm:max-w-[190px] md:max-w-[250px]" 
               />
             ) : (
-              <div className="flex items-center gap-1 text-white font-black text-xs sm:text-sm md:text-base tracking-tight shrink-0 notranslate" translate="no">
-                <span className="text-teal-200">Clean Tech</span>
-                <span className="text-white font-light text-[10px] sm:text-xs">Smart</span>
+              <div className="flex items-center gap-1 text-white font-black text-xs sm:text-base md:text-lg tracking-tight shrink-0 notranslate" translate="no">
+                <span className="text-teal-200">CLEAN TECH</span>
+                <span className="text-white font-light text-[10px] sm:text-xs">PRO</span>
               </div>
             )}
 
-            <div className="hidden md:flex flex-col justify-center text-xs lg:text-sm text-teal-100 pl-3.5 border-l border-teal-300/40 leading-tight shrink-0 notranslate" translate="no">
+            <div className="hidden lg:flex flex-col justify-center text-xs lg:text-sm text-teal-100 pl-4 border-l border-teal-300/40 leading-tight shrink-0 notranslate" translate="no">
               <span className="font-bold text-white">Representante & Assistência Técnica Autorizada Tennant</span>
               <span className="text-[11px] text-teal-200 font-medium">Curitiba & Região Metropolitana • Paraná</span>
             </div>
