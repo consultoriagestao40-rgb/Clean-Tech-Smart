@@ -125,10 +125,10 @@ export default function LpTennantA260() {
       return `https://drive.google.com/file/d/${driveMatch2[1]}/preview`;
     }
 
-    // 2. YouTube (watch, shorts, embed, youtu.be)
+    // 2. YouTube (watch, shorts, embed, youtu.be) com playsinline e sem redirecionamento
     const ytMatch = trimmed.match(/^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/|&v=)([^#&?]*).*/i);
     if (ytMatch && ytMatch[1] && ytMatch[1].length === 11) {
-      return `https://www.youtube.com/embed/${ytMatch[1]}`;
+      return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
     }
 
     // 3. Fallback direto
@@ -136,6 +136,7 @@ export default function LpTennantA260() {
   };
 
   const [showAllVideos, setShowAllVideos] = useState(false);
+  const [activeVideoModal, setActiveVideoModal] = useState(null);
 
   const videoList = useMemo(() => {
     const lines = videoUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
@@ -274,16 +275,16 @@ export default function LpTennantA260() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white text-[#212529] font-sans antialiased w-full overflow-x-clip">
+    <div className="min-h-screen bg-white text-[#212529] font-sans antialiased w-full overflow-x-clip notranslate" translate="no">
       
       {/* ========================================================================= */}
-      {/* 1. TOP BAR INSTITUCIONAL CONGELADA (ULTRA-LIMPA NO CELULAR, ROBUSTA DESKTOP) */}
+      {/* 1. TOP BAR INSTITUCIONAL CONGELADA (NOTRANSLATE ANTI-TRADUTOR SAFARI/CHROME)*/}
       {/* ========================================================================= */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-md w-full">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-md w-full notranslate" translate="no">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 md:h-20 flex items-center justify-between gap-2 sm:gap-6">
           
           {/* Logos Co-branded (Alfa Tennant + Clean Tech) */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 notranslate" translate="no">
             <img 
               src={LOGO_ALFA_TENNANT} 
               alt="Alfa by Tennant Company" 
@@ -299,20 +300,20 @@ export default function LpTennantA260() {
                 className="h-6 sm:h-8 md:h-9 object-contain brightness-0 invert max-w-[85px] sm:max-w-[130px]" 
               />
             ) : (
-              <div className="flex items-center gap-1 text-white font-black text-xs sm:text-sm md:text-base tracking-tight shrink-0">
+              <div className="flex items-center gap-1 text-white font-black text-xs sm:text-sm md:text-base tracking-tight shrink-0 notranslate" translate="no">
                 <span className="text-teal-200">Clean Tech</span>
                 <span className="text-white font-light text-[10px] sm:text-xs">Smart</span>
               </div>
             )}
 
-            <div className="hidden md:flex flex-col justify-center text-xs lg:text-sm text-teal-100 pl-3.5 border-l border-teal-300/40 leading-tight shrink-0">
+            <div className="hidden md:flex flex-col justify-center text-xs lg:text-sm text-teal-100 pl-3.5 border-l border-teal-300/40 leading-tight shrink-0 notranslate" translate="no">
               <span className="font-bold text-white">Representante & Assistência Técnica Autorizada Tennant</span>
               <span className="text-[11px] text-teal-200 font-medium">Curitiba & Região Metropolitana • Paraná</span>
             </div>
           </div>
 
           {/* Lado Direito: Timer (Desktop) + Botão WhatsApp Direto */}
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0 notranslate" translate="no">
             
             {/* E-mail (Desktop) */}
             <a 
@@ -1005,22 +1006,27 @@ export default function LpTennantA260() {
             {/* Grid de Players de Vídeo no Formato Vertical (2 colunas no celular, 4 no desktop) */}
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
               {(showAllVideos ? videoList : videoList.slice(0, 8)).map((vid) => (
-                <div key={vid.id} className="bg-white border border-gray-200 hover:border-[#007481] rounded-xl sm:rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+                <div 
+                  key={vid.id} 
+                  onClick={() => setActiveVideoModal(vid)}
+                  className="bg-white border border-gray-200 hover:border-[#007481] rounded-xl sm:rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
+                >
                   <div>
-                    <div className="aspect-[9/16] bg-black w-full relative overflow-hidden">
-                      {vid.embedUrl && (vid.embedUrl.includes('drive.google.com') || vid.embedUrl.includes('docs.google.com') || vid.embedUrl.includes('youtube.com') || vid.embedUrl.includes('/preview') || vid.embedUrl.includes('/embed/')) ? (
+                    <div className="aspect-[9/16] bg-black w-full relative overflow-hidden flex items-center justify-center">
+                      {vid.embedUrl && (vid.embedUrl.includes('drive.google.com') || vid.embedUrl.includes('docs.google.com') || vid.embedUrl.includes('youtube') || vid.embedUrl.includes('/preview') || vid.embedUrl.includes('/embed/')) ? (
                         <iframe
                           src={vid.embedUrl}
                           title={vid.title}
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           allowFullScreen
                           loading="lazy"
-                          className="w-full h-full border-0 absolute inset-0"
+                          className="w-full h-full border-0 absolute inset-0 pointer-events-auto"
                         ></iframe>
                       ) : vid.url.endsWith('.mp4') || vid.url.endsWith('.webm') ? (
                         <video
                           src={vid.url}
                           controls
+                          playsInline
                           className="w-full h-full object-cover absolute inset-0"
                         />
                       ) : (
@@ -1030,8 +1036,14 @@ export default function LpTennantA260() {
                         </div>
                       )}
                     </div>
-                    <div className="p-2 sm:p-3 bg-white border-t border-gray-100">
+                    <div className="p-2 sm:p-3 bg-white border-t border-gray-100 flex items-center justify-between gap-1">
                       <h3 className="font-bold text-gray-900 text-[11px] sm:text-xs line-clamp-2 leading-tight">{vid.title}</h3>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setActiveVideoModal(vid); }}
+                        className="text-[10px] bg-teal-50 text-[#007481] px-2 py-1 rounded font-bold hover:bg-teal-100 shrink-0"
+                      >
+                        ▶ Expandir
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1047,6 +1059,51 @@ export default function LpTennantA260() {
                 >
                   <span>{showAllVideos ? '▲ Mostrar Menos Vídeos' : `▼ Ver Todos os Vídeos de Demonstração (${videoList.length} vídeos)`}</span>
                 </button>
+              </div>
+            )}
+
+            {/* MODAL FULLSCREEN DE VÍDEO (SEM SAIR DA PÁGINA) */}
+            {activeVideoModal && (
+              <div 
+                className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-fadeIn"
+                onClick={() => setActiveVideoModal(null)}
+              >
+                <div 
+                  className="bg-black border border-white/20 rounded-2xl overflow-hidden w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Topo do Modal */}
+                  <div className="p-3 bg-[#007481] text-white flex items-center justify-between text-xs sm:text-sm font-bold">
+                    <span className="truncate pr-4">{activeVideoModal.title}</span>
+                    <button
+                      onClick={() => setActiveVideoModal(null)}
+                      className="bg-black/40 hover:bg-black/70 text-white w-7 h-7 rounded-full flex items-center justify-center font-black cursor-pointer shrink-0"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Player do Vídeo */}
+                  <div className="aspect-[9/16] sm:aspect-video w-full bg-black flex items-center justify-center">
+                    {activeVideoModal.embedUrl ? (
+                      <iframe
+                        src={activeVideoModal.embedUrl}
+                        title={activeVideoModal.title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                      ></iframe>
+                    ) : (
+                      <video
+                        src={activeVideoModal.url}
+                        controls
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-contain"
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
