@@ -962,7 +962,7 @@ export default function LpTennantA260() {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span><strong>Financiamento Facilitado:</strong> Condições especiais via BNDES, FINAME e Bancos</span>
+                    <span><strong>Parcelamento Facilitado:</strong> Condições especiais via BNDES, FINAME e Bancos</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
