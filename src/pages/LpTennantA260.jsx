@@ -289,56 +289,57 @@ export default function LpTennantA260() {
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
             
-            {/* LEFT COLUMN: FOTO GRANDE COM CONTROLES + MINIATURAS EMBAIXO */}
+            {/* LEFT COLUMN: FOTO GRANDE COM CONTROLES DIRETOS NA IMAGEM */}
             <div className="lg:col-span-6 space-y-4">
               
-              {/* Foto Principal */}
-              <div className="relative bg-white flex items-center justify-center min-h-[380px] sm:min-h-[460px] group select-none">
+              {/* Foto Principal com Navegação Integrada */}
+              <div className="relative bg-white flex items-center justify-center min-h-[380px] sm:min-h-[480px] group select-none rounded-xl">
                 
                 <img 
                   src={photoList[activePhotoIndex] || DEFAULT_PHOTOS[0]} 
                   alt="A260 Lavadora de piso de operação a pé" 
-                  className="max-h-[440px] w-auto object-contain transition-opacity duration-300"
+                  className="max-h-[460px] w-auto object-contain transition-opacity duration-300"
                 />
 
-                {/* Seta Esquerda */}
+                {/* Seta Esquerda na Foto */}
                 {photoList.length > 1 && (
                   <button
                     onClick={prevPhoto}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-800 p-2 transition-colors cursor-pointer"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-md flex items-center justify-center transition-all cursor-pointer border border-gray-100"
                     aria-label="Foto anterior"
                   >
-                    <ChevronLeft className="w-8 h-8" />
+                    <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
                   </button>
                 )}
 
-                {/* Seta Direita */}
+                {/* Seta Direita na Foto */}
                 {photoList.length > 1 && (
                   <button
                     onClick={nextPhoto}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-800 p-2 transition-colors cursor-pointer"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-md flex items-center justify-center transition-all cursor-pointer border border-gray-100"
                     aria-label="Próxima foto"
                   >
-                    <ChevronRight className="w-8 h-8" />
+                    <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
                   </button>
                 )}
-              </div>
 
-              {/* Faixa de Miniaturas (Idêntico ao print) */}
-              <div className="flex items-center gap-3 overflow-x-auto py-1">
-                {photoList.map((url, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActivePhotoIndex(idx)}
-                    className={`w-16 h-16 sm:w-20 sm:h-20 border p-1 bg-white transition-all flex items-center justify-center shrink-0 cursor-pointer ${
-                      activePhotoIndex === idx 
-                        ? 'border-[#007481] border-2 shadow-sm' 
-                        : 'border-gray-200 hover:border-gray-400'
-                    }`}
-                  >
-                    <img src={url} alt="" className="max-h-full max-w-full object-contain" />
-                  </button>
-                ))}
+                {/* Indicadores de Pontos (Dots) na Base da Foto */}
+                {photoList.length > 1 && (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/20 backdrop-blur-xs px-3 py-1.5 rounded-full">
+                    {photoList.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setActivePhotoIndex(idx)}
+                        className={`transition-all rounded-full cursor-pointer ${
+                          activePhotoIndex === idx
+                            ? 'w-6 h-2 bg-white'
+                            : 'w-2 h-2 bg-white/50 hover:bg-white/80'
+                        }`}
+                        aria-label={`Ver foto ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
             </div>
