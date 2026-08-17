@@ -872,7 +872,7 @@ export default function LpTennantA260() {
           {/* Header da Seção */}
           <div className="text-center max-w-3xl mx-auto space-y-2">
             <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-              Modelos de Negócio: <span className="text-[#007481]">Formas de Aquisição da A260</span>
+              Formas de Aquisição: <span className="text-[#007481]">Locação ou Venda Direta</span>
             </h2>
             <p className="text-sm sm:text-base text-gray-600">
               Escolha a modalidade ideal para a realidade da sua empresa: locação com redução de CAPEX ou venda direta de fábrica com garantia oficial.
