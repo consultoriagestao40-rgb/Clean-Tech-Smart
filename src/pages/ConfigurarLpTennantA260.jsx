@@ -29,8 +29,10 @@ export default function ConfigurarLpTennantA260() {
   ];
 
   const DEFAULT_VIDEOS = [
-    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
+    "https://www.youtube.com/watch?v=FjJmK50i-jE",
+    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
+    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k"
   ];
 
   const DEFAULT_TESTIMONIALS = [

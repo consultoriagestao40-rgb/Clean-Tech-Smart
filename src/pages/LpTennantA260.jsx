@@ -81,15 +81,21 @@ export default function LpTennantA260() {
   }, [photoUrlsText]);
 
   // =========================================================================
-  // 2. 🎥 VÍDEOS DEMONSTRATIVOS (Links do YouTube configurados no painel)
+  // 2. 🎥 VÍDEOS DEMONSTRATIVOS REAIS (Alfa Tennant em Operação)
   // =========================================================================
   const DEFAULT_VIDEOS = [
-    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
+    "https://www.youtube.com/watch?v=FjJmK50i-jE",
+    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
+    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k"
   ];
 
   const [videoUrlsText] = useState(() => {
-    return localStorage.getItem('lp_a260_video_urls') || DEFAULT_VIDEOS.join('\n');
+    const saved = localStorage.getItem('lp_a260_video_urls');
+    if (saved && !saved.includes('dQw4w9WgXcQ')) {
+      return saved;
+    }
+    return DEFAULT_VIDEOS.join('\n');
   });
 
 
@@ -974,10 +980,10 @@ export default function LpTennantA260() {
               <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Vídeos da Lavadora Tennant A260</h2>
             </div>
 
-            {/* Grid de Players de Vídeo no Formato Vertical (4 por linha) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            {/* Grid de Players de Vídeo no Formato Vertical (2 colunas no celular, 4 no desktop) */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
               {videoList.map((vid) => (
-                <div key={vid.id} className="bg-white border border-gray-200 hover:border-[#007481] rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+                <div key={vid.id} className="bg-white border border-gray-200 hover:border-[#007481] rounded-xl sm:rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
                   <div>
                     <div className="aspect-[9/16] bg-black w-full relative overflow-hidden">
                       {vid.embedUrl && (vid.embedUrl.includes('drive.google.com') || vid.embedUrl.includes('youtube.com') || vid.embedUrl.includes('/preview')) ? (
@@ -995,14 +1001,14 @@ export default function LpTennantA260() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-white p-4 text-center">
-                          <Play className="w-12 h-12 text-[#eb6420] mb-2" />
-                          <span className="text-xs">{vid.url}</span>
+                        <div className="w-full h-full flex flex-col items-center justify-center text-white p-2 text-center">
+                          <Play className="w-8 h-8 text-[#eb6420] mb-1" />
+                          <span className="text-[10px] line-clamp-2">{vid.url}</span>
                         </div>
                       )}
                     </div>
-                    <div className="p-3.5 bg-white">
-                      <h3 className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-2 leading-snug">{vid.title}</h3>
+                    <div className="p-2 sm:p-3.5 bg-white">
+                      <h3 className="font-bold text-gray-900 text-[11px] sm:text-sm line-clamp-2 leading-snug">{vid.title}</h3>
                     </div>
                   </div>
                 </div>
@@ -1030,21 +1036,21 @@ export default function LpTennantA260() {
           </div>
 
           {/* Grid dos 2 Modelos Principais com Largura Total */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full">
             
             {/* Opção 1: Locação / Outsourcing */}
-            <div className="bg-white border-2 border-[#eb6420] rounded-2xl p-6 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden ring-4 ring-orange-50">
-              <div className="absolute top-0 right-0 bg-[#eb6420] text-white text-[10px] font-black uppercase px-3.5 py-1 rounded-bl-lg">
+            <div className="bg-white border-2 border-[#eb6420] rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden ring-4 ring-orange-50/50">
+              <div className="absolute top-0 right-0 bg-[#eb6420] text-white text-[10px] font-black uppercase px-3 sm:px-4 py-1 rounded-bl-xl shadow-xs">
                 ★ Mais Escolhido por Empresas
               </div>
               
-              <div className="space-y-5">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-xl bg-orange-100 text-[#eb6420] flex items-center justify-center font-black">
-                    <Clock className="w-6 h-6" />
+              <div className="space-y-4 sm:space-y-5">
+                <div className="flex items-center gap-3 sm:gap-3.5">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-orange-100 text-[#eb6420] flex items-center justify-center font-black shrink-0">
+                    <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">Locação / Outsourcing Operacional</h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">Locação / Outsourcing Operacional</h3>
                     <span className="text-xs font-bold text-[#eb6420]">Redução Total de CAPEX • 100% OPEX</span>
                   </div>
                 </div>
@@ -1076,27 +1082,27 @@ export default function LpTennantA260() {
               <div className="mt-6 pt-4 border-t border-gray-100">
                 <button
                   onClick={() => handleWhatsAppRedirect("Olá! Gostaria de uma proposta de LOCAÇÃO / OUTSOURCING para a Tennant A260.")}
-                  className="w-full py-3 bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-xs uppercase rounded-xl transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 sm:py-4 px-4 bg-[#eb6420] hover:bg-[#d65715] text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-xl sm:rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2.5 cursor-pointer text-center"
                 >
-                  <WhatsAppIcon className="w-4 h-4 text-white" />
-                  Cotar Plano de Locação no WhatsApp
+                  <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0" />
+                  <span>Cotar Plano de Locação no WhatsApp</span>
                 </button>
               </div>
             </div>
 
             {/* Opção 2: Venda Direta de Fábrica */}
-            <div className="bg-white border-2 border-gray-200 hover:border-[#007481] rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between relative overflow-hidden transition-all">
-              <div className="absolute top-0 right-0 bg-[#007481] text-white text-[10px] font-black uppercase px-3.5 py-1 rounded-bl-lg">
+            <div className="bg-white border-2 border-teal-200 hover:border-[#007481] rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden transition-all ring-4 ring-teal-50/50">
+              <div className="absolute top-0 right-0 bg-[#007481] text-white text-[10px] font-black uppercase px-3 sm:px-4 py-1 rounded-bl-xl shadow-xs">
                 Máquina Nova
               </div>
 
-              <div className="space-y-5">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center font-black">
-                    <ShieldCheck className="w-6 h-6" />
+              <div className="space-y-4 sm:space-y-5">
+                <div className="flex items-center gap-3 sm:gap-3.5">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center font-black shrink-0">
+                    <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">Venda Direta de Máquina Nova</h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">Venda Direta de Máquina Nova</h3>
                     <span className="text-xs font-bold text-[#007481]">Faturamento com Suporte Oficial Tennant</span>
                   </div>
                 </div>
@@ -1128,10 +1134,10 @@ export default function LpTennantA260() {
               <div className="mt-6 pt-4 border-t border-gray-100">
                 <button
                   onClick={() => handleWhatsAppRedirect("Olá! Gostaria de receber uma proposta de COMPRA de Máquina Nova Tennant A260.")}
-                  className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs uppercase rounded-xl transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 sm:py-4 px-4 bg-[#007481] hover:bg-[#005a64] text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-xl sm:rounded-2xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2.5 cursor-pointer text-center"
                 >
-                  <WhatsAppIcon className="w-4 h-4 text-white" />
-                  Solicitar Cotação de Venda no WhatsApp
+                  <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0" />
+                  <span>Solicitar Cotação de Venda no WhatsApp</span>
                 </button>
               </div>
             </div>
