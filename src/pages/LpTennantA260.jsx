@@ -261,27 +261,27 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 1. TOP BAR INSTITUCIONAL 100% HORIZONTAL EM LINHA ÚNICA                   */}
       {/* ========================================================================= */}
-      <div className="sticky top-0 z-50 bg-[#007481] text-white py-2.5 px-3 sm:px-6 shadow-md transition-all">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 whitespace-nowrap">
+      <div className="sticky top-0 z-50 bg-[#007481] text-white py-2 px-2.5 sm:px-6 shadow-md transition-all">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3 whitespace-nowrap">
           
           {/* Logos e Autoridade Autorizada */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <img 
               src={LOGO_ALFA_TENNANT} 
               alt="Alfa by Tennant Company" 
-              className="h-7 sm:h-9 object-contain brightness-0 invert"
+              className="h-6 sm:h-9 object-contain brightness-0 invert"
             />
             
-            <div className="h-6 w-px bg-teal-300/40"></div>
+            <div className="h-5 sm:h-6 w-px bg-teal-300/40"></div>
             
             {companyLogo ? (
               <img 
                 src={companyLogo} 
                 alt="Clean Tech Smart" 
-                className="h-7 sm:h-8 object-contain brightness-0 invert max-w-[120px]" 
+                className="h-6 sm:h-8 object-contain brightness-0 invert max-w-[90px] sm:max-w-[120px]" 
               />
             ) : (
-              <div className="text-white font-black text-xs sm:text-sm tracking-tight">
+              <div className="text-white font-black text-[11px] sm:text-sm tracking-tight">
                 Clean Tech
               </div>
             )}
@@ -292,7 +292,7 @@ export default function LpTennantA260() {
           </div>
 
           {/* Contatos & Contador em Linha Única */}
-          <div className="flex items-center gap-2 sm:gap-3 text-xs font-semibold shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 text-xs font-semibold shrink-0">
             
             {/* E-mail */}
             <a 
@@ -303,18 +303,19 @@ export default function LpTennantA260() {
               <span>{EMAIL_CONTATO}</span>
             </a>
 
-            {/* Botão WhatsApp Encurtado */}
+            {/* Botão WhatsApp Encurtado Responsivo */}
             <button
               onClick={() => handleWhatsAppRedirect("Olá! Gostaria de aproveitar a CONDIÇÃO ESPECIAL DE FEIRA da Tennant A260.")}
-              className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-3.5 py-1.5 rounded-full font-bold shadow-xs transition-all hover:scale-105 cursor-pointer text-xs shrink-0"
+              className="flex items-center gap-1 sm:gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-2.5 sm:px-3.5 py-1.5 rounded-full font-bold shadow-xs transition-all hover:scale-105 cursor-pointer text-[11px] sm:text-xs shrink-0"
             >
-              <WhatsAppIcon className="w-4 h-4 text-white" />
-              <span>{WHATSAPP_DISPLAY}</span>
+              <WhatsAppIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+              <span className="hidden sm:inline">{WHATSAPP_DISPLAY}</span>
+              <span className="sm:hidden">WhatsApp</span>
             </button>
 
             {/* Contador Regressivo Compacto */}
-            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-xs px-2.5 py-1.5 rounded-full text-[11px] font-mono border border-teal-300/30 text-teal-50 shrink-0">
-              <Clock className="w-3.5 h-3.5 text-amber-300 shrink-0 mr-0.5" />
+            <div className="flex items-center gap-0.5 sm:gap-1 bg-black/40 backdrop-blur-xs px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-mono border border-teal-300/30 text-teal-50 shrink-0">
+              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-300 shrink-0 mr-0.5" />
               <span className="font-black text-white">{String(timeLeft.days).padStart(2, '0')}d</span>
               <span className="text-teal-300/50">:</span>
               <span className="font-bold text-white">{String(timeLeft.hours).padStart(2, '0')}h</span>
@@ -332,20 +333,20 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 2. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
-      <section id="hero-pdp" className="py-6 sm:py-10 bg-white">
+      <section id="hero-pdp" className="py-4 sm:py-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
             
             {/* LEFT COLUMN: FOTO GRANDE COM SELO DE FEIRA E CONTROLES DIRETOS */}
             <div className="lg:col-span-6 space-y-4">
               
               {/* Foto Principal com Selo de Promoção de Feira e Navegação Integrada */}
-              <div className="relative bg-white flex items-center justify-center min-h-[380px] sm:min-h-[480px] group select-none rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
+              <div className="relative bg-white flex items-center justify-center min-h-[300px] sm:min-h-[480px] group select-none rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
                 
                 {/* Badge Oficial Promoção de Feira Piscante */}
-                <div className="absolute top-4 left-4 z-10 pointer-events-none select-none">
-                  <div className="bg-gradient-to-r from-red-600 to-[#eb6420] text-white font-black text-xs uppercase px-4 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-white/40 tracking-wider animate-pulse">
+                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 pointer-events-none select-none">
+                  <div className="bg-gradient-to-r from-red-600 to-[#eb6420] text-white font-black text-[10px] sm:text-xs uppercase px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-white/40 tracking-wider animate-pulse">
                     <span>🔥</span>
                     <span>Promoção de Feira</span>
                   </div>
@@ -354,17 +355,17 @@ export default function LpTennantA260() {
                 <img 
                   src={photoList[activePhotoIndex] || DEFAULT_PHOTOS[0]} 
                   alt="A260 Lavadora de piso de operação a pé" 
-                  className="max-h-[460px] w-auto object-contain transition-opacity duration-300"
+                  className="max-h-[320px] sm:max-h-[460px] w-auto object-contain transition-opacity duration-300"
                 />
 
                 {/* Seta Esquerda na Foto */}
                 {photoList.length > 1 && (
                   <button
                     onClick={prevPhoto}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-md flex items-center justify-center transition-all cursor-pointer border border-gray-100"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-md flex items-center justify-center transition-all cursor-pointer border border-gray-100"
                     aria-label="Foto anterior"
                   >
-                    <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
+                    <ChevronLeft className="w-5 h-5 sm:w-7 sm:h-7" />
                   </button>
                 )}
 
@@ -372,10 +373,10 @@ export default function LpTennantA260() {
                 {photoList.length > 1 && (
                   <button
                     onClick={nextPhoto}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-md flex items-center justify-center transition-all cursor-pointer border border-gray-100"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 hover:text-gray-900 w-9 h-9 sm:w-12 sm:h-12 rounded-full shadow-md flex items-center justify-center transition-all cursor-pointer border border-gray-100"
                     aria-label="Próxima foto"
                   >
-                    <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
+                    <ChevronRight className="w-5 h-5 sm:w-7 sm:h-7" />
                   </button>
                 )}
 
@@ -388,7 +389,7 @@ export default function LpTennantA260() {
                         onClick={() => setActivePhotoIndex(idx)}
                         className={`transition-all rounded-full cursor-pointer ${
                           activePhotoIndex === idx
-                            ? 'w-6 h-2 bg-white'
+                            ? 'w-5 sm:w-6 h-2 bg-white'
                             : 'w-2 h-2 bg-white/50 hover:bg-white/80'
                         }`}
                         aria-label={`Ver foto ${idx + 1}`}
@@ -401,7 +402,7 @@ export default function LpTennantA260() {
             </div>
 
             {/* RIGHT COLUMN: HEADLINE ELEGANTE + NOME DA MÁQUINA + ESPECIFICAÇÕES + BOTÃO */}
-            <div className="lg:col-span-6 space-y-5 pt-1">
+            <div className="lg:col-span-6 space-y-4 sm:space-y-5 pt-1">
               
               {/* Headline Comercial Limpa e de Alto Impacto com cores em destaque */}
               <div className="space-y-2 pb-1">
@@ -410,29 +411,29 @@ export default function LpTennantA260() {
                   <span>•</span>
                   <span>Líder Global</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                <h1 className="text-xl sm:text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">
                   Máxima eficiência na limpeza de pisos: substitua até <span className="text-[#007481] font-black">4 auxiliares de limpeza</span> e reduza em até <span className="text-[#eb6420] font-black">60% os custos</span> com a lavadora mais vendida da Tennant.
                 </h1>
-                <p className="text-gray-700 text-sm sm:text-base leading-relaxed pt-1">
+                <p className="text-gray-700 text-xs sm:text-base leading-relaxed pt-1">
                   A <strong className="text-gray-900">Tennant A-260</strong> limpa até <strong className="text-[#007481]">2.000 m²/h</strong> com operação ultra simples de 1 botão, baixo ruído (69 dBA) e secagem imediata.
                 </p>
               </div>
 
               {/* Nome da Máquina e Categoria Oficial */}
               <div>
-                <h2 className="text-3xl sm:text-4xl font-bold text-[#212529] tracking-tight">
+                <h2 className="text-2xl sm:text-4xl font-bold text-[#212529] tracking-tight">
                   A260
                 </h2>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mt-0.5">
+                <h3 className="text-lg sm:text-2xl font-bold text-gray-800 mt-0.5">
                   Lavadora de piso de operação a pé
                 </h3>
               </div>
 
               {/* Botão Oficial Laranja Tennant Arredondado (Pill Button / Rounded Full) */}
-              <div className="pt-3">
+              <div className="pt-2 sm:pt-3">
                 <button
                   onClick={() => handleWhatsAppRedirect("Olá! Gostaria de SOLICITAR DEMONSTRAÇÃO / COTAÇÃO para a Lavadora Tennant A260.")}
-                  className="bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-sm tracking-wider uppercase px-10 py-4 rounded-full shadow-md hover:shadow-lg transition-all cursor-pointer inline-flex items-center justify-center"
+                  className="w-full sm:w-auto bg-[#eb6420] hover:bg-[#d65715] text-white font-black text-xs sm:text-sm tracking-wider uppercase px-6 sm:px-10 py-3.5 sm:py-4 rounded-full shadow-md hover:shadow-lg transition-all cursor-pointer inline-flex items-center justify-center text-center"
                 >
                   SOLICITAR DEMONSTRAÇÃO / COTAÇÃO
                 </button>
@@ -448,55 +449,55 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 4. DOBRA 2: COMPARATIVO DE PRODUTIVIDADE HUMANO VS. TENNANT A260 (PREMIUM) */}
       {/* ========================================================================= */}
-      <section className="py-14 bg-gradient-to-b from-gray-50 to-white border-t border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+      <section className="py-10 sm:py-14 bg-gradient-to-b from-gray-50 to-white border-t border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
           
           {/* Header da Seção */}
           <div className="text-center max-w-3xl mx-auto space-y-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#007481] bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
               ⚡ Eficiência Comprovada em Números
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+            <h2 className="text-xl sm:text-3xl font-black text-gray-900 tracking-tight">
               Produtividade Comparada: <span className="text-[#007481]">Tennant A260</span> vs. <span className="text-gray-500">Limpeza Manual</span>
             </h2>
-            <p className="text-sm sm:text-base text-gray-600">
+            <p className="text-xs sm:text-base text-gray-600">
               Entenda como 1 operador com a Tennant A260 entrega o mesmo rendimento de até 4 auxiliares de limpeza com padrão profissional e piso seco instantaneamente.
             </p>
           </div>
 
           {/* Destaque Visual 1 vs 1 (Cards Comparativos de Alto Impacto Alinhados com a Tabela) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 w-full">
             
             {/* Card Limpeza Manual */}
-            <div className="bg-white border-2 border-red-100 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-red-100 text-red-700 text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg">
+            <div className="bg-white border-2 border-red-100 rounded-2xl p-5 sm:p-8 shadow-xs flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-red-100 text-red-700 text-[9px] sm:text-[10px] font-black uppercase px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-bl-lg">
                 Método Tradicional
               </div>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-black text-lg">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-black text-base sm:text-lg">
                     🪣
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">Limpeza Manual (Mop & Balde)</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900">Limpeza Manual (Mop & Balde)</h3>
                     <p className="text-xs text-gray-500">1 Auxiliar de Limpeza</p>
                   </div>
                 </div>
 
-                <div className="space-y-3 py-2 text-xs sm:text-sm">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <div className="space-y-2.5 sm:space-y-3 py-2 text-xs sm:text-sm">
+                  <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-100">
                     <span className="text-gray-600">Rendimento Médio:</span>
                     <span className="font-bold text-gray-900">~280 m²/hora</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-100">
                     <span className="text-gray-600">Tempo para 2.000 m²:</span>
                     <span className="font-bold text-red-600">Mais de 7 Horas (ou 4 pessoas)</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-100">
                     <span className="text-gray-600">Secagem do Piso:</span>
                     <span className="font-bold text-gray-700">30 a 45 min molhado</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-100">
                     <span className="text-gray-600">Qualidade da Água:</span>
                     <span className="text-gray-700">Espalha água suja do balde</span>
                   </div>
@@ -509,35 +510,35 @@ export default function LpTennantA260() {
             </div>
 
             {/* Card Tennant A260 */}
-            <div className="bg-white border-2 border-teal-500 rounded-2xl p-6 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden ring-4 ring-teal-50">
-              <div className="absolute top-0 right-0 bg-[#007481] text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg">
+            <div className="bg-white border-2 border-teal-500 rounded-2xl p-5 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden ring-4 ring-teal-50">
+              <div className="absolute top-0 right-0 bg-[#007481] text-white text-[9px] sm:text-[10px] font-black uppercase px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-bl-lg">
                 ⚡ Alta Performance
               </div>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center font-black text-lg">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center font-black text-base sm:text-lg">
                     ✨
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">Lavadora Tennant A260</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900">Lavadora Tennant A260</h3>
                     <p className="text-xs font-semibold text-[#007481]">1 Único Operador</p>
                   </div>
                 </div>
 
-                <div className="space-y-3 py-2 text-xs sm:text-sm">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <div className="space-y-2.5 sm:space-y-3 py-2 text-xs sm:text-sm">
+                  <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-100">
                     <span className="text-gray-600">Rendimento Efetivo:</span>
-                    <span className="font-black text-[#007481] text-base font-mono">Até 2.000 m²/hora</span>
+                    <span className="font-black text-[#007481] text-sm sm:text-base font-mono">Até 2.000 m²/hora</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-100">
                     <span className="text-gray-600">Tempo para 2.000 m²:</span>
                     <span className="font-bold text-emerald-700">Apenas 1 Hora (7x mais rápido)</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-100">
                     <span className="text-gray-600">Secagem do Piso:</span>
                     <span className="font-bold text-emerald-700">Seco Instantaneamente</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <div className="flex justify-between items-center py-1.5 sm:py-2 border-b border-gray-100">
                     <span className="text-gray-600">Qualidade da Água:</span>
                     <span className="text-gray-700">Água limpa contínua e sucção total</span>
                   </div>
@@ -552,52 +553,61 @@ export default function LpTennantA260() {
 
           </div>
 
-          {/* Tabela Executiva Comparativa Detalhada */}
+          {/* Tabela Executiva Comparativa Detalhada com Suporte Touch/Mobile */}
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs">
-            <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-bold text-gray-900 text-sm sm:text-base">Quadro Comparativo de Especificações & Benefícios</h3>
-              <span className="text-xs font-semibold text-gray-500">Padrão Técnico Industrial Tennant</span>
+            <div className="bg-gray-100 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-bold text-gray-900 text-xs sm:text-base">Quadro Comparativo de Especificações & Benefícios</h3>
+              <span className="text-[10px] sm:text-xs font-semibold text-gray-500">Padrão Técnico Industrial Tennant</span>
             </div>
             
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-gray-50 text-gray-700 uppercase font-bold text-[11px] border-b border-gray-200">
+              <table className="w-full text-left text-xs sm:text-sm min-w-[550px]">
+                <thead className="bg-gray-50 text-gray-700 uppercase font-bold text-[10px] sm:text-[11px] border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3.5">Indicador</th>
-                    <th className="px-6 py-3.5 text-[#007481]">Tennant A260</th>
-                    <th className="px-6 py-3.5 text-gray-600">Limpeza Humana Manual</th>
-                    <th className="px-6 py-3.5 text-emerald-700">Ganho Real para Sua Empresa</th>
+                    <th className="px-4 sm:px-6 py-3">Indicador</th>
+                    <th className="px-4 sm:px-6 py-3 text-[#007481]">Tennant A260</th>
+                    <th className="px-4 sm:px-6 py-3 text-gray-600">Limpeza Humana Manual</th>
+                    <th className="px-4 sm:px-6 py-3 text-emerald-700">Ganho Real para Sua Empresa</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   <tr className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-6 py-4 font-bold text-gray-900">Produtividade por Hora</td>
-                    <td className="px-6 py-4 font-mono font-bold text-[#007481]">Até 2.000 m²/h</td>
-                    <td className="px-6 py-4 text-gray-600">~280 m²/h por pessoa</td>
-                    <td className="px-6 py-4 font-semibold text-emerald-700">⚡ 7x mais veloz (economiza 6h diárias)</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-bold text-gray-900">Produtividade por Hora</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-mono font-bold text-[#007481]">Até 2.000 m²/h</td>
+                    <td className="px-4 sm:px-6 py-3.5 text-gray-600">~280 m²/h por pessoa</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-semibold text-emerald-700">⚡ 7x mais veloz (economiza 6h diárias)</td>
                   </tr>
                   <tr className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-6 py-4 font-bold text-gray-900">Secagem do Piso</td>
-                    <td className="px-6 py-4 font-semibold text-[#007481]">Secagem Imediata (Rodo Parabólico)</td>
-                    <td className="px-6 py-4 text-gray-600">Piso molhado por 30-45 min</td>
-                    <td className="px-6 py-4 font-semibold text-emerald-700">Zero interdição e risco zero de quedas de clientes</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-bold text-gray-900">Secagem do Piso</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-semibold text-[#007481]">Secagem Imediata (Rodo Parabólico)</td>
+                    <td className="px-4 sm:px-6 py-3.5 text-gray-600">Piso molhado por 30-45 min</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-semibold text-emerald-700">Zero interdição e risco zero de quedas de clientes</td>
                   </tr>
                   <tr className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-6 py-4 font-bold text-gray-900">Capacidade dos Tanques</td>
-                    <td className="px-6 py-4 font-mono font-semibold text-gray-800">40L (Solução) / 45L (Recuperação)</td>
-                    <td className="px-6 py-4 text-gray-600">Balde de 10L a 15L</td>
-                    <td className="px-6 py-4 text-gray-700">Autonomia prolongada sem idas e vindas para troca de água</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-bold text-gray-900">Capacidade dos Tanques</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-mono font-semibold text-gray-800">40L (Solução) / 45L (Recuperação)</td>
+                    <td className="px-4 sm:px-6 py-3.5 text-gray-600">Balde de 10L a 15L</td>
+                    <td className="px-4 sm:px-6 py-3.5 text-gray-700">Autonomia prolongada sem idas e vindas para troca de água</td>
                   </tr>
                   <tr className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-6 py-4 font-bold text-gray-900">Nível de Ruído & Turnos</td>
-                    <td className="px-6 py-4 font-mono font-semibold text-emerald-700">69 dBA (Ultra Silenciosa)</td>
-                    <td className="px-6 py-4 text-gray-600">Ruído e movimentação intensa</td>
-                    <td className="px-6 py-4 text-gray-700">Limpeza em horário comercial sem incomodar público/pacientes</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-bold text-gray-900">Nível de Ruído & Turnos</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-mono font-semibold text-emerald-700">69 dBA (Ultra Silenciosa)</td>
+                    <td className="px-4 sm:px-6 py-3.5 text-gray-600">Ruído e movimentação intensa</td>
+                    <td className="px-4 sm:px-6 py-3.5 text-gray-700">Limpeza em horário comercial sem incomodar público/pacientes</td>
                   </tr>
                   <tr className="hover:bg-gray-50/80 transition-colors">
-                    <td className="px-6 py-4 font-bold text-gray-900">Alimentação & Segurança</td>
-                    <td className="px-6 py-4 font-mono font-semibold text-[#eb6420]">Bateria (100% sem cabo)</td>
-                    <td className="px-6 py-4 text-gray-600">Esforço físico repetitivo</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-bold text-gray-900">Alimentação & Segurança</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-mono font-semibold text-[#eb6420]">Bateria (100% sem cabo)</td>
+                    <td className="px-4 sm:px-6 py-3.5 text-gray-600">Esforço físico repetitivo</td>
+                    <td className="px-4 sm:px-6 py-3.5 text-gray-700">Total ergonomia e sem risco de tropeços de pedestres</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="text-[10px] text-gray-400 text-center py-1 sm:hidden bg-gray-50 border-t border-gray-100 flex items-center justify-center gap-1">
+              👉 Deslize para o lado para ver todos os dados da tabela
+            </div>
+          </div>
                     <td className="px-6 py-4 text-gray-700">Total ergonomia e sem risco de tropeços de pedestres</td>
                   </tr>
                 </tbody>
@@ -688,6 +698,142 @@ export default function LpTennantA260() {
       </section>
 
       {/* ========================================================================= */}
+      {/* 💰 CALCULADORA INTERATIVA DE ROI & ECONOMIA DE MÃO DE OBRA                */}
+      {/* ========================================================================= */}
+      <section id="calculadora-roi" className="py-12 sm:py-16 bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          
+          {/* Header da Calculadora */}
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#007481] bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
+              📊 Simulador Financeiro Interativo
+            </span>
+            <h2 className="text-xl sm:text-3xl font-black text-gray-900 tracking-tight">
+              Calcule Sua Economia Real com a <span className="text-[#007481]">Tennant A260</span>
+            </h2>
+            <p className="text-xs sm:text-base text-gray-600">
+              Ajuste o tamanho do seu piso e a equipe atual para visualizar a redução de custos e o ganho de tempo imediato.
+            </p>
+          </div>
+
+          {/* Card Principal da Calculadora */}
+          <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-teal-100 rounded-3xl p-6 sm:p-10 shadow-md grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            {/* Controles e Sliders */}
+            <div className="lg:col-span-6 space-y-6">
+              
+              {/* Slider 1: Área Total */}
+              <div className="space-y-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
+                <div className="flex justify-between items-center text-xs sm:text-sm font-bold text-gray-800">
+                  <span className="flex items-center gap-2">
+                    📏 Área Total do Seu Espaço:
+                  </span>
+                  <span className="font-mono text-base font-black text-[#007481] bg-teal-50 px-3 py-1 rounded-lg border border-teal-200">
+                    {selectedArea.toLocaleString('pt-BR')} m²
+                  </span>
+                </div>
+                <input 
+                  type="range" min="500" max="10000" step="250" value={selectedArea}
+                  onChange={(e) => setSelectedArea(Number(e.target.value))}
+                  className="w-full accent-[#007481] cursor-pointer h-2 bg-gray-200 rounded-lg"
+                />
+                <div className="flex justify-between text-[10px] text-gray-600 font-medium">
+                  <span>500 m² (Pequeno)</span>
+                  <span>5.000 m² (Médio)</span>
+                  <span>10.000 m² (Grande Galpão)</span>
+                </div>
+              </div>
+
+              {/* Slider 2: Funcionários na Limpeza Manual */}
+              <div className="space-y-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
+                <div className="flex justify-between items-center text-xs sm:text-sm font-bold text-gray-800">
+                  <span className="flex items-center gap-2">
+                    👥 Auxiliares na Limpeza Manual:
+                  </span>
+                  <span className="font-mono text-base font-black text-[#eb6420] bg-orange-50 px-3 py-1 rounded-lg border border-orange-200">
+                    {selectedCleaners} {selectedCleaners === 1 ? 'auxiliar' : 'auxiliares'}
+                  </span>
+                </div>
+                <input 
+                  type="range" min="1" max="8" step="1" value={selectedCleaners}
+                  onChange={(e) => setSelectedCleaners(Number(e.target.value))}
+                  className="w-full accent-[#eb6420] cursor-pointer h-2 bg-gray-200 rounded-lg"
+                />
+                <div className="flex justify-between text-[10px] text-gray-600 font-medium">
+                  <span>1 pessoa</span>
+                  <span>4 pessoas</span>
+                  <span>8 pessoas</span>
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-700 bg-teal-50/80 p-4 rounded-xl border border-teal-200 flex items-start gap-2.5">
+                <span className="text-base">💡</span>
+                <p className="leading-relaxed">
+                  <strong>1 Lavadora Tennant A260</strong> limpa <strong>2.000 m²/h</strong> com piso 100% seco na hora, liberando sua equipe para outras atividades produtivas.
+                </p>
+              </div>
+
+            </div>
+
+            {/* Painel de Resultados Financeiros */}
+            <div className="lg:col-span-6 bg-gradient-to-br from-[#007481] via-[#005a64] to-[#00424a] text-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-xl space-y-6">
+              
+              <div className="flex items-center justify-between border-b border-teal-400/30 pb-4">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-300">
+                  ⚡ Projeção de Economia Financeira
+                </span>
+                <span className="text-[11px] bg-white/20 px-2.5 py-0.5 rounded-full font-semibold text-white">
+                  Base Estimada
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                
+                {/* Economia Mensal */}
+                <div className="bg-white/10 p-4 rounded-xl border border-white/15">
+                  <span className="text-[11px] text-teal-100 block mb-1">Economia Mensal Estimada:</span>
+                  <div className="text-xl sm:text-3xl font-black text-emerald-300 font-mono">
+                    R$ {roiData.economiaMensal.toLocaleString('pt-BR')}
+                  </div>
+                  <span className="text-[10px] text-teal-200">Redução de custos operacionais</span>
+                </div>
+
+                {/* Economia Anual */}
+                <div className="bg-white/10 p-4 rounded-xl border border-white/15">
+                  <span className="text-[11px] text-teal-100 block mb-1">Economia Anual (12 Meses):</span>
+                  <div className="text-xl sm:text-3xl font-black text-amber-300 font-mono">
+                    R$ {roiData.economiaAnual.toLocaleString('pt-BR')}
+                  </div>
+                  <span className="text-[10px] text-teal-200">Impacto direto no EBITDA</span>
+                </div>
+
+              </div>
+
+              {/* Tempo economizado */}
+              <div className="bg-black/20 p-3.5 rounded-xl border border-teal-300/20 flex items-center justify-between text-xs">
+                <span className="text-teal-100">⏱️ Ganho de Velocidade na Operação:</span>
+                <span className="font-bold text-white bg-teal-600/60 px-2.5 py-1 rounded-lg">
+                  ~{roiData.tempoEconomizadoPercent}% mais rápido
+                </span>
+              </div>
+
+              {/* Botão de Validação do Estudo */}
+              <button
+                onClick={() => handleWhatsAppRedirect(`Olá! Simulei na calculadora uma área de ${selectedArea}m² com ${selectedCleaners} auxiliares e gostaria de validar minha economia para a Tennant A260.`)}
+                className="w-full py-4 bg-[#eb6420] hover:bg-[#d65715] text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-full shadow-lg hover:shadow-2xl transition-all hover:scale-102 flex items-center justify-center gap-2.5 cursor-pointer"
+              >
+                <WhatsAppIcon className="w-5 h-5 text-white" />
+                <span>Validar Estudo da Minha Empresa no WhatsApp</span>
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
       {/* 🚀 CTA INTERMEDIÁRIO: MEIO DA PÁGINA (ALTO IMPACTO)                       */}
       {/* ========================================================================= */}
       <section className="py-12 bg-gradient-to-r from-[#007481] via-[#005e69] to-[#004750] text-white shadow-inner">
@@ -708,7 +854,7 @@ export default function LpTennantA260() {
             <div className="shrink-0">
               <button
                 onClick={() => handleWhatsAppRedirect("Olá! Gostaria de agendar uma DEMONSTRAÇÃO PRÁTICA da Tennant A260 no meu espaço.")}
-                className="bg-[#eb6420] hover:bg-[#d65715] text-white font-black text-xs sm:text-sm uppercase tracking-wider px-8 sm:px-10 py-4 rounded-full shadow-lg hover:shadow-2xl transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-3"
+                className="w-full sm:w-auto bg-[#eb6420] hover:bg-[#d65715] text-white font-black text-xs sm:text-sm uppercase tracking-wider px-8 sm:px-10 py-4 rounded-full shadow-lg hover:shadow-2xl transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-3"
               >
                 <WhatsAppIcon className="w-5 h-5 text-white" />
                 <span>Agendar Demonstração no WhatsApp</span>
@@ -1043,12 +1189,12 @@ export default function LpTennantA260() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 🏁 CTA FINAL: FECHAMENTO & ATENDIMENTO DIRETO                             */}
+      {/* 🏁 CTA FINAL: FECHAMENTO & ATENDIMENTO DIRETO (PADRONIZADO #007481)       */}
       {/* ========================================================================= */}
-      <section className="py-16 bg-gradient-to-b from-gray-900 to-black text-white border-t border-gray-800">
+      <section className="py-14 sm:py-18 bg-gradient-to-br from-[#007481] via-[#005a64] to-[#003d44] text-white border-t border-teal-700/50 shadow-inner">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-1.5 rounded-full text-xs font-semibold text-teal-300 border border-white/10">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-xs px-4 py-1.5 rounded-full text-xs font-semibold text-white border border-white/20 shadow-xs">
+            <ShieldCheck className="w-4 h-4 text-emerald-300" />
             <span>Representante & Assistência Técnica Autorizada Tennant • Curitiba/PR</span>
           </div>
 
@@ -1056,11 +1202,11 @@ export default function LpTennantA260() {
             Pronto para Reduzir até 60% dos Custos na Limpeza de Pisos?
           </h2>
 
-          <p className="text-sm sm:text-base text-gray-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-base text-teal-100 max-w-2xl mx-auto leading-relaxed">
             Fale diretamente com nossos consultores técnicos. Receba uma cotação sob medida para compra ou locação com suporte oficial e entrega imediata.
           </p>
 
-          <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={() => handleWhatsAppRedirect("Olá! Gostaria de falar com um consultor técnico para receber cotação da Tennant A260.")}
               className="w-full sm:w-auto bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-xs sm:text-sm uppercase tracking-wider px-10 py-4 rounded-full shadow-xl hover:shadow-2xl transition-all hover:scale-105 flex items-center justify-center gap-2.5 cursor-pointer"
@@ -1071,42 +1217,42 @@ export default function LpTennantA260() {
 
             <a
               href={`mailto:${EMAIL_CONTATO}`}
-              className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm px-8 py-4 rounded-full transition-all border border-white/20 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto bg-white/15 hover:bg-white/25 text-white font-bold text-xs sm:text-sm px-8 py-4 rounded-full transition-all border border-white/30 flex items-center justify-center gap-2"
             >
-              <Mail className="w-4 h-4 text-teal-300" />
+              <Mail className="w-4 h-4 text-teal-200" />
               <span>{EMAIL_CONTATO}</span>
             </a>
           </div>
 
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-6 text-[11px] text-gray-400">
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-6 text-[11px] text-teal-100">
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Atendimento Ágil no Paraná
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> Atendimento Ágil no Paraná
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Máquinas a Pronta Entrega
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> Máquinas a Pronta Entrega
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Suporte & Peças Originais
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" /> Suporte & Peças Originais
             </span>
           </div>
         </div>
       </section>
 
       {/* ========================================================================= */}
-      {/* 8. FOOTER CORPORATIVO (Sem formulários - Apenas Contato Direto)           */}
+      {/* 8. FOOTER CORPORATIVO (PADRONIZADO COM IDENTIDADE TENNANT / CLEAN TECH)   */}
       {/* ========================================================================= */}
-      <footer className="bg-gray-900 text-gray-400 py-10 text-xs border-t border-gray-800">
+      <footer className="bg-[#002f35] text-teal-100 py-10 text-xs border-t border-[#004750]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           
           <div className="flex items-center gap-4">
             <img src={LOGO_ALFA_TENNANT} alt="Alfa Tennant" className="h-8 object-contain brightness-0 invert" />
-            <div className="border-l border-gray-700 pl-4">
+            <div className="border-l border-teal-700/60 pl-4">
               <div className="text-white font-bold">Clean Tech Smart Equipamentos</div>
-              <div className="text-gray-500 text-[11px]">Representante e Assistência Técnica Autorizada Tennant - Curitiba/PR</div>
+              <div className="text-teal-300 text-[11px]">Representante e Assistência Técnica Autorizada Tennant - Curitiba/PR</div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6 text-gray-300">
+          <div className="flex flex-wrap items-center gap-6 text-teal-100">
             <a 
               href={`https://wa.me/${WHATSAPP_NUMBER}`} 
               target="_blank" 
@@ -1119,11 +1265,11 @@ export default function LpTennantA260() {
               href={`mailto:${EMAIL_CONTATO}`} 
               className="hover:text-white flex items-center gap-1.5"
             >
-              <Mail className="w-3.5 h-3.5 text-cyan-400" /> {EMAIL_CONTATO}
+              <Mail className="w-3.5 h-3.5 text-teal-300" /> {EMAIL_CONTATO}
             </a>
           </div>
 
-          <div className="text-gray-500 text-[11px] text-center md:text-right">
+          <div className="text-teal-400 text-[11px] text-center md:text-right">
             © {new Date().getFullYear()} Clean Tech Smart. Todos os direitos reservados.
           </div>
 
