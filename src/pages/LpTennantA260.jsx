@@ -688,6 +688,37 @@ export default function LpTennantA260() {
       </section>
 
       {/* ========================================================================= */}
+      {/* 🚀 CTA INTERMEDIÁRIO: MEIO DA PÁGINA (ALTO IMPACTO)                       */}
+      {/* ========================================================================= */}
+      <section className="py-12 bg-gradient-to-r from-[#007481] via-[#005e69] to-[#004750] text-white shadow-inner">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6 text-center lg:text-left">
+            <div className="space-y-2 max-w-2xl">
+              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-300 bg-black/20 px-3 py-1 rounded-full border border-amber-300/30">
+                ⚡ Demonstração Gratuita no Seu Estabelecimento
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
+                Veja a Tennant A260 em Ação no Seu Piso Real
+              </h3>
+              <p className="text-xs sm:text-sm text-teal-100 leading-relaxed">
+                Levamos a máquina até sua empresa em Curitiba e Região Metropolitana. Teste o rendimento de 2.000 m²/h e a secagem imediata sem custo ou compromisso.
+              </p>
+            </div>
+
+            <div className="shrink-0">
+              <button
+                onClick={() => handleWhatsAppRedirect("Olá! Gostaria de agendar uma DEMONSTRAÇÃO PRÁTICA da Tennant A260 no meu espaço.")}
+                className="bg-[#eb6420] hover:bg-[#d65715] text-white font-black text-xs sm:text-sm uppercase tracking-wider px-8 sm:px-10 py-4 rounded-full shadow-lg hover:shadow-2xl transition-all hover:scale-105 cursor-pointer flex items-center justify-center gap-3"
+              >
+                <WhatsAppIcon className="w-5 h-5 text-white" />
+                <span>Agendar Demonstração no WhatsApp</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
       {/* 5. DOBRA 3: DIFERENCIAIS OPERACIONAIS (POR QUE ESCOLHER A TENNANT A260?)   */}
       {/* ========================================================================= */}
       <section className="py-16 bg-white border-b border-gray-200">
@@ -1016,6 +1047,56 @@ export default function LpTennantA260() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 🏁 CTA FINAL: FECHAMENTO & ATENDIMENTO DIRETO                             */}
+      {/* ========================================================================= */}
+      <section className="py-16 bg-gradient-to-b from-gray-900 to-black text-white border-t border-gray-800">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-1.5 rounded-full text-xs font-semibold text-teal-300 border border-white/10">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>Representante & Assistência Técnica Autorizada Tennant • Curitiba/PR</span>
+          </div>
+
+          <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+            Pronto para Reduzir até 60% dos Custos na Limpeza de Pisos?
+          </h2>
+
+          <p className="text-sm sm:text-base text-gray-300 max-w-2xl mx-auto leading-relaxed">
+            Fale diretamente com nossos consultores técnicos. Receba uma cotação sob medida para compra ou locação com suporte oficial e entrega imediata.
+          </p>
+
+          <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => handleWhatsAppRedirect("Olá! Gostaria de falar com um consultor técnico para receber cotação da Tennant A260.")}
+              className="w-full sm:w-auto bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-xs sm:text-sm uppercase tracking-wider px-10 py-4 rounded-full shadow-xl hover:shadow-2xl transition-all hover:scale-105 flex items-center justify-center gap-2.5 cursor-pointer"
+            >
+              <WhatsAppIcon className="w-5 h-5 text-white" />
+              <span>Falar no WhatsApp: {WHATSAPP_DISPLAY}</span>
+            </button>
+
+            <a
+              href={`mailto:${EMAIL_CONTATO}`}
+              className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm px-8 py-4 rounded-full transition-all border border-white/20 flex items-center justify-center gap-2"
+            >
+              <Mail className="w-4 h-4 text-teal-300" />
+              <span>{EMAIL_CONTATO}</span>
+            </a>
+          </div>
+
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-6 text-[11px] text-gray-400">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Atendimento Ágil no Paraná
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Máquinas a Pronta Entrega
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Suporte & Peças Originais
+            </span>
           </div>
         </div>
       </section>
