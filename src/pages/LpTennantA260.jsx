@@ -340,11 +340,11 @@ export default function LpTennantA260() {
               {/* Foto Principal com Selo de Promoção de Feira e Navegação Integrada */}
               <div className="relative bg-white flex items-center justify-center min-h-[380px] sm:min-h-[480px] group select-none rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
                 
-                {/* Selo Oficial Promoção de Feira com Contador Regressivo */}
+                {/* Badge Oficial Promoção de Feira com Contador Regressivo */}
                 <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-1.5 pointer-events-none select-none">
                   <div className="bg-gradient-to-r from-red-600 to-[#eb6420] text-white font-black text-xs uppercase px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-white/40 tracking-wider">
                     <span className="animate-pulse">🔥</span>
-                    <span>Selo Promoção de Feira</span>
+                    <span>Promoção de Feira</span>
                   </div>
                   <div className="bg-gray-900/85 backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-mono font-bold shadow-md flex items-center gap-1.5 border border-white/20">
                     <Clock className="w-3 h-3 text-amber-400" />
