@@ -988,14 +988,15 @@ export default function LpTennantA260() {
         </div>
       </footer>
 
-      {/* Botão Flutuante Oficial do WhatsApp */}
+      {/* Botão Flutuante Circular Oficial do WhatsApp (Ícone Redondinho) */}
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={() => handleWhatsAppRedirect()}
-          className="bg-[#25D366] hover:bg-[#20ba59] text-white font-bold px-4 py-3 rounded-full shadow-2xl flex items-center gap-2.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          className="w-14 h-14 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer group"
+          aria-label="WhatsApp"
+          title="Falar no WhatsApp"
         >
-          <WhatsAppIcon className="w-6 h-6 text-white" />
-          <span className="hidden sm:inline text-xs font-bold">Fale no WhatsApp</span>
+          <WhatsAppIcon className="w-8 h-8 text-white group-hover:scale-105 transition-transform" />
         </button>
       </div>
 
