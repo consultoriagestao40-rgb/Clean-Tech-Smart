@@ -27,11 +27,11 @@ import {
   ChevronLeft, 
   ChevronRight, 
   ExternalLink,
-  HelpCircle,
-  Video,
   Star,
   Maximize2,
-  X
+  X,
+  ShoppingCart,
+  Briefcase
 } from 'lucide-react';
 
 export default function LpTennantA260() {
@@ -417,63 +417,13 @@ export default function LpTennantA260() {
                 </h3>
               </div>
 
-              {/* Selos de Confiança */}
-              <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-gray-700">
-                <span className="bg-gray-100 border border-gray-200 px-2.5 py-1 rounded text-gray-800 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#007481]" /> Tecnologia Tennant Líder Global
-                </span>
-                <span className="bg-gray-100 border border-gray-200 px-2.5 py-1 rounded text-gray-800 flex items-center gap-1">
-                  <Zap className="w-3.5 h-3.5 text-[#eb6420]" /> Operação a Bateria
-                </span>
-                <span className="bg-gray-100 border border-gray-200 px-2.5 py-1 rounded text-gray-800 flex items-center gap-1">
-                  <Wrench className="w-3.5 h-3.5 text-emerald-700" /> Garantia e Suporte Técnico
-                </span>
-              </div>
-
-              {/* Especificações em Caixa Alta (Exato do Print) */}
-              <div className="space-y-3 pt-2">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xs font-bold text-gray-900 uppercase tracking-wide">FAIXA DE LIMPEZA</span>
-                  <span className="text-xs font-bold text-gray-700">510 MM</span>
-                </div>
-
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xs font-bold text-gray-900 uppercase tracking-wide">CAPACIDADE DO TANQUE DE SOLUÇÃO</span>
-                  <span className="text-xs font-bold text-gray-700">40 L</span>
-                </div>
-              </div>
-
               {/* Botão Oficial Laranja Tennant Arredondado (Pill Button / Rounded Full) */}
-              <div className="pt-2">
+              <div className="pt-3">
                 <button
                   onClick={() => handleWhatsAppRedirect("Olá! Gostaria de SOLICITAR DEMONSTRAÇÃO / COTAÇÃO para a Lavadora Tennant A260.")}
-                  className="bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-sm tracking-wider uppercase px-9 py-3.5 rounded-full shadow-sm hover:shadow transition-all cursor-pointer inline-flex items-center justify-center"
+                  className="bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-sm tracking-wider uppercase px-10 py-4 rounded-full shadow-md hover:shadow-lg transition-all cursor-pointer inline-flex items-center justify-center"
                 >
                   SOLICITAR DEMONSTRAÇÃO / COTAÇÃO
-                </button>
-              </div>
-
-              {/* 3 Links em Azul-Petróleo embaixo do botão (Exatos do Print) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 pt-2 text-xs font-bold text-[#007481]">
-                <button 
-                  onClick={() => handleWhatsAppRedirect("Olá! Gostaria de explorar as OPÇÕES DE LOCAÇÃO da Tennant A260.")}
-                  className="text-left hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  Explore as opções de locação <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-
-                <button 
-                  onClick={() => handleWhatsAppRedirect("Olá! Gostaria de cotação para PEÇAS E CONSUMÍVEIS da Tennant A260.")}
-                  className="text-left hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  Encontre peças e consumíveis <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-
-                <button 
-                  onClick={() => handleWhatsAppRedirect("Olá! Gostaria de informações sobre o PLANO DE SERVIÇOS E ASSISTÊNCIA TÉCNICA Tennant.")}
-                  className="text-left hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  Plano de serviços & Assistência <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
@@ -523,7 +473,7 @@ export default function LpTennantA260() {
                 <tr>
                   <td className="px-5 py-3.5 font-bold text-gray-900">Nível de Ruído</td>
                   <td className="px-5 py-3.5 font-mono font-semibold text-emerald-700">Até 69 dBA</td>
-                  <td className="px-5 py-3.5 text-gray-700">Permite operação diurna e em áreas sensíveis (hospitais/varejo)</td>
+                  <td className="px-5 py-3.5 text-gray-700">Operação ultra silenciosa para <strong>Supermercados em horário de pico</strong>, <strong>Hospitais</strong>, <strong>Áreas Administrativas</strong> e <strong>Indústrias</strong></td>
                 </tr>
                 <tr>
                   <td className="px-5 py-3.5 font-bold text-gray-900">Alimentação</td>
@@ -532,6 +482,85 @@ export default function LpTennantA260() {
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          {/* Destaque Criativo por Segmento de Atuação */}
+          <div className="mt-10">
+            <div className="text-center max-w-2xl mx-auto mb-8">
+              <span className="text-[#eb6420] text-xs font-black uppercase tracking-wider">Aplicações Práticas no Seu Negócio</span>
+              <h3 className="text-xl sm:text-2xl font-black text-gray-900 mt-1">Onde a Tennant A260 Entrega Resultados Imbatíveis</h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              
+              {/* Card 1: Supermercados */}
+              <div className="bg-white border-2 border-orange-200 hover:border-[#eb6420] rounded-xl p-5 shadow-xs transition-all flex flex-col justify-between relative group">
+                <div className="absolute -top-2.5 right-4 bg-[#eb6420] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded">
+                  Mais Vendida
+                </div>
+                <div>
+                  <div className="w-10 h-10 rounded-lg bg-orange-50 text-[#eb6420] flex items-center justify-center mb-3">
+                    <ShoppingCart className="w-5 h-5" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-sm">Supermercados & Atacarejos</h4>
+                  <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+                    Manobra fácil entre gôndolas e caixas. <strong>Piso seco no mesmo instante</strong>, eliminando o risco de escorregões de clientes mesmo com a loja cheia.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-gray-100 text-[11px] font-bold text-[#eb6420]">
+                  ✓ Zero interdição de corredores
+                </div>
+              </div>
+
+              {/* Card 2: Hospitais & Clínicas */}
+              <div className="bg-white border border-gray-200 hover:border-[#007481] rounded-xl p-5 shadow-xs transition-all flex flex-col justify-between group">
+                <div>
+                  <div className="w-10 h-10 rounded-lg bg-teal-50 text-[#007481] flex items-center justify-center mb-3">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-sm">Hospitais & Clínicas</h4>
+                  <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+                    Nível de ruído de <strong>69 dBA</strong> permite higienização diurna. A sucção parabólica recolhe 100% da água suja, atendendo rigorosos padrões sanitários.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-gray-100 text-[11px] font-bold text-[#007481]">
+                  ✓ Controle de infecção e ruído
+                </div>
+              </div>
+
+              {/* Card 3: Áreas Administrativas */}
+              <div className="bg-white border border-gray-200 hover:border-gray-400 rounded-xl p-5 shadow-xs transition-all flex flex-col justify-between group">
+                <div>
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 text-gray-800 flex items-center justify-center mb-3">
+                    <Briefcase className="w-5 h-5" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-sm">Áreas Administrativas</h4>
+                  <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+                    Halls, recepções e escritórios limpos e secos rapidamente sem atrapalhar reuniões ou atendimento ao público.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-gray-100 text-[11px] font-bold text-gray-700">
+                  ✓ Ambiente corporativo impecável
+                </div>
+              </div>
+
+              {/* Card 4: Indústrias & Logística */}
+              <div className="bg-white border border-gray-200 hover:border-gray-400 rounded-xl p-5 shadow-xs transition-all flex flex-col justify-between group">
+                <div>
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 text-gray-800 flex items-center justify-center mb-3">
+                    <Factory className="w-5 h-5" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-sm">Indústrias & Galpões</h4>
+                  <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+                    Produtividade de <strong>2.000 m²/h</strong> com pressão de escova para remoção de poeira pesada e marcas leves com agilidade.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-gray-100 text-[11px] font-bold text-gray-700">
+                  ✓ Alta durabilidade e produtividade
+                </div>
+              </div>
+
+            </div>
           </div>
 
         </div>
