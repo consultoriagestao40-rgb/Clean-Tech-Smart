@@ -31,7 +31,8 @@ import {
   Maximize2,
   X,
   ShoppingCart,
-  Briefcase
+  Briefcase,
+  Power
 } from 'lucide-react';
 
 // Ícone Oficial do WhatsApp em SVG
@@ -695,6 +696,121 @@ export default function LpTennantA260() {
               </div>
 
             </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 5. DOBRA 3: DIFERENCIAIS OPERACIONAIS (POR QUE ESCOLHER A TENNANT A260?)   */}
+      {/* ========================================================================= */}
+      <section className="py-16 bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          
+          {/* Header da Seção */}
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#eb6420] bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
+              ★ Engenharia de Alta Confiabilidade
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+              Diferenciais Operacionais: <span className="text-[#007481]">Por Que Escolher a A260?</span>
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600">
+              Projetada pela Tennant para simplificar a rotina da sua equipe, reduzir custos de manutenção e garantir pisos secos e higienizados na primeira passada.
+            </p>
+          </div>
+
+          {/* Grid de 4 Diferenciais Premium */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            {/* Diferencial 1: One-Touch */}
+            <div className="bg-gradient-to-b from-gray-50 to-white border-2 border-gray-100 hover:border-[#007481] rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Power className="w-6 h-6" />
+                </div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#007481] block">
+                  Simplicidade Absoluta
+                </span>
+                <h3 className="text-base font-bold text-gray-900 mt-1">
+                  Operação "One-Touch" (Start/Stop)
+                </h3>
+                <p className="text-xs text-gray-600 mt-2.5 leading-relaxed">
+                  Painel simplificado com acionamento em <strong>um único botão</strong> e indicador de bateria em LED. Reduz o tempo de treinamento do operador a poucos minutos.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] font-bold text-teal-700">
+                <span>Treinamento Rápido</span>
+                <Check className="w-4 h-4 text-[#007481]" />
+              </div>
+            </div>
+
+            {/* Diferencial 2: Lâminas Linatex */}
+            <div className="bg-gradient-to-b from-gray-50 to-white border-2 border-gray-100 hover:border-[#007481] rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Droplet className="w-6 h-6" />
+                </div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#007481] block">
+                  Secagem Imediata
+                </span>
+                <h3 className="text-base font-bold text-gray-900 mt-1">
+                  Lâminas Linatex® de Alta Performance
+                </h3>
+                <p className="text-xs text-gray-600 mt-2.5 leading-relaxed">
+                  Rodo parabólico de <strong>772 mm com borracha de 4 lados</strong> de uso. Recolhe 100% da água na primeira passada, liberando o piso imediatamente para o tráfego.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] font-bold text-teal-700">
+                <span>Zero Risco de Quedas</span>
+                <Check className="w-4 h-4 text-[#007481]" />
+              </div>
+            </div>
+
+            {/* Diferencial 3: Pontos Amarelos */}
+            <div className="bg-gradient-to-b from-gray-50 to-white border-2 border-gray-100 hover:border-[#eb6420] rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-orange-50 text-[#eb6420] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Wrench className="w-6 h-6" />
+                </div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#eb6420] block">
+                  Manutenção Sem Ferramentas
+                </span>
+                <h3 className="text-base font-bold text-gray-900 mt-1">
+                  Pontos Amarelos (Yellow Touch Points)
+                </h3>
+                <p className="text-xs text-gray-600 mt-2.5 leading-relaxed">
+                  Pontos de toque e checagem <strong>codificados em amarelo</strong> para rápida inspeção diária, aumentando a vida útil do equipamento e eliminando paradas desnecessárias.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] font-bold text-[#eb6420]">
+                <span>Zero Ferramentas</span>
+                <Check className="w-4 h-4 text-[#eb6420]" />
+              </div>
+            </div>
+
+            {/* Diferencial 4: Protetor Anti-Respingo */}
+            <div className="bg-gradient-to-b from-gray-50 to-white border-2 border-gray-100 hover:border-[#007481] rounded-2xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#007481] block">
+                  Proteção de Patrimônio
+                </span>
+                <h3 className="text-base font-bold text-gray-900 mt-1">
+                  Protetor Anti-Respingo Inteligente
+                </h3>
+                <p className="text-xs text-gray-600 mt-2.5 leading-relaxed">
+                  Mantém a solução química e a água <strong>100% concentradas na área de escovação</strong>, evitando respingos em rodapés, gôndolas, móveis e vitrines.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] font-bold text-teal-700">
+                <span>Protege Móveis & Paredes</span>
+                <Check className="w-4 h-4 text-[#007481]" />
+              </div>
+            </div>
+
           </div>
 
         </div>
