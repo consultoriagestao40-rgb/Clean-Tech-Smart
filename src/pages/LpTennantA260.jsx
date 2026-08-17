@@ -272,68 +272,71 @@ export default function LpTennantA260() {
     <div className="min-h-screen bg-white text-[#212529] font-sans antialiased">
       
       {/* ========================================================================= */}
-      {/* 1. TOP BAR INSTITUCIONAL CONGELADO (STICKY) COM LOGOS E CONTATO DIRETO    */}
+      {/* 1. TOP BAR INSTITUCIONAL 100% HORIZONTAL EM LINHA ÚNICA                   */}
       {/* ========================================================================= */}
-      <div className="sticky top-0 z-50 bg-[#007481] text-white py-3 px-4 shadow-md transition-all">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div className="sticky top-0 z-50 bg-[#007481] text-white py-2.5 px-3 sm:px-6 shadow-md transition-all">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 whitespace-nowrap">
           
           {/* Logos e Autoridade Autorizada */}
-          <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-3 shrink-0">
             <img 
               src={LOGO_ALFA_TENNANT} 
               alt="Alfa by Tennant Company" 
-              className="h-8 sm:h-10 object-contain brightness-0 invert"
+              className="h-7 sm:h-9 object-contain brightness-0 invert"
             />
             
-            <div className="h-7 w-px bg-teal-300/40 hidden sm:block"></div>
+            <div className="h-6 w-px bg-teal-300/40"></div>
             
             {companyLogo ? (
               <img 
                 src={companyLogo} 
                 alt="Clean Tech Smart" 
-                className="h-8 sm:h-9 object-contain brightness-0 invert max-w-[140px]" 
+                className="h-7 sm:h-8 object-contain brightness-0 invert max-w-[120px]" 
               />
             ) : (
-              <div className="text-white font-extrabold text-sm sm:text-base tracking-tight">
-                Clean Tech Smart
+              <div className="text-white font-black text-xs sm:text-sm tracking-tight">
+                Clean Tech
               </div>
             )}
             
-            <span className="hidden lg:inline text-xs font-semibold text-teal-100 pl-3 border-l border-teal-300/40">
-              Representante & Assistência Técnica Autorizada Tennant • Curitiba/PR
+            <span className="hidden xl:inline text-[11px] font-semibold text-teal-100 pl-2 border-l border-teal-300/40">
+              Autorizada Tennant • Curitiba/PR
             </span>
           </div>
 
-          {/* Contatos Diretos (WhatsApp & E-mail) + Contador Regressivo Discreto */}
-          <div className="flex items-center gap-3 sm:gap-4 text-xs font-semibold">
+          {/* Contatos & Contador em Linha Única */}
+          <div className="flex items-center gap-2 sm:gap-3 text-xs font-semibold shrink-0">
+            
+            {/* E-mail */}
             <a 
               href={`mailto:${EMAIL_CONTATO}`}
-              className="hidden md:flex items-center gap-1.5 text-teal-100 hover:text-white transition-colors"
+              className="hidden lg:flex items-center gap-1.5 text-teal-100 hover:text-white transition-colors text-[11px]"
             >
-              <Mail className="w-3.5 h-3.5" />
-              {EMAIL_CONTATO}
+              <Mail className="w-3.5 h-3.5 text-teal-200" />
+              <span>{EMAIL_CONTATO}</span>
             </a>
 
+            {/* Botão WhatsApp Encurtado */}
             <button
               onClick={() => handleWhatsAppRedirect("Olá! Gostaria de aproveitar a CONDIÇÃO ESPECIAL DE FEIRA da Tennant A260.")}
-              className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-2 rounded-full font-bold shadow-sm transition-all hover:scale-105 cursor-pointer shrink-0"
+              className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-3.5 py-1.5 rounded-full font-bold shadow-xs transition-all hover:scale-105 cursor-pointer text-xs shrink-0"
             >
               <WhatsAppIcon className="w-4 h-4 text-white" />
-              <span>WhatsApp: {WHATSAPP_DISPLAY}</span>
+              <span>{WHATSAPP_DISPLAY}</span>
             </button>
 
-            {/* Contador Regressivo Discreto à Direita do Botão do WhatsApp */}
-            <div className="hidden sm:flex items-center gap-1.5 bg-black/35 backdrop-blur-xs px-3 py-1.5 rounded-full text-[11px] font-mono border border-teal-300/30 text-teal-50 shrink-0">
-              <Clock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-              <span className="text-[10px] text-teal-200 font-sans uppercase font-bold tracking-wider hidden lg:inline">Encerra em:</span>
+            {/* Contador Regressivo Compacto */}
+            <div className="flex items-center gap-1 bg-black/40 backdrop-blur-xs px-2.5 py-1.5 rounded-full text-[11px] font-mono border border-teal-300/30 text-teal-50 shrink-0">
+              <Clock className="w-3.5 h-3.5 text-amber-300 shrink-0 mr-0.5" />
               <span className="font-black text-white">{String(timeLeft.days).padStart(2, '0')}d</span>
-              <span className="text-teal-300/60">:</span>
+              <span className="text-teal-300/50">:</span>
               <span className="font-bold text-white">{String(timeLeft.hours).padStart(2, '0')}h</span>
-              <span className="text-teal-300/60">:</span>
+              <span className="text-teal-300/50">:</span>
               <span className="font-bold text-white">{String(timeLeft.minutes).padStart(2, '0')}m</span>
-              <span className="text-teal-300/60">:</span>
+              <span className="text-teal-300/50">:</span>
               <span className="font-black text-amber-300">{String(timeLeft.seconds).padStart(2, '0')}s</span>
             </div>
+
           </div>
 
         </div>
