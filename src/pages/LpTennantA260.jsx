@@ -686,11 +686,11 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 💰 CALCULADORA INTERATIVA DE ROI & ECONOMIA DE MÃO DE OBRA                */}
       {/* ========================================================================= */}
-      <section id="calculadora-roi" className="py-12 sm:py-16 bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      <section id="calculadora-roi" className="py-8 sm:py-16 bg-white border-b border-gray-200 w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 w-full">
           
           {/* Header da Calculadora */}
-          <div className="text-center max-w-3xl mx-auto space-y-2">
+          <div className="text-center max-w-3xl mx-auto space-y-1.5">
             <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#007481] bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
               📊 Simulador Financeiro Interativo
             </span>
@@ -702,19 +702,17 @@ export default function LpTennantA260() {
             </p>
           </div>
 
-          {/* Card Principal da Calculadora */}
-          <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-teal-100 rounded-3xl p-6 sm:p-10 shadow-md grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Card Principal da Calculadora - Otimizado para Mobile (95%+ da tela) */}
+          <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-teal-100 rounded-2xl sm:rounded-3xl p-3.5 sm:p-8 md:p-10 shadow-md grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center w-full">
             
             {/* Controles e Sliders */}
-            <div className="lg:col-span-6 space-y-6">
+            <div className="lg:col-span-6 space-y-4 sm:space-y-6 w-full">
               
               {/* Slider 1: Área Total */}
-              <div className="space-y-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
+              <div className="space-y-2.5 bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-gray-200 shadow-xs w-full">
                 <div className="flex justify-between items-center text-xs sm:text-sm font-bold text-gray-800">
-                  <span className="flex items-center gap-2">
-                    📏 Área Total do Seu Espaço:
-                  </span>
-                  <span className="font-mono text-base font-black text-[#007481] bg-teal-50 px-3 py-1 rounded-lg border border-teal-200">
+                  <span>📏 Área Total a Limpar:</span>
+                  <span className="font-mono text-sm sm:text-base font-black text-[#007481] bg-teal-50 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg border border-teal-200">
                     {selectedArea.toLocaleString('pt-BR')} m²
                   </span>
                 </div>
@@ -724,19 +722,17 @@ export default function LpTennantA260() {
                   className="w-full accent-[#007481] cursor-pointer h-2 bg-gray-200 rounded-lg"
                 />
                 <div className="flex justify-between text-[10px] text-gray-600 font-medium">
-                  <span>500 m² (Pequeno)</span>
-                  <span>5.000 m² (Médio)</span>
-                  <span>10.000 m² (Grande Galpão)</span>
+                  <span>500 m²</span>
+                  <span>5.000 m²</span>
+                  <span>10.000 m²</span>
                 </div>
               </div>
 
               {/* Slider 2: Funcionários na Limpeza Manual */}
-              <div className="space-y-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
+              <div className="space-y-2.5 bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-gray-200 shadow-xs w-full">
                 <div className="flex justify-between items-center text-xs sm:text-sm font-bold text-gray-800">
-                  <span className="flex items-center gap-2">
-                    👥 Auxiliares na Limpeza Manual:
-                  </span>
-                  <span className="font-mono text-base font-black text-[#eb6420] bg-orange-50 px-3 py-1 rounded-lg border border-orange-200">
+                  <span>👥 Auxiliares na Limpeza Manual:</span>
+                  <span className="font-mono text-sm sm:text-base font-black text-[#eb6420] bg-orange-50 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg border border-orange-200">
                     {selectedCleaners} {selectedCleaners === 1 ? 'auxiliar' : 'auxiliares'}
                   </span>
                 </div>
@@ -752,7 +748,7 @@ export default function LpTennantA260() {
                 </div>
               </div>
 
-              <div className="text-xs text-gray-700 bg-teal-50/80 p-4 rounded-xl border border-teal-200 flex items-start gap-2.5">
+              <div className="text-xs text-gray-700 bg-teal-50/80 p-3.5 sm:p-4 rounded-xl border border-teal-200 flex items-start gap-2.5">
                 <span className="text-base">💡</span>
                 <p className="leading-relaxed">
                   <strong>1 Lavadora Tennant A260</strong> limpa <strong>2.000 m²/h</strong> com piso 100% seco na hora, liberando sua equipe para outras atividades produtivas.
@@ -762,22 +758,22 @@ export default function LpTennantA260() {
             </div>
 
             {/* Painel de Resultados Financeiros */}
-            <div className="lg:col-span-6 bg-gradient-to-br from-[#007481] via-[#005a64] to-[#00424a] text-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-xl space-y-6">
+            <div className="lg:col-span-6 bg-gradient-to-br from-[#007481] via-[#005a64] to-[#00424a] text-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl shadow-xl space-y-4 sm:space-y-6 w-full">
               
-              <div className="flex items-center justify-between border-b border-teal-400/30 pb-4">
+              <div className="flex items-center justify-between border-b border-teal-400/30 pb-3">
                 <span className="text-xs font-black uppercase tracking-wider text-amber-300">
                   ⚡ Projeção de Economia Financeira
                 </span>
-                <span className="text-[11px] bg-white/20 px-2.5 py-0.5 rounded-full font-semibold text-white">
+                <span className="text-[10px] sm:text-[11px] bg-white/20 px-2.5 py-0.5 rounded-full font-semibold text-white">
                   Base Estimada
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 
                 {/* Economia Mensal */}
-                <div className="bg-white/10 p-4 rounded-xl border border-white/15">
-                  <span className="text-[11px] text-teal-100 block mb-1">Economia Mensal Estimada:</span>
+                <div className="bg-white/10 p-3.5 sm:p-4 rounded-xl border border-white/15">
+                  <span className="text-[11px] text-teal-100 block mb-0.5">Economia Mensal Estimada:</span>
                   <div className="text-2xl sm:text-3xl font-black text-emerald-300 font-mono">
                     R$ {roiData.economiaMensal.toLocaleString('pt-BR')}
                   </div>
@@ -785,8 +781,8 @@ export default function LpTennantA260() {
                 </div>
 
                 {/* Economia Anual */}
-                <div className="bg-white/10 p-4 rounded-xl border border-white/15">
-                  <span className="text-[11px] text-teal-100 block mb-1">Economia Anual (12 Meses):</span>
+                <div className="bg-white/10 p-3.5 sm:p-4 rounded-xl border border-white/15">
+                  <span className="text-[11px] text-teal-100 block mb-0.5">Economia Anual (12 Meses):</span>
                   <div className="text-2xl sm:text-3xl font-black text-amber-300 font-mono">
                     R$ {roiData.economiaAnual.toLocaleString('pt-BR')}
                   </div>
@@ -796,7 +792,7 @@ export default function LpTennantA260() {
               </div>
 
               {/* Tempo economizado */}
-              <div className="bg-black/20 p-3.5 rounded-xl border border-teal-300/20 flex items-center justify-between text-xs">
+              <div className="bg-black/20 p-3 rounded-xl border border-teal-300/20 flex items-center justify-between text-xs">
                 <span className="text-teal-100">⏱️ Ganho de Velocidade:</span>
                 <span className="font-bold text-white bg-teal-600/60 px-2.5 py-1 rounded-lg">
                   ~{roiData.tempoEconomizadoPercent}% mais rápido
