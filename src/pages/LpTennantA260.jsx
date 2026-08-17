@@ -304,8 +304,8 @@ export default function LpTennantA260() {
             </span>
           </div>
 
-          {/* Contatos Diretos (WhatsApp & E-mail) */}
-          <div className="flex items-center gap-4 text-xs font-semibold">
+          {/* Contatos Diretos (WhatsApp & E-mail) + Contador Regressivo Discreto */}
+          <div className="flex items-center gap-3 sm:gap-4 text-xs font-semibold">
             <a 
               href={`mailto:${EMAIL_CONTATO}`}
               className="hidden md:flex items-center gap-1.5 text-teal-100 hover:text-white transition-colors"
@@ -316,11 +316,24 @@ export default function LpTennantA260() {
 
             <button
               onClick={() => handleWhatsAppRedirect("Olá! Gostaria de aproveitar a CONDIÇÃO ESPECIAL DE FEIRA da Tennant A260.")}
-              className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-2 rounded-full font-bold shadow-sm transition-all hover:scale-105 cursor-pointer"
+              className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-2 rounded-full font-bold shadow-sm transition-all hover:scale-105 cursor-pointer shrink-0"
             >
               <WhatsAppIcon className="w-4 h-4 text-white" />
               <span>WhatsApp: {WHATSAPP_DISPLAY}</span>
             </button>
+
+            {/* Contador Regressivo Discreto à Direita do Botão do WhatsApp */}
+            <div className="hidden sm:flex items-center gap-1.5 bg-black/35 backdrop-blur-xs px-3 py-1.5 rounded-full text-[11px] font-mono border border-teal-300/30 text-teal-50 shrink-0">
+              <Clock className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+              <span className="text-[10px] text-teal-200 font-sans uppercase font-bold tracking-wider hidden lg:inline">Encerra em:</span>
+              <span className="font-black text-white">{String(timeLeft.days).padStart(2, '0')}d</span>
+              <span className="text-teal-300/60">:</span>
+              <span className="font-bold text-white">{String(timeLeft.hours).padStart(2, '0')}h</span>
+              <span className="text-teal-300/60">:</span>
+              <span className="font-bold text-white">{String(timeLeft.minutes).padStart(2, '0')}m</span>
+              <span className="text-teal-300/60">:</span>
+              <span className="font-black text-amber-300">{String(timeLeft.seconds).padStart(2, '0')}s</span>
+            </div>
           </div>
 
         </div>
@@ -340,22 +353,11 @@ export default function LpTennantA260() {
               {/* Foto Principal com Selo de Promoção de Feira e Navegação Integrada */}
               <div className="relative bg-white flex items-center justify-center min-h-[380px] sm:min-h-[480px] group select-none rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
                 
-                {/* Badge Oficial Promoção de Feira com Contador Regressivo */}
-                <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-1.5 pointer-events-none select-none">
-                  <div className="bg-gradient-to-r from-red-600 to-[#eb6420] text-white font-black text-xs uppercase px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-white/40 tracking-wider">
-                    <span className="animate-pulse">🔥</span>
+                {/* Badge Oficial Promoção de Feira Piscante */}
+                <div className="absolute top-4 left-4 z-10 pointer-events-none select-none">
+                  <div className="bg-gradient-to-r from-red-600 to-[#eb6420] text-white font-black text-xs uppercase px-4 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-white/40 tracking-wider animate-pulse">
+                    <span>🔥</span>
                     <span>Promoção de Feira</span>
-                  </div>
-                  <div className="bg-gray-900/85 backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-mono font-bold shadow-md flex items-center gap-1.5 border border-white/20">
-                    <Clock className="w-3 h-3 text-amber-400" />
-                    <span className="text-[10px] text-gray-300 font-sans uppercase font-semibold">Encerra em:</span>
-                    <span className="text-amber-300">{String(timeLeft.days).padStart(2, '0')}d</span>
-                    <span className="text-gray-500">:</span>
-                    <span className="text-white">{String(timeLeft.hours).padStart(2, '0')}h</span>
-                    <span className="text-gray-500">:</span>
-                    <span className="text-white">{String(timeLeft.minutes).padStart(2, '0')}m</span>
-                    <span className="text-gray-500">:</span>
-                    <span className="text-orange-400">{String(timeLeft.seconds).padStart(2, '0')}s</span>
                   </div>
                 </div>
 
@@ -413,15 +415,10 @@ export default function LpTennantA260() {
               
               {/* Headline Comercial Limpa e de Alto Impacto com cores em destaque */}
               <div className="space-y-2 pb-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="bg-red-600 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1 animate-pulse">
-                    🔥 Promoção de Feira
-                  </span>
-                  <div className="flex items-center gap-1.5 text-[#eb6420] text-xs font-black uppercase tracking-wider">
-                    <span>★ A Mais Vendida da Tennant</span>
-                    <span>•</span>
-                    <span>Líder Global</span>
-                  </div>
+                <div className="flex items-center gap-1.5 text-[#eb6420] text-xs font-black uppercase tracking-wider">
+                  <span>★ A Lavadora Mais Vendida da Tennant</span>
+                  <span>•</span>
+                  <span>Líder Global</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">
                   Máxima eficiência na limpeza de pisos: substitua até <span className="text-[#007481] font-black">4 auxiliares de limpeza</span> e reduza em até <span className="text-[#eb6420] font-black">60% os custos</span> com a lavadora mais vendida da Tennant.
