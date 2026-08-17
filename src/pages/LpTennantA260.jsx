@@ -90,41 +90,17 @@ export default function LpTennantA260() {
   }, [photoUrlsText]);
 
   // =========================================================================
-  // 2. 🎥 VÍDEOS DEMONSTRATIVOS (20 VÍDEOS ALFA TENNANT / GOOGLE DRIVE)
+  // 2. 🎥 VÍDEOS DEMONSTRATIVOS (EXCLUSIVAMENTE GOOGLE DRIVE / MP4)
   // =========================================================================
-  const DEFAULT_VIDEOS = [
-    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
-    "https://www.youtube.com/watch?v=FjJmK50i-jE",
-    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
-    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k",
-    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
-    "https://www.youtube.com/watch?v=FjJmK50i-jE",
-    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
-    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k",
-    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
-    "https://www.youtube.com/watch?v=FjJmK50i-jE",
-    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
-    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k",
-    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
-    "https://www.youtube.com/watch?v=FjJmK50i-jE",
-    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
-    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k",
-    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
-    "https://www.youtube.com/watch?v=FjJmK50i-jE",
-    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
-    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k"
-  ];
-
   const [videoUrlsText, setVideoUrlsText] = useState(() => {
     const saved = localStorage.getItem('lp_a260_video_urls');
-    if (saved && !saved.includes('dQw4w9WgXcQ')) {
+    if (saved && !saved.includes('youtube.com') && !saved.includes('youtu.be') && !saved.includes('dQw4w9WgXcQ')) {
       return saved;
     }
-    return DEFAULT_VIDEOS.join('\n');
+    return '';
   });
 
-
-  // Helper universal para vídeos: Google Drive (todos os formatos de compartilhamento), YouTube ou MP4 direto
+  // Helper universal para vídeos: Google Drive (todos os formatos de compartilhamento) ou MP4
   const parseVideoEmbed = (url) => {
     if (!url) return null;
     const trimmed = url.trim();
@@ -140,14 +116,12 @@ export default function LpTennantA260() {
       return `https://drive.google.com/file/d/${driveMatch2[1]}/preview`;
     }
 
-    // 2. YouTube (watch, shorts, embed, youtu.be) com playsinline e sem redirecionamento
-    const ytMatch = trimmed.match(/^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/|&v=)([^#&?]*).*/i);
-    if (ytMatch && ytMatch[1] && ytMatch[1].length === 11) {
-      return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
+    // 2. Fallback direto se for MP4/WebM
+    if (trimmed.endsWith('.mp4') || trimmed.endsWith('.webm')) {
+      return trimmed;
     }
 
-    // 3. Fallback direto
-    return trimmed;
+    return null;
   };
 
   const [showAllVideos, setShowAllVideos] = useState(false);
@@ -155,7 +129,9 @@ export default function LpTennantA260() {
 
   const videoList = useMemo(() => {
     const lines = videoUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
-    return lines.map((link, idx) => ({
+    // Filtra estritamente links válidos (sem YouTube)
+    const validLines = lines.filter(u => !u.includes('youtube.com') && !u.includes('youtu.be'));
+    return validLines.map((link, idx) => ({
       id: idx,
       url: link,
       embedUrl: parseVideoEmbed(link),
@@ -1017,51 +993,70 @@ export default function LpTennantA260() {
               <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Vídeos da Lavadora Tennant A260</h2>
             </div>
 
-            {/* Grid de Players de Vídeo no Formato Vertical (2 colunas no celular, 4 no desktop) */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-              {(showAllVideos ? videoList : videoList.slice(0, 8)).map((vid) => (
-                <div 
-                  key={vid.id} 
-                  className="bg-white border border-gray-200 hover:border-[#007481] rounded-xl sm:rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+            {videoList.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center max-w-xl mx-auto space-y-3 shadow-xs">
+                <Video className="w-12 h-12 text-[#007481] mx-auto stroke-1" />
+                <h3 className="font-bold text-gray-900 text-base">Vídeos Demonstrativos do Google Drive</h3>
+                <p className="text-xs text-gray-500">
+                  Os vídeos de demonstração da Tennant A260 em operação são carregados diretamente dos links do Google Drive cadastrados no painel.
+                </p>
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Gostaria de receber os vídeos de demonstração da Tennant A260 no meu WhatsApp.")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-[#25D366] text-white px-5 py-2.5 rounded-full font-bold text-xs shadow-sm hover:shadow transition-all cursor-pointer"
                 >
-                  <div>
-                    <div className="aspect-[9/16] bg-black w-full relative overflow-hidden flex items-center justify-center">
-                      {vid.embedUrl && (vid.embedUrl.includes('drive.google.com') || vid.embedUrl.includes('docs.google.com') || vid.embedUrl.includes('youtube') || vid.embedUrl.includes('/preview') || vid.embedUrl.includes('/embed/')) ? (
-                        <iframe
-                          src={vid.embedUrl}
-                          title={vid.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowFullScreen
-                          loading="lazy"
-                          className="w-full h-full border-0 absolute inset-0 pointer-events-auto"
-                        ></iframe>
-                      ) : vid.url.endsWith('.mp4') || vid.url.endsWith('.webm') ? (
-                        <video
-                          src={vid.url}
-                          controls
-                          playsInline
-                          className="w-full h-full object-cover absolute inset-0"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-white p-2 text-center absolute inset-0">
-                          <Play className="w-8 h-8 text-[#eb6420] mb-1" />
-                          <span className="text-[10px] line-clamp-2">{vid.url}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-2 sm:p-3 bg-white border-t border-gray-100 flex items-center justify-between gap-1">
-                      <h3 className="font-bold text-gray-900 text-[11px] sm:text-xs line-clamp-2 leading-tight">{vid.title}</h3>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setActiveVideoModal(vid); }}
-                        className="text-[10px] bg-teal-50 text-[#007481] px-2 py-1 rounded font-bold hover:bg-teal-100 shrink-0"
-                      >
-                        ▶ Expandir
-                      </button>
+                  <WhatsAppIcon className="w-4 h-4 text-white" />
+                  <span>Solicitar Vídeos no WhatsApp</span>
+                </a>
+              </div>
+            ) : (
+              /* Grid de Players de Vídeo no Formato Vertical (2 colunas no celular, 4 no desktop) */
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+                {(showAllVideos ? videoList : videoList.slice(0, 8)).map((vid) => (
+                  <div 
+                    key={vid.id} 
+                    className="bg-white border border-gray-200 hover:border-[#007481] rounded-xl sm:rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+                  >
+                    <div>
+                      <div className="aspect-[9/16] bg-black w-full relative overflow-hidden flex items-center justify-center">
+                        {vid.embedUrl && (vid.embedUrl.includes('drive.google.com') || vid.embedUrl.includes('docs.google.com') || vid.embedUrl.includes('/preview')) ? (
+                          <iframe
+                            src={vid.embedUrl}
+                            title={vid.title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            loading="lazy"
+                            className="w-full h-full border-0 absolute inset-0 pointer-events-auto"
+                          ></iframe>
+                        ) : vid.url.endsWith('.mp4') || vid.url.endsWith('.webm') ? (
+                          <video
+                            src={vid.url}
+                            controls
+                            playsInline
+                            className="w-full h-full object-cover absolute inset-0"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-white p-2 text-center absolute inset-0">
+                            <Play className="w-8 h-8 text-[#eb6420] mb-1" />
+                            <span className="text-[10px] line-clamp-2">{vid.url}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-2 sm:p-3 bg-white border-t border-gray-100 flex items-center justify-between gap-1">
+                        <h3 className="font-bold text-gray-900 text-[11px] sm:text-xs line-clamp-2 leading-tight">{vid.title}</h3>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setActiveVideoModal(vid); }}
+                          className="text-[10px] bg-teal-50 text-[#007481] px-2 py-1 rounded font-bold hover:bg-teal-100 shrink-0 cursor-pointer"
+                        >
+                          ▶ Expandir
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             {/* Botão de Ver Mais / Menos se houver mais de 8 vídeos */}
             {videoList.length > 8 && (

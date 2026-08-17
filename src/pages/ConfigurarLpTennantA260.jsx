@@ -28,13 +28,6 @@ export default function ConfigurarLpTennantA260() {
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-in-use.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg"
   ];
 
-  const DEFAULT_VIDEOS = [
-    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
-    "https://www.youtube.com/watch?v=FjJmK50i-jE",
-    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
-    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k"
-  ];
-
   const DEFAULT_TESTIMONIALS = [
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-in-use.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg"
   ];
@@ -47,7 +40,13 @@ export default function ConfigurarLpTennantA260() {
     }
     return DEFAULT_PHOTOS.join('\n');
   });
-  const [videoUrls, setVideoUrls] = useState(localStorage.getItem('lp_a260_video_urls') || DEFAULT_VIDEOS.join('\n'));
+  const [videoUrls, setVideoUrls] = useState(() => {
+    const saved = localStorage.getItem('lp_a260_video_urls');
+    if (saved && !saved.includes('youtube.com') && !saved.includes('youtu.be')) {
+      return saved;
+    }
+    return '';
+  });
   const [testimonialUrls, setTestimonialUrls] = useState(localStorage.getItem('lp_a260_testimonials_urls') || DEFAULT_TESTIMONIALS.join('\n'));
   const [whatsappNumber, setWhatsappNumber] = useState(localStorage.getItem('lp_a260_whatsapp') || "5541985083658");
   const [whatsappDisplay, setWhatsappDisplay] = useState(localStorage.getItem('lp_a260_whatsapp_display') || "(41) 98508-3658");
