@@ -227,9 +227,9 @@ export default function LpTennantA260() {
     <div className="min-h-screen bg-white text-[#212529] font-sans antialiased">
       
       {/* ========================================================================= */}
-      {/* 1. TOP BAR INSTITUCIONAL COM LOGOS E CONTATO DIRETO                       */}
+      {/* 1. TOP BAR INSTITUCIONAL CONGELADO (STICKY) COM LOGOS E CONTATO DIRETO    */}
       {/* ========================================================================= */}
-      <div className="bg-[#007481] text-white py-3.5 px-4 shadow-sm">
+      <div className="sticky top-0 z-50 bg-[#007481] text-white py-3 px-4 shadow-md transition-all">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           
           {/* Logos e Autoridade Autorizada */}
