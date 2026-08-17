@@ -399,53 +399,163 @@ export default function LpTennantA260() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 4. DOBRA 2: INDICADORES DE DESEMPENHO (GRID RÁPIDO)                       */}
+      {/* 4. DOBRA 2: COMPARATIVO DE PRODUTIVIDADE HUMANO VS. TENNANT A260 (PREMIUM) */}
       {/* ========================================================================= */}
-      <section className="py-10 bg-gray-50 border-t border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-14 bg-gradient-to-b from-gray-50 to-white border-t border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           
-          <div className="mb-6">
-            <span className="text-[#007481] text-xs font-bold uppercase tracking-wider block">Alta Produtividade & Eficiência</span>
-            <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Indicadores de Desempenho (Grid Rápido)</h2>
+          {/* Header da Seção */}
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#007481] bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
+              ⚡ Eficiência Comprovada em Números
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+              Produtividade Comparada: <span className="text-[#007481]">Tennant A260</span> vs. <span className="text-gray-500">Limpeza Manual</span>
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600">
+              Entenda como 1 operador com a Tennant A260 entrega o mesmo rendimento de até 4 auxiliares de limpeza com padrão profissional e piso seco instantaneamente.
+            </p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-            <table className="w-full text-left text-xs sm:text-sm">
-              <thead className="bg-gray-100 text-gray-900 uppercase font-bold text-[11px] border-b border-gray-200">
-                <tr>
-                  <th className="px-5 py-3.5">Indicador</th>
-                  <th className="px-5 py-3.5">Especificação</th>
-                  <th className="px-5 py-3.5">Benefício Prático</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                <tr>
-                  <td className="px-5 py-3.5 font-bold text-gray-900">Produtividade Teórica</td>
-                  <td className="px-5 py-3.5 font-mono font-semibold text-[#007481]">Até 2.000 m²/h</td>
-                  <td className="px-5 py-3.5 text-gray-700">Substitui equipes manuais (até 4 auxiliares) e reduz o tempo de operação</td>
-                </tr>
-                <tr>
-                  <td className="px-5 py-3.5 font-bold text-gray-900">Faixa de Limpeza</td>
-                  <td className="px-5 py-3.5 font-mono font-semibold text-gray-800">510 mm (disco)</td>
-                  <td className="px-5 py-3.5 text-gray-700">Agilidade em corredores e áreas médias</td>
-                </tr>
-                <tr>
-                  <td className="px-5 py-3.5 font-bold text-gray-900">Capacidade dos Tanques</td>
-                  <td className="px-5 py-3.5 font-mono font-semibold text-gray-800">40L (Solução) / 45L (Recuperação)</td>
-                  <td className="px-5 py-3.5 text-gray-700">Maior autonomia sem paradas frequentes</td>
-                </tr>
-                <tr>
-                  <td className="px-5 py-3.5 font-bold text-gray-900">Nível de Ruído</td>
-                  <td className="px-5 py-3.5 font-mono font-semibold text-emerald-700">Até 69 dBA</td>
-                  <td className="px-5 py-3.5 text-gray-700">Operação ultra silenciosa para <strong>Supermercados em horário de pico</strong>, <strong>Hospitais</strong>, <strong>Áreas Administrativas</strong> e <strong>Indústrias</strong></td>
-                </tr>
-                <tr>
-                  <td className="px-5 py-3.5 font-bold text-gray-900">Alimentação</td>
-                  <td className="px-5 py-3.5 font-mono font-semibold text-[#eb6420]">Bateria (sem cabo)</td>
-                  <td className="px-5 py-3.5 text-gray-700">Total mobilidade sem risco de tropeços</td>
-                </tr>
-              </tbody>
-            </table>
+          {/* Destaque Visual 1 vs 1 (Cards Comparativos de Alto Impacto) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            
+            {/* Card Limpeza Manual */}
+            <div className="bg-white border-2 border-red-100 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-red-100 text-red-700 text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg">
+                Método Tradicional
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-black text-lg">
+                    🪣
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Limpeza Manual (Mop & Balde)</h3>
+                    <p className="text-xs text-gray-500">1 Auxiliar de Limpeza</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 py-2 text-xs sm:text-sm">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Rendimento Médio:</span>
+                    <span className="font-bold text-gray-900">~280 m²/hora</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Tempo para 2.000 m²:</span>
+                    <span className="font-bold text-red-600">Mais de 7 Horas (ou 4 pessoas)</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Secagem do Piso:</span>
+                    <span className="font-bold text-gray-700">30 a 45 min molhado</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Qualidade da Água:</span>
+                    <span className="text-gray-700">Espalha água suja do balde</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-red-100 text-xs font-semibold text-red-700 flex items-center gap-1.5">
+                <span>✕ Alto custo com encargos, faltas e esforço repetitivo</span>
+              </div>
+            </div>
+
+            {/* Card Tennant A260 */}
+            <div className="bg-white border-2 border-teal-500 rounded-2xl p-6 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden ring-4 ring-teal-50">
+              <div className="absolute top-0 right-0 bg-[#007481] text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg">
+                ⚡ Alta Performance
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center font-black text-lg">
+                    ✨
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Lavadora Tennant A260</h3>
+                    <p className="text-xs font-semibold text-[#007481]">1 Único Operador</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 py-2 text-xs sm:text-sm">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Rendimento Efetivo:</span>
+                    <span className="font-black text-[#007481] text-base font-mono">Até 2.000 m²/hora</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Tempo para 2.000 m²:</span>
+                    <span className="font-bold text-emerald-700">Apenas 1 Hora (7x mais rápido)</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Secagem do Piso:</span>
+                    <span className="font-bold text-emerald-700">Seco Instantaneamente</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-gray-600">Qualidade da Água:</span>
+                    <span className="text-gray-700">Água limpa contínua e sucção total</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-teal-100 text-xs font-bold text-[#007481] flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Economia de até 60% na folha e zero risco de quedas</span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Tabela Executiva Comparativa Detalhada */}
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs">
+            <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-bold text-gray-900 text-sm sm:text-base">Quadro Comparativo de Especificações & Benefícios</h3>
+              <span className="text-xs font-semibold text-gray-500">Padrão Técnico Industrial Tennant</span>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-gray-50 text-gray-700 uppercase font-bold text-[11px] border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3.5">Indicador</th>
+                    <th className="px-6 py-3.5 text-[#007481]">Tennant A260</th>
+                    <th className="px-6 py-3.5 text-gray-600">Limpeza Humana Manual</th>
+                    <th className="px-6 py-3.5 text-emerald-700">Ganho Real para Sua Empresa</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  <tr className="hover:bg-gray-50/80 transition-colors">
+                    <td className="px-6 py-4 font-bold text-gray-900">Produtividade por Hora</td>
+                    <td className="px-6 py-4 font-mono font-bold text-[#007481]">Até 2.000 m²/h</td>
+                    <td className="px-6 py-4 text-gray-600">~280 m²/h por pessoa</td>
+                    <td className="px-6 py-4 font-semibold text-emerald-700">⚡ 7x mais veloz (economiza 6h diárias)</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50/80 transition-colors">
+                    <td className="px-6 py-4 font-bold text-gray-900">Secagem do Piso</td>
+                    <td className="px-6 py-4 font-semibold text-[#007481]">Secagem Imediata (Rodo Parabólico)</td>
+                    <td className="px-6 py-4 text-gray-600">Piso molhado por 30-45 min</td>
+                    <td className="px-6 py-4 font-semibold text-emerald-700">Zero interdição e risco zero de quedas de clientes</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50/80 transition-colors">
+                    <td className="px-6 py-4 font-bold text-gray-900">Capacidade dos Tanques</td>
+                    <td className="px-6 py-4 font-mono font-semibold text-gray-800">40L (Solução) / 45L (Recuperação)</td>
+                    <td className="px-6 py-4 text-gray-600">Balde de 10L a 15L</td>
+                    <td className="px-6 py-4 text-gray-700">Autonomia prolongada sem idas e vindas para troca de água</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50/80 transition-colors">
+                    <td className="px-6 py-4 font-bold text-gray-900">Nível de Ruído & Turnos</td>
+                    <td className="px-6 py-4 font-mono font-semibold text-emerald-700">69 dBA (Ultra Silenciosa)</td>
+                    <td className="px-6 py-4 text-gray-600">Ruído e movimentação intensa</td>
+                    <td className="px-6 py-4 text-gray-700">Limpeza em horário comercial sem incomodar público/pacientes</td>
+                  </tr>
+                  <tr className="hover:bg-gray-50/80 transition-colors">
+                    <td className="px-6 py-4 font-bold text-gray-900">Alimentação & Segurança</td>
+                    <td className="px-6 py-4 font-mono font-semibold text-[#eb6420]">Bateria (100% sem cabo)</td>
+                    <td className="px-6 py-4 text-gray-600">Esforço físico repetitivo</td>
+                    <td className="px-6 py-4 text-gray-700">Total ergonomia e sem risco de tropeços de pedestres</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Destaque Criativo por Segmento de Atuação */}
