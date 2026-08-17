@@ -35,6 +35,7 @@ import {
   Power,
   Video
 } from 'lucide-react';
+import CleanTechLogo from '../components/CleanTechLogo';
 
 // Ícone Oficial do WhatsApp em SVG
 function WhatsAppIcon({ className = "w-5 h-5" }) {
@@ -55,7 +56,7 @@ export default function LpTennantA260() {
 
   // Logos Oficiais em Alta Definição (HD 4K Transparentes)
   const LOGO_ALFA_TENNANT = "/alfa-tennant-logo-hd.png";
-  const LOGO_CLEANTECH_DEFAULT = "/cleantechpro-logo-hd.png";
+  const LOGO_CLEANTECH_DEFAULT = "/cleantechpro-logo.svg";
   const [companyLogo, setCompanyLogo] = useState(LOGO_CLEANTECH_DEFAULT);
 
   useEffect(() => {
@@ -91,17 +92,26 @@ export default function LpTennantA260() {
   }, [photoUrlsText]);
 
   // =========================================================================
-  // 2. 🎥 VÍDEOS DEMONSTRATIVOS (EXCLUSIVAMENTE GOOGLE DRIVE / MP4)
+  // 2. 🎥 VÍDEOS DEMONSTRATIVOS (GOOGLE DRIVE / YOUTUBE / MP4)
   // =========================================================================
+  const DEFAULT_VIDEOS = [
+    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
+    "https://www.youtube.com/watch?v=FjJmK50i-jE",
+    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
+    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k",
+    "https://www.youtube.com/watch?v=kYJzC67Y_7s",
+    "https://www.youtube.com/watch?v=M7lc1UVf-VE"
+  ];
+
   const [videoUrlsText, setVideoUrlsText] = useState(() => {
     const saved = localStorage.getItem('lp_a260_video_urls');
-    if (saved && !saved.includes('youtube.com') && !saved.includes('youtu.be') && !saved.includes('dQw4w9WgXcQ')) {
+    if (saved && !saved.includes('dQw4w9WgXcQ')) {
       return saved;
     }
     return '';
   });
 
-  // Helper universal para vídeos: Google Drive (todos os formatos de compartilhamento) ou MP4
+  // Helper universal para vídeos: Google Drive, YouTube ou MP4 direto
   const parseVideoEmbed = (url) => {
     if (!url) return null;
     const trimmed = url.trim();
@@ -117,26 +127,42 @@ export default function LpTennantA260() {
       return `https://drive.google.com/file/d/${driveMatch2[1]}/preview`;
     }
 
-    // 2. Fallback direto se for MP4/WebM
-    if (trimmed.endsWith('.mp4') || trimmed.endsWith('.webm')) {
+    // 2. YouTube (watch?v=ID, youtu.be/ID, shorts/ID, embed/ID)
+    const ytMatch = trimmed.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=0&rel=0&modestbranding=1&playsinline=1`;
+    }
+
+    // 3. Fallback direto se for MP4/WebM
+    if (trimmed.endsWith('.mp4') || trimmed.endsWith('.webm') || trimmed.includes('.mp4?') || trimmed.includes('.webm?')) {
       return trimmed;
     }
 
-    return null;
+    return trimmed;
   };
 
   const [showAllVideos, setShowAllVideos] = useState(false);
   const [activeVideoModal, setActiveVideoModal] = useState(null);
 
+  const videoTitles = [
+    "Operação da Tennant A260: Lavagem & Secagem Contínua",
+    "Demonstração do Rodo Parabólico Linatex em Ação",
+    "Limpeza Pesada de Galpões e Indústrias",
+    "Operação com Painel Touch e Sistema de 1 Botão",
+    "Sucção Perfeita sem Deixar Rastros no Piso",
+    "Manutenção Simplificada e Troca Rápida de Escova",
+    "Abastecimento dos Tanques de 45 Litros",
+    "Desempenho da Bateria e Manobrabilidade em Espaços Estreitos"
+  ];
+
   const videoList = useMemo(() => {
-    const lines = videoUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
-    // Filtra estritamente links válidos (sem YouTube)
-    const validLines = lines.filter(u => !u.includes('youtube.com') && !u.includes('youtu.be'));
-    return validLines.map((link, idx) => ({
+    const lines = videoUrlsText ? videoUrlsText.split('\n').map(u => u.trim()).filter(Boolean) : [];
+    const sourceList = lines.length > 0 ? lines : DEFAULT_VIDEOS;
+    return sourceList.map((link, idx) => ({
       id: idx,
       url: link,
       embedUrl: parseVideoEmbed(link),
-      title: idx === 0 ? "Demonstração da Tennant A260: Operação & Sucção Linatex" : `Vídeo de Demonstração #${idx + 1}`
+      title: videoTitles[idx % videoTitles.length] || `Vídeo Demonstrativo #${idx + 1}`
     }));
   }, [videoUrlsText]);
 
@@ -277,47 +303,47 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 1. TOP BAR INSTITUCIONAL CONGELADA (NOTRANSLATE ANTI-TRADUTOR SAFARI/CHROME)*/}
       {/* ========================================================================= */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-md w-full notranslate" translate="no">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 md:h-24 flex items-center justify-between gap-2 sm:gap-6">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-lg w-full notranslate" translate="no">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 sm:h-22 md:h-24 flex items-center justify-between gap-2 sm:gap-4">
           
-          {/* Logos Co-branded (Alfa Tennant + Clean Tech) - Maiores e com Cores Originais */}
-          <div className="flex items-center gap-2.5 sm:gap-4 shrink-0 notranslate" translate="no">
+          {/* LADO ESQUERDO: Logos */}
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0 notranslate" translate="no">
+            {/* Logotipo Alfa Tennant (Apenas Desktop / Tablet - Oculto no Mobile para ganhar espaço) */}
             <img 
               src={LOGO_ALFA_TENNANT} 
               alt="Alfa by Tennant Company" 
-              className="h-8 sm:h-11 md:h-14 object-contain"
+              className="hidden sm:block h-8 sm:h-10 md:h-12 w-auto object-contain shrink-0 drop-shadow-xs"
             />
             
-            <div className="h-7 sm:h-10 md:h-12 w-px bg-teal-300/40"></div>
+            <div className="hidden sm:block h-7 sm:h-9 md:h-11 w-px bg-teal-300/30 shrink-0"></div>
             
-            {/* Logotipo Oficial Clean Tech Pro */}
-            <img 
-              src={companyLogo || LOGO_CLEANTECH_DEFAULT} 
-              alt="Clean Tech Pro" 
-              className="h-8 sm:h-11 md:h-14 object-contain max-w-[130px] sm:max-w-[190px] md:max-w-[250px]" 
-            />
+            {/* Logotipo Oficial Clean Tech Pro (Vetor SVG Nítido / 100% Contraste HD) */}
+            <div className="flex items-center shrink-0">
+              <CleanTechLogo className="h-10 sm:h-11 md:h-13 w-auto shrink-0 drop-shadow-sm" />
+            </div>
 
-            <div className="hidden lg:flex flex-col justify-center text-xs lg:text-sm text-teal-100 pl-4 border-l border-teal-300/40 leading-tight shrink-0 notranslate" translate="no">
-              <span className="font-bold text-white">Representante & Assistência Técnica Autorizada Tennant</span>
+            {/* Tag de Representante & Assistência Técnica (Apenas Telas Grandes Desktop) */}
+            <div className="hidden xl:flex flex-col justify-center text-xs text-teal-100 pl-4 border-l border-teal-300/30 leading-tight shrink-0 notranslate" translate="no">
+              <span className="font-bold text-white tracking-wide">Representante & Assistência Técnica Autorizada Tennant</span>
               <span className="text-[11px] text-teal-200 font-medium">Curitiba & Região Metropolitana • Paraná</span>
             </div>
           </div>
 
-          {/* Lado Direito: Timer (Desktop) + Botão WhatsApp Direto */}
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0 notranslate" translate="no">
+          {/* LADO DIREITO: Timer + Ações */}
+          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0 notranslate" translate="no">
             
-            {/* E-mail (Desktop) */}
+            {/* E-mail (Desktop XL) */}
             <a 
               href={`mailto:${EMAIL_CONTATO}`}
-              className="hidden lg:flex items-center gap-2 text-teal-100 hover:text-white transition-colors text-xs sm:text-sm font-medium"
+              className="hidden 2xl:flex items-center gap-2 text-teal-100 hover:text-white transition-colors text-xs font-medium shrink-0"
             >
               <Mail className="w-4 h-4 text-teal-200" />
               <span>{EMAIL_CONTATO}</span>
             </a>
 
-            {/* Contador Regressivo Executivo (Apenas no Desktop/Tablet para não apertar mobile) */}
-            <div className="hidden md:flex items-center gap-1 sm:gap-1.5 bg-black/35 backdrop-blur-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs md:text-sm font-mono border border-teal-300/30 text-teal-50 shrink-0">
-              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 shrink-0 mr-0.5" />
+            {/* Contador Regressivo Promocional (Visível tanto no Mobile quanto no Desktop) */}
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs md:text-sm font-mono border border-teal-300/30 text-teal-50 shrink-0 shadow-inner">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 shrink-0" />
               <span className="font-bold text-white">{String(timeLeft.days).padStart(2, '0')}d</span>
               <span className="text-teal-300/40">:</span>
               <span className="font-bold text-white">{String(timeLeft.hours).padStart(2, '0')}h</span>
@@ -327,15 +353,27 @@ export default function LpTennantA260() {
               <span className="font-black text-amber-300">{String(timeLeft.seconds).padStart(2, '0')}s</span>
             </div>
 
-            {/* Botão WhatsApp Direto (Compacto no Celular, Completo no Desktop) */}
-            <button
-              onClick={() => handleWhatsAppRedirect("Olá! Gostaria de aproveitar a CONDIÇÃO ESPECIAL DE FEIRA da Tennant A260.")}
-              className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-full font-bold shadow-md transition-all hover:scale-105 cursor-pointer text-xs sm:text-sm shrink-0"
-            >
-              <WhatsAppIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
-              <span className="sm:hidden">WhatsApp</span>
-              <span className="hidden sm:inline">{WHATSAPP_DISPLAY}</span>
-            </button>
+            {/* Mobile CTA: Botão Direto de Cotação (Sem o texto longo do WhatsApp) */}
+            <div className="sm:hidden shrink-0">
+              <button
+                onClick={() => handleWhatsAppRedirect("Olá! Gostaria de aproveitar a CONDIÇÃO ESPECIAL DE FEIRA da Tennant A260.")}
+                className="flex items-center gap-1 bg-[#eb6420] hover:bg-[#d65715] active:scale-95 text-white px-3 py-1.5 rounded-full font-black shadow-md transition-all text-xs shrink-0 cursor-pointer"
+              >
+                <Zap className="w-3.5 h-3.5 fill-current" />
+                <span>Cotar Agora</span>
+              </button>
+            </div>
+
+            {/* Desktop CTA: Botão WhatsApp Oficial com Número Formatado */}
+            <div className="hidden sm:block shrink-0">
+              <button
+                onClick={() => handleWhatsAppRedirect("Olá! Gostaria de aproveitar a CONDIÇÃO ESPECIAL DE FEIRA da Tennant A260.")}
+                className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white px-4 md:px-5 py-2 md:py-2.5 rounded-full font-bold shadow-md transition-all text-xs md:text-sm shrink-0 whitespace-nowrap cursor-pointer hover:shadow-lg"
+              >
+                <WhatsAppIcon className="w-4 h-4 md:w-5 md:h-5 text-white shrink-0" />
+                <span>{WHATSAPP_DISPLAY}</span>
+              </button>
+            </div>
 
           </div>
 
@@ -345,7 +383,7 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 2. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
-      <section id="hero-pdp" className="pt-20 sm:pt-24 md:pt-28 pb-4 sm:pb-10 bg-white">
+      <section id="hero-pdp" className="pt-24 sm:pt-28 md:pt-32 pb-4 sm:pb-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
@@ -597,9 +635,9 @@ export default function LpTennantA260() {
                   </tr>
                   <tr className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-4 sm:px-6 py-3.5 font-bold text-gray-900">Capacidade dos Tanques</td>
-                    <td className="px-4 sm:px-6 py-3.5 font-mono font-semibold text-gray-800">40L (Solução) / 45L (Recuperação)</td>
+                    <td className="px-4 sm:px-6 py-3.5 font-mono font-semibold text-gray-800">45L (Água Limpa / Solução) / 45L (Recuperação)</td>
                     <td className="px-4 sm:px-6 py-3.5 text-gray-600">Balde de 10L a 15L</td>
-                    <td className="px-4 sm:px-6 py-3.5 text-gray-700">Autonomia prolongada sem idas e vindas para troca de água</td>
+                    <td className="px-4 sm:px-6 py-3.5 text-gray-700">Autonomia prolongada de 45L sem idas e vindas para troca de água</td>
                   </tr>
                   <tr className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-4 sm:px-6 py-3.5 font-bold text-gray-900">Nível de Ruído & Turnos</td>
@@ -1021,7 +1059,7 @@ export default function LpTennantA260() {
                   >
                     <div>
                       <div className="aspect-[9/16] bg-black w-full relative overflow-hidden flex items-center justify-center">
-                        {vid.embedUrl && (vid.embedUrl.includes('drive.google.com') || vid.embedUrl.includes('docs.google.com') || vid.embedUrl.includes('/preview')) ? (
+                        {vid.embedUrl && (vid.embedUrl.includes('drive.google.com') || vid.embedUrl.includes('docs.google.com') || vid.embedUrl.includes('youtube') || vid.embedUrl.includes('/preview') || vid.embedUrl.includes('/embed/')) ? (
                           <iframe
                             src={vid.embedUrl}
                             title={vid.title}
@@ -1038,9 +1076,9 @@ export default function LpTennantA260() {
                             className="w-full h-full object-cover absolute inset-0"
                           />
                         ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-white p-2 text-center absolute inset-0">
-                            <Play className="w-8 h-8 text-[#eb6420] mb-1" />
-                            <span className="text-[10px] line-clamp-2">{vid.url}</span>
+                          <div className="w-full h-full flex flex-col items-center justify-center text-white p-2 text-center absolute inset-0 cursor-pointer" onClick={() => setActiveVideoModal(vid)}>
+                            <Play className="w-10 h-10 text-[#eb6420] mb-2 drop-shadow-md" />
+                            <span className="text-[11px] font-bold text-teal-200">Clique para Assistir</span>
                           </div>
                         )}
                       </div>

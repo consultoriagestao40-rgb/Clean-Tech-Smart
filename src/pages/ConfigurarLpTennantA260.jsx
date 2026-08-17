@@ -41,11 +41,7 @@ export default function ConfigurarLpTennantA260() {
     return DEFAULT_PHOTOS.join('\n');
   });
   const [videoUrls, setVideoUrls] = useState(() => {
-    const saved = localStorage.getItem('lp_a260_video_urls');
-    if (saved && !saved.includes('youtube.com') && !saved.includes('youtu.be')) {
-      return saved;
-    }
-    return '';
+    return localStorage.getItem('lp_a260_video_urls') || '';
   });
   const [testimonialUrls, setTestimonialUrls] = useState(localStorage.getItem('lp_a260_testimonials_urls') || DEFAULT_TESTIMONIALS.join('\n'));
   const [whatsappNumber, setWhatsappNumber] = useState(localStorage.getItem('lp_a260_whatsapp') || "5541985083658");
