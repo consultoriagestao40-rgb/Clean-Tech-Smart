@@ -261,7 +261,7 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 1. TOP BAR INSTITUCIONAL CONGELADA (ULTRA-LIMPA NO CELULAR, ROBUSTA DESKTOP) */}
       {/* ========================================================================= */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-lg transition-all w-full">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-md w-full">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 md:h-20 flex items-center justify-between gap-2 sm:gap-6">
           
           {/* Logos Co-branded (Alfa Tennant + Clean Tech) */}
@@ -307,13 +307,14 @@ export default function LpTennantA260() {
               <span className="font-black text-amber-300">{String(timeLeft.seconds).padStart(2, '0')}s</span>
             </div>
 
-            {/* Botão WhatsApp Direto 100% visível em qualquer smartphone */}
+            {/* Botão WhatsApp Direto (Compacto no Celular, Completo no Desktop) */}
             <button
               onClick={() => handleWhatsAppRedirect("Olá! Gostaria de aproveitar a CONDIÇÃO ESPECIAL DE FEIRA da Tennant A260.")}
-              className="flex items-center gap-1.5 sm:gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-full font-bold shadow-md transition-all hover:scale-105 cursor-pointer text-xs sm:text-sm shrink-0"
+              className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-full font-bold shadow-md transition-all hover:scale-105 cursor-pointer text-xs sm:text-sm shrink-0"
             >
               <WhatsAppIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
-              <span>{WHATSAPP_DISPLAY}</span>
+              <span className="sm:hidden">WhatsApp</span>
+              <span className="hidden sm:inline">{WHATSAPP_DISPLAY}</span>
             </button>
 
           </div>
@@ -324,7 +325,7 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 2. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
-      <section id="hero-pdp" className="pt-18 sm:pt-22 md:pt-28 pb-4 sm:pb-10 bg-white">
+      <section id="hero-pdp" className="pt-20 sm:pt-24 md:pt-28 pb-4 sm:pb-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
@@ -333,11 +334,11 @@ export default function LpTennantA260() {
             <div className="lg:col-span-6 space-y-4">
               
               {/* Foto Principal com Selo de Promoção de Feira e Navegação Integrada */}
-              <div className="relative bg-white flex flex-col items-center justify-center p-4 sm:p-6 min-h-[340px] sm:min-h-[480px] group select-none rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
+              <div className="relative bg-white flex flex-col items-center justify-center pt-8 pb-6 px-4 min-h-[360px] sm:min-h-[480px] group select-none rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
                 
                 {/* Badge Oficial Promoção de Feira Piscante */}
                 <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 pointer-events-none select-none">
-                  <div className="bg-gradient-to-r from-red-600 via-orange-600 to-[#eb6420] text-white font-black text-[10px] sm:text-xs uppercase px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-white tracking-wider animate-pulse">
+                  <div className="bg-gradient-to-r from-red-600 via-orange-600 to-[#eb6420] text-white font-black text-xs uppercase px-3.5 sm:px-4 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-white tracking-wider animate-pulse">
                     <span>🔥</span>
                     <span>Promoção de Feira</span>
                   </div>
@@ -346,7 +347,7 @@ export default function LpTennantA260() {
                 <img 
                   src={photoList[activePhotoIndex] || DEFAULT_PHOTOS[0]} 
                   alt="A260 Lavadora de piso de operação a pé" 
-                  className="max-h-[300px] sm:max-h-[440px] w-auto object-contain transition-opacity duration-300 mt-4 sm:mt-0"
+                  className="max-h-[280px] sm:max-h-[440px] w-auto object-contain transition-opacity duration-300 mt-6 sm:mt-2"
                 />
 
                 {/* Seta Esquerda na Foto */}
