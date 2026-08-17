@@ -846,12 +846,12 @@ export default function LpTennantA260() {
               <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Vídeos da Lavadora Tennant A260</h2>
             </div>
 
-            {/* Grid de Players de Vídeo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Grid de Players de Vídeo no Formato Vertical (4 por linha) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
               {videoList.map((vid) => (
-                <div key={vid.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm flex flex-col justify-between">
+                <div key={vid.id} className="bg-white border border-gray-200 hover:border-[#007481] rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
                   <div>
-                    <div className="aspect-video bg-black w-full relative">
+                    <div className="aspect-[9/16] bg-black w-full relative overflow-hidden">
                       {vid.embedUrl && (vid.embedUrl.includes('drive.google.com') || vid.embedUrl.includes('youtube.com') || vid.embedUrl.includes('/preview')) ? (
                         <iframe
                           src={vid.embedUrl}
@@ -864,7 +864,7 @@ export default function LpTennantA260() {
                         <video
                           src={vid.url}
                           controls
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-white p-4 text-center">
@@ -873,8 +873,8 @@ export default function LpTennantA260() {
                         </div>
                       )}
                     </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm">{vid.title}</h3>
+                    <div className="p-3.5 bg-white">
+                      <h3 className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-2 leading-snug">{vid.title}</h3>
                     </div>
                   </div>
                 </div>
