@@ -259,53 +259,53 @@ export default function LpTennantA260() {
     <div className="min-h-screen bg-white text-[#212529] font-sans antialiased w-full overflow-x-clip">
       
       {/* ========================================================================= */}
-      {/* 1. TOP BAR INSTITUCIONAL CONGELADA (LINHA ÚNICA ULTRA-CLEAN & ELEGANTE)   */}
+      {/* 1. TOP BAR INSTITUCIONAL CONGELADA (ALTA & ROBUSTA NO DESKTOP, FINA MOBILE) */}
       {/* ========================================================================= */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-md transition-all w-full">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 h-13 sm:h-14 flex items-center justify-between gap-2">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-13 md:h-20 flex items-center justify-between gap-3">
           
-          {/* Logos Co-branded */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Logos Co-branded (Grandes e Imponentes no Desktop) */}
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <img 
               src={LOGO_ALFA_TENNANT} 
               alt="Alfa by Tennant Company" 
-              className="h-5 sm:h-8 object-contain brightness-0 invert"
+              className="h-5 sm:h-7 md:h-10 object-contain brightness-0 invert"
             />
             
-            <div className="h-4 sm:h-5 w-px bg-teal-300/40"></div>
+            <div className="h-4 sm:h-6 md:h-8 w-px bg-teal-300/40"></div>
             
             {companyLogo ? (
               <img 
                 src={companyLogo} 
                 alt="Clean Tech Smart" 
-                className="h-5 sm:h-7 object-contain brightness-0 invert max-w-[70px] sm:max-w-[120px]" 
+                className="h-5 sm:h-6 md:h-9 object-contain brightness-0 invert max-w-[70px] sm:max-w-[100px] md:max-w-[140px]" 
               />
             ) : (
-              <div className="text-white font-black text-[11px] sm:text-sm tracking-tight">
+              <div className="text-white font-black text-[11px] sm:text-sm md:text-base tracking-tight">
                 Clean Tech
               </div>
             )}
             
-            <span className="hidden xl:inline text-[11px] font-semibold text-teal-100 pl-2 border-l border-teal-300/40">
+            <span className="hidden xl:inline text-xs md:text-sm font-semibold text-teal-100 pl-3 border-l border-teal-300/40">
               Autorizada Tennant • Curitiba/PR
             </span>
           </div>
 
-          {/* Lado Direito: Timer + WhatsApp (Linha Única em Qualquer Celular) */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          {/* Lado Direito: Timer + WhatsApp + E-mail */}
+          <div className="flex items-center gap-1.5 sm:gap-3 md:gap-4 shrink-0">
             
-            {/* E-mail (Apenas Desktop) */}
+            {/* E-mail (Desktop) */}
             <a 
               href={`mailto:${EMAIL_CONTATO}`}
-              className="hidden lg:flex items-center gap-1.5 text-teal-100 hover:text-white transition-colors text-[11px]"
+              className="hidden lg:flex items-center gap-2 text-teal-100 hover:text-white transition-colors text-xs md:text-sm font-medium"
             >
-              <Mail className="w-3.5 h-3.5 text-teal-200" />
+              <Mail className="w-4 h-4 text-teal-200" />
               <span>{EMAIL_CONTATO}</span>
             </a>
 
-            {/* Contador Regressivo Compacto */}
-            <div className="flex items-center gap-0.5 sm:gap-1 bg-black/30 backdrop-blur-xs px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-mono border border-teal-300/30 text-teal-50 shrink-0">
-              <Clock className="w-3 h-3 text-amber-300 shrink-0 mr-0.5" />
+            {/* Contador Regressivo Executivo */}
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-black/35 backdrop-blur-xs px-2 sm:px-3 md:px-4 py-1 md:py-2 rounded-full text-[10px] sm:text-xs md:text-sm font-mono border border-teal-300/30 text-teal-50 shrink-0">
+              <Clock className="w-3 h-3 md:w-4 md:h-4 text-amber-300 shrink-0 mr-0.5" />
               <span className="font-bold text-white">{String(timeLeft.days).padStart(2, '0')}d</span>
               <span className="text-teal-300/40">:</span>
               <span className="font-bold text-white">{String(timeLeft.hours).padStart(2, '0')}h</span>
@@ -318,9 +318,9 @@ export default function LpTennantA260() {
             {/* Botão WhatsApp Direto */}
             <button
               onClick={() => handleWhatsAppRedirect("Olá! Gostaria de aproveitar a CONDIÇÃO ESPECIAL DE FEIRA da Tennant A260.")}
-              className="flex items-center gap-1 sm:gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full font-bold shadow-xs transition-all hover:scale-105 cursor-pointer text-[11px] sm:text-xs shrink-0"
+              className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-2.5 sm:px-4 md:px-5 py-1 sm:py-2 md:py-2.5 rounded-full font-bold shadow-md transition-all hover:scale-105 cursor-pointer text-[11px] sm:text-xs md:text-sm shrink-0"
             >
-              <WhatsAppIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+              <WhatsAppIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
               <span className="hidden sm:inline">{WHATSAPP_DISPLAY}</span>
               <span className="sm:hidden">WhatsApp</span>
             </button>
@@ -333,7 +333,7 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 2. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
-      <section id="hero-pdp" className="pt-16 sm:pt-20 pb-4 sm:pb-10 bg-white">
+      <section id="hero-pdp" className="pt-16 md:pt-24 pb-4 sm:pb-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
