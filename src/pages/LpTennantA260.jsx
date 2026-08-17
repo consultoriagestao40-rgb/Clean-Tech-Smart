@@ -54,7 +54,17 @@ export default function LpTennantA260() {
 
   // Logos Oficiais
   const LOGO_ALFA_TENNANT = "https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png";
-  const [companyLogo] = useState(localStorage.getItem('app_company_logo') || '');
+  const [companyLogo, setCompanyLogo] = useState(() => {
+    return localStorage.getItem('app_company_logo') || localStorage.getItem('app_company_logo_original') || '';
+  });
+
+  useEffect(() => {
+    const handleLogo = () => {
+      setCompanyLogo(localStorage.getItem('app_company_logo') || localStorage.getItem('app_company_logo_original') || '');
+    };
+    window.addEventListener('logoChanged', handleLogo);
+    return () => window.removeEventListener('logoChanged', handleLogo);
+  }, []);
 
   // =========================================================================
   // 1. 📷 FOTOS OFICIAIS DA MÁQUINA
@@ -99,31 +109,33 @@ export default function LpTennantA260() {
   });
 
 
-  // Helper universal para vídeos: Google Drive, YouTube ou MP4 direto
+  // Helper universal para vídeos: Google Drive (todos os formatos de compartilhamento), YouTube ou MP4 direto
   const parseVideoEmbed = (url) => {
     if (!url) return null;
     const trimmed = url.trim();
 
-    // 1. Google Drive (drive.google.com/file/d/... ou drive.google.com/open?id=...)
-    const driveMatch1 = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    // 1. Google Drive (drive.google.com/file/d/ID, docs.google.com/file/d/ID, open?id=ID, uc?id=ID, etc.)
+    const driveMatch1 = trimmed.match(/(?:drive|docs)\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
     if (driveMatch1 && driveMatch1[1]) {
       return `https://drive.google.com/file/d/${driveMatch1[1]}/preview`;
     }
 
-    const driveMatch2 = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    if (driveMatch2 && driveMatch2[1] && trimmed.includes('drive.google.com')) {
+    const driveMatch2 = trimmed.match(/(?:drive|docs)\.google\.com\/[a-zA-Z0-9_/?&=#%+-]*[?&]id=([a-zA-Z0-9_-]+)/i);
+    if (driveMatch2 && driveMatch2[1]) {
       return `https://drive.google.com/file/d/${driveMatch2[1]}/preview`;
     }
 
-    // 2. YouTube
-    const ytMatch = trimmed.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
-    if (ytMatch && ytMatch[2].length === 11) {
-      return `https://www.youtube.com/embed/${ytMatch[2]}`;
+    // 2. YouTube (watch, shorts, embed, youtu.be)
+    const ytMatch = trimmed.match(/^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/|&v=)([^#&?]*).*/i);
+    if (ytMatch && ytMatch[1] && ytMatch[1].length === 11) {
+      return `https://www.youtube.com/embed/${ytMatch[1]}`;
     }
 
-    // 3. Fallback / URL Direta
+    // 3. Fallback direto
     return trimmed;
   };
+
+  const [showAllVideos, setShowAllVideos] = useState(false);
 
   const videoList = useMemo(() => {
     const lines = videoUrlsText.split('\n').map(u => u.trim()).filter(Boolean);
@@ -131,7 +143,7 @@ export default function LpTennantA260() {
       id: idx,
       url: link,
       embedUrl: parseVideoEmbed(link),
-      title: idx === 0 ? "Demonstração da Tennant A260: Operação & Sucção Linatex" : `Vídeo Demonstrativo da Lavadora Tennant #${idx + 1}`
+      title: idx === 0 ? "Demonstração da Tennant A260: Operação & Sucção Linatex" : `Vídeo de Demonstração #${idx + 1}`
     }));
   }, [videoUrlsText]);
 
@@ -280,9 +292,18 @@ export default function LpTennantA260() {
             
             <div className="h-5 sm:h-6 md:h-8 w-px bg-teal-300/40"></div>
             
-            <div className="text-white font-black text-xs sm:text-sm md:text-base tracking-tight shrink-0">
-              Clean Tech
-            </div>
+            {companyLogo ? (
+              <img 
+                src={companyLogo} 
+                alt="Clean Tech Smart" 
+                className="h-6 sm:h-8 md:h-9 object-contain brightness-0 invert max-w-[85px] sm:max-w-[130px]" 
+              />
+            ) : (
+              <div className="flex items-center gap-1 text-white font-black text-xs sm:text-sm md:text-base tracking-tight shrink-0">
+                <span className="text-teal-200">Clean Tech</span>
+                <span className="text-white font-light text-[10px] sm:text-xs">Smart</span>
+              </div>
+            )}
             
             <span className="hidden xl:inline text-xs sm:text-sm font-semibold text-teal-100 pl-3 border-l border-teal-300/40">
               Autorizada Tennant • Curitiba/PR
@@ -982,38 +1003,51 @@ export default function LpTennantA260() {
 
             {/* Grid de Players de Vídeo no Formato Vertical (2 colunas no celular, 4 no desktop) */}
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-              {videoList.map((vid) => (
+              {(showAllVideos ? videoList : videoList.slice(0, 8)).map((vid) => (
                 <div key={vid.id} className="bg-white border border-gray-200 hover:border-[#007481] rounded-xl sm:rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
                   <div>
                     <div className="aspect-[9/16] bg-black w-full relative overflow-hidden">
-                      {vid.embedUrl && (vid.embedUrl.includes('drive.google.com') || vid.embedUrl.includes('youtube.com') || vid.embedUrl.includes('/preview')) ? (
+                      {vid.embedUrl && (vid.embedUrl.includes('drive.google.com') || vid.embedUrl.includes('docs.google.com') || vid.embedUrl.includes('youtube.com') || vid.embedUrl.includes('/preview') || vid.embedUrl.includes('/embed/')) ? (
                         <iframe
                           src={vid.embedUrl}
                           title={vid.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; allow-same-origin; allow-scripts"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           allowFullScreen
-                          className="w-full h-full border-0"
+                          loading="lazy"
+                          className="w-full h-full border-0 absolute inset-0"
                         ></iframe>
                       ) : vid.url.endsWith('.mp4') || vid.url.endsWith('.webm') ? (
                         <video
                           src={vid.url}
                           controls
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover absolute inset-0"
                         />
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-white p-2 text-center">
+                        <div className="w-full h-full flex flex-col items-center justify-center text-white p-2 text-center absolute inset-0">
                           <Play className="w-8 h-8 text-[#eb6420] mb-1" />
                           <span className="text-[10px] line-clamp-2">{vid.url}</span>
                         </div>
                       )}
                     </div>
-                    <div className="p-2 sm:p-3.5 bg-white">
-                      <h3 className="font-bold text-gray-900 text-[11px] sm:text-sm line-clamp-2 leading-snug">{vid.title}</h3>
+                    <div className="p-2 sm:p-3 bg-white border-t border-gray-100">
+                      <h3 className="font-bold text-gray-900 text-[11px] sm:text-xs line-clamp-2 leading-tight">{vid.title}</h3>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Botão de Ver Mais / Menos se houver mais de 8 vídeos */}
+            {videoList.length > 8 && (
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setShowAllVideos(!showAllVideos)}
+                  className="bg-white hover:bg-teal-50 text-[#007481] border-2 border-[#007481] px-6 py-2.5 rounded-full font-bold text-xs sm:text-sm transition-all shadow-sm hover:shadow cursor-pointer inline-flex items-center gap-2"
+                >
+                  <span>{showAllVideos ? '▲ Mostrar Menos Vídeos' : `▼ Ver Todos os Vídeos de Demonstração (${videoList.length} vídeos)`}</span>
+                </button>
+              </div>
+            )}
           </div>
 
         </div>
@@ -1039,42 +1073,46 @@ export default function LpTennantA260() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full">
             
             {/* Opção 1: Locação / Outsourcing */}
-            <div className="bg-white border-2 border-[#eb6420] rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden ring-4 ring-orange-50/50">
-              <div className="absolute top-0 right-0 bg-[#eb6420] text-white text-[10px] font-black uppercase px-3 sm:px-4 py-1 rounded-bl-xl shadow-xs">
-                ★ Mais Escolhido por Empresas
-              </div>
+            <div className="bg-white border-2 border-[#eb6420] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden ring-4 ring-orange-50/50">
               
-              <div className="space-y-4 sm:space-y-5">
-                <div className="flex items-center gap-3 sm:gap-3.5">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-orange-100 text-[#eb6420] flex items-center justify-center font-black shrink-0">
-                    <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">Locação / Outsourcing Operacional</h3>
-                    <span className="text-xs font-bold text-[#eb6420]">Redução Total de CAPEX • 100% OPEX</span>
-                  </div>
+              <div>
+                {/* Badge no Topo Sem Sobrepor */}
+                <div className="mb-4 inline-flex items-center gap-1.5 self-start bg-[#eb6420] text-white text-[11px] font-black uppercase px-3.5 py-1 rounded-full shadow-xs tracking-wider">
+                  ★ Mais Escolhido por Empresas
                 </div>
+                
+                <div className="space-y-4 sm:space-y-5">
+                  <div className="flex items-center gap-3 sm:gap-3.5">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-orange-100 text-[#eb6420] flex items-center justify-center font-black shrink-0">
+                      <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">Locação / Outsourcing Operacional</h3>
+                      <span className="text-xs font-bold text-[#eb6420]">Redução Total de CAPEX • 100% OPEX</span>
+                    </div>
+                  </div>
 
-                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                  Linhas de locação mensal com <strong>manutenção inclusa</strong> para reduzir custos operacionais e evitar imobilização de capital.
-                </p>
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                    Linhas de locação mensal com <strong>manutenção inclusa</strong> para reduzir custos operacionais e evitar imobilização de capital.
+                  </p>
 
-                <div className="space-y-2.5 pt-2 border-t border-gray-100 text-xs text-gray-700">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span><strong>Manutenção 100% inclusa:</strong> Peças, escovas e borrachas sem surpresas no caixa</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span><strong>Benefício Fiscal:</strong> Mensalidade 100% dedutível no IRPJ/CSLL (Lucro Real)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span><strong>Substituição Imediata:</strong> Garantia de continuidade sem parada de operação</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span><strong>Entrega técnica e treinamento:</strong> Gratuitos no seu estabelecimento</span>
+                  <div className="space-y-2.5 pt-2 border-t border-gray-100 text-xs text-gray-700">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span><strong>Manutenção 100% inclusa:</strong> Peças, escovas e borrachas sem surpresas no caixa</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span><strong>Benefício Fiscal:</strong> Mensalidade 100% dedutível no IRPJ/CSLL (Lucro Real)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span><strong>Substituição Imediata:</strong> Garantia de continuidade sem parada de operação</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span><strong>Entrega técnica e treinamento:</strong> Gratuitos no seu estabelecimento</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1091,42 +1129,46 @@ export default function LpTennantA260() {
             </div>
 
             {/* Opção 2: Venda Direta de Fábrica */}
-            <div className="bg-white border-2 border-teal-200 hover:border-[#007481] rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden transition-all ring-4 ring-teal-50/50">
-              <div className="absolute top-0 right-0 bg-[#007481] text-white text-[10px] font-black uppercase px-3 sm:px-4 py-1 rounded-bl-xl shadow-xs">
-                Máquina Nova
-              </div>
-
-              <div className="space-y-4 sm:space-y-5">
-                <div className="flex items-center gap-3 sm:gap-3.5">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center font-black shrink-0">
-                    <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">Venda Direta de Máquina Nova</h3>
-                    <span className="text-xs font-bold text-[#007481]">Faturamento com Suporte Oficial Tennant</span>
-                  </div>
+            <div className="bg-white border-2 border-teal-200 hover:border-[#007481] rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden transition-all ring-4 ring-teal-50/50">
+              
+              <div>
+                {/* Badge no Topo Sem Sobrepor */}
+                <div className="mb-4 inline-flex items-center gap-1.5 self-start bg-[#007481] text-white text-[11px] font-black uppercase px-3.5 py-1 rounded-full shadow-xs tracking-wider">
+                  ★ Faturamento Direto de Fábrica
                 </div>
 
-                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                  Adquira a Tennant A260 nova com garantia oficial de fábrica e entrega técnica com treinamento no local.
-                </p>
+                <div className="space-y-4 sm:space-y-5">
+                  <div className="flex items-center gap-3 sm:gap-3.5">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center font-black shrink-0">
+                      <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">Venda Direta de Máquina Nova</h3>
+                      <span className="text-xs font-bold text-[#007481]">Garantia Oficial de Fábrica Tennant</span>
+                    </div>
+                  </div>
 
-                <div className="space-y-2.5 pt-2 border-t border-gray-100 text-xs text-gray-700">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span><strong>Garantia Oficial Tennant:</strong> Rede autorizada com técnicos certificados de fábrica</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span><strong>Parcelamento Facilitado:</strong> Condições especiais via BNDES, FINAME e Bancos</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span><strong>Estoque de Peças Genuínas:</strong> Fornecimento contínuo de escovas, rodos e detergentes</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span><strong>Assistência no Paraná:</strong> Atendimento ágil em Curitiba e Região</span>
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                    Adquira a Tennant A260 nova com garantia oficial de fábrica e entrega técnica com treinamento no local.
+                  </p>
+
+                  <div className="space-y-2.5 pt-2 border-t border-gray-100 text-xs text-gray-700">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span><strong>Garantia Oficial Tennant:</strong> Rede autorizada com técnicos certificados de fábrica</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span><strong>Parcelamento Facilitado:</strong> Condições especiais via BNDES, FINAME e Bancos</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span><strong>Estoque de Peças Genuínas:</strong> Fornecimento contínuo de escovas, rodos e detergentes</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span><strong>Assistência no Paraná:</strong> Atendimento ágil em Curitiba e Região</span>
+                    </div>
                   </div>
                 </div>
               </div>
