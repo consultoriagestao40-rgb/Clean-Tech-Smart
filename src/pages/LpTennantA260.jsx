@@ -92,6 +92,24 @@ export default function LpTennantA260() {
     return localStorage.getItem('lp_a260_video_urls') || DEFAULT_VIDEOS.join('\n');
   });
 
+  // Form states para Dobra 6 (Lead Capture / Orçamento Rápido)
+  const [leadName, setLeadName] = useState('');
+  const [leadCompany, setLeadCompany] = useState('');
+  const [leadEmail, setLeadEmail] = useState('');
+  const [leadPhone, setLeadPhone] = useState('');
+  const [leadArea, setLeadArea] = useState('1.000 a 3.000 m²');
+  const [leadInterest, setLeadInterest] = useState('Locação Mensal / Outsourcing');
+
+  const handleLeadSubmit = (e) => {
+    e.preventDefault();
+    const msg = `Olá! Me chamo ${leadName || 'Cliente'}${leadCompany ? ` da empresa ${leadCompany}` : ''}.
+Gostaria de receber uma proposta para ${leadInterest} da Lavadora Tennant A260.
+📍 Área a ser limpa: ${leadArea}
+📧 E-mail corporativo: ${leadEmail || 'Não informado'}
+📱 Telefone/WhatsApp: ${leadPhone || 'Não informado'}`;
+    handleWhatsAppRedirect(msg);
+  };
+
   // Helper universal para vídeos: Google Drive, YouTube ou MP4 direto
   const parseVideoEmbed = (url) => {
     if (!url) return null;
@@ -905,6 +923,271 @@ export default function LpTennantA260() {
                 </div>
               ))}
             </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 6. DOBRA 5: MODELOS DE NEGÓCIO / FORMAS DE AQUISIÇÃO (PREMIUM)            */}
+      {/* ========================================================================= */}
+      <section className="py-16 bg-gradient-to-b from-gray-50 to-white border-t border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          
+          {/* Header da Seção */}
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#007481] bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
+              💼 Flexibilidade Comercial & Estratégica
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+              Modelos de Negócio: <span className="text-[#007481]">Como Adquirir a Tennant A260</span>
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600">
+              Escolha a modalidade ideal para a realidade financeira da sua empresa: locação com redução de CAPEX ou venda direta de fábrica com garantia oficial.
+            </p>
+          </div>
+
+          {/* Grid dos 2 Modelos Principais */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            
+            {/* Opção 1: Locação / Outsourcing */}
+            <div className="bg-white border-2 border-[#eb6420] rounded-2xl p-6 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden ring-4 ring-orange-50">
+              <div className="absolute top-0 right-0 bg-[#eb6420] text-white text-[10px] font-black uppercase px-3.5 py-1 rounded-bl-lg">
+                ★ Mais Escolhido por Empresas
+              </div>
+              
+              <div className="space-y-5">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-orange-100 text-[#eb6420] flex items-center justify-center font-black">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Locação / Outsourcing Operacional</h3>
+                    <span className="text-xs font-bold text-[#eb6420]">Redução Total de CAPEX • 100% OPEX</span>
+                  </div>
+                </div>
+
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                  Linhas de locação sob medida (diária a 60 meses) com gestão completa de manutenção e peças genuínas inclusas.
+                </p>
+
+                <div className="space-y-2.5 pt-2 border-t border-gray-100 text-xs text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Manutenção 100% inclusa:</strong> Peças, escovas e borrachas sem surpresas no caixa</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Benefício Fiscal:</strong> Mensalidade 100% dedutível no IRPJ/CSLL (Lucro Real)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Substituição Imediata:</strong> Garantia de continuidade sem parada de operação</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Entrega técnica e treinamento:</strong> Gratuitos no seu estabelecimento</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => handleWhatsAppRedirect("Olá! Gostaria de uma proposta de LOCAÇÃO / OUTSOURCING para a Tennant A260.")}
+                  className="w-full py-3 bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-xs uppercase rounded-xl transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <WhatsAppIcon className="w-4 h-4 text-white" />
+                  Cotar Plano de Locação no WhatsApp
+                </button>
+              </div>
+            </div>
+
+            {/* Opção 2: Venda Direta de Fábrica */}
+            <div className="bg-white border-2 border-gray-200 hover:border-[#007481] rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between relative overflow-hidden transition-all">
+              <div className="absolute top-0 right-0 bg-[#007481] text-white text-[10px] font-black uppercase px-3.5 py-1 rounded-bl-lg">
+                Máquina Nova
+              </div>
+
+              <div className="space-y-5">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center font-black">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Venda Direta de Máquina Nova</h3>
+                    <span className="text-xs font-bold text-[#007481]">Faturamento com Suporte Oficial Tennant</span>
+                  </div>
+                </div>
+
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                  Adquira a Tennant A260 nova com garantia oficial de fábrica e entrega técnica com treinamento no local.
+                </p>
+
+                <div className="space-y-2.5 pt-2 border-t border-gray-100 text-xs text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Garantia Oficial Tennant:</strong> Rede autorizada com técnicos certificados de fábrica</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Financiamento Facilitado:</strong> Condições especiais via BNDES, FINAME e Bancos</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Estoque de Peças Genuínas:</strong> Fornecimento contínuo de escovas, rodos e detergentes</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Assistência no Paraná:</strong> Atendimento ágil em Curitiba e Região</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => handleWhatsAppRedirect("Olá! Gostaria de receber uma proposta de COMPRA de Máquina Nova Tennant A260.")}
+                  className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs uppercase rounded-xl transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <WhatsAppIcon className="w-4 h-4 text-white" />
+                  Solicitar Cotação de Venda no WhatsApp
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 7. DOBRA 6: FORMULÁRIO DE CONVERSÃO RÁPIDA (LEAD CAPTURE NO WHATSAPP)      */}
+      {/* ========================================================================= */}
+      <section id="orcamento" className="py-16 bg-slate-900 text-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          
+          {/* Header do Formulário */}
+          <div className="text-center space-y-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-amber-400 bg-amber-950/60 px-3 py-1 rounded-full border border-amber-500/30">
+              ⚡ Atendimento Ágil em Curitiba & Região
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+              Solicite uma Proposta Personalizada para o Seu Negócio
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-300 max-w-2xl mx-auto">
+              Preencha os dados abaixo e receba um comparativo financeiro detalhado de locação ou compra para a sua área.
+            </p>
+          </div>
+
+          {/* Card do Formulário */}
+          <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 sm:p-10 shadow-2xl backdrop-blur-md">
+            <form onSubmit={handleLeadSubmit} className="space-y-6">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                
+                {/* Nome */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-200">Seu Nome *</label>
+                  <input
+                    type="text"
+                    required
+                    value={leadName}
+                    onChange={(e) => setLeadName(e.target.value)}
+                    placeholder="Ex: Carlos Mendes"
+                    className="w-full bg-slate-900/90 border border-slate-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#007481] transition-colors"
+                  />
+                </div>
+
+                {/* Empresa */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-200">Nome da Empresa / Condomínio *</label>
+                  <input
+                    type="text"
+                    required
+                    value={leadCompany}
+                    onChange={(e) => setLeadCompany(e.target.value)}
+                    placeholder="Ex: Supermercado Alvorada Ltda"
+                    className="w-full bg-slate-900/90 border border-slate-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#007481] transition-colors"
+                  />
+                </div>
+
+                {/* E-mail */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-200">E-mail Corporativo</label>
+                  <input
+                    type="email"
+                    value={leadEmail}
+                    onChange={(e) => setLeadEmail(e.target.value)}
+                    placeholder="Ex: compras@suaempresa.com.br"
+                    className="w-full bg-slate-900/90 border border-slate-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#007481] transition-colors"
+                  />
+                </div>
+
+                {/* Telefone / WhatsApp */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-200">Telefone / WhatsApp *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={leadPhone}
+                    onChange={(e) => setLeadPhone(e.target.value)}
+                    placeholder="Ex: (41) 99999-9999"
+                    className="w-full bg-slate-900/90 border border-slate-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#007481] transition-colors"
+                  />
+                </div>
+
+                {/* Metragem Aproximada */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-200">Área Aproximada a ser Limpa</label>
+                  <select
+                    value={leadArea}
+                    onChange={(e) => setLeadArea(e.target.value)}
+                    className="w-full bg-slate-900/90 border border-slate-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#007481] transition-colors"
+                  >
+                    <option value="Até 1.000 m²">Até 1.000 m²</option>
+                    <option value="1.000 a 3.000 m²">1.000 a 3.000 m² (Ideal para A260)</option>
+                    <option value="3.000 a 6.000 m²">3.000 a 6.000 m²</option>
+                    <option value="Acima de 6.000 m²">Acima de 6.000 m² (Múltiplas Máquinas)</option>
+                  </select>
+                </div>
+
+                {/* Interesse */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-200">Modalidade de Interesse</label>
+                  <select
+                    value={leadInterest}
+                    onChange={(e) => setLeadInterest(e.target.value)}
+                    className="w-full bg-slate-900/90 border border-slate-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#007481] transition-colors"
+                  >
+                    <option value="Locação Mensal / Outsourcing">Locação Mensal / Outsourcing (Manutenção Inclusa)</option>
+                    <option value="Locação Curto Prazo (Diária/Semanal)">Locação Curto Prazo (Diária / Semanal / Pós-Obra)</option>
+                    <option value="Compra de Máquina Nova">Compra de Máquina Nova Direto de Fábrica</option>
+                    <option value="Quero Consultar Ambas as Opções">Quero Consultar Ambas as Opções</option>
+                  </select>
+                </div>
+
+              </div>
+
+              {/* Botão de Envio para o WhatsApp */}
+              <div className="pt-3">
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-lg transition-all hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2.5 cursor-pointer"
+                >
+                  <WhatsAppIcon className="w-5 h-5 text-white" />
+                  <span>Falar com Especialista / Receber Orçamento no WhatsApp</span>
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-6 pt-2 text-[11px] text-gray-400">
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Seus dados estão 100% seguros
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-400" /> Resposta em minutos no horário comercial
+                </span>
+              </div>
+
+            </form>
           </div>
 
         </div>
