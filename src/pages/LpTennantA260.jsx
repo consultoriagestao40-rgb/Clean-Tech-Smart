@@ -56,7 +56,7 @@ export default function LpTennantA260() {
 
   // Logos Oficiais em Alta Definição (HD 4K Transparentes)
   const LOGO_ALFA_TENNANT = "/alfa-tennant-logo-hd.png";
-  const LOGO_CLEANTECH_DEFAULT = "/cleantechpro-logo.svg";
+  const LOGO_CLEANTECH_DEFAULT = "/cleantechpro-official-logo.png";
   const [companyLogo, setCompanyLogo] = useState(LOGO_CLEANTECH_DEFAULT);
 
   useEffect(() => {
@@ -95,12 +95,11 @@ export default function LpTennantA260() {
   // 2. 🎥 VÍDEOS DEMONSTRATIVOS (GOOGLE DRIVE / YOUTUBE / MP4)
   // =========================================================================
   const DEFAULT_VIDEOS = [
-    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
-    "https://www.youtube.com/watch?v=FjJmK50i-jE",
-    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
-    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k",
-    "https://www.youtube.com/watch?v=kYJzC67Y_7s",
-    "https://www.youtube.com/watch?v=M7lc1UVf-VE"
+    "https://drive.google.com/file/d/1ah1iYK93vQz7hPwy1gIsZvA0VmuUPkOP/view?usp=drive_link",
+    "https://drive.google.com/file/d/1NECUfkD8NQF7v_ez6NPnPngflbF3Ijcn/view?usp=drive_link",
+    "https://drive.google.com/file/d/165w5slp4jWVplkaYiyY2ptEnKdsnfhra/view?usp=drive_link",
+    "https://drive.google.com/file/d/1fXi10BjSiGmL0DVqlNIHvplzja7inNsE/view?usp=drive_link",
+    "https://drive.google.com/file/d/1oRKXlQOFrBPdF5iGhvoXbGVfObA_SoDu/view?usp=drive_link"
   ];
 
   const [videoUrlsText, setVideoUrlsText] = useState(() => {
@@ -317,9 +316,13 @@ export default function LpTennantA260() {
             
             <div className="hidden sm:block h-7 sm:h-9 md:h-11 w-px bg-teal-300/30 shrink-0"></div>
             
-            {/* Logotipo Oficial Clean Tech Pro (Vetor SVG Nítido / 100% Contraste HD) */}
-            <div className="flex items-center shrink-0">
-              <CleanTechLogo className="h-10 sm:h-11 md:h-13 w-auto shrink-0 drop-shadow-sm" />
+            {/* Logotipo Oficial Clean Tech Pro em Box Branco Elegante (Opção 01) */}
+            <div className="bg-white px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl shadow-xs border border-white/30 flex items-center justify-center shrink-0">
+              <img 
+                src={companyLogo || LOGO_CLEANTECH_DEFAULT} 
+                alt="Clean Tech Pro" 
+                className="h-7 sm:h-9 md:h-10 w-auto object-contain shrink-0" 
+              />
             </div>
 
             {/* Tag de Representante & Assistência Técnica (Apenas Telas Grandes Desktop) */}
@@ -1022,7 +1025,7 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 5. SEÇÃO DE VÍDEOS & PRINTS DE DEPOIMENTOS DE CLIENTES                    */}
       {/* ========================================================================= */}
-      <section id="videos-depoimentos" className="py-14 bg-gray-50 border-t border-gray-200">
+      <section id="videos-depoimentos" className="hidden md:block py-14 bg-gray-50 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           
           {/* BLOCO 1: VÍDEOS DEMONSTRATIVOS */}

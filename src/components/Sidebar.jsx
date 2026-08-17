@@ -30,7 +30,7 @@ import {
 
 export default function Sidebar() {
   const location = useLocation();
-  const [logo, setLogo] = useState(localStorage.getItem('app_company_logo') || '');
+  const [logo, setLogo] = useState(localStorage.getItem('app_company_logo') || '/cleantechpro-official-logo.png');
   const [zoom, setZoom] = useState(parseInt(localStorage.getItem('app_company_logo_zoom') || '100', 10));
   
   // Collapse State
