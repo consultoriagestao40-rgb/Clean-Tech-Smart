@@ -227,20 +227,43 @@ export default function LpTennantA260() {
     <div className="min-h-screen bg-white text-[#212529] font-sans antialiased">
       
       {/* ========================================================================= */}
-      {/* 1. TOP BAR AZUL-PETRÓLEO OFICIAL TENNANT                                   */}
+      {/* 1. TOP BAR INSTITUCIONAL COM LOGOS E CONTATO DIRETO                       */}
       {/* ========================================================================= */}
-      <div className="bg-[#007481] text-white text-xs py-2 px-4">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div className="bg-[#007481] text-white py-3.5 px-4 shadow-sm">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           
-          <div className="flex items-center gap-2 font-medium tracking-wide">
-            <span className="font-bold">REPRESENTANTE & ASSISTÊNCIA TÉCNICA AUTORIZADA TENNANT</span>
-            <span className="hidden md:inline text-teal-100">| Curitiba, Região Metropolitana e todo o Paraná</span>
+          {/* Logos e Autoridade Autorizada */}
+          <div className="flex items-center gap-4 sm:gap-6">
+            <img 
+              src={LOGO_ALFA_TENNANT} 
+              alt="Alfa by Tennant Company" 
+              className="h-8 sm:h-10 object-contain brightness-0 invert"
+            />
+            
+            <div className="h-7 w-px bg-teal-300/40 hidden sm:block"></div>
+            
+            {companyLogo ? (
+              <img 
+                src={companyLogo} 
+                alt="Clean Tech Smart" 
+                className="h-8 sm:h-9 object-contain brightness-0 invert max-w-[140px]" 
+              />
+            ) : (
+              <div className="text-white font-extrabold text-sm sm:text-base tracking-tight">
+                Clean Tech Smart
+              </div>
+            )}
+            
+            <span className="hidden lg:inline text-xs font-semibold text-teal-100 pl-3 border-l border-teal-300/40">
+              Representante & Assistência Técnica Autorizada Tennant • Curitiba/PR
+            </span>
           </div>
 
-          <div className="flex items-center gap-5 text-teal-50">
+          {/* Contatos Diretos (WhatsApp & E-mail) */}
+          <div className="flex items-center gap-4 text-xs font-semibold">
             <a 
               href={`mailto:${EMAIL_CONTATO}`}
-              className="hidden sm:flex items-center gap-1.5 hover:text-white transition-colors"
+              className="hidden md:flex items-center gap-1.5 text-teal-100 hover:text-white transition-colors"
             >
               <Mail className="w-3.5 h-3.5" />
               {EMAIL_CONTATO}
@@ -248,87 +271,18 @@ export default function LpTennantA260() {
 
             <button
               onClick={() => handleWhatsAppRedirect()}
-              className="flex items-center gap-1.5 hover:text-white font-semibold transition-colors cursor-pointer"
+              className="flex items-center gap-2 bg-[#eb6420] hover:bg-[#d65715] text-white px-4 py-2 rounded-full font-bold shadow-xs transition-colors cursor-pointer"
             >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>Entre em contato conosco ({WHATSAPP_DISPLAY})</span>
+              <MessageSquare className="w-4 h-4" />
+              <span>WhatsApp: {WHATSAPP_DISPLAY}</span>
             </button>
-
-            <span className="text-teal-200 hidden lg:inline flex items-center gap-1">
-              🌐 Português - BR
-            </span>
           </div>
 
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. HEADER PRINCIPAL (CLONE EXATO DO SITE TENNANT COM LOGOS)               */}
-      {/* ========================================================================= */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-24 flex items-center justify-between gap-6">
-          
-          {/* Logos Co-Branded */}
-          <div className="flex items-center gap-4 sm:gap-6">
-            
-            {/* Logo Alfa Tennant */}
-            <a href="#hero-pdp" className="flex items-center">
-              <img 
-                src={LOGO_ALFA_TENNANT} 
-                alt="Alfa by Tennant Company" 
-                className="h-10 sm:h-12 object-contain"
-              />
-            </a>
-
-            <div className="h-10 w-px bg-gray-300 hidden sm:block"></div>
-
-            {/* Logo Clean Tech Smart */}
-            <div className="flex items-center gap-3">
-              {companyLogo ? (
-                <img 
-                  src={companyLogo} 
-                  alt="Clean Tech Smart" 
-                  className="h-9 sm:h-11 object-contain max-w-[150px]" 
-                />
-              ) : (
-                <div className="flex flex-col">
-                  <span className="font-extrabold text-gray-900 tracking-tight text-base sm:text-lg">Clean Tech Smart</span>
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Autorizada Tennant</span>
-                </div>
-              )}
-            </div>
-
-          </div>
-
-          {/* Nav Items Oficiais Tennant */}
-          <nav className="hidden lg:flex items-center gap-8 text-[15px] font-semibold text-gray-700">
-            <a href="#hero-pdp" className="hover:text-[#007481] transition-colors">Máquinas</a>
-            <a href="#locacao" className="hover:text-[#007481] transition-colors">Planos de Locação</a>
-            <a href="#venda" className="hover:text-[#007481] transition-colors">Vendas</a>
-            <a href="#assistencia" className="hover:text-[#007481] transition-colors">Assistência Técnica</a>
-            <a href="#videos-depoimentos" className="hover:text-[#007481] transition-colors">Vídeos & Depoimentos</a>
-            <a href="#especificacoes" className="hover:text-[#007481] transition-colors">Ficha Técnica</a>
-          </nav>
-
-          {/* Search Box Pill (Idêntico ao do site Tennant) */}
-          <div className="hidden sm:flex items-center">
-            <div className="relative w-56 xl:w-72">
-              <input 
-                type="text" 
-                readOnly
-                onClick={() => handleWhatsAppRedirect("Olá! Gostaria de consultar modelos de lavadoras de piso Tennant.")}
-                placeholder="Buscar máquinas, peças..." 
-                className="w-full bg-white border border-gray-300 rounded-full py-2 pl-4 pr-10 text-xs text-gray-700 cursor-pointer focus:outline-none hover:border-gray-400 shadow-sm"
-              />
-              <Search className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
-            </div>
-          </div>
-
-        </div>
-      </header>
-
-      {/* ========================================================================= */}
-      {/* 3. PRODUCT DISPLAY (HERO PDP)                                             */}
+      {/* 2. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
       <section id="hero-pdp" className="py-6 sm:py-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
