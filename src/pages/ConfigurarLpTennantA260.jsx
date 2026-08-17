@@ -54,8 +54,32 @@ export default function ConfigurarLpTennantA260() {
   const [contactEmail, setContactEmail] = useState(localStorage.getItem('lp_a260_email') || "vendas@cleantechpro.com.br");
   const [rentalPrice, setRentalPrice] = useState(localStorage.getItem('lp_a260_rental_price') || "3.890,00");
 
-  // Salva no localStorage
-  const handleSave = (e) => {
+  // Sincroniza com o banco de dados remoto
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/get-settings');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.settings) {
+            if (data.settings.lp_a260_photo_urls) setPhotoUrls(data.settings.lp_a260_photo_urls);
+            if (data.settings.lp_a260_video_urls) setVideoUrls(data.settings.lp_a260_video_urls);
+            if (data.settings.lp_a260_testimonials_urls) setTestimonialUrls(data.settings.lp_a260_testimonials_urls);
+            if (data.settings.lp_a260_whatsapp) setWhatsappNumber(data.settings.lp_a260_whatsapp);
+            if (data.settings.lp_a260_whatsapp_display) setWhatsappDisplay(data.settings.lp_a260_whatsapp_display);
+            if (data.settings.lp_a260_email) setContactEmail(data.settings.lp_a260_email);
+            if (data.settings.lp_a260_rental_price) setRentalPrice(data.settings.lp_a260_rental_price);
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao buscar configurações remotas da LP:', err);
+      }
+    }
+    loadSettings();
+  }, []);
+
+  // Salva no localStorage e no Banco de Dados Remoto
+  const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
 
@@ -67,11 +91,27 @@ export default function ConfigurarLpTennantA260() {
     localStorage.setItem('lp_a260_email', contactEmail);
     localStorage.setItem('lp_a260_rental_price', rentalPrice);
 
-    setTimeout(() => {
-      setIsSaving(false);
-      setSuccessMsg('Configurações da Landing Page salvas com sucesso!');
-      setTimeout(() => setSuccessMsg(''), 4000);
-    }, 400);
+    try {
+      await fetch('/api/save-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lp_a260_photo_urls: photoUrls,
+          lp_a260_video_urls: videoUrls,
+          lp_a260_testimonials_urls: testimonialUrls,
+          lp_a260_whatsapp: whatsappNumber,
+          lp_a260_whatsapp_display: whatsappDisplay,
+          lp_a260_email: contactEmail,
+          lp_a260_rental_price: rentalPrice
+        })
+      });
+    } catch (err) {
+      console.warn('Erro ao persistir no banco:', err);
+    }
+
+    setIsSaving(false);
+    setSuccessMsg('Configurações da Landing Page salvas com sucesso em todos os dispositivos!');
+    setTimeout(() => setSuccessMsg(''), 4000);
   };
 
   return (

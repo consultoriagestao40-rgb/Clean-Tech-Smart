@@ -54,13 +54,20 @@ export default function LpTennantA260() {
 
   // Logos Oficiais
   const LOGO_ALFA_TENNANT = "https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png";
+  const LOGO_CLEANTECH_DEFAULT = "/cleantechpro-logo-transparent.png";
   const [companyLogo, setCompanyLogo] = useState(() => {
-    return localStorage.getItem('app_company_logo') || localStorage.getItem('app_company_logo_original') || '';
+    return localStorage.getItem('app_company_logo_original') || 
+           localStorage.getItem('app_company_logo') || 
+           LOGO_CLEANTECH_DEFAULT;
   });
 
   useEffect(() => {
     const handleLogo = () => {
-      setCompanyLogo(localStorage.getItem('app_company_logo') || localStorage.getItem('app_company_logo_original') || '');
+      setCompanyLogo(
+        localStorage.getItem('app_company_logo_original') || 
+        localStorage.getItem('app_company_logo') || 
+        LOGO_CLEANTECH_DEFAULT
+      );
     };
     window.addEventListener('logoChanged', handleLogo);
     return () => window.removeEventListener('logoChanged', handleLogo);
@@ -91,16 +98,32 @@ export default function LpTennantA260() {
   }, [photoUrlsText]);
 
   // =========================================================================
-  // 2. 🎥 VÍDEOS DEMONSTRATIVOS REAIS (Alfa Tennant em Operação)
+  // 2. 🎥 VÍDEOS DEMONSTRATIVOS (20 VÍDEOS ALFA TENNANT / GOOGLE DRIVE)
   // =========================================================================
   const DEFAULT_VIDEOS = [
+    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
+    "https://www.youtube.com/watch?v=FjJmK50i-jE",
+    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
+    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k",
+    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
+    "https://www.youtube.com/watch?v=FjJmK50i-jE",
+    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
+    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k",
+    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
+    "https://www.youtube.com/watch?v=FjJmK50i-jE",
+    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
+    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k",
+    "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
+    "https://www.youtube.com/watch?v=FjJmK50i-jE",
+    "https://www.youtube.com/watch?v=cWjP-i4h4hA",
+    "https://www.youtube.com/watch?v=5rN9O-Y8Q3k",
     "https://www.youtube.com/watch?v=Xh79G2-W-6Q",
     "https://www.youtube.com/watch?v=FjJmK50i-jE",
     "https://www.youtube.com/watch?v=cWjP-i4h4hA",
     "https://www.youtube.com/watch?v=5rN9O-Y8Q3k"
   ];
 
-  const [videoUrlsText] = useState(() => {
+  const [videoUrlsText, setVideoUrlsText] = useState(() => {
     const saved = localStorage.getItem('lp_a260_video_urls');
     if (saved && !saved.includes('dQw4w9WgXcQ')) {
       return saved;
@@ -150,28 +173,33 @@ export default function LpTennantA260() {
 
 
 
-  // Sincroniza fotos com o catálogo de máquinas do banco de dados
+  // Sincroniza fotos e vídeos remotos com a base de dados
   useEffect(() => {
-    async function loadCatalog() {
+    async function loadRemoteSettings() {
       try {
-        const res = await fetch('/api/get-machine-models');
+        const res = await fetch('/api/get-settings');
         if (res.ok) {
           const data = await res.json();
-          if (data.machineModels && data.machineModels.length > 0) {
-            const foundA260 = data.machineModels.find(m => 
-              m.name?.toLowerCase().includes('a260') || 
-              m.name?.toLowerCase().includes('a-260')
-            );
-            if (foundA260?.photo_urls && !localStorage.getItem('lp_a260_photo_urls')) {
-              setPhotoUrlsText(foundA260.photo_urls);
+          if (data.settings) {
+            if (data.settings.lp_a260_video_urls) {
+              setVideoUrlsText(data.settings.lp_a260_video_urls);
+              localStorage.setItem('lp_a260_video_urls', data.settings.lp_a260_video_urls);
+            }
+            if (data.settings.lp_a260_photo_urls) {
+              setPhotoUrlsText(data.settings.lp_a260_photo_urls);
+              localStorage.setItem('lp_a260_photo_urls', data.settings.lp_a260_photo_urls);
+            }
+            if (data.settings.app_company_logo) {
+              setCompanyLogo(data.settings.app_company_logo);
+              localStorage.setItem('app_company_logo', data.settings.app_company_logo);
             }
           }
         }
       } catch (err) {
-        console.warn('Erro ao carregar modelo do catálogo:', err);
+        console.warn('Erro ao buscar configurações remotas:', err);
       }
     }
-    loadCatalog();
+    loadRemoteSettings();
   }, []);
 
   const nextPhoto = () => {
@@ -293,18 +321,12 @@ export default function LpTennantA260() {
             
             <div className="h-7 sm:h-10 md:h-12 w-px bg-teal-300/40"></div>
             
-            {companyLogo ? (
-              <img 
-                src={companyLogo} 
-                alt="Clean Tech Pro" 
-                className="h-8 sm:h-11 md:h-14 object-contain max-w-[130px] sm:max-w-[190px] md:max-w-[250px]" 
-              />
-            ) : (
-              <div className="flex items-center gap-1 text-white font-black text-xs sm:text-base md:text-lg tracking-tight shrink-0 notranslate" translate="no">
-                <span className="text-teal-200">CLEAN TECH</span>
-                <span className="text-white font-light text-[10px] sm:text-xs">PRO</span>
-              </div>
-            )}
+            {/* Logotipo Oficial Clean Tech Pro */}
+            <img 
+              src={companyLogo || LOGO_CLEANTECH_DEFAULT} 
+              alt="Clean Tech Pro" 
+              className="h-8 sm:h-11 md:h-14 object-contain max-w-[130px] sm:max-w-[190px] md:max-w-[250px]" 
+            />
 
             <div className="hidden lg:flex flex-col justify-center text-xs lg:text-sm text-teal-100 pl-4 border-l border-teal-300/40 leading-tight shrink-0 notranslate" translate="no">
               <span className="font-bold text-white">Representante & Assistência Técnica Autorizada Tennant</span>
@@ -1008,8 +1030,7 @@ export default function LpTennantA260() {
               {(showAllVideos ? videoList : videoList.slice(0, 8)).map((vid) => (
                 <div 
                   key={vid.id} 
-                  onClick={() => setActiveVideoModal(vid)}
-                  className="bg-white border border-gray-200 hover:border-[#007481] rounded-xl sm:rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
+                  className="bg-white border border-gray-200 hover:border-[#007481] rounded-xl sm:rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
                 >
                   <div>
                     <div className="aspect-[9/16] bg-black w-full relative overflow-hidden flex items-center justify-center">
