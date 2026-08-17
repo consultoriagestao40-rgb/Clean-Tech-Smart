@@ -304,10 +304,11 @@ export default function LpTennantA260() {
                 <span className="text-white font-light text-[10px] sm:text-xs">Smart</span>
               </div>
             )}
-            
-            <span className="hidden xl:inline text-xs sm:text-sm font-semibold text-teal-100 pl-3 border-l border-teal-300/40">
-              Autorizada Tennant • Curitiba/PR
-            </span>
+
+            <div className="hidden md:flex flex-col justify-center text-xs lg:text-sm text-teal-100 pl-3.5 border-l border-teal-300/40 leading-tight shrink-0">
+              <span className="font-bold text-white">Representante & Assistência Técnica Autorizada Tennant</span>
+              <span className="text-[11px] text-teal-200 font-medium">Curitiba & Região Metropolitana • Paraná</span>
+            </div>
           </div>
 
           {/* Lado Direito: Timer (Desktop) + Botão WhatsApp Direto */}
