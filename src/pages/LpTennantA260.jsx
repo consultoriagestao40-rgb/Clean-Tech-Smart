@@ -232,62 +232,133 @@ export default function LpTennantA260() {
     }
   ];
 
+  // =========================================================================
+  // ⏳ CONTADOR REGRESSIVO DE PROMOÇÃO DE FEIRA (Sempre 7 dias restantes)
+  // =========================================================================
+  const [timeLeft, setTimeLeft] = useState(() => {
+    let target = localStorage.getItem('lp_a260_promo_deadline');
+    if (!target || parseInt(target, 10) < Date.now()) {
+      target = Date.now() + 7 * 24 * 60 * 60 * 1000;
+      localStorage.setItem('lp_a260_promo_deadline', target.toString());
+    }
+    const diff = Math.max(0, parseInt(target, 10) - Date.now());
+    return {
+      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((diff / 1000 / 60) % 60),
+      seconds: Math.floor((diff / 1000) % 60)
+    };
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      let target = localStorage.getItem('lp_a260_promo_deadline');
+      if (!target || parseInt(target, 10) < Date.now()) {
+        target = Date.now() + 7 * 24 * 60 * 60 * 1000;
+        localStorage.setItem('lp_a260_promo_deadline', target.toString());
+      }
+      const diff = Math.max(0, parseInt(target, 10) - Date.now());
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / 1000 / 60) % 60),
+        seconds: Math.floor((diff / 1000) % 60)
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white text-[#212529] font-sans antialiased">
       
       {/* ========================================================================= */}
       {/* 1. TOP BAR INSTITUCIONAL CONGELADO (STICKY) COM LOGOS E CONTATO DIRETO    */}
       {/* ========================================================================= */}
-      <div className="sticky top-0 z-50 bg-[#007481] text-white py-3 px-4 shadow-md transition-all">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          
-          {/* Logos e Autoridade Autorizada */}
-          <div className="flex items-center gap-4 sm:gap-6">
-            <img 
-              src={LOGO_ALFA_TENNANT} 
-              alt="Alfa by Tennant Company" 
-              className="h-8 sm:h-10 object-contain brightness-0 invert"
-            />
-            
-            <div className="h-7 w-px bg-teal-300/40 hidden sm:block"></div>
-            
-            {companyLogo ? (
-              <img 
-                src={companyLogo} 
-                alt="Clean Tech Smart" 
-                className="h-8 sm:h-9 object-contain brightness-0 invert max-w-[140px]" 
-              />
-            ) : (
-              <div className="text-white font-extrabold text-sm sm:text-base tracking-tight">
-                Clean Tech Smart
+      <div className="sticky top-0 z-50 shadow-md">
+        
+        {/* Banner de Urgência: Selo Promoção de Feira + Contador Regressivo */}
+        <div className="bg-[#eb6420] text-white py-1.5 px-4 text-xs font-bold">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="bg-black/25 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border border-white/20 flex items-center gap-1 animate-pulse">
+                🔥 Selo Promoção de Feira
+              </span>
+              <span className="hidden sm:inline text-orange-100 text-xs">
+                Condições Exclusivas de Fábrica • Frete & Entrega Técnica Inclusos
+              </span>
+            </div>
+
+            {/* Contador Regressivo Dinâmico (Sempre 7 Dias) */}
+            <div className="flex items-center gap-2 font-mono text-xs">
+              <span className="text-[11px] font-sans text-orange-100 font-semibold uppercase tracking-wider hidden md:inline">
+                Oferta Encerra em:
+              </span>
+              <div className="flex items-center gap-1">
+                <span className="bg-black/30 px-2 py-0.5 rounded font-black text-white">{String(timeLeft.days).padStart(2, '0')}d</span>
+                <span className="text-orange-200">:</span>
+                <span className="bg-black/30 px-2 py-0.5 rounded font-black text-white">{String(timeLeft.hours).padStart(2, '0')}h</span>
+                <span className="text-orange-200">:</span>
+                <span className="bg-black/30 px-2 py-0.5 rounded font-black text-white">{String(timeLeft.minutes).padStart(2, '0')}m</span>
+                <span className="text-orange-200">:</span>
+                <span className="bg-black/30 px-2 py-0.5 rounded font-black text-yellow-300">{String(timeLeft.seconds).padStart(2, '0')}s</span>
               </div>
-            )}
-            
-            <span className="hidden lg:inline text-xs font-semibold text-teal-100 pl-3 border-l border-teal-300/40">
-              Representante & Assistência Técnica Autorizada Tennant • Curitiba/PR
-            </span>
+            </div>
           </div>
-
-          {/* Contatos Diretos (WhatsApp & E-mail) */}
-          <div className="flex items-center gap-4 text-xs font-semibold">
-            <a 
-              href={`mailto:${EMAIL_CONTATO}`}
-              className="hidden md:flex items-center gap-1.5 text-teal-100 hover:text-white transition-colors"
-            >
-              <Mail className="w-3.5 h-3.5" />
-              {EMAIL_CONTATO}
-            </a>
-
-            <button
-              onClick={() => handleWhatsAppRedirect()}
-              className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-2 rounded-full font-bold shadow-sm transition-all hover:scale-105 cursor-pointer"
-            >
-              <WhatsAppIcon className="w-4 h-4 text-white" />
-              <span>WhatsApp: {WHATSAPP_DISPLAY}</span>
-            </button>
-          </div>
-
         </div>
+
+        {/* Menu Principal Azul-Petróleo */}
+        <div className="bg-[#007481] text-white py-2.5 px-4">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            
+            {/* Logos e Autoridade Autorizada */}
+            <div className="flex items-center gap-4 sm:gap-6">
+              <img 
+                src={LOGO_ALFA_TENNANT} 
+                alt="Alfa by Tennant Company" 
+                className="h-8 sm:h-10 object-contain brightness-0 invert"
+              />
+              
+              <div className="h-7 w-px bg-teal-300/40 hidden sm:block"></div>
+              
+              {companyLogo ? (
+                <img 
+                  src={companyLogo} 
+                  alt="Clean Tech Smart" 
+                  className="h-8 sm:h-9 object-contain brightness-0 invert max-w-[140px]" 
+                />
+              ) : (
+                <div className="text-white font-extrabold text-sm sm:text-base tracking-tight">
+                  Clean Tech Smart
+                </div>
+              )}
+              
+              <span className="hidden lg:inline text-xs font-semibold text-teal-100 pl-3 border-l border-teal-300/40">
+                Representante & Assistência Técnica Autorizada Tennant • Curitiba/PR
+              </span>
+            </div>
+
+            {/* Contatos Diretos (WhatsApp & E-mail) */}
+            <div className="flex items-center gap-4 text-xs font-semibold">
+              <a 
+                href={`mailto:${EMAIL_CONTATO}`}
+                className="hidden md:flex items-center gap-1.5 text-teal-100 hover:text-white transition-colors"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                {EMAIL_CONTATO}
+              </a>
+
+              <button
+                onClick={() => handleWhatsAppRedirect("Olá! Gostaria de aproveitar a CONDIÇÃO ESPECIAL DE FEIRA da Tennant A260.")}
+                className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-2 rounded-full font-bold shadow-sm transition-all hover:scale-105 cursor-pointer"
+              >
+                <WhatsAppIcon className="w-4 h-4 text-white" />
+                <span>WhatsApp: {WHATSAPP_DISPLAY}</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
       {/* ========================================================================= */}
@@ -358,10 +429,15 @@ export default function LpTennantA260() {
               
               {/* Headline Comercial Limpa e de Alto Impacto com cores em destaque */}
               <div className="space-y-2 pb-1">
-                <div className="flex items-center gap-1.5 text-[#eb6420] text-xs font-black uppercase tracking-wider">
-                  <span>★ A Lavadora Mais Vendida da Tennant</span>
-                  <span>•</span>
-                  <span>Líder Global</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="bg-red-600 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1 animate-pulse">
+                    🔥 Promoção de Feira
+                  </span>
+                  <div className="flex items-center gap-1.5 text-[#eb6420] text-xs font-black uppercase tracking-wider">
+                    <span>★ A Mais Vendida da Tennant</span>
+                    <span>•</span>
+                    <span>Líder Global</span>
+                  </div>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">
                   Máxima eficiência na limpeza de pisos: substitua até <span className="text-[#007481] font-black">4 auxiliares de limpeza</span> e reduza em até <span className="text-[#eb6420] font-black">60% os custos</span> com a lavadora mais vendida da Tennant.
@@ -417,8 +493,8 @@ export default function LpTennantA260() {
             </p>
           </div>
 
-          {/* Destaque Visual 1 vs 1 (Cards Comparativos de Alto Impacto) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+          {/* Destaque Visual 1 vs 1 (Cards Comparativos de Alto Impacto Alinhados com a Tabela) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
             
             {/* Card Limpeza Manual */}
             <div className="bg-white border-2 border-red-100 rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between relative overflow-hidden">
