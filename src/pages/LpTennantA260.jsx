@@ -32,7 +32,8 @@ import {
   X,
   ShoppingCart,
   Briefcase,
-  Power
+  Power,
+  Video
 } from 'lucide-react';
 
 // Ícone Oficial do WhatsApp em SVG
@@ -52,9 +53,9 @@ export default function LpTennantA260() {
   const WHATSAPP_DISPLAY = localStorage.getItem('lp_a260_whatsapp_display') || "(41) 98508-3658";
   const EMAIL_CONTATO = localStorage.getItem('lp_a260_email') || "vendas@cleantechpro.com.br";
 
-  // Logos Oficiais
-  const LOGO_ALFA_TENNANT = "https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png";
-  const LOGO_CLEANTECH_DEFAULT = "/cleantechpro-logo-transparent.png";
+  // Logos Oficiais em Alta Definição (HD 4K Transparentes)
+  const LOGO_ALFA_TENNANT = "/alfa-tennant-logo-hd.png";
+  const LOGO_CLEANTECH_DEFAULT = "/cleantechpro-logo-hd.png";
   const [companyLogo, setCompanyLogo] = useState(LOGO_CLEANTECH_DEFAULT);
 
   useEffect(() => {
