@@ -24,7 +24,7 @@ export default function ConfigurarLpTennantA260() {
   const DEFAULT_PHOTOS = [
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-main.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-solution-tank.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
-    "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-handle.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
+    "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-control-panel.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg",
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-in-use.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg"
   ];
 
@@ -38,7 +38,13 @@ export default function ConfigurarLpTennantA260() {
   ];
 
   // States
-  const [photoUrls, setPhotoUrls] = useState(localStorage.getItem('lp_a260_photo_urls') || DEFAULT_PHOTOS.join('\n'));
+  const [photoUrls, setPhotoUrls] = useState(() => {
+    const saved = localStorage.getItem('lp_a260_photo_urls');
+    if (saved && !saved.includes('a260-handle')) {
+      return saved;
+    }
+    return DEFAULT_PHOTOS.join('\n');
+  });
   const [videoUrls, setVideoUrls] = useState(localStorage.getItem('lp_a260_video_urls') || DEFAULT_VIDEOS.join('\n'));
   const [testimonialUrls, setTestimonialUrls] = useState(localStorage.getItem('lp_a260_testimonials_urls') || DEFAULT_TESTIMONIALS.join('\n'));
   const [whatsappNumber, setWhatsappNumber] = useState(localStorage.getItem('lp_a260_whatsapp') || "5541985083658");
