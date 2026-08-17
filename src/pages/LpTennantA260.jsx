@@ -879,8 +879,8 @@ export default function LpTennantA260() {
             </p>
           </div>
 
-          {/* Grid dos 2 Modelos Principais */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {/* Grid dos 2 Modelos Principais com Largura Total */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
             
             {/* Opção 1: Locação / Outsourcing */}
             <div className="bg-white border-2 border-[#eb6420] rounded-2xl p-6 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden ring-4 ring-orange-50">
