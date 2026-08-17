@@ -877,15 +877,6 @@ export default function LpTennantA260() {
                       <h3 className="font-bold text-gray-900 text-sm">{vid.title}</h3>
                     </div>
                   </div>
-
-                  <div className="p-4 pt-0">
-                    <button
-                      onClick={() => handleWhatsAppRedirect(`Olá! Assisti ao vídeo da Tennant A260 e gostaria de agendar uma demonstração no meu local.`)}
-                      className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded transition-colors cursor-pointer"
-                    >
-                      Agendar Demonstração Prática no Local
-                    </button>
-                  </div>
                 </div>
               ))}
             </div>
