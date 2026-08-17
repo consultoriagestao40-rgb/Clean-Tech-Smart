@@ -271,7 +271,7 @@ export default function LpTennantA260() {
 
             <button
               onClick={() => handleWhatsAppRedirect()}
-              className="flex items-center gap-2 bg-[#eb6420] hover:bg-[#d65715] text-white px-4 py-2 rounded-full font-bold shadow-xs transition-colors cursor-pointer"
+              className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-2 rounded-full font-bold shadow-sm transition-all hover:scale-105 cursor-pointer"
             >
               <MessageSquare className="w-4 h-4" />
               <span>WhatsApp: {WHATSAPP_DISPLAY}</span>
