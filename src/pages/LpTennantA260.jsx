@@ -256,12 +256,12 @@ export default function LpTennantA260() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white text-[#212529] font-sans antialiased w-full max-w-[100vw] overflow-x-hidden">
+    <div className="min-h-screen bg-white text-[#212529] font-sans antialiased w-full overflow-x-clip">
       
       {/* ========================================================================= */}
-      {/* 1. TOP BAR INSTITUCIONAL 100% RESPONSIVA (ZERO OVERFLOW NO CELULAR)       */}
+      {/* 1. TOP BAR INSTITUCIONAL CONGELADA / FIXA NO TOPO (100% RESPONSIVA)       */}
       {/* ========================================================================= */}
-      <header className="sticky top-0 z-50 bg-[#007481] text-white shadow-md transition-all w-full">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-md transition-all w-full">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between gap-2">
           
           {/* Logos Co-branded */}
@@ -341,7 +341,7 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 2. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
-      <section id="hero-pdp" className="py-4 sm:py-10 bg-white">
+      <section id="hero-pdp" className="pt-20 sm:pt-20 pb-4 sm:pb-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
