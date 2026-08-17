@@ -259,40 +259,32 @@ export default function LpTennantA260() {
     <div className="min-h-screen bg-white text-[#212529] font-sans antialiased w-full overflow-x-clip">
       
       {/* ========================================================================= */}
-      {/* 1. TOP BAR INSTITUCIONAL CONGELADA (ALTURA GENEROSA & PRESENÇA EXECUTIVA)  */}
+      {/* 1. TOP BAR INSTITUCIONAL CONGELADA (ULTRA-LIMPA NO CELULAR, ROBUSTA DESKTOP) */}
       {/* ========================================================================= */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-lg transition-all w-full">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4.5 flex items-center justify-between gap-3 sm:gap-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 md:h-20 flex items-center justify-between gap-2 sm:gap-6">
           
-          {/* Logos Co-branded (Grandes, Claros e Imponentes) */}
-          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+          {/* Logos Co-branded (Alfa Tennant + Clean Tech) */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <img 
               src={LOGO_ALFA_TENNANT} 
               alt="Alfa by Tennant Company" 
-              className="h-7 sm:h-10 md:h-11 object-contain brightness-0 invert"
+              className="h-6 sm:h-8 md:h-10 object-contain brightness-0 invert"
             />
             
-            <div className="h-6 sm:h-8 w-px bg-teal-300/40"></div>
+            <div className="h-5 sm:h-6 md:h-8 w-px bg-teal-300/40"></div>
             
-            {companyLogo ? (
-              <img 
-                src={companyLogo} 
-                alt="Clean Tech Smart" 
-                className="h-6 sm:h-9 md:h-10 object-contain brightness-0 invert max-w-[90px] sm:max-w-[130px] md:max-w-[150px]" 
-              />
-            ) : (
-              <div className="text-white font-black text-xs sm:text-base md:text-lg tracking-tight">
-                Clean Tech
-              </div>
-            )}
+            <div className="text-white font-black text-xs sm:text-sm md:text-base tracking-tight shrink-0">
+              Clean Tech
+            </div>
             
-            <span className="hidden xl:inline text-xs sm:text-sm font-semibold text-teal-100 pl-3.5 border-l border-teal-300/40">
+            <span className="hidden xl:inline text-xs sm:text-sm font-semibold text-teal-100 pl-3 border-l border-teal-300/40">
               Autorizada Tennant • Curitiba/PR
             </span>
           </div>
 
-          {/* Lado Direito: Timer + WhatsApp + E-mail */}
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
+          {/* Lado Direito: Timer (Desktop) + Botão WhatsApp Direto */}
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             
             {/* E-mail (Desktop) */}
             <a 
@@ -303,8 +295,8 @@ export default function LpTennantA260() {
               <span>{EMAIL_CONTATO}</span>
             </a>
 
-            {/* Contador Regressivo Executivo com Maior Altura */}
-            <div className="flex items-center gap-1 sm:gap-1.5 bg-black/35 backdrop-blur-xs px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-full text-[11px] sm:text-xs md:text-sm font-mono border border-teal-300/30 text-teal-50 shrink-0">
+            {/* Contador Regressivo Executivo (Apenas no Desktop/Tablet para não apertar mobile) */}
+            <div className="hidden md:flex items-center gap-1 sm:gap-1.5 bg-black/35 backdrop-blur-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs md:text-sm font-mono border border-teal-300/30 text-teal-50 shrink-0">
               <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 shrink-0 mr-0.5" />
               <span className="font-bold text-white">{String(timeLeft.days).padStart(2, '0')}d</span>
               <span className="text-teal-300/40">:</span>
@@ -315,14 +307,13 @@ export default function LpTennantA260() {
               <span className="font-black text-amber-300">{String(timeLeft.seconds).padStart(2, '0')}s</span>
             </div>
 
-            {/* Botão WhatsApp Direto */}
+            {/* Botão WhatsApp Direto 100% visível em qualquer smartphone */}
             <button
               onClick={() => handleWhatsAppRedirect("Olá! Gostaria de aproveitar a CONDIÇÃO ESPECIAL DE FEIRA da Tennant A260.")}
-              className="flex items-center gap-1.5 sm:gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-3 sm:px-5 md:px-6 py-1.5 sm:py-2.5 md:py-3 rounded-full font-bold shadow-md transition-all hover:scale-105 cursor-pointer text-xs sm:text-sm shrink-0"
+              className="flex items-center gap-1.5 sm:gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-full font-bold shadow-md transition-all hover:scale-105 cursor-pointer text-xs sm:text-sm shrink-0"
             >
-              <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              <span className="hidden sm:inline">{WHATSAPP_DISPLAY}</span>
-              <span className="sm:hidden">WhatsApp</span>
+              <WhatsAppIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
+              <span>{WHATSAPP_DISPLAY}</span>
             </button>
 
           </div>
@@ -333,7 +324,7 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 2. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
-      <section id="hero-pdp" className="pt-22 sm:pt-28 pb-4 sm:pb-10 bg-white">
+      <section id="hero-pdp" className="pt-18 sm:pt-22 md:pt-28 pb-4 sm:pb-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
@@ -342,11 +333,11 @@ export default function LpTennantA260() {
             <div className="lg:col-span-6 space-y-4">
               
               {/* Foto Principal com Selo de Promoção de Feira e Navegação Integrada */}
-              <div className="relative bg-white flex items-center justify-center min-h-[300px] sm:min-h-[480px] group select-none rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
+              <div className="relative bg-white flex flex-col items-center justify-center p-4 sm:p-6 min-h-[340px] sm:min-h-[480px] group select-none rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
                 
                 {/* Badge Oficial Promoção de Feira Piscante */}
-                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 pointer-events-none select-none">
-                  <div className="bg-gradient-to-r from-red-600 to-[#eb6420] text-white font-black text-[10px] sm:text-xs uppercase px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-white/40 tracking-wider animate-pulse">
+                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 pointer-events-none select-none">
+                  <div className="bg-gradient-to-r from-red-600 via-orange-600 to-[#eb6420] text-white font-black text-[10px] sm:text-xs uppercase px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-white tracking-wider animate-pulse">
                     <span>🔥</span>
                     <span>Promoção de Feira</span>
                   </div>
@@ -355,7 +346,7 @@ export default function LpTennantA260() {
                 <img 
                   src={photoList[activePhotoIndex] || DEFAULT_PHOTOS[0]} 
                   alt="A260 Lavadora de piso de operação a pé" 
-                  className="max-h-[320px] sm:max-h-[460px] w-auto object-contain transition-opacity duration-300"
+                  className="max-h-[300px] sm:max-h-[440px] w-auto object-contain transition-opacity duration-300 mt-4 sm:mt-0"
                 />
 
                 {/* Seta Esquerda na Foto */}
@@ -781,12 +772,12 @@ export default function LpTennantA260() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 
                 {/* Economia Mensal */}
                 <div className="bg-white/10 p-4 rounded-xl border border-white/15">
                   <span className="text-[11px] text-teal-100 block mb-1">Economia Mensal Estimada:</span>
-                  <div className="text-xl sm:text-3xl font-black text-emerald-300 font-mono">
+                  <div className="text-2xl sm:text-3xl font-black text-emerald-300 font-mono">
                     R$ {roiData.economiaMensal.toLocaleString('pt-BR')}
                   </div>
                   <span className="text-[10px] text-teal-200">Redução de custos operacionais</span>
@@ -795,7 +786,7 @@ export default function LpTennantA260() {
                 {/* Economia Anual */}
                 <div className="bg-white/10 p-4 rounded-xl border border-white/15">
                   <span className="text-[11px] text-teal-100 block mb-1">Economia Anual (12 Meses):</span>
-                  <div className="text-xl sm:text-3xl font-black text-amber-300 font-mono">
+                  <div className="text-2xl sm:text-3xl font-black text-amber-300 font-mono">
                     R$ {roiData.economiaAnual.toLocaleString('pt-BR')}
                   </div>
                   <span className="text-[10px] text-teal-200">Impacto direto no EBITDA</span>
@@ -805,7 +796,7 @@ export default function LpTennantA260() {
 
               {/* Tempo economizado */}
               <div className="bg-black/20 p-3.5 rounded-xl border border-teal-300/20 flex items-center justify-between text-xs">
-                <span className="text-teal-100">⏱️ Ganho de Velocidade na Operação:</span>
+                <span className="text-teal-100">⏱️ Ganho de Velocidade:</span>
                 <span className="font-bold text-white bg-teal-600/60 px-2.5 py-1 rounded-lg">
                   ~{roiData.tempoEconomizadoPercent}% mais rápido
                 </span>
@@ -814,10 +805,10 @@ export default function LpTennantA260() {
               {/* Botão de Validação do Estudo */}
               <button
                 onClick={() => handleWhatsAppRedirect(`Olá! Simulei na calculadora uma área de ${selectedArea}m² com ${selectedCleaners} auxiliares e gostaria de validar minha economia para a Tennant A260.`)}
-                className="w-full py-4 bg-[#eb6420] hover:bg-[#d65715] text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-full shadow-lg hover:shadow-2xl transition-all hover:scale-102 flex items-center justify-center gap-2.5 cursor-pointer"
+                className="w-full py-3.5 sm:py-4 px-4 bg-[#eb6420] hover:bg-[#d65715] text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-full shadow-lg hover:shadow-2xl transition-all hover:scale-102 flex items-center justify-center gap-2 cursor-pointer text-center"
               >
-                <WhatsAppIcon className="w-5 h-5 text-white" />
-                <span>Validar Estudo da Minha Empresa no WhatsApp</span>
+                <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0" />
+                <span>Validar Estudo no WhatsApp</span>
               </button>
 
             </div>
