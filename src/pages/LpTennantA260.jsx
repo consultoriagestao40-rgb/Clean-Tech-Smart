@@ -886,43 +886,6 @@ Gostaria de receber uma proposta para ${leadInterest} da Lavadora Tennant A260.
                     >
                       Agendar Demonstração Prática no Local
                     </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* BLOCO 2: PRINTS DE DEPOIMENTOS DE CLIENTES */}
-          <div className="pt-6 border-t border-gray-200">
-            <div className="mb-6">
-              <span className="text-[#eb6420] text-xs font-bold uppercase tracking-wider">Prova Social & Avaliações</span>
-              <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Depoimentos & Prints de Clientes Satisfeitos</h2>
-              <p className="text-xs text-gray-500 mt-1">Veja o que síndicos, gerentes de facilities e diretores de indústrias dizem sobre nosso atendimento.</p>
-            </div>
-
-            {/* Grid de Prints de Depoimentos */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {testimonialList.map((url, idx) => (
-                <div 
-                  key={idx} 
-                  className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow group relative cursor-pointer"
-                  onClick={() => setZoomedImage(url)}
-                >
-                  <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center overflow-hidden relative">
-                    <img src={url} alt={`Depoimento Cliente ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
-                      <Maximize2 className="w-4 h-4" /> Clique para Ampliar
-                    </div>
-                  </div>
-                  <div className="p-3 text-xs bg-white flex items-center justify-between">
-                    <span className="font-semibold text-gray-800 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Cliente Verificado Curitiba
-                    </span>
-                    <span className="text-[10px] text-gray-400">Ver Print</span>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
 
         </div>
