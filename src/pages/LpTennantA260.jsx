@@ -55,19 +55,11 @@ export default function LpTennantA260() {
   // Logos Oficiais
   const LOGO_ALFA_TENNANT = "https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png";
   const LOGO_CLEANTECH_DEFAULT = "/cleantechpro-logo-transparent.png";
-  const [companyLogo, setCompanyLogo] = useState(() => {
-    return localStorage.getItem('app_company_logo_original') || 
-           localStorage.getItem('app_company_logo') || 
-           LOGO_CLEANTECH_DEFAULT;
-  });
+  const [companyLogo, setCompanyLogo] = useState(LOGO_CLEANTECH_DEFAULT);
 
   useEffect(() => {
     const handleLogo = () => {
-      setCompanyLogo(
-        localStorage.getItem('app_company_logo_original') || 
-        localStorage.getItem('app_company_logo') || 
-        LOGO_CLEANTECH_DEFAULT
-      );
+      setCompanyLogo(LOGO_CLEANTECH_DEFAULT);
     };
     window.addEventListener('logoChanged', handleLogo);
     return () => window.removeEventListener('logoChanged', handleLogo);
