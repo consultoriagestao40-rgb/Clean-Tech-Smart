@@ -864,6 +864,134 @@ export default function LpTennantA260() {
       </section>
 
       {/* ========================================================================= */}
+      {/* 5. DOBRA 5: MODELOS DE NEGÓCIO / FORMAS DE AQUISIÇÃO                      */}
+      {/* ========================================================================= */}
+      <section className="py-16 bg-gradient-to-b from-gray-50 to-white border-t border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          
+          {/* Header da Seção */}
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+              Modelos de Negócio: <span className="text-[#007481]">Formas de Aquisição da A260</span>
+            </h2>
+            <p className="text-sm sm:text-base text-gray-600">
+              Escolha a modalidade ideal para a realidade da sua empresa: locação com redução de CAPEX ou venda direta de fábrica com garantia oficial.
+            </p>
+          </div>
+
+          {/* Grid dos 2 Modelos Principais */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            
+            {/* Opção 1: Locação / Outsourcing */}
+            <div className="bg-white border-2 border-[#eb6420] rounded-2xl p-6 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden ring-4 ring-orange-50">
+              <div className="absolute top-0 right-0 bg-[#eb6420] text-white text-[10px] font-black uppercase px-3.5 py-1 rounded-bl-lg">
+                ★ Mais Escolhido por Empresas
+              </div>
+              
+              <div className="space-y-5">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-orange-100 text-[#eb6420] flex items-center justify-center font-black">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Locação / Outsourcing Operacional</h3>
+                    <span className="text-xs font-bold text-[#eb6420]">Redução Total de CAPEX • 100% OPEX</span>
+                  </div>
+                </div>
+
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                  Linhas de locação mensal com <strong>manutenção inclusa</strong> para reduzir custos operacionais e evitar imobilização de capital.
+                </p>
+
+                <div className="space-y-2.5 pt-2 border-t border-gray-100 text-xs text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Manutenção 100% inclusa:</strong> Peças, escovas e borrachas sem surpresas no caixa</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Benefício Fiscal:</strong> Mensalidade 100% dedutível no IRPJ/CSLL (Lucro Real)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Substituição Imediata:</strong> Garantia de continuidade sem parada de operação</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Entrega técnica e treinamento:</strong> Gratuitos no seu estabelecimento</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => handleWhatsAppRedirect("Olá! Gostaria de uma proposta de LOCAÇÃO / OUTSOURCING para a Tennant A260.")}
+                  className="w-full py-3 bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-xs uppercase rounded-xl transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <WhatsAppIcon className="w-4 h-4 text-white" />
+                  Cotar Plano de Locação no WhatsApp
+                </button>
+              </div>
+            </div>
+
+            {/* Opção 2: Venda Direta de Fábrica */}
+            <div className="bg-white border-2 border-gray-200 hover:border-[#007481] rounded-2xl p-6 sm:p-8 shadow-xs flex flex-col justify-between relative overflow-hidden transition-all">
+              <div className="absolute top-0 right-0 bg-[#007481] text-white text-[10px] font-black uppercase px-3.5 py-1 rounded-bl-lg">
+                Máquina Nova
+              </div>
+
+              <div className="space-y-5">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-teal-50 text-[#007481] flex items-center justify-center font-black">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Venda Direta de Máquina Nova</h3>
+                    <span className="text-xs font-bold text-[#007481]">Faturamento com Suporte Oficial Tennant</span>
+                  </div>
+                </div>
+
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                  Adquira a Tennant A260 nova com garantia oficial de fábrica e entrega técnica com treinamento no local.
+                </p>
+
+                <div className="space-y-2.5 pt-2 border-t border-gray-100 text-xs text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Garantia Oficial Tennant:</strong> Rede autorizada com técnicos certificados de fábrica</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Financiamento Facilitado:</strong> Condições especiais via BNDES, FINAME e Bancos</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Estoque de Peças Genuínas:</strong> Fornecimento contínuo de escovas, rodos e detergentes</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span><strong>Assistência no Paraná:</strong> Atendimento ágil em Curitiba e Região</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => handleWhatsAppRedirect("Olá! Gostaria de receber uma proposta de COMPRA de Máquina Nova Tennant A260.")}
+                  className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs uppercase rounded-xl transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <WhatsAppIcon className="w-4 h-4 text-white" />
+                  Solicitar Cotação de Venda no WhatsApp
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
       {/* 6. TABS INFORMATIVAS (Planos de Locação, Venda, Assistência, ROI)          */}
       {/* ========================================================================= */}
       <section className="py-12 bg-white border-t border-gray-200">
