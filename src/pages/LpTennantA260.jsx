@@ -393,15 +393,18 @@ export default function LpTennantA260() {
             <div className="lg:col-span-6 space-y-5 pt-1">
               
               {/* Headline Comercial Limpa e de Alto Impacto com cores em destaque */}
-              <div className="space-y-1.5 pb-1">
+              <div className="space-y-2 pb-1">
                 <div className="flex items-center gap-1.5 text-[#eb6420] text-xs font-black uppercase tracking-wider">
-                  <span>★ A Lavadora Mais Vendida</span>
+                  <span>★ A Lavadora Mais Vendida da Tennant</span>
                   <span>•</span>
-                  <span>Melhor Custo-Benefício</span>
+                  <span>Líder Global</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                  Substitua até <span className="text-[#007481] font-black">4 auxiliares de limpeza</span> e reduza em até <span className="text-[#eb6420] font-black">60% os custos</span> da sua empresa.
+                  Máxima eficiência na limpeza de pisos: substitua até <span className="text-[#007481] font-black">4 auxiliares de limpeza</span> e reduza em até <span className="text-[#eb6420] font-black">60% os custos</span> com a lavadora mais vendida da Tennant.
                 </h1>
+                <p className="text-gray-700 text-sm sm:text-base leading-relaxed pt-1">
+                  A <strong className="text-gray-900">Tennant A-260</strong> limpa até <strong className="text-[#007481]">2.000 m²/h</strong> com operação ultra simples de 1 botão, baixo ruído (69 dBA) e secagem imediata.
+                </p>
               </div>
 
               {/* Nome da Máquina e Categoria Oficial */}
@@ -414,10 +417,18 @@ export default function LpTennantA260() {
                 </h3>
               </div>
 
-              {/* Descrição Exata do Fabricante */}
-              <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
-                A lavadora de pisos A260 à bateria foi desenvolvida para ambientes que requerem excelente resultado de limpeza com agilidade e facilidade de operação. Com nível de ruído de 69 dBA e produtividade de até 2.000 m²/h, é ideal para hospitais, lojas de varejo, shoppings, indústrias e qualquer outro ambiente pequeno e médio com fluxo de pessoas.
-              </p>
+              {/* Selos de Confiança */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-bold text-gray-700">
+                <span className="bg-gray-100 border border-gray-200 px-2.5 py-1 rounded text-gray-800 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#007481]" /> Tecnologia Tennant Líder Global
+                </span>
+                <span className="bg-gray-100 border border-gray-200 px-2.5 py-1 rounded text-gray-800 flex items-center gap-1">
+                  <Zap className="w-3.5 h-3.5 text-[#eb6420]" /> Operação a Bateria
+                </span>
+                <span className="bg-gray-100 border border-gray-200 px-2.5 py-1 rounded text-gray-800 flex items-center gap-1">
+                  <Wrench className="w-3.5 h-3.5 text-emerald-700" /> Garantia e Suporte Técnico
+                </span>
+              </div>
 
               {/* Especificações em Caixa Alta (Exato do Print) */}
               <div className="space-y-3 pt-2">
@@ -435,10 +446,10 @@ export default function LpTennantA260() {
               {/* Botão Oficial Laranja Tennant Arredondado (Pill Button / Rounded Full) */}
               <div className="pt-2">
                 <button
-                  onClick={() => handleWhatsAppRedirect("Olá! Gostaria de SOLICITAR INFORMAÇÕES e proposta para a Lavadora Tennant A260.")}
+                  onClick={() => handleWhatsAppRedirect("Olá! Gostaria de SOLICITAR DEMONSTRAÇÃO / COTAÇÃO para a Lavadora Tennant A260.")}
                   className="bg-[#eb6420] hover:bg-[#d65715] text-white font-bold text-sm tracking-wider uppercase px-9 py-3.5 rounded-full shadow-sm hover:shadow transition-all cursor-pointer inline-flex items-center justify-center"
                 >
-                  SOLICITAR INFORMAÇÕES
+                  SOLICITAR DEMONSTRAÇÃO / COTAÇÃO
                 </button>
               </div>
 
@@ -468,6 +479,59 @@ export default function LpTennantA260() {
 
             </div>
 
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 4. DOBRA 2: INDICADORES DE DESEMPENHO (GRID RÁPIDO)                       */}
+      {/* ========================================================================= */}
+      <section className="py-10 bg-gray-50 border-t border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="mb-6">
+            <span className="text-[#007481] text-xs font-bold uppercase tracking-wider block">Alta Produtividade & Eficiência</span>
+            <h2 className="text-2xl font-bold text-gray-900 mt-0.5">Indicadores de Desempenho (Grid Rápido)</h2>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+            <table className="w-full text-left text-xs sm:text-sm">
+              <thead className="bg-gray-100 text-gray-900 uppercase font-bold text-[11px] border-b border-gray-200">
+                <tr>
+                  <th className="px-5 py-3.5">Indicador</th>
+                  <th className="px-5 py-3.5">Especificação</th>
+                  <th className="px-5 py-3.5">Benefício Prático</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                <tr>
+                  <td className="px-5 py-3.5 font-bold text-gray-900">Produtividade Teórica</td>
+                  <td className="px-5 py-3.5 font-mono font-semibold text-[#007481]">Até 2.000 m²/h</td>
+                  <td className="px-5 py-3.5 text-gray-700">Substitui equipes manuais (até 4 auxiliares) e reduz o tempo de operação</td>
+                </tr>
+                <tr>
+                  <td className="px-5 py-3.5 font-bold text-gray-900">Faixa de Limpeza</td>
+                  <td className="px-5 py-3.5 font-mono font-semibold text-gray-800">510 mm (disco)</td>
+                  <td className="px-5 py-3.5 text-gray-700">Agilidade em corredores e áreas médias</td>
+                </tr>
+                <tr>
+                  <td className="px-5 py-3.5 font-bold text-gray-900">Capacidade dos Tanques</td>
+                  <td className="px-5 py-3.5 font-mono font-semibold text-gray-800">40L (Solução) / 45L (Recuperação)</td>
+                  <td className="px-5 py-3.5 text-gray-700">Maior autonomia sem paradas frequentes</td>
+                </tr>
+                <tr>
+                  <td className="px-5 py-3.5 font-bold text-gray-900">Nível de Ruído</td>
+                  <td className="px-5 py-3.5 font-mono font-semibold text-emerald-700">Até 69 dBA</td>
+                  <td className="px-5 py-3.5 text-gray-700">Permite operação diurna e em áreas sensíveis (hospitais/varejo)</td>
+                </tr>
+                <tr>
+                  <td className="px-5 py-3.5 font-bold text-gray-900">Alimentação</td>
+                  <td className="px-5 py-3.5 font-mono font-semibold text-[#eb6420]">Bateria (sem cabo)</td>
+                  <td className="px-5 py-3.5 text-gray-700">Total mobilidade sem risco de tropeços</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
         </div>
