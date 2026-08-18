@@ -302,7 +302,7 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 1. TOP BAR INSTITUCIONAL CONGELADA (NOTRANSLATE ANTI-TRADUTOR SAFARI/CHROME)*/}
       {/* ========================================================================= */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-lg w-full notranslate" translate="no">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-[0_8px_25px_-4px_rgba(0,0,0,0.18),0_4px_10px_-2px_rgba(0,0,0,0.1)] border-b border-[#005f6b]/35 w-full notranslate" translate="no">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 sm:h-22 md:h-24 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* LADO ESQUERDO: Logotipo Oficial Clean Tech Pro + Destaque no Desktop */}
