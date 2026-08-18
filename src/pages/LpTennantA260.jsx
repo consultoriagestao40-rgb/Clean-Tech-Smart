@@ -365,11 +365,10 @@ export default function LpTennantA260() {
         </div>
 
         {/* Faixa Institucional de Credibilidade Tennant no Mobile (Abaixo do Menu) */}
-        <div className="md:hidden bg-[#005c66] py-1.5 px-3 text-center border-t border-teal-500/30 text-[11px] text-teal-100 font-semibold flex items-center justify-center gap-1.5 shadow-inner notranslate" translate="no">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
-          <span className="truncate">
-            <strong className="text-white font-bold">Representante & Assistência Autorizada Tennant</strong> • PR
-          </span>
+        <div className="md:hidden bg-[#005c66] py-2 px-2.5 text-center border-t border-teal-500/30 text-[10px] sm:text-[11px] text-teal-100 font-semibold flex items-center justify-center gap-1.5 shadow-inner leading-tight flex-wrap notranslate" translate="no">
+          <ShieldCheck className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+          <span className="text-white font-bold">Representante & Assistência Autorizada Tennant</span>
+          <span className="text-teal-200 font-normal">• PR</span>
         </div>
       </header>
 
