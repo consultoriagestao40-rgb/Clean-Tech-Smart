@@ -213,13 +213,7 @@ export default function LpTennantA260() {
   const [custoServenteOrganico, setCustoServenteOrganico] = useState(4200); // Custo médio por servente orgânico (salário + 100% encargos)
   const [openFaq, setOpenFaq] = useState(null);
 
-  // Valor numérico de locação
-  const numericRentalPrice = useMemo(() => {
-    const raw = (rentalPrice || "3890").toString().replace(/\./g, '').replace(',', '.');
-    return parseFloat(raw) || 3890;
-  }, [rentalPrice]);
-
-  // ROI Math
+  // ROI Math (Focado puramente na supressão de serventes e custo/m²)
   const roiData = useMemo(() => {
     const area = Math.max(100, Number(selectedArea) || 3000);
     const custoServente = Math.max(1000, Number(custoServenteOrganico) || 4200);
@@ -233,19 +227,17 @@ export default function LpTennantA260() {
     // 2. Com a Lavadora Tennant A260 (Mecanizada):
     // 1 operador com a A260 (2.000 m²/h) cobre com facilidade até 6.000 m² de piso por dia
     const serventesComMaquina = Math.max(1, Math.ceil(area / 6000));
-    const custoMaoDeObraComMaquina = serventesComMaquina * custoServente;
-    const custoLocacaoMensal = numericRentalPrice;
-    const custoTotalComMaquina = custoMaoDeObraComMaquina + custoLocacaoMensal;
+    const custoTotalComMaquina = serventesComMaquina * custoServente;
     const custoPorM2ComMaquina = custoTotalComMaquina / area;
 
-    // 3. Economia Gerada:
+    // 3. Supressão de Serventes & Economia Gerada:
+    const serventesPoupados = Math.max(0, serventesSemMaquina - serventesComMaquina);
     const economiaMensal = Math.max(0, custoTotalManual - custoTotalComMaquina);
     const economiaAnual = economiaMensal * 12;
     const percentualEconomia = custoTotalManual > 0 
       ? Math.max(0, Math.round(((custoTotalManual - custoTotalComMaquina) / custoTotalManual) * 100))
       : 0;
     const economiaPorM2 = Math.max(0, custoPorM2Manual - custoPorM2ComMaquina);
-    const serventesPoupados = Math.max(0, serventesSemMaquina - serventesComMaquina);
 
     // Tempo diário estimado
     const horasManualDia = (area / (serventesSemMaquina * 200)).toFixed(1);
@@ -259,8 +251,6 @@ export default function LpTennantA260() {
       custoTotalManual,
       custoPorM2Manual,
       serventesComMaquina,
-      custoMaoDeObraComMaquina,
-      custoLocacaoMensal,
       custoTotalComMaquina,
       custoPorM2ComMaquina,
       economiaMensal,
@@ -272,7 +262,7 @@ export default function LpTennantA260() {
       horasComA260Dia,
       ganhoVelocidade: Math.max(60, Math.min(85, ganhoVelocidade || 75))
     };
-  }, [selectedArea, custoServenteOrganico, numericRentalPrice]);
+  }, [selectedArea, custoServenteOrganico]);
 
   // Função WhatsApp Direto
   const handleWhatsAppRedirect = (customMsg = null) => {
@@ -937,21 +927,21 @@ export default function LpTennantA260() {
 
                 <div className="mt-4 space-y-3">
                   <div className="flex justify-between items-center bg-white/10 p-2.5 rounded-xl text-xs sm:text-sm">
-                    <span className="text-teal-100 font-medium">👤 Operador com Máquina:</span>
+                    <span className="text-teal-100 font-medium">👤 Equipe Necessária com Máquina:</span>
                     <span className="font-bold text-emerald-300 font-mono">
                       {roiData.serventesComMaquina} {roiData.serventesComMaquina === 1 ? 'operador' : 'operadores'}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center bg-white/10 p-2.5 rounded-xl text-xs sm:text-sm">
-                    <span className="text-teal-100 font-medium">🚜 Locação Tennant A260:</span>
-                    <span className="font-semibold text-white font-mono">
-                      R$ {roiData.custoLocacaoMensal.toLocaleString('pt-BR')},00 / mês
+                    <span className="text-teal-100 font-medium">🚀 Supressão de Mão de Obra:</span>
+                    <span className="font-bold text-amber-300 font-mono">
+                      {roiData.serventesPoupados > 0 ? `-${roiData.serventesPoupados} ${roiData.serventesPoupados === 1 ? 'servente' : 'serventes'}` : 'Equipe otimizada'}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center bg-emerald-950/40 border border-emerald-400/30 p-3 rounded-xl">
-                    <span className="text-xs sm:text-sm font-bold text-teal-100">💰 Custo Total Mensal (Operador + Máquina):</span>
+                    <span className="text-xs sm:text-sm font-bold text-teal-100">💰 Custo Total Mensal com Mão de Obra:</span>
                     <span className="font-mono text-base sm:text-xl font-black text-emerald-300">
                       R$ {roiData.custoTotalComMaquina.toLocaleString('pt-BR')},00
                     </span>
@@ -970,7 +960,7 @@ export default function LpTennantA260() {
                     <span>✓ Piso 100% lavado e seco instantaneamente</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-emerald-300 font-bold">
-                    <span>✓ Manutenção, peças e assistência autorizada inclusas</span>
+                    <span>✓ Redução de custo por m² de R$ {roiData.custoPorM2Manual.toFixed(2).replace('.', ',')} para R$ {roiData.custoPorM2ComMaquina.toFixed(2).replace('.', ',')}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-teal-200">
                     <span>• Rendimento da A260: até 2.000 m²/h (cobre até 6.000 m²/dia por turno)</span>
@@ -990,19 +980,19 @@ export default function LpTennantA260() {
                   Resultado Financeiro
                 </span>
                 <span className="text-xs text-teal-200">
-                  Economia direta no caixa da sua empresa:
+                  Economia gerada pela supressão de serventes:
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div className="bg-white/10 p-3.5 rounded-xl border border-white/20">
-                  <span className="text-[11px] text-teal-100 block">Economia Mensal Estimada:</span>
+                  <span className="text-[11px] text-teal-100 block">Economia Mensal em Folha:</span>
                   <div className="text-2xl sm:text-3xl font-black text-emerald-300 font-mono">
                     R$ {roiData.economiaMensal.toLocaleString('pt-BR')}
                     <span className="text-xs text-teal-200 font-normal"> / mês</span>
                   </div>
                   <span className="text-[10px] text-teal-200 block mt-0.5">
-                    Redução de até {roiData.percentualEconomia}% no custo operacional
+                    Redução de até {roiData.percentualEconomia}% no custo de mão de obra
                   </span>
                 </div>
 
@@ -1020,14 +1010,14 @@ export default function LpTennantA260() {
 
               {roiData.serventesPoupados > 0 && (
                 <p className="text-xs text-teal-100 leading-relaxed pt-1">
-                  💡 Sua empresa economiza <strong>{roiData.serventesPoupados} {roiData.serventesPoupados === 1 ? 'funcionário' : 'funcionários'}</strong> na limpeza, que podem ser realocados para atividades estratégicas do negócio.
+                  💡 Sua empresa suprime <strong>{roiData.serventesPoupados} {roiData.serventesPoupados === 1 ? 'servente' : 'serventes'}</strong> da rotina pesada de limpeza, gerando economia imediata no custo por m² de piso.
                 </p>
               )}
             </div>
 
             <div className="lg:col-span-5 flex flex-col justify-center space-y-2.5">
               <button
-                onClick={() => handleWhatsAppRedirect(`Olá! Simulei na Calculadora de ROI uma área de ${selectedArea}m² (Custo manual de R$ ${roiData.custoTotalManual.toLocaleString('pt-BR')}/mês vs Tennant A260 R$ ${roiData.custoTotalComMaquina.toLocaleString('pt-BR')}/mês). Gostaria de validar minha economia de R$ ${roiData.economiaMensal.toLocaleString('pt-BR')}/mês.`)}
+                onClick={() => handleWhatsAppRedirect(`Olá! Simulei na Calculadora de ROI uma área de ${selectedArea}m² (Custo manual de R$ ${roiData.custoTotalManual.toLocaleString('pt-BR')}/mês com ${roiData.serventesSemMaquina} serventes vs Tennant A260 R$ ${roiData.custoTotalComMaquina.toLocaleString('pt-BR')}/mês com ${roiData.serventesComMaquina} operador). Gostaria de validar minha economia de R$ ${roiData.economiaMensal.toLocaleString('pt-BR')}/mês.`)}
                 className="w-full py-4 px-6 bg-[#eb6420] hover:bg-[#d65715] active:scale-95 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-full shadow-lg hover:shadow-2xl transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
               >
                 <WhatsAppIcon className="w-5 h-5 text-white shrink-0" />
