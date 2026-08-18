@@ -303,30 +303,25 @@ export default function LpTennantA260() {
       {/* 1. TOP BAR INSTITUCIONAL CONGELADA (NOTRANSLATE ANTI-TRADUTOR SAFARI/CHROME)*/}
       {/* ========================================================================= */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-lg w-full notranslate" translate="no">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 sm:h-24 md:h-28 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-18 sm:h-22 md:h-24 flex items-center justify-between gap-2 sm:gap-4">
           
-          {/* LADO ESQUERDO: Logos */}
+          {/* LADO ESQUERDO: Logotipo Clean Tech Pro + Destaque de Autorizada Tennant */}
           <div className="flex items-center gap-3 sm:gap-5 shrink-0 notranslate" translate="no">
-            {/* Logotipo Alfa Tennant (Apenas Desktop / Tablet - Oculto no Mobile para ganhar espaço) */}
-            <img 
-              src={LOGO_ALFA_TENNANT} 
-              alt="Alfa by Tennant Company" 
-              className="hidden sm:block h-10 sm:h-12 md:h-14 lg:h-16 w-auto max-h-[56px] sm:max-h-[68px] object-contain shrink-0 drop-shadow-xs"
-            />
-            
-            <div className="hidden sm:block h-8 sm:h-10 md:h-14 w-px bg-teal-300/30 shrink-0"></div>
-            
             {/* Logotipo Oficial Clean Tech Pro Branco Transparente (Maior e com Máximo Destaque) */}
             <img 
               src={companyLogo || LOGO_CLEANTECH_DEFAULT} 
               alt="Clean Tech Pro" 
-              className="h-12 sm:h-14 md:h-16 lg:h-20 w-auto max-h-[58px] sm:max-h-[72px] md:max-h-[85px] object-contain shrink-0 drop-shadow-xs" 
+              className="h-11 sm:h-13 md:h-16 lg:h-18 w-auto max-h-[54px] sm:max-h-[68px] md:max-h-[80px] object-contain shrink-0 drop-shadow-xs" 
             />
 
-            {/* Tag de Representante & Assistência Técnica (Apenas Telas Grandes Desktop) */}
-            <div className="hidden xl:flex flex-col justify-center text-xs text-teal-100 pl-4 border-l border-teal-300/30 leading-tight shrink-0 notranslate" translate="no">
-              <span className="font-bold text-white tracking-wide">Representante & Assistência Técnica Autorizada Tennant</span>
-              <span className="text-[11px] text-teal-200 font-medium">Curitiba & Região Metropolitana • Paraná</span>
+            {/* Destaque Maior da Frase de Representante & Assistência Técnica Autorizada (Desktop / Tablet) */}
+            <div className="hidden md:flex flex-col justify-center text-left pl-3.5 lg:pl-5 border-l-2 border-teal-300/40 leading-snug shrink-0 notranslate" translate="no">
+              <span className="font-extrabold text-white text-xs sm:text-sm lg:text-base tracking-wide">
+                Representante & Assistência Técnica Autorizada Tennant
+              </span>
+              <span className="text-[11px] sm:text-xs text-teal-200 font-semibold tracking-normal">
+                Curitiba & Região Metropolitana • Paraná
+              </span>
             </div>
           </div>
 
@@ -368,12 +363,20 @@ export default function LpTennantA260() {
           </div>
 
         </div>
+
+        {/* Faixa Institucional de Credibilidade Tennant no Mobile (Abaixo do Menu) */}
+        <div className="md:hidden bg-[#005c66] py-1.5 px-3 text-center border-t border-teal-500/30 text-[11px] text-teal-100 font-semibold flex items-center justify-center gap-1.5 shadow-inner notranslate" translate="no">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
+          <span className="truncate">
+            <strong className="text-white font-bold">Representante & Assistência Autorizada Tennant</strong> • PR
+          </span>
+        </div>
       </header>
 
       {/* ========================================================================= */}
       {/* 2. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
-      <section id="hero-pdp" className="pt-24 sm:pt-30 md:pt-36 pb-4 sm:pb-10 bg-white">
+      <section id="hero-pdp" className="pt-28 sm:pt-30 md:pt-34 pb-4 sm:pb-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
