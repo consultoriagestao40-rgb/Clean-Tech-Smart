@@ -303,24 +303,24 @@ export default function LpTennantA260() {
       {/* 1. TOP BAR INSTITUCIONAL CONGELADA (NOTRANSLATE ANTI-TRADUTOR SAFARI/CHROME)*/}
       {/* ========================================================================= */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-lg w-full notranslate" translate="no">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 sm:h-22 md:h-24 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 sm:h-24 md:h-28 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* LADO ESQUERDO: Logos */}
-          <div className="flex items-center gap-3 sm:gap-4 shrink-0 notranslate" translate="no">
+          <div className="flex items-center gap-3 sm:gap-5 shrink-0 notranslate" translate="no">
             {/* Logotipo Alfa Tennant (Apenas Desktop / Tablet - Oculto no Mobile para ganhar espaço) */}
             <img 
               src={LOGO_ALFA_TENNANT} 
               alt="Alfa by Tennant Company" 
-              className="hidden sm:block h-8 sm:h-10 md:h-12 w-auto object-contain shrink-0 drop-shadow-xs"
+              className="hidden sm:block h-10 sm:h-12 md:h-14 lg:h-16 w-auto max-h-[56px] sm:max-h-[68px] object-contain shrink-0 drop-shadow-xs"
             />
             
-            <div className="hidden sm:block h-7 sm:h-9 md:h-11 w-px bg-teal-300/30 shrink-0"></div>
+            <div className="hidden sm:block h-8 sm:h-10 md:h-14 w-px bg-teal-300/30 shrink-0"></div>
             
-            {/* Logotipo Oficial Clean Tech Pro Branco Transparente (Harmonizado com Alfa Tennant) */}
+            {/* Logotipo Oficial Clean Tech Pro Branco Transparente (Maior e com Máximo Destaque) */}
             <img 
               src={companyLogo || LOGO_CLEANTECH_DEFAULT} 
               alt="Clean Tech Pro" 
-              className="h-8 sm:h-10 md:h-12 w-auto object-contain shrink-0 drop-shadow-xs" 
+              className="h-12 sm:h-14 md:h-16 lg:h-20 w-auto max-h-[58px] sm:max-h-[72px] md:max-h-[85px] object-contain shrink-0 drop-shadow-xs" 
             />
 
             {/* Tag de Representante & Assistência Técnica (Apenas Telas Grandes Desktop) */}
@@ -343,7 +343,7 @@ export default function LpTennantA260() {
             </a>
 
             {/* Contador Regressivo Promocional (Visível no Mobile e Desktop) */}
-            <div className="flex items-center gap-1 sm:gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs md:text-sm font-mono border border-teal-300/30 text-teal-50 shrink-0 shadow-inner">
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 rounded-full text-[11px] sm:text-xs md:text-sm font-mono border border-teal-300/30 text-teal-50 shrink-0 shadow-inner">
               <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 shrink-0" />
               <span className="font-bold text-white">{String(timeLeft.days).padStart(2, '0')}d</span>
               <span className="text-teal-300/40">:</span>
@@ -373,7 +373,7 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 2. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
-      <section id="hero-pdp" className="pt-24 sm:pt-28 md:pt-32 pb-4 sm:pb-10 bg-white">
+      <section id="hero-pdp" className="pt-24 sm:pt-30 md:pt-36 pb-4 sm:pb-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
