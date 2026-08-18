@@ -372,11 +372,11 @@ export default function LpTennantA260() {
           
           {/* DESTAQUE OFICIAL NO MOBILE (ABAIXO DO MENU E ACIMA DA FOTO DA MÁQUINA) */}
           <div className="md:hidden mb-4 text-center notranslate" translate="no">
-            <div className="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-teal-50 via-sky-50 to-orange-50/50 border border-[#007481]/30 px-3.5 py-2 rounded-xl shadow-xs">
+            <div className="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-teal-50 via-sky-50 to-teal-50/60 border border-[#007481]/30 px-3.5 py-2 rounded-xl shadow-xs">
               <ShieldCheck className="w-4 h-4 text-[#007481] shrink-0" />
               <div className="text-[11px] sm:text-xs font-black text-gray-900 tracking-tight leading-tight">
                 <span className="text-gray-800 font-bold">Representante & Assistência Técnica</span>{' '}
-                <span className="text-[#eb6420] font-black underline decoration-orange-300">Autorizada Tennant</span>{' '}
+                <span className="text-[#007481] font-black underline decoration-teal-400">Autorizada Tennant</span>{' '}
                 <span className="text-teal-800 font-bold">• PR</span>
               </div>
             </div>
