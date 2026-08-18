@@ -208,30 +208,70 @@ export default function LpTennantA260() {
   const [activeTab, setActiveTab] = useState('locacao');
 
   // ROI Calculator States
-  const [selectedArea, setSelectedArea] = useState(2500); // m²
-  const [selectedCleaners, setSelectedCleaners] = useState(3); // faxineiros manuais
+  const [selectedArea, setSelectedArea] = useState(3000); // m² padrão
+  const [custoServenteOrganico, setCustoServenteOrganico] = useState(4200); // Custo médio por servente orgânico (salário + 100% encargos)
   const [openFaq, setOpenFaq] = useState(null);
+
+  // Valor numérico de locação
+  const numericRentalPrice = useMemo(() => {
+    const raw = (rentalPrice || "3890").toString().replace(/\./g, '').replace(',', '.');
+    return parseFloat(raw) || 3890;
+  }, [rentalPrice]);
 
   // ROI Math
   const roiData = useMemo(() => {
-    const horasComA260 = (selectedArea / 1200).toFixed(1);
-    const horasManual = (selectedArea / (selectedCleaners * 180)).toFixed(1);
-    const custoManualMensal = selectedCleaners * 3200;
-    const custoLocacaoMensal = 3890;
-    const economiaMensal = Math.max(0, custoManualMensal - custoLocacaoMensal);
+    const area = Math.max(100, Number(selectedArea) || 3000);
+    const custoServente = Math.max(1000, Number(custoServenteOrganico) || 4200);
+
+    // 1. Limpeza Manual Tradicional (sem máquina):
+    // 1 servente manual limpa cerca de ~1.200 m² de piso por turno diário sustentável
+    const serventesSemMaquina = Math.max(1, Math.ceil(area / 1200));
+    const custoTotalManual = serventesSemMaquina * custoServente;
+    const custoPorM2Manual = custoTotalManual / area;
+
+    // 2. Com a Lavadora Tennant A260 (Mecanizada):
+    // 1 operador com a A260 (2.000 m²/h) cobre com facilidade até 6.000 m² de piso por dia
+    const serventesComMaquina = Math.max(1, Math.ceil(area / 6000));
+    const custoMaoDeObraComMaquina = serventesComMaquina * custoServente;
+    const custoLocacaoMensal = numericRentalPrice;
+    const custoTotalComMaquina = custoMaoDeObraComMaquina + custoLocacaoMensal;
+    const custoPorM2ComMaquina = custoTotalComMaquina / area;
+
+    // 3. Economia Gerada:
+    const economiaMensal = Math.max(0, custoTotalManual - custoTotalComMaquina);
     const economiaAnual = economiaMensal * 12;
-    const tempoEconomizadoPercent = Math.round(((horasManual - horasComA260) / (horasManual || 1)) * 100);
+    const percentualEconomia = custoTotalManual > 0 
+      ? Math.max(0, Math.round(((custoTotalManual - custoTotalComMaquina) / custoTotalManual) * 100))
+      : 0;
+    const economiaPorM2 = Math.max(0, custoPorM2Manual - custoPorM2ComMaquina);
+    const serventesPoupados = Math.max(0, serventesSemMaquina - serventesComMaquina);
+
+    // Tempo diário estimado
+    const horasManualDia = (area / (serventesSemMaquina * 200)).toFixed(1);
+    const horasComA260Dia = (area / 1600).toFixed(1);
+    const ganhoVelocidade = Math.round(((horasManualDia - horasComA260Dia) / (horasManualDia || 1)) * 100);
 
     return {
-      horasComA260,
-      horasManual,
-      custoManualMensal,
+      area,
+      custoServente,
+      serventesSemMaquina,
+      custoTotalManual,
+      custoPorM2Manual,
+      serventesComMaquina,
+      custoMaoDeObraComMaquina,
       custoLocacaoMensal,
+      custoTotalComMaquina,
+      custoPorM2ComMaquina,
       economiaMensal,
       economiaAnual,
-      tempoEconomizadoPercent: Math.max(50, Math.min(85, tempoEconomizadoPercent || 70))
+      percentualEconomia,
+      economiaPorM2,
+      serventesPoupados,
+      horasManualDia,
+      horasComA260Dia,
+      ganhoVelocidade: Math.max(60, Math.min(85, ganhoVelocidade || 75))
     };
-  }, [selectedArea, selectedCleaners]);
+  }, [selectedArea, custoServenteOrganico, numericRentalPrice]);
 
   // Função WhatsApp Direto
   const handleWhatsAppRedirect = (customMsg = null) => {
@@ -740,128 +780,261 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 💰 CALCULADORA INTERATIVA DE ROI & ECONOMIA DE MÃO DE OBRA                */}
       {/* ========================================================================= */}
-      <section id="calculadora-roi" className="py-8 sm:py-16 bg-white border-b border-gray-200 w-full">
+      <section id="calculadora-roi" className="py-10 sm:py-16 bg-white border-b border-gray-200 w-full notranslate" translate="no">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 w-full">
           
           {/* Header da Calculadora */}
-          <div className="text-center max-w-3xl mx-auto space-y-1.5">
-            <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#007481] bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
-              📊 Simulador Financeiro Interativo
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#007481] bg-teal-50 px-3.5 py-1 rounded-full border border-teal-200">
+              📊 Simulador Financeiro de Viabilidade & ROI
             </span>
-            <h2 className="text-xl sm:text-3xl font-black text-gray-900 tracking-tight">
-              Calcule Sua Economia Real com a <span className="text-[#007481]">Tennant A260</span>
+            <h2 className="text-xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
+              Compare os Custos: <span className="text-red-600">Limpeza Manual</span> vs. <span className="text-[#007481]">Tennant A260</span>
             </h2>
-            <p className="text-xs sm:text-base text-gray-600">
-              Ajuste o tamanho do seu piso e a equipe atual para visualizar a redução de custos e o ganho de tempo imediato.
+            <p className="text-xs sm:text-base text-gray-600 leading-relaxed">
+              Veja a redução real de custo mensal e por m² ao substituir equipes manuais por 1 lavadora automática de alto rendimento.
             </p>
           </div>
 
-          {/* Card Principal da Calculadora - Otimizado para Mobile (95%+ da tela) */}
-          <div className="bg-gradient-to-br from-gray-50 to-white border-2 border-teal-100 rounded-2xl sm:rounded-3xl p-3.5 sm:p-8 md:p-10 shadow-md grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center w-full">
+          {/* Controle de Área Interativo */}
+          <div className="bg-gradient-to-br from-teal-50/70 via-white to-gray-50 border-2 border-teal-200/80 rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-xs space-y-4">
             
-            {/* Controles e Sliders */}
-            <div className="lg:col-span-6 space-y-4 sm:space-y-6 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <label className="text-xs sm:text-sm font-extrabold text-gray-900 flex items-center gap-1.5">
+                  <span>📏 Qual o tamanho da área total do seu piso a ser limpa diariamente?</span>
+                </label>
+                <span className="text-[11px] text-gray-500 block">
+                  Base de cálculo: Custo médio por servente próprio/orgânico de <strong>R$ 4.200,00/mês</strong> (salário + 100% encargos, benefícios e EPIs).
+                </span>
+              </div>
               
-              {/* Slider 1: Área Total */}
-              <div className="space-y-2.5 bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-gray-200 shadow-xs w-full">
-                <div className="flex justify-between items-center text-xs sm:text-sm font-bold text-gray-800">
-                  <span>📏 Área Total a Limpar:</span>
-                  <span className="font-mono text-sm sm:text-base font-black text-[#007481] bg-teal-50 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg border border-teal-200">
-                    {selectedArea.toLocaleString('pt-BR')} m²
-                  </span>
-                </div>
-                <input 
-                  type="range" min="500" max="10000" step="250" value={selectedArea}
-                  onChange={(e) => setSelectedArea(Number(e.target.value))}
-                  className="w-full accent-[#007481] cursor-pointer h-2 bg-gray-200 rounded-lg"
-                />
-                <div className="flex justify-between text-[10px] text-gray-600 font-medium">
-                  <span>500 m²</span>
-                  <span>5.000 m²</span>
-                  <span>10.000 m²</span>
-                </div>
+              {/* Badge com Valor Selecionado */}
+              <div className="flex items-center gap-2 self-start sm:self-center">
+                <span className="font-mono text-base sm:text-xl font-black text-[#007481] bg-white px-4 py-1.5 rounded-xl border-2 border-[#007481]/30 shadow-xs">
+                  {selectedArea.toLocaleString('pt-BR')} m²
+                </span>
               </div>
-
-              {/* Slider 2: Funcionários na Limpeza Manual */}
-              <div className="space-y-2.5 bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-gray-200 shadow-xs w-full">
-                <div className="flex justify-between items-center text-xs sm:text-sm font-bold text-gray-800">
-                  <span>👥 Auxiliares na Limpeza Manual:</span>
-                  <span className="font-mono text-sm sm:text-base font-black text-[#eb6420] bg-orange-50 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-lg border border-orange-200">
-                    {selectedCleaners} {selectedCleaners === 1 ? 'auxiliar' : 'auxiliares'}
-                  </span>
-                </div>
-                <input 
-                  type="range" min="1" max="8" step="1" value={selectedCleaners}
-                  onChange={(e) => setSelectedCleaners(Number(e.target.value))}
-                  className="w-full accent-[#eb6420] cursor-pointer h-2 bg-gray-200 rounded-lg"
-                />
-                <div className="flex justify-between text-[10px] text-gray-600 font-medium">
-                  <span>1 pessoa</span>
-                  <span>4 pessoas</span>
-                  <span>8 pessoas</span>
-                </div>
-              </div>
-
-              <div className="text-xs text-gray-700 bg-teal-50/80 p-3.5 sm:p-4 rounded-xl border border-teal-200 flex items-start gap-2.5">
-                <span className="text-base">💡</span>
-                <p className="leading-relaxed">
-                  <strong>1 Lavadora Tennant A260</strong> limpa <strong>2.000 m²/h</strong> com piso 100% seco na hora, liberando sua equipe para outras atividades produtivas.
-                </p>
-              </div>
-
             </div>
 
-            {/* Painel de Resultados Financeiros */}
-            <div className="lg:col-span-6 bg-gradient-to-br from-[#007481] via-[#005a64] to-[#00424a] text-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl shadow-xl space-y-4 sm:space-y-6 w-full">
-              
-              <div className="flex items-center justify-between border-b border-teal-400/30 pb-3">
-                <span className="text-xs font-black uppercase tracking-wider text-amber-300">
-                  ⚡ Projeção de Economia Financeira
+            {/* Slider de Área */}
+            <div className="space-y-2 pt-1">
+              <input 
+                type="range" min="500" max="12000" step="250" value={selectedArea}
+                onChange={(e) => setSelectedArea(Number(e.target.value))}
+                className="w-full accent-[#007481] cursor-pointer h-2.5 bg-gray-200 rounded-lg"
+              />
+              <div className="flex justify-between text-[10px] sm:text-xs text-gray-500 font-semibold">
+                <span>500 m² (Pequeno)</span>
+                <span>3.000 m² (Médio)</span>
+                <span>6.000 m² (Grande)</span>
+                <span>12.000 m² (Centro Logístico)</span>
+              </div>
+            </div>
+
+            {/* Botões Rápidos de Metragem (Presets) */}
+            <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-[11px] font-bold text-gray-500">Atalhos Rápidos:</span>
+              {[
+                { label: '1.500 m² (Supermercado / Loja)', value: 1500 },
+                { label: '3.000 m² (Galpão / Logística)', value: 3000 },
+                { label: '5.000 m² (Indústria / Fábrica)', value: 5000 },
+                { label: '8.000 m² (Centro de Distribuição)', value: 8000 }
+              ].map((preset) => (
+                <button
+                  key={preset.value}
+                  onClick={() => setSelectedArea(preset.value)}
+                  className={`px-3 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer border ${
+                    selectedArea === preset.value
+                      ? 'bg-[#007481] text-white border-[#007481] shadow-xs'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-[#007481] hover:text-[#007481]'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+          </div>
+
+          {/* Comparativo Lado a Lado de Custos (Antes vs Depois) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+            
+            {/* CARD 1: CENÁRIO MANUAL (SEM MÁQUINA) */}
+            <div className="lg:col-span-6 bg-white border-2 border-red-200 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center justify-between border-b border-red-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-red-500 shrink-0"></span>
+                    <h3 className="text-sm sm:text-base font-black text-red-950 uppercase tracking-wide">
+                      Limpeza Manual Tradicional (Mop / Rodo)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-bold bg-red-50 text-red-700 px-2 py-0.5 rounded border border-red-200">
+                    Cenário Atual
+                  </span>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  <div className="flex justify-between items-center bg-red-50/50 p-2.5 rounded-xl text-xs sm:text-sm">
+                    <span className="text-gray-700 font-medium">👥 Serventes Necessários:</span>
+                    <span className="font-bold text-red-700 font-mono">
+                      {roiData.serventesSemMaquina} {roiData.serventesSemMaquina === 1 ? 'servente' : 'serventes'}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-red-50/50 p-2.5 rounded-xl text-xs sm:text-sm">
+                    <span className="text-gray-700 font-medium">💼 Custo por Servente (Orgânico):</span>
+                    <span className="font-semibold text-gray-900 font-mono">
+                      R$ {roiData.custoServente.toLocaleString('pt-BR')},00 / mês
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-red-100/60 p-3 rounded-xl">
+                    <span className="text-xs sm:text-sm font-bold text-red-950">💸 Custo Total Mensal:</span>
+                    <span className="font-mono text-base sm:text-xl font-black text-red-700">
+                      R$ {roiData.custoTotalManual.toLocaleString('pt-BR')},00
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded-xl text-xs sm:text-sm border border-gray-200">
+                    <span className="text-gray-700 font-bold">📐 Custo Médio por m² de Piso:</span>
+                    <span className="font-mono font-black text-gray-900 text-sm sm:text-base">
+                      R$ {roiData.custoPorM2Manual.toFixed(2).replace('.', ',')} / m²
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-gray-100 text-[11px] text-gray-600 space-y-1">
+                  <div className="flex items-center gap-1.5 text-red-700 font-semibold">
+                    <span>⚠️ Piso molhado por horas com risco de acidentes</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-red-700 font-semibold">
+                    <span>⚠️ Esforço físico repetitivo, faltas e atestados</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-gray-500">
+                    <span>• Rendimento médio manual: ~1.200 m²/dia por pessoa</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CARD 2: CENÁRIO COM TENNANT A260 (CLEAN TECH) */}
+            <div className="lg:col-span-6 bg-gradient-to-br from-[#007481] via-[#005a64] to-[#00424a] text-white border-2 border-teal-400/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center justify-between border-b border-teal-300/30 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-emerald-400 shrink-0 animate-pulse"></span>
+                    <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-wide">
+                      Com Lavadora Tennant A260 (Clean Tech)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-bold bg-emerald-400/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-400/40">
+                    Alta Eficiência
+                  </span>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  <div className="flex justify-between items-center bg-white/10 p-2.5 rounded-xl text-xs sm:text-sm">
+                    <span className="text-teal-100 font-medium">👤 Operador com Máquina:</span>
+                    <span className="font-bold text-emerald-300 font-mono">
+                      {roiData.serventesComMaquina} {roiData.serventesComMaquina === 1 ? 'operador' : 'operadores'}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-white/10 p-2.5 rounded-xl text-xs sm:text-sm">
+                    <span className="text-teal-100 font-medium">🚜 Locação Tennant A260:</span>
+                    <span className="font-semibold text-white font-mono">
+                      R$ {roiData.custoLocacaoMensal.toLocaleString('pt-BR')},00 / mês
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-emerald-950/40 border border-emerald-400/30 p-3 rounded-xl">
+                    <span className="text-xs sm:text-sm font-bold text-teal-100">💰 Custo Total Mensal (Operador + Máquina):</span>
+                    <span className="font-mono text-base sm:text-xl font-black text-emerald-300">
+                      R$ {roiData.custoTotalComMaquina.toLocaleString('pt-BR')},00
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-white/15 p-2.5 rounded-xl text-xs sm:text-sm border border-white/20">
+                    <span className="text-teal-100 font-bold">📐 Custo Médio por m² de Piso:</span>
+                    <span className="font-mono font-black text-white text-sm sm:text-base">
+                      R$ {roiData.custoPorM2ComMaquina.toFixed(2).replace('.', ',')} / m²
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-teal-400/30 text-[11px] text-teal-100 space-y-1">
+                  <div className="flex items-center gap-1.5 text-emerald-300 font-bold">
+                    <span>✓ Piso 100% lavado e seco instantaneamente</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-emerald-300 font-bold">
+                    <span>✓ Manutenção, peças e assistência autorizada inclusas</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-teal-200">
+                    <span>• Rendimento da A260: até 2.000 m²/h (cobre até 6.000 m²/dia por turno)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* CARD RESUMO EXECUTIVO: ECONOMIA E BOTÃO DE VALIDAÇÃO */}
+          <div className="bg-gradient-to-r from-[#003d44] via-[#005761] to-[#007481] text-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-xl border border-teal-300/30 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            
+            <div className="lg:col-span-7 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="bg-amber-400 text-gray-900 font-black text-xs px-2.5 py-0.5 rounded uppercase">
+                  Resultado Financeiro
                 </span>
-                <span className="text-[10px] sm:text-[11px] bg-white/20 px-2.5 py-0.5 rounded-full font-semibold text-white">
-                  Base Estimada
+                <span className="text-xs text-teal-200">
+                  Economia direta no caixa da sua empresa:
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                
-                {/* Economia Mensal */}
-                <div className="bg-white/10 p-3.5 sm:p-4 rounded-xl border border-white/15">
-                  <span className="text-[11px] text-teal-100 block mb-0.5">Economia Mensal Estimada:</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <div className="bg-white/10 p-3.5 rounded-xl border border-white/20">
+                  <span className="text-[11px] text-teal-100 block">Economia Mensal Estimada:</span>
                   <div className="text-2xl sm:text-3xl font-black text-emerald-300 font-mono">
                     R$ {roiData.economiaMensal.toLocaleString('pt-BR')}
+                    <span className="text-xs text-teal-200 font-normal"> / mês</span>
                   </div>
-                  <span className="text-[10px] text-teal-200">Redução de custos operacionais</span>
+                  <span className="text-[10px] text-teal-200 block mt-0.5">
+                    Redução de até {roiData.percentualEconomia}% no custo operacional
+                  </span>
                 </div>
 
-                {/* Economia Anual */}
-                <div className="bg-white/10 p-3.5 sm:p-4 rounded-xl border border-white/15">
-                  <span className="text-[11px] text-teal-100 block mb-0.5">Economia Anual (12 Meses):</span>
+                <div className="bg-white/10 p-3.5 rounded-xl border border-white/20">
+                  <span className="text-[11px] text-teal-100 block">Economia Anual (12 Meses):</span>
                   <div className="text-2xl sm:text-3xl font-black text-amber-300 font-mono">
                     R$ {roiData.economiaAnual.toLocaleString('pt-BR')}
+                    <span className="text-xs text-teal-200 font-normal"> / ano</span>
                   </div>
-                  <span className="text-[10px] text-teal-200">Impacto direto no EBITDA</span>
+                  <span className="text-[10px] text-teal-200 block mt-0.5">
+                    Custo por m² cai de R$ {roiData.custoPorM2Manual.toFixed(2).replace('.', ',')} para R$ {roiData.custoPorM2ComMaquina.toFixed(2).replace('.', ',')}
+                  </span>
                 </div>
-
               </div>
 
-              {/* Tempo economizado */}
-              <div className="bg-black/20 p-3 rounded-xl border border-teal-300/20 flex items-center justify-between text-xs">
-                <span className="text-teal-100">⏱️ Ganho de Velocidade:</span>
-                <span className="font-bold text-white bg-teal-600/60 px-2.5 py-1 rounded-lg">
-                  ~{roiData.tempoEconomizadoPercent}% mais rápido
-                </span>
-              </div>
+              {roiData.serventesPoupados > 0 && (
+                <p className="text-xs text-teal-100 leading-relaxed pt-1">
+                  💡 Sua empresa economiza <strong>{roiData.serventesPoupados} {roiData.serventesPoupados === 1 ? 'funcionário' : 'funcionários'}</strong> na limpeza, que podem ser realocados para atividades estratégicas do negócio.
+                </p>
+              )}
+            </div>
 
-              {/* Botão de Validação do Estudo */}
+            <div className="lg:col-span-5 flex flex-col justify-center space-y-2.5">
               <button
-                onClick={() => handleWhatsAppRedirect(`Olá! Simulei na calculadora uma área de ${selectedArea}m² com ${selectedCleaners} auxiliares e gostaria de validar minha economia para a Tennant A260.`)}
-                className="w-full py-3.5 sm:py-4 px-4 bg-[#eb6420] hover:bg-[#d65715] text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-full shadow-lg hover:shadow-2xl transition-all hover:scale-102 flex items-center justify-center gap-2 cursor-pointer text-center"
+                onClick={() => handleWhatsAppRedirect(`Olá! Simulei na Calculadora de ROI uma área de ${selectedArea}m² (Custo manual de R$ ${roiData.custoTotalManual.toLocaleString('pt-BR')}/mês vs Tennant A260 R$ ${roiData.custoTotalComMaquina.toLocaleString('pt-BR')}/mês). Gostaria de validar minha economia de R$ ${roiData.economiaMensal.toLocaleString('pt-BR')}/mês.`)}
+                className="w-full py-4 px-6 bg-[#eb6420] hover:bg-[#d65715] active:scale-95 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-full shadow-lg hover:shadow-2xl transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
               >
-                <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0" />
+                <WhatsAppIcon className="w-5 h-5 text-white shrink-0" />
                 <span>Validar Estudo no WhatsApp</span>
               </button>
-
+              <span className="text-[11px] text-teal-200 text-center block">
+                Atendimento rápido com consultores especializados em Curitiba e Região.
+              </span>
             </div>
 
           </div>
