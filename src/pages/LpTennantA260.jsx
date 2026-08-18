@@ -303,7 +303,7 @@ export default function LpTennantA260() {
       {/* 1. TOP BAR INSTITUCIONAL CONGELADA (NOTRANSLATE ANTI-TRADUTOR SAFARI/CHROME)*/}
       {/* ========================================================================= */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-lg w-full notranslate" translate="no">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-18 sm:h-22 md:h-24 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 sm:h-22 md:h-24 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* LADO ESQUERDO: Logotipo Clean Tech Pro + Destaque de Autorizada Tennant */}
           <div className="flex items-center gap-3 sm:gap-5 shrink-0 notranslate" translate="no">
@@ -363,19 +363,12 @@ export default function LpTennantA260() {
           </div>
 
         </div>
-
-        {/* Faixa Institucional de Credibilidade Tennant no Mobile (Abaixo do Menu - Linha Única Obrigatória) */}
-        <div className="md:hidden bg-[#005c66] py-1.5 px-2 text-center border-t border-teal-500/30 text-[9px] min-[360px]:text-[10px] min-[400px]:text-[11px] text-teal-100 font-semibold flex items-center justify-center gap-1 shadow-inner whitespace-nowrap notranslate" translate="no">
-          <ShieldCheck className="w-3 h-3 min-[360px]:w-3.5 min-[360px]:h-3.5 text-amber-300 shrink-0" />
-          <span className="text-white font-bold">Representante & Assistência Autorizada Tennant</span>
-          <span className="text-teal-200 font-medium">• PR</span>
-        </div>
       </header>
 
       {/* ========================================================================= */}
       {/* 2. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
-      <section id="hero-pdp" className="pt-28 sm:pt-30 md:pt-34 pb-4 sm:pb-10 bg-white">
+      <section id="hero-pdp" className="pt-22 sm:pt-26 md:pt-30 pb-4 sm:pb-10 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
