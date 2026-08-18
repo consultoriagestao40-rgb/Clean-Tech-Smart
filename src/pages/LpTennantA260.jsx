@@ -230,7 +230,9 @@ export default function LpTennantA260() {
     // 1 operador com a A260 (2.000 m²/h) cobre com facilidade até 6.000 m² de piso por dia
     const prodA260Dia = 6000;
     const serventesComMaquina = Math.max(1, Math.ceil(area / prodA260Dia));
-    const custoTotalComMaquina = serventesComMaquina * custoServente;
+    const custoMaoDeObraComMaquina = serventesComMaquina * custoServente;
+    const custoEquipamentoInterno = serventesComMaquina * 2000; // R$ 2.000/mês (Depreciação + Manutenção - embutido internamente no cálculo sem exposição aberta)
+    const custoTotalComMaquina = custoMaoDeObraComMaquina + custoEquipamentoInterno;
     const custoPorM2ComMaquina = custoTotalComMaquina / area;
 
     // 3. Supressão de Serventes & Economia Gerada:
@@ -991,7 +993,7 @@ export default function LpTennantA260() {
                   </div>
 
                   <div className="flex justify-between items-center bg-emerald-950/40 border border-emerald-400/30 p-3 rounded-xl">
-                    <span className="text-xs sm:text-sm font-bold text-teal-100">💰 Custo Total Mensal com Mão de Obra:</span>
+                    <span className="text-xs sm:text-sm font-bold text-teal-100">💰 Custo Operacional Mensal Total:</span>
                     <span className="font-mono text-base sm:text-xl font-black text-emerald-300">
                       R$ {roiData.custoTotalComMaquina.toLocaleString('pt-BR')},00
                     </span>
