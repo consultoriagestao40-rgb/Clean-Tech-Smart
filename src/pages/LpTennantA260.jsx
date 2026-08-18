@@ -305,16 +305,15 @@ export default function LpTennantA260() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#007481] text-white shadow-lg w-full notranslate" translate="no">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 sm:h-22 md:h-24 flex items-center justify-between gap-2 sm:gap-4">
           
-          {/* LADO ESQUERDO: Logotipo Clean Tech Pro + Destaque de Autorizada Tennant */}
+          {/* LADO ESQUERDO: Logotipo Oficial Clean Tech Pro + Destaque no Desktop */}
           <div className="flex items-center gap-3 sm:gap-5 shrink-0 notranslate" translate="no">
-            {/* Logotipo Oficial Clean Tech Pro Branco Transparente (Maior e com Máximo Destaque) */}
             <img 
               src={companyLogo || LOGO_CLEANTECH_DEFAULT} 
               alt="Clean Tech Pro" 
-              className="h-11 sm:h-13 md:h-16 lg:h-18 w-auto max-h-[54px] sm:max-h-[68px] md:max-h-[80px] object-contain shrink-0 drop-shadow-xs" 
+              className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto max-h-[50px] sm:max-h-[60px] md:max-h-[70px] object-contain shrink-0 drop-shadow-xs" 
             />
 
-            {/* Destaque Maior da Frase de Representante & Assistência Técnica Autorizada (Desktop / Tablet) */}
+            {/* Destaque no Header Desktop (Idêntico ao print aprovado) */}
             <div className="hidden md:flex flex-col justify-center text-left pl-3.5 lg:pl-5 border-l-2 border-teal-300/40 leading-snug shrink-0 notranslate" translate="no">
               <span className="font-extrabold text-white text-xs sm:text-sm lg:text-base tracking-wide">
                 Representante & Assistência Técnica Autorizada Tennant
@@ -368,8 +367,20 @@ export default function LpTennantA260() {
       {/* ========================================================================= */}
       {/* 2. PRODUCT DISPLAY (HERO PDP)                                             */}
       {/* ========================================================================= */}
-      <section id="hero-pdp" className="pt-22 sm:pt-26 md:pt-30 pb-4 sm:pb-10 bg-white">
+      <section id="hero-pdp" className="pt-28 sm:pt-32 md:pt-36 lg:pt-40 pb-6 sm:pb-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* DESTAQUE OFICIAL NO MOBILE (ABAIXO DO MENU E ACIMA DA FOTO DA MÁQUINA) */}
+          <div className="md:hidden mb-4 text-center notranslate" translate="no">
+            <div className="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-teal-50 via-sky-50 to-orange-50/50 border border-[#007481]/30 px-3.5 py-2 rounded-xl shadow-xs">
+              <ShieldCheck className="w-4 h-4 text-[#007481] shrink-0" />
+              <div className="text-[11px] sm:text-xs font-black text-gray-900 tracking-tight leading-tight">
+                <span className="text-gray-800 font-bold">Representante & Assistência Técnica</span>{' '}
+                <span className="text-[#eb6420] font-black underline decoration-orange-300">Autorizada Tennant</span>{' '}
+                <span className="text-teal-800 font-bold">• PR</span>
+              </div>
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-start">
             
