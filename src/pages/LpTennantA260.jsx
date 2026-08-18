@@ -828,8 +828,8 @@ export default function LpTennantA260() {
               </div>
             </div>
 
-            {/* Botões Rápidos de Metragem (Presets) */}
-            <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
+            {/* Botões Rápidos de Metragem (Presets) - Visíveis apenas em telas maiores para manter mobile super limpo */}
+            <div className="hidden sm:flex pt-2 flex-wrap items-center gap-2 text-xs">
               <span className="text-[11px] font-bold text-gray-500">Atalhos Rápidos:</span>
               {[
                 { label: '1.500 m² (Supermercado / Loja)', value: 1500 },
