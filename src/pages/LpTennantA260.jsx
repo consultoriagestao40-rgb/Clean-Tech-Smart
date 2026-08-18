@@ -56,7 +56,7 @@ export default function LpTennantA260() {
 
   // Logos Oficiais em Alta Definição (HD 4K Transparentes)
   const LOGO_ALFA_TENNANT = "/alfa-tennant-logo-hd.png";
-  const LOGO_CLEANTECH_DEFAULT = "/cleantechpro-official-logo.png";
+  const LOGO_CLEANTECH_DEFAULT = "/cleantechpro-official-white.png";
   const [companyLogo, setCompanyLogo] = useState(LOGO_CLEANTECH_DEFAULT);
 
   useEffect(() => {
@@ -316,14 +316,12 @@ export default function LpTennantA260() {
             
             <div className="hidden sm:block h-7 sm:h-9 md:h-11 w-px bg-teal-300/30 shrink-0"></div>
             
-            {/* Logotipo Oficial Clean Tech Pro em Box Branco Elegante (Opção 01) */}
-            <div className="bg-white px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl shadow-xs border border-white/30 flex items-center justify-center shrink-0">
-              <img 
-                src={companyLogo || LOGO_CLEANTECH_DEFAULT} 
-                alt="Clean Tech Pro" 
-                className="h-7 sm:h-9 md:h-10 w-auto object-contain shrink-0" 
-              />
-            </div>
+            {/* Logotipo Oficial Clean Tech Pro Branco Transparente (Harmonizado com Alfa Tennant) */}
+            <img 
+              src={companyLogo || LOGO_CLEANTECH_DEFAULT} 
+              alt="Clean Tech Pro" 
+              className="h-8 sm:h-10 md:h-12 w-auto object-contain shrink-0 drop-shadow-xs" 
+            />
 
             {/* Tag de Representante & Assistência Técnica (Apenas Telas Grandes Desktop) */}
             <div className="hidden xl:flex flex-col justify-center text-xs text-teal-100 pl-4 border-l border-teal-300/30 leading-tight shrink-0 notranslate" translate="no">
@@ -344,7 +342,7 @@ export default function LpTennantA260() {
               <span>{EMAIL_CONTATO}</span>
             </a>
 
-            {/* Contador Regressivo Promocional (Visível tanto no Mobile quanto no Desktop) */}
+            {/* Contador Regressivo Promocional (Visível no Mobile e Desktop) */}
             <div className="flex items-center gap-1 sm:gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs md:text-sm font-mono border border-teal-300/30 text-teal-50 shrink-0 shadow-inner">
               <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 shrink-0" />
               <span className="font-bold text-white">{String(timeLeft.days).padStart(2, '0')}d</span>
@@ -354,17 +352,6 @@ export default function LpTennantA260() {
               <span className="font-bold text-white">{String(timeLeft.minutes).padStart(2, '0')}m</span>
               <span className="text-teal-300/40">:</span>
               <span className="font-black text-amber-300">{String(timeLeft.seconds).padStart(2, '0')}s</span>
-            </div>
-
-            {/* Mobile CTA: Botão Direto de Cotação (Sem o texto longo do WhatsApp) */}
-            <div className="sm:hidden shrink-0">
-              <button
-                onClick={() => handleWhatsAppRedirect("Olá! Gostaria de aproveitar a CONDIÇÃO ESPECIAL DE FEIRA da Tennant A260.")}
-                className="flex items-center gap-1 bg-[#eb6420] hover:bg-[#d65715] active:scale-95 text-white px-3 py-1.5 rounded-full font-black shadow-md transition-all text-xs shrink-0 cursor-pointer"
-              >
-                <Zap className="w-3.5 h-3.5 fill-current" />
-                <span>Cotar Agora</span>
-              </button>
             </div>
 
             {/* Desktop CTA: Botão WhatsApp Oficial com Número Formatado */}
