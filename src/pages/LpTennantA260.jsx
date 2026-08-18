@@ -53,6 +53,7 @@ export default function LpTennantA260() {
   const WHATSAPP_NUMBER = localStorage.getItem('lp_a260_whatsapp') || "5541985083658";
   const WHATSAPP_DISPLAY = localStorage.getItem('lp_a260_whatsapp_display') || "(41) 98508-3658";
   const EMAIL_CONTATO = localStorage.getItem('lp_a260_email') || "vendas@cleantechpro.com.br";
+  const rentalPrice = localStorage.getItem('lp_a260_rental_price') || "3.890,00";
 
   // Logos Oficiais em Alta Definição (HD 4K Transparentes)
   const LOGO_ALFA_TENNANT = "/alfa-tennant-logo-hd.png";
