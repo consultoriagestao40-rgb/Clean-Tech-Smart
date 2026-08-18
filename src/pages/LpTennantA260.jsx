@@ -210,23 +210,26 @@ export default function LpTennantA260() {
 
   // ROI Calculator States
   const [selectedArea, setSelectedArea] = useState(3000); // m² padrão
+  const [produtividadeManual, setProdutividadeManual] = useState(1200); // m²/dia por servente manual (padrão 1.200 m²)
   const [custoServenteOrganico, setCustoServenteOrganico] = useState(4200); // Custo médio por servente orgânico (salário + 100% encargos)
   const [openFaq, setOpenFaq] = useState(null);
 
-  // ROI Math (Focado puramente na supressão de serventes e custo/m²)
+  // ROI Math (Baseado na produtividade por servente vs. Tennant A260)
   const roiData = useMemo(() => {
     const area = Math.max(100, Number(selectedArea) || 3000);
+    const prodServente = Math.max(400, Number(produtividadeManual) || 1200);
     const custoServente = Math.max(1000, Number(custoServenteOrganico) || 4200);
 
     // 1. Limpeza Manual Tradicional (sem máquina):
-    // 1 servente manual limpa cerca de ~1.200 m² de piso por turno diário sustentável
-    const serventesSemMaquina = Math.max(1, Math.ceil(area / 1200));
+    // Quantidade de serventes calculada pela produtividade diária por servente
+    const serventesSemMaquina = Math.max(1, Math.ceil(area / prodServente));
     const custoTotalManual = serventesSemMaquina * custoServente;
     const custoPorM2Manual = custoTotalManual / area;
 
     // 2. Com a Lavadora Tennant A260 (Mecanizada):
     // 1 operador com a A260 (2.000 m²/h) cobre com facilidade até 6.000 m² de piso por dia
-    const serventesComMaquina = Math.max(1, Math.ceil(area / 6000));
+    const prodA260Dia = 6000;
+    const serventesComMaquina = Math.max(1, Math.ceil(area / prodA260Dia));
     const custoTotalComMaquina = serventesComMaquina * custoServente;
     const custoPorM2ComMaquina = custoTotalComMaquina / area;
 
@@ -240,12 +243,14 @@ export default function LpTennantA260() {
     const economiaPorM2 = Math.max(0, custoPorM2Manual - custoPorM2ComMaquina);
 
     // Tempo diário estimado
-    const horasManualDia = (area / (serventesSemMaquina * 200)).toFixed(1);
+    const horasManualDia = (area / (serventesSemMaquina * (prodServente / 8))).toFixed(1);
     const horasComA260Dia = (area / 1600).toFixed(1);
     const ganhoVelocidade = Math.round(((horasManualDia - horasComA260Dia) / (horasManualDia || 1)) * 100);
 
     return {
       area,
+      prodServente,
+      prodA260Dia,
       custoServente,
       serventesSemMaquina,
       custoTotalManual,
@@ -262,7 +267,7 @@ export default function LpTennantA260() {
       horasComA260Dia,
       ganhoVelocidade: Math.max(60, Math.min(85, ganhoVelocidade || 75))
     };
-  }, [selectedArea, custoServenteOrganico]);
+  }, [selectedArea, produtividadeManual, custoServenteOrganico]);
 
   // Função WhatsApp Direto
   const handleWhatsAppRedirect = (customMsg = null) => {
@@ -846,6 +851,36 @@ export default function LpTennantA260() {
               ))}
             </div>
 
+            {/* Controle 2: Produtividade por Servente Manual */}
+            <div className="pt-3 border-t border-gray-200/70 space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <label className="text-xs sm:text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                    <span>⚡ Produtividade Média da Limpeza Manual por Servente:</span>
+                  </label>
+                  <span className="text-[11px] text-gray-500 block">
+                    Em média, 1 servente limpa cerca de <strong>1.000 a 1.500 m²/dia</strong> com mop/rodo em turno integral.
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-xs sm:text-sm font-bold text-gray-900 bg-white px-3 py-1 rounded-lg border border-gray-300 shadow-xs">
+                    {produtividadeManual.toLocaleString('pt-BR')} m²/dia por pessoa
+                  </span>
+                </div>
+              </div>
+
+              <input 
+                type="range" min="800" max="1800" step="100" value={produtividadeManual}
+                onChange={(e) => setProdutividadeManual(Number(e.target.value))}
+                className="w-full accent-gray-700 cursor-pointer h-2 bg-gray-200 rounded-lg"
+              />
+              <div className="flex justify-between text-[10px] sm:text-xs text-gray-500 font-medium">
+                <span>800 m²/dia (Piso Muito Sujo)</span>
+                <span>1.200 m²/dia (Padrão de Mercado)</span>
+                <span>1.800 m²/dia (Limpeza Leve)</span>
+              </div>
+            </div>
+
           </div>
 
           {/* Comparativo Lado a Lado de Custos (Antes vs Depois) */}
@@ -868,9 +903,17 @@ export default function LpTennantA260() {
 
                 <div className="mt-4 space-y-3">
                   <div className="flex justify-between items-center bg-red-50/50 p-2.5 rounded-xl text-xs sm:text-sm">
+                    <span className="text-gray-700 font-medium">⚡ Produtividade por Pessoa:</span>
+                    <span className="font-bold text-gray-900 font-mono">
+                      {roiData.prodServente.toLocaleString('pt-BR')} m²/dia
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-red-50/50 p-2.5 rounded-xl text-xs sm:text-sm">
                     <span className="text-gray-700 font-medium">👥 Serventes Necessários:</span>
                     <span className="font-bold text-red-700 font-mono">
                       {roiData.serventesSemMaquina} {roiData.serventesSemMaquina === 1 ? 'servente' : 'serventes'}
+                      <span className="text-[10px] text-gray-500 font-normal ml-1">({selectedArea}m² ÷ {roiData.prodServente}m²)</span>
                     </span>
                   </div>
 
@@ -926,6 +969,13 @@ export default function LpTennantA260() {
                 </div>
 
                 <div className="mt-4 space-y-3">
+                  <div className="flex justify-between items-center bg-white/10 p-2.5 rounded-xl text-xs sm:text-sm">
+                    <span className="text-teal-100 font-medium">⚡ Produtividade da Tennant A260:</span>
+                    <span className="font-bold text-white font-mono">
+                      2.000 m²/h (até 6.000 m²/dia)
+                    </span>
+                  </div>
+
                   <div className="flex justify-between items-center bg-white/10 p-2.5 rounded-xl text-xs sm:text-sm">
                     <span className="text-teal-100 font-medium">👤 Equipe Necessária com Máquina:</span>
                     <span className="font-bold text-emerald-300 font-mono">
