@@ -50,6 +50,12 @@ export default function PropostasLocacao() {
   const [isMachineModelModalOpen, setIsMachineModelModalOpen] = useState(false);
   const [isSavingMachineModel, setIsSavingMachineModel] = useState(false);
   const [newMachineModelName, setNewMachineModelName] = useState('');
+  const [newMachineModelRentalPriceId, setNewMachineModelRentalPriceId] = useState('');
+  const [showPriceOverride, setShowPriceOverride] = useState({});
+
+  const toggleShowPriceOverride = (idx) => {
+    setShowPriceOverride(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
 
   // Share Link Expiration Modal states
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -68,12 +74,16 @@ export default function PropostasLocacao() {
       const res = await fetch('/api/save-machine-model', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newMachineModelName.trim() })
+        body: JSON.stringify({ 
+          name: newMachineModelName.trim(),
+          rental_price_id: newMachineModelRentalPriceId || null
+        })
       });
       if (res.ok) {
         const data = await res.json();
         setIsMachineModelModalOpen(false);
         setNewMachineModelName('');
+        setNewMachineModelRentalPriceId('');
         // Refresh catalog
         const machinesRes = await fetch('/api/get-machine-models');
         const machinesData = await machinesRes.json();
@@ -191,27 +201,46 @@ export default function PropostasLocacao() {
     return finalValue > 0 ? finalValue.toFixed(2) : '';
   };
 
-  const getMachineModelKeywords = (name) => {
-    if (!name) return [];
-    return name
+  const findBestRentalPriceForMachine = (machineModelId) => {
+    if (!machineModelId) return null;
+    const selectedMachine = machineModels.find(m => String(m.id) === String(machineModelId));
+    if (!selectedMachine) return null;
+
+    // 1. Direct explicit link in database
+    if (selectedMachine.rental_price_id) {
+      const explicit = rentalPrices.find(r => String(r.id) === String(selectedMachine.rental_price_id));
+      if (explicit) return explicit;
+    }
+
+    // 2. Smart token & code matching
+    const mName = String(selectedMachine.name || '').toLowerCase();
+    
+    // Clean tokens from machine name (e.g. "T360", "A260", "S20", "T760", "S960", "A140", "A135", "T20", "Mini", "AS5160", "5160", "Brava")
+    const cleanTokens = mName
+      .replace(/[(),\/\-]/g, ' ')
       .split(/\s+/)
-      .map(w => w.replace(/[(),]/g, '').trim().toLowerCase())
-      .filter(w => w.length >= 3 && w !== 'tennant' && w !== 'lavadora' && w !== 'varredeira' && w !== 'piso' && w !== 'operação' && w !== 'opera');
+      .map(w => w.trim().toLowerCase())
+      .filter(w => w.length >= 2 && !['de', 'da', 'do', 'com', 'para', 'em', 'operacao', 'operação', 'lavadora', 'varredeira', 'aspirador', 'piso', 'pisos', 'pe', 'pé', 'bordo', 'compacta', 'tamanho', 'medio', 'médio', 'tennant', 'alfa', 'eletrica', 'elétrica', 'cabo'].includes(w));
+
+    for (const token of cleanTokens) {
+      const found = rentalPrices.find(r => {
+        const code = String(r.code || '').toLowerCase();
+        const desc = String(r.description || '').toLowerCase();
+        return code === token || code === `tna${token}` || code === `amat${token}` || code.includes(token) || desc.includes(token);
+      });
+      if (found) return found;
+    }
+
+    return rentalPrices[0] || null;
   };
 
   const getItemFilteredPrices = (machineModelId) => {
     if (!machineModelId) return rentalPrices;
-    const selectedMachine = machineModels.find(m => String(m.id) === String(machineModelId));
-    if (!selectedMachine) return rentalPrices;
+    const best = findBestRentalPriceForMachine(machineModelId);
+    if (!best) return rentalPrices;
 
-    const keywords = getMachineModelKeywords(selectedMachine.name);
-    if (keywords.length === 0) return rentalPrices;
-
-    return rentalPrices.filter(r => {
-      const rCode = String(r.code || '').toLowerCase();
-      const rDesc = String(r.description || '').toLowerCase();
-      return keywords.some(kw => rCode.includes(kw) || rDesc.includes(kw));
-    });
+    // Return matched price first, followed by the rest
+    return [best, ...rentalPrices.filter(r => String(r.id) !== String(best.id))];
   };
 
   const handleItemChange = (index, field, value) => {
@@ -220,10 +249,11 @@ export default function PropostasLocacao() {
       const currentItem = { ...newItems[index], [field]: value };
 
       if (field === 'machine_model_id') {
-        const matching = getItemFilteredPrices(value);
-        if (matching.length > 0 && !matching.some(r => String(r.id) === String(currentItem.rental_price_id))) {
-          currentItem.rental_price_id = String(matching[0].id);
-          const autoVal = calculateItemPrice(matching[0].id, currentItem.period_months);
+        currentItem.machine_model_id = value;
+        const matchedPrice = findBestRentalPriceForMachine(value);
+        if (matchedPrice) {
+          currentItem.rental_price_id = String(matchedPrice.id);
+          const autoVal = calculateItemPrice(matchedPrice.id, currentItem.period_months);
           if (autoVal) currentItem.monthly_value = autoVal;
         }
       }
@@ -252,11 +282,14 @@ export default function PropostasLocacao() {
       else nextPeriod = 7;
     }
 
+    const matchedPrice = lastItem?.machine_model_id ? findBestRentalPriceForMachine(lastItem.machine_model_id) : null;
+    const rPriceId = lastItem?.rental_price_id || (matchedPrice ? String(matchedPrice.id) : '');
+
     const newItem = {
       id: 'opt_' + Date.now(),
       machine_model_id: lastItem?.machine_model_id || '',
       equipment_id: '',
-      rental_price_id: lastItem?.rental_price_id || '',
+      rental_price_id: rPriceId,
       period_months: nextPeriod,
       quantity: 1,
       monthly_value: '',
@@ -300,8 +333,16 @@ export default function PropostasLocacao() {
 
   const handleGenerateQuickOptions = (baseIndex = 0) => {
     const baseItem = formData.items[baseIndex] || formData.items[0];
-    if (!baseItem || !baseItem.machine_model_id || !baseItem.rental_price_id) {
-      alert('Selecione primeiro o Modelo da Máquina e o Preço da Tabela na Opção #1 para gerar as opções rápidas.');
+    if (!baseItem || !baseItem.machine_model_id) {
+      alert('Selecione primeiro o Modelo da Máquina na Opção #1 para gerar as opções rápidas.');
+      return;
+    }
+
+    const matchedPrice = findBestRentalPriceForMachine(baseItem.machine_model_id);
+    const rPriceId = baseItem.rental_price_id || (matchedPrice ? String(matchedPrice.id) : null);
+
+    if (!rPriceId) {
+      alert('Não foi possível identificar a tabela de preços para este modelo.');
       return;
     }
 
@@ -315,10 +356,10 @@ export default function PropostasLocacao() {
       id: 'opt_' + Date.now() + '_' + idx,
       machine_model_id: baseItem.machine_model_id,
       equipment_id: baseItem.equipment_id || '',
-      rental_price_id: baseItem.rental_price_id,
+      rental_price_id: String(rPriceId),
       period_months: p.period,
       quantity: baseItem.quantity || 1,
-      monthly_value: calculateItemPrice(baseItem.rental_price_id, p.period),
+      monthly_value: calculateItemPrice(rPriceId, p.period) || '',
       contract_type: baseItem.contract_type || '0 - Sem cobertura.',
       hours_per_month: baseItem.hours_per_month || '100 horas/mês',
       notes: p.label
@@ -1776,6 +1817,7 @@ body{padding-top:60px}
                   {formData.items.map((item, idx) => {
                     const filteredPrices = getItemFilteredPrices(item.machine_model_id);
                     const valInfo = getRentalValueInfo(item.period_months);
+                    const selectedPriceRow = rentalPrices.find(r => String(r.id) === String(item.rental_price_id));
 
                     return (
                       <div 
@@ -1818,20 +1860,25 @@ body{padding-top:60px}
                         </div>
 
                         {/* Machine & Physical Equipment */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">
-                              Modelo da Máquina (Catálogo) *
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                          <div className="md:col-span-7">
+                            <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                              <span>Equipamento / Modelo da Máquina *</span>
+                              <span className="text-[10px] text-blue-600 font-semibold">Sincroniza automaticamente com a Tabela de Preços</span>
                             </label>
                             <div className="flex items-center space-x-2">
                               <select 
                                 required
                                 value={item.machine_model_id} 
                                 onChange={e => handleItemChange(idx, 'machine_model_id', e.target.value)}
-                                className="flex-1 min-w-0 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white font-medium"
+                                className="flex-1 min-w-0 w-full px-3 py-2 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white font-bold text-gray-900 shadow-xs"
                               >
-                                <option value="">Selecione o Modelo</option>
-                                {machineModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                                <option value="">Selecione o Modelo da Máquina...</option>
+                                {machineModels.map(m => (
+                                  <option key={m.id} value={m.id}>
+                                    {m.name}
+                                  </option>
+                                ))}
                               </select>
                               <button
                                 type="button"
@@ -1844,14 +1891,14 @@ body{padding-top:60px}
                             </div>
                           </div>
 
-                          <div>
+                          <div className="md:col-span-5">
                             <label className="block text-xs font-bold text-gray-700 mb-1">
                               Ativo Físico do Park de Máquinas (Opcional)
                             </label>
                             <select 
                               value={item.equipment_id || ''} 
                               onChange={e => handleItemChange(idx, 'equipment_id', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white font-medium"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white font-medium text-gray-700"
                             >
                               <option value="">Vincular Ativo Físico (Opcional)...</option>
                               {equipments.map(eq => {
@@ -1868,48 +1915,75 @@ body{padding-top:60px}
                           </div>
                         </div>
 
-                        {/* Price Table, Period & Quantity */}
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                          <div className="md:col-span-6">
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Preço Associado (Tabela de Locação) *</label>
+                        {/* Auto-Linked Pricing Table Status Badge */}
+                        {selectedPriceRow ? (
+                          <div className="p-2.5 bg-emerald-50/90 border border-emerald-200 rounded-lg text-xs flex flex-wrap items-center justify-between gap-2 shadow-xs">
+                            <div className="flex items-center space-x-2 text-emerald-900">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-600 text-white font-extrabold text-[10px] uppercase tracking-wider shadow-xs">
+                                ✓ Tabela Vinculada
+                              </span>
+                              <span className="font-extrabold text-emerald-950 text-xs">
+                                {selectedPriceRow.code}
+                              </span>
+                              <span className="text-emerald-700 text-xs">
+                                &mdash; {selectedPriceRow.description}
+                              </span>
+                              <span className="text-emerald-800 font-semibold hidden md:inline text-xs">
+                                (Base 12M: R$ {Number(selectedPriceRow.price_12 || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => toggleShowPriceOverride(idx)}
+                              className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 underline cursor-pointer ml-auto"
+                            >
+                              {showPriceOverride[idx] ? '▲ Ocultar Seleção Manual' : '⚙️ Alterar Tabela de Preço'}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded-lg text-xs text-blue-800 flex items-center justify-between">
+                            <span>💡 Selecione o modelo acima para puxar o preço da tabela de locação automaticamente.</span>
+                            <button
+                              type="button"
+                              onClick={() => toggleShowPriceOverride(idx)}
+                              className="text-[11px] font-bold text-blue-700 hover:text-blue-900 underline cursor-pointer"
+                            >
+                              Selecionar Tabela Manualmente
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Manual Price Table Selector (Shown only if toggled or if not auto-linked) */}
+                        {(showPriceOverride[idx] || !item.rental_price_id) && (
+                          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-1 animate-in fade-in duration-150">
+                            <label className="block text-xs font-bold text-gray-700 mb-1">
+                              Preço Associado Manual (Tabela de Locação)
+                            </label>
                             <select 
-                              required
                               value={item.rental_price_id} 
                               onChange={e => handleItemChange(idx, 'rental_price_id', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white"
                             >
                               <option value="">Selecione o Código da Tabela</option>
-                              {filteredPrices.map(r => {
-                                const totalMarkup = Number(formData.insumos_percent || 0) +
-                                                    Number(formData.manutencao_percent || 0) +
-                                                    Number(formData.lucro_percent || 0) +
-                                                    Number(formData.tributos_percent || 0);
-                                const calc = (val) => {
-                                  if (!val) return '—';
-                                  const finalVal = Number(val) * (1 + totalMarkup / 100);
-                                  return 'R$ ' + finalVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                                };
-                                const p12Val = Number(r.price_12 || 0);
-                                const dailyVal = p12Val > 0 ? (p12Val * 2 / 22).toFixed(2) : null;
-                                const weeklyVal = p12Val > 0 ? ((p12Val * 2 / 22) * 7).toFixed(2) : null;
-                                const biweeklyVal = p12Val > 0 ? ((p12Val * 1.75 / 22) * 15).toFixed(2) : null;
-                                const monthlyAvulsoVal = p12Val > 0 ? (p12Val * 1.5).toFixed(2) : null;
-                                return (
-                                  <option key={r.id} value={r.id}>
-                                    {r.code} - {r.description} (1 Sem: {calc(weeklyVal)} | 15 Dias: {calc(biweeklyVal)} | 01 Mês: {calc(monthlyAvulsoVal)} | 12M: {calc(r.price_12)})
-                                  </option>
-                                );
-                              })}
+                              {rentalPrices.map(r => (
+                                <option key={r.id} value={r.id}>
+                                  {r.code} - {r.description} (12M: R$ {Number(r.price_12 || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                                </option>
+                              ))}
                             </select>
                           </div>
+                        )}
 
+                        {/* Period, Quantity, Hours & Contract */}
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                           <div className="md:col-span-4">
                             <label className="block text-xs font-bold text-gray-700 mb-1">Período / Prazo *</label>
                             <select 
                               required
                               value={item.period_months} 
                               onChange={e => handleItemChange(idx, 'period_months', Number(e.target.value))}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white font-semibold text-gray-800"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white font-bold text-gray-800"
                             >
                               <option value={1}>Diário (1 dia)</option>
                               <option value={7}>Semanal (1 semana / 7 dias)</option>
@@ -1933,34 +2007,8 @@ body{padding-top:60px}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs text-center font-bold"
                             />
                           </div>
-                        </div>
 
-                        {/* Value, Hours and Contract Type */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-                          <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">{valInfo.labelTitle} *</label>
-                            <input 
-                              required
-                              type="number" 
-                              step="0.01"
-                              value={item.monthly_value} 
-                              onChange={e => handleItemChange(idx, 'monthly_value', e.target.value)}
-                              className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-extrabold text-blue-600 bg-blue-50/40" 
-                              placeholder="0.00"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Franquia de Horas</label>
-                            <input 
-                              type="text" 
-                              value={item.hours_per_month} 
-                              onChange={e => handleItemChange(idx, 'hours_per_month', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs" 
-                            />
-                          </div>
-
-                          <div>
+                          <div className="md:col-span-3">
                             <label className="block text-xs font-bold text-gray-700 mb-1">Tipo de Contrato</label>
                             <select 
                               value={item.contract_type} 
@@ -1973,6 +2021,45 @@ body{padding-top:60px}
                               <option value="3 - Bronze.">3 - Bronze (Manutenção exceto escovas/discos/baterias)</option>
                               <option value="4 - MOB.">4 - MOB (Mão de Obra e Deslocamento apenas)</option>
                             </select>
+                          </div>
+
+                          <div className="md:col-span-3">
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Franquia de Horas</label>
+                            <input 
+                              type="text" 
+                              value={item.hours_per_month} 
+                              onChange={e => handleItemChange(idx, 'hours_per_month', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs" 
+                            />
+                          </div>
+                        </div>
+
+                        {/* Final Calculated Value Banner */}
+                        <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-xs">
+                          <div>
+                            <span className="text-[11px] font-extrabold text-gray-800 uppercase tracking-wide block">
+                              {valInfo.labelTitle} Calculado para esta opção:
+                            </span>
+                            <span className="text-[10px] text-gray-500">
+                              Base Tabela {selectedPriceRow ? `[${selectedPriceRow.code}]` : ''} + Markup ({Number(formData.insumos_percent || 0) + Number(formData.manutencao_percent || 0) + Number(formData.lucro_percent || 0) + Number(formData.tributos_percent || 0)}%)
+                            </span>
+                          </div>
+
+                          <div className="w-48">
+                            <div className="relative">
+                              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-blue-600">
+                                R$
+                              </span>
+                              <input 
+                                required
+                                type="number" 
+                                step="0.01"
+                                value={item.monthly_value} 
+                                onChange={e => handleItemChange(idx, 'monthly_value', e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 border-2 border-blue-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-extrabold text-blue-700 bg-white shadow-xs" 
+                                placeholder="0.00"
+                              />
+                            </div>
                           </div>
                         </div>
 
@@ -2425,6 +2512,24 @@ body{padding-top:60px}
                   onChange={e => setNewMachineModelName(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                  Código da Tabela de Locação Vinculado (Opcional)
+                </label>
+                <select
+                  value={newMachineModelRentalPriceId}
+                  onChange={e => setNewMachineModelRentalPriceId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white"
+                >
+                  <option value="">Vincular Automaticamente / Selecionar Código...</option>
+                  {rentalPrices.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.code} - {r.description} (12M: R$ {Number(r.price_12 || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-[11px] text-blue-800 leading-relaxed">

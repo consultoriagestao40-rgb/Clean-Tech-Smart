@@ -13,7 +13,20 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { rows } = await pool.query('SELECT * FROM machine_models ORDER BY name ASC');
+    const { rows } = await pool.query(`
+      SELECT 
+        mm.*,
+        rp.code AS rental_code,
+        rp.description AS rental_description,
+        rp.price_12 AS rental_price_12,
+        rp.price_24 AS rental_price_24,
+        rp.price_36 AS rental_price_36,
+        rp.price_48 AS rental_price_48,
+        rp.price_60 AS rental_price_60
+      FROM machine_models mm
+      LEFT JOIN rental_prices rp ON mm.rental_price_id = rp.id
+      ORDER BY mm.name ASC
+    `);
     return res.status(200).json({ machineModels: rows });
   } catch (error) {
     console.error('Erro ao buscar modelos de máquinas:', error);

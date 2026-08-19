@@ -12,17 +12,30 @@ export default function ModelosMaquinas() {
   
   // Viewing details state
   const [viewingModel, setViewingModel] = useState(null);
+  const [rentalPrices, setRentalPrices] = useState([]);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [formData, setFormData] = useState({
     id: null,
     name: '',
     photo_urls: '',
-    technical_description: ''
+    technical_description: '',
+    rental_price_id: ''
   });
 
   useEffect(() => {
     fetchModels();
+    fetchRentalPrices();
   }, []);
+
+  async function fetchRentalPrices() {
+    try {
+      const res = await fetch('/api/get-rental-prices');
+      const data = await res.json();
+      if (data.rentalPrices) setRentalPrices(data.rentalPrices);
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   async function fetchModels() {
     setIsLoading(true);
@@ -42,7 +55,8 @@ export default function ModelosMaquinas() {
       id: item.id,
       name: item.name || '',
       photo_urls: item.photo_urls || '',
-      technical_description: item.technical_description || ''
+      technical_description: item.technical_description || '',
+      rental_price_id: item.rental_price_id || ''
     });
     setIsModalOpen(true);
   };
@@ -52,7 +66,8 @@ export default function ModelosMaquinas() {
       id: null,
       name: '',
       photo_urls: '',
-      technical_description: ''
+      technical_description: '',
+      rental_price_id: ''
     });
     setIsModalOpen(true);
   };
@@ -254,7 +269,14 @@ CARACTERÍSTICAS & BENEFÍCIOS:
                   {/* Body Info */}
                   <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
                     <div>
-                      <h3 className="font-bold text-gray-900 text-base leading-tight group-hover:text-blue-600 transition-colors mb-2">{item.name}</h3>
+                      <div className="flex flex-wrap items-center justify-between gap-1 mb-2">
+                        <h3 className="font-bold text-gray-900 text-base leading-tight group-hover:text-blue-600 transition-colors">{item.name}</h3>
+                        {item.rental_code && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            ✓ {item.rental_code}
+                          </span>
+                        )}
+                      </div>
                       {item.technical_description ? (
                         <p className="text-xs text-gray-500 line-clamp-4 bg-gray-50 p-2.5 rounded border border-gray-100 font-mono whitespace-pre-line">
                           {item.technical_description}
@@ -331,6 +353,23 @@ CARACTERÍSTICAS & BENEFÍCIOS:
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium" 
                   placeholder="Ex: A260 Lavadora de Piso de Operação a Pé" 
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preço da Tabela de Locação Vinculado (Opcional)</label>
+                <select 
+                  value={formData.rental_price_id || ''} 
+                  onChange={e => setFormData({...formData, rental_price_id: e.target.value})} 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white"
+                >
+                  <option value="">Vincular Automaticamente / Selecionar Código da Tabela...</option>
+                  {rentalPrices.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.code} - {r.description} (12M: R$ {Number(r.price_12 || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                    </option>
+                  ))}
+                </select>
+                <span className="text-[10px] text-gray-400 mt-1 block">Ao vincular, o sistema selecionará este preço da tabela automaticamente ao criar propostas comerciais de locação.</span>
               </div>
 
               <div>
