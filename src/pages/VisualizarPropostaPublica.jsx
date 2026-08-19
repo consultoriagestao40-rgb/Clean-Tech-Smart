@@ -874,7 +874,6 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                       </div>
                     </div>
                   )}
-                </div>
 
                   <p className="text-[10px] text-slate-600 leading-relaxed text-justify italic">
                     Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <strong className="font-bold text-slate-900">3º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital – São Paulo</strong>, cuja cópia digitalizada está disponível no site: <u>www.alfatennant.com.br/terms</u> e também por e-mail ou correio quando solicitada.
