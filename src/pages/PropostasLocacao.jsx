@@ -181,12 +181,12 @@ export default function PropostasLocacao() {
     if (period === 1) baseCost = p12 > 0 ? (p12 * 2) / 22 : 0;
     else if (period === 7) baseCost = p12 > 0 ? ((p12 * 2) / 22) * 7 : 0;
     else if (period === 15) baseCost = p12 > 0 ? ((p12 * 1.75) / 22) * 15 : 0;
-    else if (period === 30) baseCost = p12 * 1.5;
-    else if (period === 12) baseCost = p12;
+    else if (period === 30 || period === 12) baseCost = p12;
     else if (period === 24) baseCost = Number(selectedPriceRow.price_24 || 0);
     else if (period === 36) baseCost = Number(selectedPriceRow.price_36 || 0);
     else if (period === 48) baseCost = Number(selectedPriceRow.price_48 || 0);
     else if (period === 60) baseCost = Number(selectedPriceRow.price_60 || 0);
+    else baseCost = p12;
 
     const markup = customMarkup || {
       insumos: Number(formData.insumos_percent || 0),
@@ -349,7 +349,7 @@ export default function PropostasLocacao() {
     const periodsToGen = [
       { period: 7, label: 'Opção 1 - Semanal (7 dias)' },
       { period: 15, label: 'Opção 2 - Quinzenal (15 dias)' },
-      { period: 30, label: 'Opção 3 - Mensal Avulso (01 mês)' }
+      { period: 30, label: 'Opção 3 - 01 Mês (30 dias)' }
     ];
 
     const generated = periodsToGen.map((p, idx) => ({
@@ -599,7 +599,8 @@ export default function PropostasLocacao() {
     if (m === 1) return 'Diário (1 dia)';
     if (m === 7) return 'Semanal (7 dias)';
     if (m === 15) return 'Quinzenal (15 dias)';
-    if (m === 30) return 'Mensal Avulso';
+    if (m === 30) return '01 Mês (30 dias)';
+    if (m === 12) return '12 Meses';
     return `${m} Meses`;
   };
 

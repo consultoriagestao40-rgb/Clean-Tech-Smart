@@ -127,7 +127,8 @@ export default function VisualizarPropostaPublica() {
     if (m === 1) return 'Diário (1 dia)';
     if (m === 7) return 'Semanal (7 dias)';
     if (m === 15) return 'Quinzenal (15 dias)';
-    if (m === 30) return 'Mensal Avulso';
+    if (m === 30) return '01 Mês (30 dias)';
+    if (m === 12) return '12 Meses';
     return `${m} Meses`;
   };
 

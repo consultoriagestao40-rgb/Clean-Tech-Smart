@@ -461,8 +461,7 @@ export default function TabelaLocacao() {
                 <th className="px-2 py-3.5 font-bold text-orange-700 text-right bg-orange-50/20 whitespace-nowrap">Diário (1d)</th>
                 <th className="px-2 py-3.5 font-bold text-orange-700 text-right bg-orange-50/20 whitespace-nowrap">Semanal (7d)</th>
                 <th className="px-2 py-3.5 font-bold text-orange-700 text-right bg-orange-50/20 whitespace-nowrap">Quinzenal (15d)</th>
-                <th className="px-2 py-3.5 font-bold text-orange-700 text-right bg-orange-50/20 whitespace-nowrap">Mensal Avulso</th>
-                <th className="px-2 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30 whitespace-nowrap">12 M</th>
+                <th className="px-2 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30 whitespace-nowrap">12 M (01 Mês)</th>
                 <th className="px-2 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30 whitespace-nowrap">24 M</th>
                 <th className="px-2 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30 whitespace-nowrap">36 M</th>
                 <th className="px-2 py-3.5 font-bold text-blue-700 text-right bg-blue-50/30 whitespace-nowrap">48 M</th>
@@ -473,14 +472,14 @@ export default function TabelaLocacao() {
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan="15" className="px-6 py-12 text-center">
+                  <td colSpan="14" className="px-6 py-12 text-center">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-500 mb-2" />
                     <span className="text-gray-400">Carregando tabela de preços...</span>
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="15" className="px-6 py-12 text-center text-gray-400">
+                  <td colSpan="14" className="px-6 py-12 text-center text-gray-400">
                     Nenhum registro de preço encontrado.
                   </td>
                 </tr>
@@ -500,9 +499,6 @@ export default function TabelaLocacao() {
                     </td>
                     <td className="px-2 py-3 text-right bg-orange-50/10 whitespace-nowrap">
                       {renderCellWithMarkup(item.price_12 ? (Number(item.price_12) * 1.75 / 22 * 15).toFixed(2) : null)}
-                    </td>
-                    <td className="px-2 py-3 text-right bg-orange-50/10 whitespace-nowrap">
-                      {renderCellWithMarkup(item.price_12 ? (Number(item.price_12) * 1.5).toFixed(2) : null)}
                     </td>
                     <td className="px-2 py-3 text-right bg-blue-50/10 whitespace-nowrap">{renderCellWithMarkup(item.price_12)}</td>
                     <td className="px-2 py-3 text-right bg-blue-50/10 whitespace-nowrap">{renderCellWithMarkup(item.price_24)}</td>
