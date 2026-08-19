@@ -1779,39 +1779,66 @@ body{padding-top:60px}
                 </select>
               </div>
 
+              {/* Premissas Customizadas (Acima de todos os equipamentos) */}
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                    Premissas de Markup Aplicadas a Todas as Opções
+                  </h4>
+                  <span className="text-[11px] text-gray-500 font-semibold">
+                    Markup Total: {Number(formData.insumos_percent || 0) + Number(formData.manutencao_percent || 0) + Number(formData.lucro_percent || 0) + Number(formData.tributos_percent || 0)}%
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Insumos (%)</label>
+                    <input 
+                      type="number" 
+                      value={formData.insumos_percent} 
+                      onChange={e => handleMarkupChange('insumos_percent', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Manutenção (%)</label>
+                    <input 
+                      type="number" 
+                      value={formData.manutencao_percent} 
+                      onChange={e => handleMarkupChange('manutencao_percent', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Lucro (%)</label>
+                    <input 
+                      type="number" 
+                      value={formData.lucro_percent} 
+                      onChange={e => handleMarkupChange('lucro_percent', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Tributos (%)</label>
+                    <input 
+                      type="number" 
+                      value={formData.tributos_percent} 
+                      onChange={e => handleMarkupChange('tributos_percent', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Multi-Option / Equipment Cards Section */}
               <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-3">
-                  <div>
-                    <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
-                      <Layers className="w-5 h-5 text-blue-600" />
-                      <span>Opções e Equipamentos da Proposta ({formData.items.length} {formData.items.length === 1 ? 'Opção' : 'Opções'})</span>
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Configure até 6 ou mais opções com diferentes máquinas, prazos (1 semana, 15 dias, 01 mês, etc.) e valores.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => handleGenerateQuickOptions(0)}
-                      className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs rounded-lg transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-                      title="Gera automaticamente 3 opções para o equipamento da Opção #1: 1 Semana, 15 Dias e 01 Mês"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Gerar 3 Prazos (1 Sem, 15 Dias, 01 Mês)</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleAddItem}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-all shadow-xs flex items-center gap-1 cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>+ Adicionar Opção</span>
-                    </button>
-                  </div>
+                <div className="border-b border-gray-200 pb-2">
+                  <h3 className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-blue-600" />
+                    <span>Opções e Equipamentos da Proposta ({formData.items.length} {formData.items.length === 1 ? 'Opção' : 'Opções'})</span>
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Utilize o botão <strong>Duplicar</strong> em cada opção para adicionar mais opções/prazos à proposta.
+                  </p>
                 </div>
 
                 {/* Option Cards */}
@@ -1827,25 +1854,20 @@ body{padding-top:60px}
                         className="bg-white border-2 border-slate-200 hover:border-blue-300 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4 transition-all relative group"
                       >
                         {/* Option Card Header */}
-                        <div className="flex items-center justify-between border-b border-gray-150 pb-3">
-                          <div className="flex items-center gap-2.5">
-                            <span className="bg-blue-600 text-white font-extrabold text-xs px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                              Opção #{idx + 1}
-                            </span>
-                            <span className="text-xs font-bold text-gray-700">
-                              {formatPeriod(item.period_months)} &bull; {item.monthly_value ? `R$ ${Number(item.monthly_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${valInfo.suffix}` : 'A definir valor'}
-                            </span>
-                          </div>
+                        <div className="flex items-center justify-between border-b border-gray-150 pb-2.5">
+                          <span className="text-xs font-extrabold text-gray-500 uppercase tracking-wider">
+                            Opção #{idx + 1}
+                          </span>
 
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
                               onClick={() => handleDuplicateItem(idx)}
-                              className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition-colors flex items-center gap-1"
+                              className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-2xs border border-blue-200"
                               title="Duplicar esta opção"
                             >
                               <Copy className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">Duplicar</span>
+                              <span>Duplicar</span>
                             </button>
 
                             {formData.items.length > 1 && (
@@ -2072,56 +2094,6 @@ body{padding-top:60px}
                       </div>
                     );
                   })}
-                </div>
-              </div>
-
-              {/* Premissas Customizadas */}
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Premissas de Markup Aplicadas a Todas as Opções
-                  </h4>
-                  <span className="text-[11px] text-gray-500 font-semibold">
-                    Markup Total: {Number(formData.insumos_percent || 0) + Number(formData.manutencao_percent || 0) + Number(formData.lucro_percent || 0) + Number(formData.tributos_percent || 0)}%
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Insumos (%)</label>
-                    <input 
-                      type="number" 
-                      value={formData.insumos_percent} 
-                      onChange={e => handleMarkupChange('insumos_percent', e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Manutenção (%)</label>
-                    <input 
-                      type="number" 
-                      value={formData.manutencao_percent} 
-                      onChange={e => handleMarkupChange('manutencao_percent', e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Lucro (%)</label>
-                    <input 
-                      type="number" 
-                      value={formData.lucro_percent} 
-                      onChange={e => handleMarkupChange('lucro_percent', e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Tributos (%)</label>
-                    <input 
-                      type="number" 
-                      value={formData.tributos_percent} 
-                      onChange={e => handleMarkupChange('tributos_percent', e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
                 </div>
               </div>
 
