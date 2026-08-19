@@ -178,10 +178,10 @@ export default function PropostasLocacao() {
     const period = Number(periodMonths);
     const p12 = Number(selectedPriceRow.price_12 || 0);
 
-    if (period === 1) baseCost = p12 > 0 ? (p12 * 2) / 22 : 0;
-    else if (period === 7) baseCost = p12 > 0 ? ((p12 * 2) / 22) * 7 : 0;
-    else if (period === 15) baseCost = p12 > 0 ? ((p12 * 1.75) / 22) * 15 : 0;
-    else if (period === 30) baseCost = p12 > 0 ? p12 * 1.5 : 0;
+    if (period === 1) baseCost = p12 > 0 ? (p12 * 1.75) / 22 : 0;
+    else if (period === 7) baseCost = p12 > 0 ? ((p12 * 1.5) / 22) * 7 : 0;
+    else if (period === 15) baseCost = p12 > 0 ? ((p12 * 1.25) / 22) * 15 : 0;
+    else if (period === 30) baseCost = p12 > 0 ? p12 * 1.15 : 0;
     else if (period === 12) baseCost = p12;
     else if (period === 24) baseCost = Number(selectedPriceRow.price_24 || 0);
     else if (period === 36) baseCost = Number(selectedPriceRow.price_36 || 0);

@@ -493,16 +493,16 @@ export default function TabelaLocacao() {
                     <td className="px-3 py-3 text-right text-gray-600 font-medium whitespace-nowrap">R$ {formatBRL(item.list_price)}</td>
                     <td className="px-3 py-3 text-right text-green-700 font-semibold whitespace-nowrap">R$ {formatBRL(item.distributor_price)}</td>
                     <td className="px-2 py-3 text-right bg-orange-50/10 whitespace-nowrap">
-                      {renderCellWithMarkup(item.price_12 ? (Number(item.price_12) * 2 / 22).toFixed(2) : null)}
+                      {renderCellWithMarkup(item.price_12 ? (Number(item.price_12) * 1.75 / 22).toFixed(2) : null)}
                     </td>
                     <td className="px-2 py-3 text-right bg-orange-50/10 whitespace-nowrap">
-                      {renderCellWithMarkup(item.price_12 ? (Number(item.price_12) * 2 / 22 * 7).toFixed(2) : null)}
+                      {renderCellWithMarkup(item.price_12 ? ((Number(item.price_12) * 1.5 / 22) * 7).toFixed(2) : null)}
                     </td>
                     <td className="px-2 py-3 text-right bg-orange-50/10 whitespace-nowrap">
-                      {renderCellWithMarkup(item.price_12 ? (Number(item.price_12) * 1.75 / 22 * 15).toFixed(2) : null)}
+                      {renderCellWithMarkup(item.price_12 ? ((Number(item.price_12) * 1.25 / 22) * 15).toFixed(2) : null)}
                     </td>
                     <td className="px-2 py-3 text-right bg-orange-50/10 whitespace-nowrap">
-                      {renderCellWithMarkup(item.price_12 ? (Number(item.price_12) * 1.5).toFixed(2) : null)}
+                      {renderCellWithMarkup(item.price_12 ? (Number(item.price_12) * 1.15).toFixed(2) : null)}
                     </td>
                     <td className="px-2 py-3 text-right bg-blue-50/10 whitespace-nowrap">{renderCellWithMarkup(item.price_12)}</td>
                     <td className="px-2 py-3 text-right bg-blue-50/10 whitespace-nowrap">{renderCellWithMarkup(item.price_24)}</td>
