@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { id, status, client_feedback, approved_by } = req.body;
+  const { id, status, client_feedback, approved_by, approved_option } = req.body;
 
   if (!id || !status) {
     return res.status(400).json({ error: 'ID e Status são obrigatórios.' });
@@ -21,8 +21,9 @@ export default async function handler(req, res) {
 
   try {
     const timeStr = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    const optionNote = approved_option ? ` [Opção Aprovada: ${approved_option}]` : '';
     const auditMsg = status === 'Fechada' || status === 'Aprovada'
-      ? `Aprovado por: ${approved_by || 'Cliente'} em ${timeStr}. Feedback: ${client_feedback || 'Nenhum'}`
+      ? `Aprovado por: ${approved_by || 'Cliente'}${optionNote} em ${timeStr}. Feedback: ${client_feedback || 'Nenhum'}`
       : `Recusado em ${timeStr}. Motivo/Ajustes solicitados: ${client_feedback || 'Nenhum'}`;
 
     const { rows } = await pool.query(`

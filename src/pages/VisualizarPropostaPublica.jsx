@@ -19,6 +19,7 @@ export default function VisualizarPropostaPublica() {
   // Form fields
   const [signerName, setSignerName] = useState('');
   const [signerDocument, setSignerDocument] = useState('');
+  const [selectedOptionToApprove, setSelectedOptionToApprove] = useState('all');
   const [feedbackNotes, setFeedbackNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -51,6 +52,16 @@ export default function VisualizarPropostaPublica() {
     }
     setIsSubmitting(true);
     try {
+      let optionText = selectedOptionToApprove;
+      if (selectedOptionToApprove === 'all') {
+        optionText = 'Pacote Completo / Todas as Opções';
+      } else if (proposal?.items && Array.isArray(proposal.items)) {
+        const found = proposal.items.find(i => String(i.id) === String(selectedOptionToApprove));
+        if (found) {
+          optionText = `${found.machine_name || proposal.machine_name} (${formatPeriod(found.period_months)} - R$ ${Number(found.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`;
+        }
+      }
+
       const res = await fetch('/api/approve-rental-proposal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -58,7 +69,8 @@ export default function VisualizarPropostaPublica() {
           id,
           status: 'Fechada',
           approved_by: signerName + (signerDocument ? ` (CPF/CNPJ: ${signerDocument})` : ''),
-          client_feedback: 'Proposta assinada e aprovada digitalmente pelo cliente.'
+          approved_option: optionText,
+          client_feedback: `Proposta assinada e aprovada digitalmente pelo cliente. [Opção: ${optionText}]`
         })
       });
       if (res.ok) {
@@ -222,6 +234,98 @@ export default function VisualizarPropostaPublica() {
     const colorLight = '#e0f5fb';
     const introText = 'Equipamento de alta qualidade e rendimento, ideal para processos contínuos de higienização de pisos.';
 
+    const isMultiOption = p.items && Array.isArray(p.items) && p.items.length > 1;
+
+    const financialSectionHTML = isMultiOption ? `
+      <h3 class="box-title">Quadro Comparativo de Opções e Prazos de Locação</h3>
+      <table class="table-rental" style="width:100%; border-collapse:collapse; margin-bottom:20px;">
+        <thead>
+          <tr style="background:${primaryColor}; color:#fff; font-size:10px; text-transform:uppercase;">
+            <th style="padding:8px; border:1px solid #cbd5e1; text-align:center; width:70px;">Opção</th>
+            <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Equipamento / Modelo</th>
+            <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Prazo / Período</th>
+            <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Tipo Contrato & Horas</th>
+            <th style="padding:8px; border:1px solid #cbd5e1; text-align:center; width:45px;">Qtd</th>
+            <th style="padding:8px; border:1px solid #cbd5e1; text-align:right;">Valor da Locação</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${p.items.map((item, idx) => {
+            const itemValInfo = getRentalValueInfo(item.period_months);
+            return `
+              <tr style="font-size:11px; ${idx % 2 === 1 ? 'background:#f8fafc;' : ''}">
+                <td style="padding:8px; border:1px solid #e2e8f0; text-align:center; font-weight:800; color:${primaryColor};">Opção #${idx + 1}</td>
+                <td style="padding:8px; border:1px solid #e2e8f0; font-weight:700; color:#0f172a;">${item.machine_name || p.machine_name || 'Equipamento'}</td>
+                <td style="padding:8px; border:1px solid #e2e8f0; font-weight:600; color:#334155;">${formatPeriod(item.period_months)}</td>
+                <td style="padding:8px; border:1px solid #e2e8f0; color:#475569; font-size:10px;">${item.contract_type || '0 - Sem cobertura'}<br/><span style="color:#64748b;">${item.hours_per_month || '100 horas/mês'}</span></td>
+                <td style="padding:8px; border:1px solid #e2e8f0; text-align:center; font-weight:700;">${item.quantity || 1}</td>
+                <td style="padding:8px; border:1px solid #e2e8f0; text-align:right; font-weight:800; color:${primaryColor}; font-size:12px;">
+                  R$ ${Number(item.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${itemValInfo.suffix}
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+
+      <table class="table-rental">
+        <tr>
+          <td class="label-col">Região Utilizada</td>
+          <td class="value-col">${p.region_used || 'Curitiba e Região'}</td>
+          <td class="label-col">Tempo de Entrega</td>
+          <td class="value-col">${p.delivery_time || 'Imediato'}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Custo do Frete</td>
+          <td class="value-col">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
+          <td class="label-col">Validade da proposta</td>
+          <td class="value-col">${p.validity_days || '10 dias'}</td>
+        </tr>
+        ${p.notes ? `
+        <tr>
+          <td class="label-col">OBSERVAÇÃO</td>
+          <td class="value-col" colspan="3" style="font-weight: 400; color: #475569;">${p.notes}</td>
+        </tr>` : ''}
+      </table>
+    ` : `
+      <h3 class="box-title">Valores e Condições de Locação</h3>
+      <table class="table-rental">
+        <tr>
+          <td class="label-col">${valInfo.label}</td>
+          <td class="value-col" style="font-size: 14px; color: ${primaryColor}; font-weight: 800;">R$ ${Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${valInfo.suffix}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Tipo de Contrato*</td>
+          <td class="value-col" style="font-weight: 700;">${p.contract_type || '—'}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Período de Locação</td>
+          <td class="value-col">${formatPeriod(p.period_months)}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Horas/Mês</td>
+          <td class="value-col">${p.hours_per_month || '—'}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Região Utilizada</td>
+          <td class="value-col">${p.region_used || '—'}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Tempo de Entrega</td>
+          <td class="value-col">${p.delivery_time || '—'}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Custo do Frete</td>
+          <td class="value-col">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Validade da proposta</td>
+          <td class="value-col">${p.validity_days || '—'}</td>
+        </tr>
+        ${p.notes ? `<tr><td class="label-col">OBSERVAÇÃO</td><td class="value-col" style="font-weight: 400; color: #475569;">${p.notes}</td></tr>` : ''}
+      </table>
+    `;
+
     const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -333,43 +437,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
     <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" class="logo-img" />
   </div>
 
-  <h3 class="box-title">Valores e Condições de Locação</h3>
-
-  <table class="table-rental">
-    <tr>
-      <td class="label-col">${valInfo.label}</td>
-      <td class="value-col" style="font-size: 14px; color: ${primaryColor}; font-weight: 800;">R$ ${Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${valInfo.suffix}</td>
-    </tr>
-    <tr>
-      <td class="label-col">Tipo de Contrato*</td>
-      <td class="value-col" style="font-weight: 700;">${p.contract_type || '—'}</td>
-    </tr>
-    <tr>
-      <td class="label-col">Período de Locação</td>
-      <td class="value-col">${formatPeriod(p.period_months)}</td>
-    </tr>
-    <tr>
-      <td class="label-col">Horas/Mês</td>
-      <td class="value-col">${p.hours_per_month || '—'}</td>
-    </tr>
-    <tr>
-      <td class="label-col">Região Utilizada</td>
-      <td class="value-col">${p.region_used || '—'}</td>
-    </tr>
-    <tr>
-      <td class="label-col">Tempo de Entrega</td>
-      <td class="value-col">${p.delivery_time || '—'}</td>
-    </tr>
-    <tr>
-      <td class="label-col">Custo do Frete</td>
-      <td class="value-col">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
-    </tr>
-    <tr>
-      <td class="label-col">Validade da proposta</td>
-      <td class="value-col">${p.validity_days || '—'}</td>
-    </tr>
-    ${p.notes ? `<tr><td class="label-col">OBSERVAÇÃO</td><td class="value-col" style="font-weight: 400; color: #475569;">${p.notes}</td></tr>` : ''}
-  </table>
+  ${financialSectionHTML}
 
   <p class="legal-text">
     Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <b>3º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital &ndash; São Paulo</b>, cuja cópia digitalizada está disponível no site: <i>www.alfatennant.com.br/terms</i> e também por e-mail ou correio quando solicitada.
@@ -647,55 +715,127 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
 
                 <div className="space-y-4">
                   <h3 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: primaryColor }}>
-                    Valores e Condições de Locação
+                    {p.items && p.items.length > 1 ? 'Quadro Comparativo de Opções e Prazos' : 'Valores e Condições de Locação'}
                   </h3>
 
-                  <table className="w-full border-collapse border border-slate-300 text-xs">
-                    <tbody>
-                      <tr>
-                        <td className="w-48 p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">{valInfo.label}</td>
-                        <td className="p-2.5 font-extrabold text-slate-900 border border-slate-300 bg-[#EEF2FF]" style={{ color: primaryColor }}>
-                          R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {valInfo.suffix}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">TIPO DE CONTRATO*</td>
-                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.contract_type || '0 - Sem Cobertura'}</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">PERÍODO DE LOCAÇÃO</td>
-                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{formatPeriod(p.period_months)}</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">HORAS/MÊS</td>
-                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.hours_per_month || '100 horas/mês'}</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">REGIÃO UTILIZADA</td>
-                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.region_used || 'Curitiba e Região'}</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">TEMPO DE ENTREGA</td>
-                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.delivery_time || '20 Dias'}</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">CUSTO DO FRETE</td>
-                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">
-                          {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">VALIDADE DA PROPOSTA</td>
-                        <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.validity_days || '10 dias'}</td>
-                      </tr>
-                      {p.notes && (
+                  {p.items && p.items.length > 1 ? (
+                    <div className="space-y-3">
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse border border-slate-300 text-xs">
+                          <thead>
+                            <tr style={{ backgroundColor: primaryColor }} className="text-white text-[11px] uppercase font-bold">
+                              <th className="p-2 border border-slate-300 text-center w-16">Opção</th>
+                              <th className="p-2 border border-slate-300 text-left">Equipamento / Modelo</th>
+                              <th className="p-2 border border-slate-300 text-left">Prazo / Período</th>
+                              <th className="p-2 border border-slate-300 text-left">Tipo Contrato & Horas</th>
+                              <th className="p-2 border border-slate-300 text-center w-12">Qtd</th>
+                              <th className="p-2 border border-slate-300 text-right">Valor da Locação</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {p.items.map((item, idx) => {
+                              const itemValInfo = getRentalValueInfo(item.period_months);
+                              return (
+                                <tr key={item.id || idx} className={`text-xs ${idx % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}>
+                                  <td className="p-2.5 border border-slate-300 text-center font-extrabold" style={{ color: primaryColor }}>
+                                    Opção #{idx + 1}
+                                  </td>
+                                  <td className="p-2.5 border border-slate-300 font-bold text-slate-900">
+                                    {item.machine_name || p.machine_name || 'Equipamento'}
+                                  </td>
+                                  <td className="p-2.5 border border-slate-300 font-semibold text-slate-800">
+                                    {formatPeriod(item.period_months)}
+                                  </td>
+                                  <td className="p-2.5 border border-slate-300 text-[11px] text-slate-600">
+                                    <div className="font-semibold text-slate-800">{item.contract_type || '0 - Sem Cobertura'}</div>
+                                    <div className="text-slate-500">{item.hours_per_month || '100 horas/mês'}</div>
+                                  </td>
+                                  <td className="p-2.5 border border-slate-300 text-center font-bold text-slate-800">
+                                    {item.quantity || 1}
+                                  </td>
+                                  <td className="p-2.5 border border-slate-300 text-right font-extrabold text-sm" style={{ color: primaryColor }}>
+                                    R$ {Number(item.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[11px] font-normal text-slate-500">{itemValInfo.suffix}</span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <table className="w-full border-collapse border border-slate-300 text-xs">
+                        <tbody>
+                          <tr>
+                            <td className="w-48 p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">REGIÃO UTILIZADA</td>
+                            <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.region_used || 'Curitiba e Região'}</td>
+                            <td className="w-48 p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">TEMPO DE ENTREGA</td>
+                            <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.delivery_time || 'Imediato'}</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">CUSTO DO FRETE</td>
+                            <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">
+                              {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
+                            </td>
+                            <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">VALIDADE DA PROPOSTA</td>
+                            <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.validity_days || '10 dias'}</td>
+                          </tr>
+                          {p.notes && (
+                            <tr>
+                              <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">OBSERVAÇÃO</td>
+                              <td colSpan={3} className="p-2.5 font-normal text-slate-700 border border-slate-300 bg-[#EEF2FF] whitespace-pre-wrap">{p.notes}</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <table className="w-full border-collapse border border-slate-300 text-xs">
+                      <tbody>
                         <tr>
-                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">OBSERVAÇÃO</td>
-                          <td className="p-2.5 font-normal text-slate-700 border border-slate-300 bg-[#EEF2FF] whitespace-pre-wrap">{p.notes}</td>
+                          <td className="w-48 p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">{valInfo.label}</td>
+                          <td className="p-2.5 font-extrabold text-slate-900 border border-slate-300 bg-[#EEF2FF]" style={{ color: primaryColor }}>
+                            R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {valInfo.suffix}
+                          </td>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
+                        <tr>
+                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">TIPO DE CONTRATO*</td>
+                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.contract_type || '0 - Sem Cobertura'}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">PERÍODO DE LOCAÇÃO</td>
+                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{formatPeriod(p.period_months)}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">HORAS/MÊS</td>
+                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.hours_per_month || '100 horas/mês'}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">REGIÃO UTILIZADA</td>
+                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.region_used || 'Curitiba e Região'}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">TEMPO DE ENTREGA</td>
+                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.delivery_time || '20 Dias'}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">CUSTO DO FRETE</td>
+                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">
+                            {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">VALIDADE DA PROPOSTA</td>
+                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.validity_days || '10 dias'}</td>
+                        </tr>
+                        {p.notes && (
+                          <tr>
+                            <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">OBSERVAÇÃO</td>
+                            <td className="p-2.5 font-normal text-slate-700 border border-slate-300 bg-[#EEF2FF] whitespace-pre-wrap">{p.notes}</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
 
                   <p className="text-[10px] text-slate-600 leading-relaxed text-justify italic">
                     Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <strong className="font-bold text-slate-900">3º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital – São Paulo</strong>, cuja cópia digitalizada está disponível no site: <u>www.alfatennant.com.br/terms</u> e também por e-mail ou correio quando solicitada.
@@ -958,6 +1098,27 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
             </div>
 
             <form onSubmit={handleApprove} className="space-y-4 text-xs">
+              {p.items && p.items.length > 1 && (
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
+                  <label className="block font-bold text-slate-800">Selecione a Opção Aprovada *</label>
+                  <select
+                    value={selectedOptionToApprove}
+                    onChange={e => setSelectedOptionToApprove(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#009AC7] focus:outline-none bg-white font-medium text-slate-800"
+                  >
+                    <option value="all">Pacote Completo / Todas as Opções</option>
+                    {p.items.map((item, idx) => (
+                      <option key={item.id || idx} value={item.id || idx}>
+                        Opção #{idx + 1}: {item.machine_name || p.machine_name} ({formatPeriod(item.period_months)} - R$ {Number(item.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-slate-500">
+                    Indique se você está aprovando uma opção específica ou o conjunto de opções.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Nome Completo do Responsável *</label>
                 <input

@@ -34,7 +34,70 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Proposta não encontrada.' });
     }
 
-    return res.status(200).json({ proposal: rows[0] });
+    const proposal = rows[0];
+    let parsedItems = [];
+    if (proposal.items) {
+      parsedItems = typeof proposal.items === 'string' ? JSON.parse(proposal.items) : proposal.items;
+    } else if (proposal.machine_model_id) {
+      parsedItems = [{
+        id: 'opt_1',
+        machine_model_id: proposal.machine_model_id,
+        equipment_id: proposal.equipment_id,
+        rental_price_id: proposal.rental_price_id,
+        period_months: proposal.period_months,
+        quantity: 1,
+        monthly_value: proposal.monthly_value,
+        contract_type: proposal.contract_type,
+        hours_per_month: proposal.hours_per_month,
+        notes: ''
+      }];
+    }
+
+    if (parsedItems && parsedItems.length > 0) {
+      const machineIds = [...new Set(parsedItems.map(i => i.machine_model_id).filter(Boolean))];
+      const rentalIds = [...new Set(parsedItems.map(i => i.rental_price_id).filter(Boolean))];
+      const eqIds = [...new Set(parsedItems.map(i => i.equipment_id).filter(Boolean))];
+
+      let machinesMap = {};
+      let rentalMap = {};
+      let eqMap = {};
+
+      if (machineIds.length > 0) {
+        const { rows: machines } = await pool.query(`SELECT id, name, photo_urls, technical_description FROM machine_models WHERE id = ANY($1::int[])`, [machineIds]);
+        machines.forEach(m => { machinesMap[m.id] = m; });
+      }
+
+      if (rentalIds.length > 0) {
+        const { rows: rentals } = await pool.query(`SELECT id, code, description, list_price, price_12, price_24, price_36, price_48, price_60 FROM rental_prices WHERE id = ANY($1::int[])`, [rentalIds]);
+        rentals.forEach(r => { rentalMap[r.id] = r; });
+      }
+
+      if (eqIds.length > 0) {
+        const { rows: eqs } = await pool.query(`SELECT id, name, serial_number, ownership_type, status FROM equipments WHERE id = ANY($1::int[])`, [eqIds]);
+        eqs.forEach(e => { eqMap[e.id] = e; });
+      }
+
+      proposal.items = parsedItems.map((item, idx) => {
+        const m = machinesMap[item.machine_model_id] || {};
+        const r = rentalMap[item.rental_price_id] || {};
+        const eq = eqMap[item.equipment_id] || {};
+        return {
+          ...item,
+          option_number: idx + 1,
+          machine_name: m.name || proposal.machine_name || 'Equipamento',
+          machine_photos: m.photo_urls || proposal.machine_photos || '',
+          machine_specs: m.technical_description || proposal.machine_specs || '',
+          rental_code: r.code || proposal.rental_code || '',
+          rental_description: r.description || '',
+          equipment_name: eq.name || '',
+          equipment_serial: eq.serial_number || ''
+        };
+      });
+    } else {
+      proposal.items = [];
+    }
+
+    return res.status(200).json({ proposal });
   } catch (error) {
     console.error('Erro ao buscar detalhes da proposta:', error);
     return res.status(500).json({ error: 'Erro interno ao buscar detalhes.' });
