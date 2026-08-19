@@ -181,7 +181,8 @@ export default function PropostasLocacao() {
     if (period === 1) baseCost = p12 > 0 ? (p12 * 2) / 22 : 0;
     else if (period === 7) baseCost = p12 > 0 ? ((p12 * 2) / 22) * 7 : 0;
     else if (period === 15) baseCost = p12 > 0 ? ((p12 * 1.75) / 22) * 15 : 0;
-    else if (period === 30 || period === 12) baseCost = p12;
+    else if (period === 30) baseCost = p12 > 0 ? p12 * 1.5 : 0;
+    else if (period === 12) baseCost = p12;
     else if (period === 24) baseCost = Number(selectedPriceRow.price_24 || 0);
     else if (period === 36) baseCost = Number(selectedPriceRow.price_36 || 0);
     else if (period === 48) baseCost = Number(selectedPriceRow.price_48 || 0);
@@ -599,7 +600,7 @@ export default function PropostasLocacao() {
     if (m === 1) return 'Diário (1 dia)';
     if (m === 7) return 'Semanal (7 dias)';
     if (m === 15) return 'Quinzenal (15 dias)';
-    if (m === 30) return '01 Mês (30 dias)';
+    if (m === 30) return 'Mensal Avulso (01 mês)';
     if (m === 12) return '12 Meses';
     return `${m} Meses`;
   };
@@ -1986,15 +1987,19 @@ body{padding-top:60px}
                               onChange={e => handleItemChange(idx, 'period_months', Number(e.target.value))}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs bg-white font-bold text-gray-800"
                             >
-                              <option value={1}>Diário (1 dia)</option>
-                              <option value={7}>Semanal (1 semana / 7 dias)</option>
-                              <option value={15}>Quinzenal (15 dias)</option>
-                              <option value={30}>Mensal Avulso (01 mês)</option>
-                              <option value={12}>12 Meses</option>
-                              <option value={24}>24 Meses</option>
-                              <option value={36}>36 Meses</option>
-                              <option value={48}>48 Meses</option>
-                              <option value={60}>60 Meses</option>
+                              <optgroup label="Locação Spot / Curto Prazo">
+                                <option value={1}>Diário (1 dia)</option>
+                                <option value={7}>Semanal (7 dias)</option>
+                                <option value={15}>Quinzenal (15 dias)</option>
+                                <option value={30}>Mensal Avulso (01 mês)</option>
+                              </optgroup>
+                              <optgroup label="Contratos de Longo Prazo">
+                                <option value={12}>Contrato 12 Meses</option>
+                                <option value={24}>Contrato 24 Meses</option>
+                                <option value={36}>Contrato 36 Meses</option>
+                                <option value={48}>Contrato 48 Meses</option>
+                                <option value={60}>Contrato 60 Meses</option>
+                              </optgroup>
                             </select>
                           </div>
 
