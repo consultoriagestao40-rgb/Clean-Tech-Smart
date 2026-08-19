@@ -238,92 +238,112 @@ export default function VisualizarPropostaPublica() {
     const isMultiOption = p.items && Array.isArray(p.items) && p.items.length > 1;
 
     const financialSectionHTML = isMultiOption ? `
-      <h3 class="box-title">Quadro Comparativo de Opções e Prazos de Locação</h3>
-      <table class="table-rental" style="width:100%; border-collapse:collapse; margin-bottom:20px;">
-        <thead>
-          <tr style="background:${primaryColor}; color:#fff; font-size:10px; text-transform:uppercase;">
-            <th style="padding:8px; border:1px solid #cbd5e1; text-align:center; width:70px;">Opção</th>
-            <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Equipamento / Modelo</th>
-            <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Prazo / Período</th>
-            <th style="padding:8px; border:1px solid #cbd5e1; text-align:left;">Tipo Contrato & Horas</th>
-            <th style="padding:8px; border:1px solid #cbd5e1; text-align:center; width:45px;">Qtd</th>
-            <th style="padding:8px; border:1px solid #cbd5e1; text-align:right;">Valor da Locação</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${p.items.map((item, idx) => {
-            const itemValInfo = getRentalValueInfo(item.period_months);
-            return `
-              <tr style="font-size:11px; ${idx % 2 === 1 ? 'background:#f8fafc;' : ''}">
-                <td style="padding:8px; border:1px solid #e2e8f0; text-align:center; font-weight:800; color:${primaryColor};">Opção #${idx + 1}</td>
-                <td style="padding:8px; border:1px solid #e2e8f0; font-weight:700; color:#0f172a;">${item.machine_name || p.machine_name || 'Equipamento'}</td>
-                <td style="padding:8px; border:1px solid #e2e8f0; font-weight:600; color:#334155;">${formatPeriod(item.period_months)}</td>
-                <td style="padding:8px; border:1px solid #e2e8f0; color:#475569; font-size:10px;">${item.contract_type || '0 - Sem cobertura'}<br/><span style="color:#64748b;">${item.hours_per_month || '100 horas/mês'}</span></td>
-                <td style="padding:8px; border:1px solid #e2e8f0; text-align:center; font-weight:700;">${item.quantity || 1}</td>
-                <td style="padding:8px; border:1px solid #e2e8f0; text-align:right; font-weight:800; color:${primaryColor}; font-size:12px;">
-                  R$ ${Number(item.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${itemValInfo.suffix}
-                </td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
+      <div style="margin-bottom: 24px;">
+        <h3 class="box-title" style="margin-bottom: 12px;">Quadro Comparativo de Opções e Prazos de Locação</h3>
+        <table class="table-rental" style="width:100%; border-collapse:collapse; border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; margin-bottom:0;">
+          <thead>
+            <tr style="background:${primaryColor}; color:#fff; font-size:10px; text-transform:uppercase; letter-spacing:0.5px;">
+              <th style="padding:10px 8px; text-align:center; width:80px; border-right:1px solid rgba(255,255,255,0.2);">Opção</th>
+              <th style="padding:10px 12px; text-align:left; border-right:1px solid rgba(255,255,255,0.2);">Equipamento / Modelo</th>
+              <th style="padding:10px 12px; text-align:left; border-right:1px solid rgba(255,255,255,0.2);">Prazo / Período</th>
+              <th style="padding:10px 12px; text-align:left; border-right:1px solid rgba(255,255,255,0.2);">Tipo Contrato & Horas</th>
+              <th style="padding:10px 8px; text-align:center; width:45px; border-right:1px solid rgba(255,255,255,0.2);">Qtd</th>
+              <th style="padding:10px 12px; text-align:right;">Valor da Locação</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${p.items.map((item, idx) => {
+              const itemValInfo = getRentalValueInfo(item.period_months);
+              return `
+                <tr style="font-size:11px; ${idx % 2 === 1 ? 'background:#f8fafc;' : 'background:#ffffff;'} border-bottom:1px solid #e2e8f0;">
+                  <td style="padding:10px 8px; text-align:center; font-weight:800; color:${primaryColor}; border-right:1px solid #e2e8f0;">
+                    <span style="display:inline-block; padding:2px 8px; background:${primaryColor}15; border-radius:4px; font-size:10px;">Opção #${idx + 1}</span>
+                  </td>
+                  <td style="padding:10px 12px; font-weight:700; color:#0f172a; border-right:1px solid #e2e8f0;">
+                    ${item.machine_name || p.machine_name || 'Equipamento'}
+                  </td>
+                  <td style="padding:10px 12px; font-weight:600; color:#334155; border-right:1px solid #e2e8f0;">
+                    ${formatPeriod(item.period_months)}
+                  </td>
+                  <td style="padding:10px 12px; color:#475569; font-size:10px; border-right:1px solid #e2e8f0; line-height:1.4;">
+                    <span style="font-weight:700; color:#1e293b;">${item.contract_type || '0 - Sem cobertura'}</span><br/>
+                    <span style="color:#64748b;">${item.hours_per_month || '100 horas/mês'}</span>
+                  </td>
+                  <td style="padding:10px 8px; text-align:center; font-weight:700; color:#0f172a; border-right:1px solid #e2e8f0;">
+                    ${item.quantity || 1}
+                  </td>
+                  <td style="padding:10px 12px; text-align:right; font-weight:800; color:${primaryColor}; font-size:12px; white-space:nowrap;">
+                    R$ ${Number(item.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span style="font-size:10px; font-weight:600; color:#64748b;">${itemValInfo.suffix}</span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
 
-      <table class="table-rental">
+      <div style="margin-top: 24px; margin-bottom: 20px;">
+        <h3 class="box-title" style="margin-bottom: 12px;">Condições Gerais de Fornecimento</h3>
+        <table class="table-rental" style="width:100%; border-collapse:collapse; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+          <tr>
+            <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Região Utilizada</td>
+            <td style="padding:9px 14px; font-weight:600; color:#0f172a; font-size:11px; border:1px solid #e2e8f0;">${p.region_used || 'Curitiba e Região'}</td>
+            <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Tempo de Entrega</td>
+            <td style="padding:9px 14px; font-weight:600; color:#0f172a; font-size:11px; border:1px solid #e2e8f0;">${p.delivery_time || 'Imediato'}</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Custo do Frete</td>
+            <td style="padding:9px 14px; font-weight:600; color:#0f172a; font-size:11px; border:1px solid #e2e8f0;">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
+            <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Validade da Proposta</td>
+            <td style="padding:9px 14px; font-weight:600; color:#0f172a; font-size:11px; border:1px solid #e2e8f0;">${p.validity_days || '10 dias'}</td>
+          </tr>
+          ${p.notes ? `
+          <tr>
+            <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Observações</td>
+            <td colspan="3" style="padding:9px 14px; font-weight:400; color:#334155; font-size:11px; border:1px solid #e2e8f0; line-height:1.4;">${p.notes}</td>
+          </tr>` : ''}
+        </table>
+      </div>
+    ` : `
+      <h3 class="box-title" style="margin-bottom: 12px;">Valores e Condições de Locação</h3>
+      <table class="table-rental" style="width:100%; border-collapse:collapse; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; margin-bottom:20px;">
         <tr>
-          <td class="label-col">Região Utilizada</td>
-          <td class="value-col">${p.region_used || 'Curitiba e Região'}</td>
-          <td class="label-col">Tempo de Entrega</td>
-          <td class="value-col">${p.delivery_time || 'Imediato'}</td>
+          <td style="padding:10px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:220px; border:1px solid #e2e8f0;">${valInfo.label}</td>
+          <td style="padding:10px 14px; font-size: 14px; color: ${primaryColor}; font-weight: 800; border:1px solid #e2e8f0;">R$ ${Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span style="font-size:11px; font-weight:600; color:#64748b;">${valInfo.suffix}</span></td>
         </tr>
         <tr>
-          <td class="label-col">Custo do Frete</td>
-          <td class="value-col">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
-          <td class="label-col">Validade da proposta</td>
-          <td class="value-col">${p.validity_days || '10 dias'}</td>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Tipo de Contrato</td>
+          <td style="padding:9px 14px; font-weight: 700; color:#0f172a; border:1px solid #e2e8f0;">${p.contract_type || '0 - Sem cobertura'}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Período de Locação</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${formatPeriod(p.period_months)}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Franquia de Horas</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${p.hours_per_month || '100 horas/mês'}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Região Utilizada</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${p.region_used || 'Curitiba e Região'}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Tempo de Entrega</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${p.delivery_time || 'Imediato'}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Custo do Frete</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Validade da Proposta</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${p.validity_days || '10 dias'}</td>
         </tr>
         ${p.notes ? `
         <tr>
-          <td class="label-col">OBSERVAÇÃO</td>
-          <td class="value-col" colspan="3" style="font-weight: 400; color: #475569;">${p.notes}</td>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Observações</td>
+          <td style="padding:9px 14px; font-weight: 400; color: #475569; border:1px solid #e2e8f0;">${p.notes}</td>
         </tr>` : ''}
-      </table>
-    ` : `
-      <h3 class="box-title">Valores e Condições de Locação</h3>
-      <table class="table-rental">
-        <tr>
-          <td class="label-col">${valInfo.label}</td>
-          <td class="value-col" style="font-size: 14px; color: ${primaryColor}; font-weight: 800;">R$ ${Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${valInfo.suffix}</td>
-        </tr>
-        <tr>
-          <td class="label-col">Tipo de Contrato*</td>
-          <td class="value-col" style="font-weight: 700;">${p.contract_type || '—'}</td>
-        </tr>
-        <tr>
-          <td class="label-col">Período de Locação</td>
-          <td class="value-col">${formatPeriod(p.period_months)}</td>
-        </tr>
-        <tr>
-          <td class="label-col">Horas/Mês</td>
-          <td class="value-col">${p.hours_per_month || '—'}</td>
-        </tr>
-        <tr>
-          <td class="label-col">Região Utilizada</td>
-          <td class="value-col">${p.region_used || '—'}</td>
-        </tr>
-        <tr>
-          <td class="label-col">Tempo de Entrega</td>
-          <td class="value-col">${p.delivery_time || '—'}</td>
-        </tr>
-        <tr>
-          <td class="label-col">Custo do Frete</td>
-          <td class="value-col">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
-        </tr>
-        <tr>
-          <td class="label-col">Validade da proposta</td>
-          <td class="value-col">${p.validity_days || '—'}</td>
-        </tr>
-        ${p.notes ? `<tr><td class="label-col">OBSERVAÇÃO</td><td class="value-col" style="font-weight: 400; color: #475569;">${p.notes}</td></tr>` : ''}
       </table>
     `;
 
@@ -714,129 +734,147 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                   <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" className="h-8 object-contain" />
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-sm font-extrabold uppercase tracking-wider" style={{ color: primaryColor }}>
-                    {p.items && p.items.length > 1 ? 'Quadro Comparativo de Opções e Prazos' : 'Valores e Condições de Locação'}
-                  </h3>
-
+                <div className="space-y-6">
                   {p.items && p.items.length > 1 ? (
-                    <div className="space-y-3">
-                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse border border-slate-300 text-xs">
-                          <thead>
-                            <tr style={{ backgroundColor: primaryColor }} className="text-white text-[11px] uppercase font-bold">
-                              <th className="p-2 border border-slate-300 text-center w-16">Opção</th>
-                              <th className="p-2 border border-slate-300 text-left">Equipamento / Modelo</th>
-                              <th className="p-2 border border-slate-300 text-left">Prazo / Período</th>
-                              <th className="p-2 border border-slate-300 text-left">Tipo Contrato & Horas</th>
-                              <th className="p-2 border border-slate-300 text-center w-12">Qtd</th>
-                              <th className="p-2 border border-slate-300 text-right">Valor da Locação</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {p.items.map((item, idx) => {
-                              const itemValInfo = getRentalValueInfo(item.period_months);
-                              return (
-                                <tr key={item.id || idx} className={`text-xs ${idx % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}>
-                                  <td className="p-2.5 border border-slate-300 text-center font-extrabold" style={{ color: primaryColor }}>
-                                    Opção #{idx + 1}
-                                  </td>
-                                  <td className="p-2.5 border border-slate-300 font-bold text-slate-900">
-                                    {item.machine_name || p.machine_name || 'Equipamento'}
-                                  </td>
-                                  <td className="p-2.5 border border-slate-300 font-semibold text-slate-800">
-                                    {formatPeriod(item.period_months)}
-                                  </td>
-                                  <td className="p-2.5 border border-slate-300 text-[11px] text-slate-600">
-                                    <div className="font-semibold text-slate-800">{item.contract_type || '0 - Sem Cobertura'}</div>
-                                    <div className="text-slate-500">{item.hours_per_month || '100 horas/mês'}</div>
-                                  </td>
-                                  <td className="p-2.5 border border-slate-300 text-center font-bold text-slate-800">
-                                    {item.quantity || 1}
-                                  </td>
-                                  <td className="p-2.5 border border-slate-300 text-right font-extrabold text-sm" style={{ color: primaryColor }}>
-                                    R$ {Number(item.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[11px] font-normal text-slate-500">{itemValInfo.suffix}</span>
-                                  </td>
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 pb-1 border-b-2" style={{ color: primaryColor, borderColor: primaryColor }}>
+                          Quadro Comparativo de Opções e Prazos de Locação
+                        </h3>
+                        <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
+                          <table className="w-full border-collapse text-xs">
+                            <thead>
+                              <tr style={{ backgroundColor: primaryColor }} className="text-white text-[11px] uppercase font-extrabold tracking-wider">
+                                <th className="p-3 text-center w-20 border-r border-white/20">Opção</th>
+                                <th className="p-3 text-left border-r border-white/20">Equipamento / Modelo</th>
+                                <th className="p-3 text-left border-r border-white/20">Prazo / Período</th>
+                                <th className="p-3 text-left border-r border-white/20">Tipo Contrato & Horas</th>
+                                <th className="p-3 text-center w-14 border-r border-white/20">Qtd</th>
+                                <th className="p-3 text-right">Valor da Locação</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {p.items.map((item, idx) => {
+                                const itemValInfo = getRentalValueInfo(item.period_months);
+                                return (
+                                  <tr key={item.id || idx} className={`text-xs hover:bg-slate-50/80 transition-colors ${idx % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}`}>
+                                    <td className="p-3 text-center border-r border-slate-100">
+                                      <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-extrabold" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
+                                        Opção #{idx + 1}
+                                      </span>
+                                    </td>
+                                    <td className="p-3 font-bold text-slate-900 border-r border-slate-100">
+                                      {item.machine_name || p.machine_name || 'Equipamento'}
+                                    </td>
+                                    <td className="p-3 font-semibold text-slate-800 border-r border-slate-100">
+                                      {formatPeriod(item.period_months)}
+                                    </td>
+                                    <td className="p-3 text-[11px] text-slate-600 border-r border-slate-100 leading-tight">
+                                      <div className="font-bold text-slate-800">{item.contract_type || '0 - Sem Cobertura'}</div>
+                                      <div className="text-slate-500 text-[10px] mt-0.5">{item.hours_per_month || '100 horas/mês'}</div>
+                                    </td>
+                                    <td className="p-3 text-center font-bold text-slate-900 border-r border-slate-100">
+                                      {item.quantity || 1}
+                                    </td>
+                                    <td className="p-3 text-right font-extrabold text-sm whitespace-nowrap" style={{ color: primaryColor }}>
+                                      R$ {Number(item.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-[11px] font-semibold text-slate-500">{itemValInfo.suffix}</span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 pb-1 border-b-2" style={{ color: primaryColor, borderColor: primaryColor }}>
+                          Condições Gerais de Fornecimento
+                        </h3>
+                        <div className="rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+                          <table className="w-full border-collapse text-xs">
+                            <tbody className="divide-y divide-slate-100">
+                              <tr>
+                                <td className="w-48 p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Região Utilizada</td>
+                                <td className="p-3 font-semibold text-slate-900 border-r border-slate-100">{p.region_used || 'Curitiba e Região'}</td>
+                                <td className="w-48 p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Tempo de Entrega</td>
+                                <td className="p-3 font-semibold text-slate-900">{p.delivery_time || 'Imediato'}</td>
+                              </tr>
+                              <tr>
+                                <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Custo do Frete</td>
+                                <td className="p-3 font-semibold text-slate-900 border-r border-slate-100">
+                                  {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
+                                </td>
+                                <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Validade da Proposta</td>
+                                <td className="p-3 font-semibold text-slate-900">{p.validity_days || '10 dias'}</td>
+                              </tr>
+                              {p.notes && (
+                                <tr>
+                                  <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Observações</td>
+                                  <td colSpan={3} className="p-3 font-normal text-slate-700 whitespace-pre-wrap leading-relaxed">{p.notes}</td>
                                 </tr>
-                              );
-                            })}
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 pb-1 border-b-2" style={{ color: primaryColor, borderColor: primaryColor }}>
+                        Valores e Condições de Locação
+                      </h3>
+                      <div className="rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+                        <table className="w-full border-collapse text-xs">
+                          <tbody className="divide-y divide-slate-100">
+                            <tr>
+                              <td className="w-52 p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">{valInfo.label}</td>
+                              <td className="p-3 font-extrabold text-base text-slate-900" style={{ color: primaryColor }}>
+                                R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span className="text-xs font-semibold text-slate-500">{valInfo.suffix}</span>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Tipo de Contrato</td>
+                              <td className="p-3 font-bold text-slate-900">{p.contract_type || '0 - Sem Cobertura'}</td>
+                            </tr>
+                            <tr>
+                              <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Período de Locação</td>
+                              <td className="p-3 font-semibold text-slate-900">{formatPeriod(p.period_months)}</td>
+                            </tr>
+                            <tr>
+                              <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Franquia de Horas</td>
+                              <td className="p-3 font-semibold text-slate-900">{p.hours_per_month || '100 horas/mês'}</td>
+                            </tr>
+                            <tr>
+                              <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Região Utilizada</td>
+                              <td className="p-3 font-semibold text-slate-900">{p.region_used || 'Curitiba e Região'}</td>
+                            </tr>
+                            <tr>
+                              <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Tempo de Entrega</td>
+                              <td className="p-3 font-semibold text-slate-900">{p.delivery_time || 'Imediato'}</td>
+                            </tr>
+                            <tr>
+                              <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Custo do Frete</td>
+                              <td className="p-3 font-semibold text-slate-900">
+                                {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Validade da Proposta</td>
+                              <td className="p-3 font-semibold text-slate-900">{p.validity_days || '10 dias'}</td>
+                            </tr>
+                            {p.notes && (
+                              <tr>
+                                <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Observações</td>
+                                <td className="p-3 font-normal text-slate-700 whitespace-pre-wrap leading-relaxed">{p.notes}</td>
+                              </tr>
+                            )}
                           </tbody>
                         </table>
                       </div>
-
-                      <table className="w-full border-collapse border border-slate-300 text-xs">
-                        <tbody>
-                          <tr>
-                            <td className="w-48 p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">REGIÃO UTILIZADA</td>
-                            <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.region_used || 'Curitiba e Região'}</td>
-                            <td className="w-48 p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">TEMPO DE ENTREGA</td>
-                            <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.delivery_time || 'Imediato'}</td>
-                          </tr>
-                          <tr>
-                            <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">CUSTO DO FRETE</td>
-                            <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">
-                              {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
-                            </td>
-                            <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">VALIDADE DA PROPOSTA</td>
-                            <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.validity_days || '10 dias'}</td>
-                          </tr>
-                          {p.notes && (
-                            <tr>
-                              <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">OBSERVAÇÃO</td>
-                              <td colSpan={3} className="p-2.5 font-normal text-slate-700 border border-slate-300 bg-[#EEF2FF] whitespace-pre-wrap">{p.notes}</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
                     </div>
-                  ) : (
-                    <table className="w-full border-collapse border border-slate-300 text-xs">
-                      <tbody>
-                        <tr>
-                          <td className="w-48 p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">{valInfo.label}</td>
-                          <td className="p-2.5 font-extrabold text-slate-900 border border-slate-300 bg-[#EEF2FF]" style={{ color: primaryColor }}>
-                            R$ {Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {valInfo.suffix}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">TIPO DE CONTRATO*</td>
-                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.contract_type || '0 - Sem Cobertura'}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">PERÍODO DE LOCAÇÃO</td>
-                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{formatPeriod(p.period_months)}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">HORAS/MÊS</td>
-                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.hours_per_month || '100 horas/mês'}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">REGIÃO UTILIZADA</td>
-                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.region_used || 'Curitiba e Região'}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">TEMPO DE ENTREGA</td>
-                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.delivery_time || '20 Dias'}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">CUSTO DO FRETE</td>
-                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">
-                            {Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">VALIDADE DA PROPOSTA</td>
-                          <td className="p-2.5 font-semibold text-slate-800 border border-slate-300 bg-[#EEF2FF]">{p.validity_days || '10 dias'}</td>
-                        </tr>
-                        {p.notes && (
-                          <tr>
-                            <td className="p-2.5 font-bold text-slate-800 border border-slate-300 bg-white">OBSERVAÇÃO</td>
-                            <td className="p-2.5 font-normal text-slate-700 border border-slate-300 bg-[#EEF2FF] whitespace-pre-wrap">{p.notes}</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
                   )}
+                </div>
 
                   <p className="text-[10px] text-slate-600 leading-relaxed text-justify italic">
                     Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <strong className="font-bold text-slate-900">3º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital – São Paulo</strong>, cuja cópia digitalizada está disponível no site: <u>www.alfatennant.com.br/terms</u> e também por e-mail ou correio quando solicitada.
