@@ -1250,8 +1250,8 @@ body{padding-top:60px}
 @media print{
   .print-bar,.no-print{display:none!important}
   body{background:#fff;padding-top:0}
-  .page{box-shadow:none;margin:0;padding:14mm 16mm;border-radius:0;max-width:100%;page-break-after:always;break-after:page}
-  .page:last-of-type{page-break-after:auto!important;break-after:auto!important}
+  .page{box-shadow:none;margin:0;padding:14mm 16mm;border-radius:0;max-width:100%}
+  .page + .page{page-break-before:always;break-before:page}
   @page{size:A4 portrait;margin:0}
 }
 </style>
