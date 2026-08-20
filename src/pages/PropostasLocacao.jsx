@@ -1159,15 +1159,11 @@ export default function PropostasLocacao() {
             </tr>
             <tr>
               <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Custo do Frete</td>
-              <td style="padding:9px 14px; font-weight:600; color:#0f172a; font-size:11px; border:1px solid #e2e8f0;">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
+              <td style="padding:9px 14px; font-weight:600; color:#0f172a; font-size:11px; border:1px solid #e2e8f0;">${Number(p.freight_cost) > 0 ? 'R$ ' + Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : 'Incluso'}</td>
               <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Validade da Proposta</td>
               <td style="padding:9px 14px; font-weight:600; color:#0f172a; font-size:11px; border:1px solid #e2e8f0;">${p.validity_days || '10 dias'}</td>
             </tr>
-            ${p.notes ? `
-            <tr>
-              <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Observações</td>
-              <td colspan="3" style="padding:9px 14px; font-weight:400; color:#334155; font-size:11px; border:1px solid #e2e8f0; line-height:1.4;">${p.notes}</td>
-            </tr>` : ''}
+            ${p.notes ? '<tr><td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Observações</td><td colspan="3" style="padding:9px 14px; font-weight:400; color:#334155; font-size:11px; border:1px solid #e2e8f0; line-height:1.4;">' + p.notes + '</td></tr>' : ''}
           </table>
         </div>
       ` : `
@@ -1199,17 +1195,13 @@ export default function PropostasLocacao() {
           </tr>
           <tr>
             <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Custo do Frete</td>
-            <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
+            <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${Number(p.freight_cost) > 0 ? 'R$ ' + Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : 'Incluso'}</td>
           </tr>
           <tr>
             <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Validade da Proposta</td>
             <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${p.validity_days || '10 dias'}</td>
           </tr>
-          ${p.notes ? `
-          <tr>
-            <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Observações</td>
-            <td style="padding:9px 14px; font-weight: 400; color: #475569; border:1px solid #e2e8f0;">${p.notes}</td>
-          </tr>` : ''}
+          ${p.notes ? '<tr><td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Observações</td><td style="padding:9px 14px; font-weight:400; color:#475569; border:1px solid #e2e8f0;">' + p.notes + '</td></tr>' : ''}
         </table>
       `;
 
@@ -1221,45 +1213,46 @@ export default function PropostasLocacao() {
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
-body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:12px;line-height:1.5}
+body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:11px;line-height:1.4}
 .print-bar{position:fixed;top:0;left:0;right:0;background:${primaryColor};color:#fff;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;z-index:999}
 .btn-print{background:#fff;color:${primaryColor};border:none;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
 .btn-print:hover{background:${colorLight}}
 body{padding-top:60px}
-.page{background:#fff;max-width:870px;margin:20px auto;padding:52px 60px;box-shadow:0 4px 24px rgba(0,0,0,.08);border-radius:12px;position:relative}
-.header{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid #e2e8f0;margin-bottom:20px}
+.page{background:#fff;max-width:870px;margin:20px auto;padding:36px 48px;box-shadow:0 4px 24px rgba(0,0,0,.08);border-radius:12px;position:relative}
+.header{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid #e2e8f0;margin-bottom:16px}
 .tagline{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:2px;text-transform:uppercase}
 .logo-img{max-height:60px;object-fit:contain}
-.green-title{font-family:'Outfit',sans-serif;color:${primaryColor};font-size:24px;font-weight:800;letter-spacing:-0.5px;margin-bottom:25px;text-transform:uppercase}
-.main-img-box{width:100%;height:320px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:25px}
+.green-title{font-family:'Outfit',sans-serif;color:${primaryColor};font-size:22px;font-weight:800;letter-spacing:-0.5px;margin-bottom:16px;text-transform:uppercase}
+.main-img-box{width:100%;height:220px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
 .main-img{max-height:100%;max-width:100%;object-fit:contain}
-.eq-title{font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;color:#0f172a;margin-bottom:12px;border-bottom:1px solid #f1f5f9;padding-bottom:8px}
+.eq-title{font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;color:#0f172a;margin-bottom:10px;border-bottom:1px solid #f1f5f9;padding-bottom:6px}
 .eq-title span{color:#94a3b8;font-weight:400}
-.description{font-size:12px;color:#475569;line-height:1.6;margin-bottom:25px}
-.spec-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:30px;align-items:start}
-.box-title{font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;color:${primaryColor};text-transform:uppercase;margin-bottom:15px;letter-spacing:0.5px;border-bottom:2px solid ${primaryColor};padding-bottom:6px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
-.row-item{display:flex;justify-content:space-between;border-bottom:1px solid #f1f5f9;padding:6px 0;font-size:12px}
+.description{font-size:11px;color:#475569;line-height:1.5;margin-bottom:16px}
+.spec-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:start}
+.box-title{font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;color:${primaryColor};text-transform:uppercase;margin-bottom:10px;letter-spacing:0.5px;border-bottom:2px solid ${primaryColor};padding-bottom:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.row-item{display:flex;justify-content:space-between;border-bottom:1px solid #f1f5f9;padding:4px 0;font-size:11px}
 .row-item b{color:#475569}
-.table-rental{width:100%;border-collapse:collapse;margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}
-.table-rental td{padding:10px 14px;border:1px solid #e2e8f0}
-.table-rental td.label-col{font-weight:700;color:#475569;background:#f8fafc;width:250px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
-.table-rental td.value-col{font-weight:600;color:#0f172a;font-size:12px}
-.legal-text{font-size:10px;color:#64748b;line-height:1.5;margin-bottom:25px;text-align:justify}
-.table-comparison{width:100%;border-collapse:collapse;margin-bottom:25px;border:1px solid #e2e8f0;font-size:10px}
+.table-rental{width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}
+.table-rental td{padding:8px 12px;border:1px solid #e2e8f0}
+.table-rental td.label-col{font-weight:700;color:#475569;background:#f8fafc;width:220px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px}
+.table-rental td.value-col{font-weight:600;color:#0f172a;font-size:11px}
+.legal-text{font-size:9px;color:#64748b;line-height:1.4;margin-bottom:16px;text-align:justify}
+.table-comparison{width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid #e2e8f0;font-size:10px}
 .table-comparison th{background:${primaryColor};color:#fff;padding:6px 10px;font-weight:600;text-align:left}
 .table-comparison td{padding:6px 10px;border:1px solid #e2e8f0;color:#475569}
-.footer-cols{display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:end;margin-top:35px;border-top:1px solid #e2e8f0;padding-top:15px}
-.seller-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px 16px;font-size:11px}
+.footer-cols{display:grid;grid-template-columns:1.5fr 1fr;gap:30px;align-items:end;margin-top:20px;border-top:1px solid #e2e8f0;padding-top:12px}
+.seller-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 14px;font-size:10px}
 .seller-box b{display:block;margin-bottom:4px;color:${primaryColor};text-transform:uppercase;font-size:9px;letter-spacing:0.5px}
 .brand-footer{text-align:right}
-.brand-footer img{max-height:40px;margin-bottom:6px;object-fit:contain}
+.brand-footer img{max-height:36px;margin-bottom:4px;object-fit:contain}
 .brand-footer-text{font-size:9px;color:#94a3b8;line-height:1.3}
 @media print{
   .print-bar,.no-print{display:none!important}
   body{background:#fff;padding-top:0}
-  .page{box-shadow:none;margin:0;padding:20px 30px;border-radius:0;max-width:100%}
-  @page{margin:10mm 12mm}
+  .page{box-shadow:none;margin:0;padding:14mm 16mm;border-radius:0;max-width:100%;page-break-after:always;break-after:page}
+  .page:last-of-type{page-break-after:auto!important;break-after:auto!important}
+  @page{size:A4 portrait;margin:0}
 }
 </style>
 </head>
@@ -1272,19 +1265,15 @@ body{padding-top:60px}
 <!-- PAGE 1: Presentation & Technical Specs -->
 <div class="page">
   <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid ${primaryColor}; padding-bottom: 20px; margin-bottom: 25px;">
-    ${companyLogo ? `<div style="width: 180px; display: block;"></div>` : ''}
+    ${companyLogo ? '<div style="width: 180px; display: block;"></div>' : ''}
     <div style="flex: 1; text-align: center;">
       <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">${companyName}</h1>
       <div style="font-size: 11px; font-weight: bold; color: #1e293b; margin-top: 4px;">CNPJ: ${companyCnpj}</div>
       <div style="font-size: 10px; color: #475569; margin-top: 2px;">${companyAddress}</div>
       <div style="font-size: 10px; color: #475569; margin-top: 2px;">Telefone: ${companyPhone}</div>
-      ${companyEmail ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">Email: ${companyEmail}</div>` : ''}
+      ${companyEmail ? '<div style="font-size: 10px; color: #475569; margin-top: 2px;">Email: ' + companyEmail + '</div>' : ''}
     </div>
-    ${companyLogo ? `
-      <div style="width: 180px; display: flex; justify-content: flex-end;">
-        <img src="${companyLogo}" alt="Logo" style="max-height: 100px; max-width: 180px; object-fit: contain;" />
-      </div>
-    ` : ''}
+    ${companyLogo ? '<div style="width: 180px; display: flex; justify-content: flex-end;"><img src="' + companyLogo + '" alt="Logo" style="max-height: 100px; max-width: 180px; object-fit: contain;" /></div>' : ''}
   </div>
 
   <div style="text-align: center; margin-bottom: 25px;">
