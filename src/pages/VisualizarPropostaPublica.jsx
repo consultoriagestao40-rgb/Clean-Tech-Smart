@@ -214,9 +214,6 @@ export default function VisualizarPropostaPublica() {
   const photosList = (p.machine_photos || p.machine_image || '').split('\n').map(u => u.trim()).filter(Boolean);
   const mainPhoto = photosList.length > 0 ? photosList[0] : 'https://placehold.co/400x300?text=Equipamento';
 
-  const parseSpecsToHTML = (rawSpecs) => {
-    if (!rawSpecs) return '<p class="italic text-slate-400">Consulte a ficha técnica anexa.</p>';
-    let htmlContent = rawSpecs;
   const parseSpecsToHTML = (text) => {
     if (!text) return '';
     let htmlContent = '';
