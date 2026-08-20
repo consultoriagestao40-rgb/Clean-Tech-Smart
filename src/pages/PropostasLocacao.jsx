@@ -1199,7 +1199,7 @@ export default function PropostasLocacao() {
               </tr>
               <tr>
                 <td style="padding:5px 8px; background:#f8fafc; font-weight:700; color:#475569; border-right:1px solid #e2e8f0; text-transform:uppercase; font-size:8.5px; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">Custo do Frete</td>
-                <td style="padding:5px 8px; font-weight:700; color:#0f172a; border-right:1px solid #e2e8f0; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
+                <td style="padding:5px 8px; font-weight:700; color:#0f172a; border-right:1px solid #e2e8f0; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${Number(p.freight_cost) > 0 ? 'R$ ' + Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : 'Incluso'}</td>
                 <td style="padding:5px 8px; background:#f8fafc; font-weight:700; color:#475569; border-right:1px solid #e2e8f0; text-transform:uppercase; font-size:8.5px; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">Validade Proposta</td>
                 <td style="padding:5px 8px; font-weight:700; color:#0f172a; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${p.validity_days || '10 dias'}</td>
               </tr>
@@ -1239,7 +1239,7 @@ export default function PropostasLocacao() {
               </tr>
               <tr>
                 <td style="padding:5px 10px; background:#f8fafc; font-weight:700; color:#475569; font-size:8.5px; text-transform:uppercase; border-right:1px solid #e2e8f0; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">Frete / Validade</td>
-                <td style="padding:5px 10px; font-weight:600; color:#0f172a; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'} • Validade: ${p.validity_days || '10 dias'}</td>
+                <td style="padding:5px 10px; font-weight:600; color:#0f172a; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${Number(p.freight_cost) > 0 ? 'R$ ' + Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : 'Incluso'} • Validade: ${p.validity_days || '10 dias'}</td>
               </tr>
               ${p.notes ? `
               <tr>
