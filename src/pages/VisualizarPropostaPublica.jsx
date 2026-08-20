@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { 
   FileText, Loader2, CheckCircle2, XCircle, Printer, 
   Check, MessageSquare, ChevronRight, Info, FileSignature, X
@@ -7,7 +7,16 @@ import {
 
 export default function VisualizarPropostaPublica() {
   const { id } = useParams();
-  const [proposal, setProposal] = useState(null);
+  const location = useLocation();
+
+  // Parse visible sections from URL: ?sec=specs,values,conditions,contract_types,seller,minuta
+  const ALL_SECTIONS = ['specs','values','conditions','contract_types','seller','minuta'];
+  const secParam = new URLSearchParams(location.search).get('sec');
+  const visibleSections = secParam
+    ? secParam.split(',').map(s => s.trim()).filter(s => ALL_SECTIONS.includes(s))
+    : ALL_SECTIONS; // if no param, show everything (backward compat)
+  const canSee = (section) => visibleSections.includes(section);
+
   const [activeTab, setActiveTab] = useState('proposal'); // 'presentation' | 'proposal' | 'minuta' | 'chat'
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -584,6 +593,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
               <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
+            {canSee('minuta') && (
             <button
               onClick={() => setActiveTab('minuta')}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
@@ -598,6 +608,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
               </div>
               <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
+            )}
 
             <button
               onClick={() => setActiveTab('chat')}
@@ -715,12 +726,14 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                     <p className="text-[11px] text-slate-500 italic leading-relaxed">
                       {p.machine_technical_description || 'Equipamento de alta qualidade e rendimento, ideal para processos contínuos de higienização de pisos.'}
                     </p>
+                    {canSee('specs') && (
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider block mb-2" style={{ color: primaryColor }}>
                         ESPECIFICAÇÕES TÉCNICAS
                       </span>
                       <div className="text-xs text-slate-700 space-y-1" dangerouslySetInnerHTML={{ __html: specsHTML }} />
                     </div>
+                    )}
                   </div>
                 </div>
 
@@ -879,6 +892,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                     Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <strong className="font-bold text-slate-900">3º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital – São Paulo</strong>, cuja cópia digitalizada está disponível no site: <u>www.alfatennant.com.br/terms</u> e também por e-mail ou correio quando solicitada.
                   </p>
 
+                  {canSee('contract_types') && (
                   <div className="pt-2">
                     <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block mb-2">* TABELA DESCRITIVA DE TIPOS DE CONTRATO</span>
                     <table className="w-full border-collapse border border-slate-300 text-[10px]">
@@ -912,14 +926,17 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
                       </tbody>
                     </table>
                   </div>
+                  )}
 
                   <div className="pt-4 flex items-end justify-between border-t border-slate-200">
+                    {canSee('seller') ? (
                     <div className="bg-slate-50 border border-slate-300 p-3.5 rounded-lg max-w-xs text-xs text-slate-800 font-medium">
                       <span className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: primaryColor }}>
                         Dados do Vendedor
                       </span>
                       <div className="whitespace-pre-line leading-relaxed">{p.seller_info || 'Alfa Tennant\nAtendimento Comercial'}</div>
                     </div>
+                    ) : <div /> }
 
                     <div className="text-right text-[10px] text-slate-400 space-y-1">
                       <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" className="h-8 object-contain ml-auto mb-1" />

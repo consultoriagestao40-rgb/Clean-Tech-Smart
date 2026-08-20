@@ -62,6 +62,14 @@ export default function PropostasLocacao() {
   const [shareProposalId, setShareProposalId] = useState(null);
   const [shareValidityDays, setShareValidityDays] = useState('10 dias');
   const [isSavingShare, setIsSavingShare] = useState(false);
+  const [shareSections, setShareSections] = useState({
+    specs: true,
+    values: true,
+    conditions: true,
+    contract_types: true,
+    seller: true,
+    minuta: false,
+  });
 
   const handleSaveQuickMachineModel = async (e) => {
     e.preventDefault();
@@ -562,6 +570,7 @@ export default function PropostasLocacao() {
     const proposal = proposals.find(p => p.id === proposalId);
     setShareProposalId(proposalId);
     setShareValidityDays(proposal?.validity_days || '10 dias');
+    setShareSections({ specs: true, values: true, conditions: true, contract_types: true, seller: true, minuta: false });
     setIsShareModalOpen(true);
   };
 
@@ -579,7 +588,8 @@ export default function PropostasLocacao() {
         body: JSON.stringify({ id: shareProposalId, validity_days: shareValidityDays })
       });
       if (response.ok) {
-        const url = `${window.location.origin}/visualizar-proposta/${shareProposalId}`;
+        const enabledSections = Object.entries(shareSections).filter(([, v]) => v).map(([k]) => k).join(',');
+        const url = `${window.location.origin}/visualizar-proposta/${shareProposalId}?sec=${encodeURIComponent(enabledSections)}`;
         navigator.clipboard.writeText(url);
         setIsShareModalOpen(false);
         fetchProposals();
@@ -2415,9 +2425,9 @@ body{padding-top:60px}
             </div>
             
             <form onSubmit={handleConfirmShare}>
-              <div className="p-6 space-y-4">
+              <div className="p-5 space-y-4">
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Defina o prazo de validade/expiração do link público antes de compartilhá-lo com seu cliente.
+                  Defina o prazo de validade e quais seções serão visíveis para o cliente no link público.
                 </p>
 
                 <div>
@@ -2437,8 +2447,36 @@ body{padding-top:60px}
                   </select>
                 </div>
 
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Seções Visíveis para o Cliente</label>
+                  <div className="border border-gray-200 rounded-lg overflow-hidden divide-y divide-gray-100">
+                    {[
+                      { key: 'specs',          label: 'Ficha Técnica / Especificações', icon: '📋' },
+                      { key: 'values',         label: 'Valores de Locação',             icon: '💰' },
+                      { key: 'conditions',     label: 'Condições Gerais (frete, validade, região)', icon: '📦' },
+                      { key: 'contract_types', label: 'Tipos de Contrato (Ouro/Prata/Bronze)', icon: '📄' },
+                      { key: 'seller',         label: 'Dados do Vendedor',                icon: '👤' },
+                      { key: 'minuta',         label: 'Minuta de Contrato',               icon: '📜' },
+                    ].map(({ key, label, icon }) => (
+                      <label key={key} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={shareSections[key]}
+                          onChange={e => setShareSections(prev => ({ ...prev, [key]: e.target.checked }))}
+                          className="w-4 h-4 rounded accent-blue-600"
+                        />
+                        <span className="text-xs">{icon}</span>
+                        <span className="text-xs font-medium text-gray-700 flex-1">{label}</span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${shareSections[key] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                          {shareSections[key] ? 'Visível' : 'Oculto'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="text-[10px] text-gray-400 font-semibold italic bg-blue-50/50 p-3 rounded-lg border border-blue-100/30">
-                  * Ao confirmar, a validade da proposta comercial será atualizada no banco de dados e o link público será copiado automaticamente para sua área de transferência.
+                  * As preferências de seção ficam codificadas no link. Basta gerar um novo link para mudar as configurações.
                 </div>
               </div>
 
