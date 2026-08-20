@@ -343,15 +343,11 @@ export default function VisualizarPropostaPublica() {
             </tr>
             <tr>
               <td style="padding:5px 8px; background:#f8fafc; font-weight:700; color:#475569; border-right:1px solid #e2e8f0; text-transform:uppercase; font-size:8.5px; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">Custo do Frete</td>
-              <td style="padding:5px 8px; font-weight:700; color:#0f172a; border-right:1px solid #e2e8f0; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
+              <td style="padding:5px 8px; font-weight:700; color:#0f172a; border-right:1px solid #e2e8f0; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${Number(p.freight_cost) > 0 ? 'R$ ' + Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : 'Incluso'}</td>
               <td style="padding:5px 8px; background:#f8fafc; font-weight:700; color:#475569; border-right:1px solid #e2e8f0; text-transform:uppercase; font-size:8.5px; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">Validade Proposta</td>
               <td style="padding:5px 8px; font-weight:700; color:#0f172a; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${p.validity_days || '10 dias'}</td>
             </tr>
-            ${p.notes ? `
-            <tr>
-              <td style="padding:5px 8px; background:#f8fafc; font-weight:700; color:#475569; border-right:1px solid #e2e8f0; text-transform:uppercase; font-size:8.5px;">Observações</td>
-              <td colspan="3" style="padding:5px 8px; color:#334155; font-size:9px; font-style:italic;">${p.notes}</td>
-            </tr>` : ''}
+            ${p.notes ? '<tr><td style="padding:5px 8px; background:#f8fafc; font-weight:700; color:#475569; border-right:1px solid #e2e8f0; text-transform:uppercase; font-size:8.5px;">Observações</td><td colspan="3" style="padding:5px 8px; color:#334155; font-size:9px; font-style:italic;">' + p.notes + '</td></tr>' : ''}
           </table>
         </div>
       </div>
@@ -383,13 +379,9 @@ export default function VisualizarPropostaPublica() {
             </tr>
             <tr>
               <td style="padding:5px 10px; background:#f8fafc; font-weight:700; color:#475569; font-size:8.5px; text-transform:uppercase; border-right:1px solid #e2e8f0; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">Frete / Validade</td>
-              <td style="padding:5px 10px; font-weight:600; color:#0f172a; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'} • Validade: ${p.validity_days || '10 dias'}</td>
+              <td style="padding:5px 10px; font-weight:600; color:#0f172a; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${Number(p.freight_cost) > 0 ? 'R$ ' + Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : 'Incluso'} • Validade: ${p.validity_days || '10 dias'}</td>
             </tr>
-            ${p.notes ? `
-            <tr>
-              <td style="padding:5px 10px; background:#f8fafc; font-weight:700; color:#475569; font-size:8.5px; text-transform:uppercase; border-right:1px solid #e2e8f0;">Observações</td>
-              <td style="padding:5px 10px; color:#475569; font-size:9px;">${p.notes}</td>
-            </tr>` : ''}
+            ${p.notes ? '<tr><td style="padding:5px 10px; background:#f8fafc; font-weight:700; color:#475569; font-size:8.5px; text-transform:uppercase; border-right:1px solid #e2e8f0;">Observações</td><td style="padding:5px 10px; color:#475569; font-size:9px;">' + p.notes + '</td></tr>' : ''}
           </table>
         </div>
       </div>
@@ -503,13 +495,9 @@ body {
       <div style="flex:1; text-align:left;">
         <h1 style="font-size:15px; font-weight:800; color:#0f172a; text-transform:uppercase; letter-spacing:0.5px; margin:0;">${companyName}</h1>
         <div style="font-size:9.5px; font-weight:700; color:#1e293b; margin-top:2px;">CNPJ: ${companyCnpj}</div>
-        <div style="font-size:8.5px; color:#64748b; margin-top:1px;">${companyAddress} • Tel: ${companyPhone} ${companyEmail ? `• ${companyEmail}` : ''}</div>
+        <div style="font-size:8.5px; color:#64748b; margin-top:1px;">${companyAddress} • Tel: ${companyPhone} ${companyEmail ? '• ' + companyEmail : ''}</div>
       </div>
-      ${companyLogo ? `
-        <div style="max-width:140px; display:flex; justify-content:flex-end;">
-          <img src="${companyLogo}" alt="Logo" style="max-height:50px; max-width:140px; object-fit:contain;" />
-        </div>
-      ` : ''}
+      ${companyLogo ? '<div style="max-width:140px; display:flex; justify-content:flex-end;"><img src="' + companyLogo + '" alt="Logo" style="max-height:50px; max-width:140px; object-fit:contain;" /></div>' : ''}
     </div>
 
     <!-- Title -->
