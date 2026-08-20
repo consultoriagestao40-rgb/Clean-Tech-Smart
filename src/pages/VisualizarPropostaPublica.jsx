@@ -214,177 +214,137 @@ export default function VisualizarPropostaPublica() {
   const photosList = (p.machine_photos || p.machine_image || '').split('\n').map(u => u.trim()).filter(Boolean);
   const mainPhoto = photosList.length > 0 ? photosList[0] : 'https://placehold.co/400x300?text=Equipamento';
 
-  const parseSpecsToHTML = (text) => {
-    if (!text) return '';
-    let htmlContent = '';
-    const lines = text.split('\n');
-    
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      
-      if (trimmed.includes(':')) {
-        const [key, ...valParts] = trimmed.split(':');
-        const val = valParts.join(':').trim();
-        const cleanKey = key.replace(/^[-\s*•]+/, '').trim();
-        htmlContent += `
-          <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding:2px 0; font-size:9px; line-height:1.25;">
-            <span style="font-weight:600; color:#475569; width:52%;">${cleanKey}</span>
-            <span style="color:#0f172a; width:48%; text-align:right; font-weight:600;">${val}</span>
-          </div>
-        `;
-      } else if (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) {
-        const cleanLine = trimmed.replace(/^[-\s*•]+/, '').trim();
-        htmlContent += `
-          <div style="display:flex; align-items:start; padding:1.5px 0; font-size:9px; color:#334155; line-height:1.25;">
-            <span style="color:${primaryColor}; margin-right:4px; font-weight:bold;">•</span>
-            <span>${cleanLine}</span>
-          </div>
-        `;
-      } else if (trimmed === trimmed.toUpperCase() && trimmed.length > 3) {
-        htmlContent += `
-          <div style="font-weight:800; color:${primaryColor}; font-size:9px; text-transform:uppercase; border-bottom:1px solid ${primaryColor}; padding-bottom:2px; margin-top:5px; margin-bottom:3px; letter-spacing:0.5px;">
-            ${trimmed}
-          </div>
-        `;
-      } else {
-        htmlContent += `
-          <p style="font-size:9px; color:#475569; padding:1.5px 0; line-height:1.25;">${trimmed}</p>
-        `;
-      }
+  const parseSpecsToHTML = (rawSpecs) => {
+    if (!rawSpecs) return '<p class="italic text-slate-400">Consulte a ficha técnica anexa.</p>';
+    let htmlContent = rawSpecs;
+    if (rawSpecs.includes('{') && rawSpecs.includes('}')) {
+      try {
+        const parsed = JSON.parse(rawSpecs);
+        if (Array.isArray(parsed)) {
+          return `<ul class="list-none p-0">${parsed.map(item => `<li class="py-1 border-b border-slate-100"><strong>${item.label || item.key}:</strong> ${item.value}</li>`).join('')}</ul>`;
+        }
+      } catch (e) {}
     }
-    return htmlContent;
+    return htmlContent.replace(/\n/g, '<br/>');
   };
 
   const specsHTML = parseSpecsToHTML(p.machine_technical_description || p.machine_specs);
 
-  const formatHoursForPeriod = (hours, period) => {
-    const pVal = Number(period);
-    if (!hours || hours === '100 horas/mês' || hours === '100 horas/mes' || hours === '100h/mês') {
-      if (pVal === 1) return '5 horas/dia';
-      if (pVal === 7) return '25 horas/semana';
-      if (pVal === 15) return '50 horas/quinzena';
-      return '100 horas/mês';
-    }
-    return hours;
-  };
-
   // Generate EXACT same PDF HTML as PropostasLocacao.jsx system view
   const handlePrintPDF = () => {
+    const colorLight = '#e0f5fb';
     const introText = 'Equipamento de alta qualidade e rendimento, ideal para processos contínuos de higienização de pisos.';
+
     const isMultiOption = p.items && Array.isArray(p.items) && p.items.length > 1;
 
     const financialSectionHTML = isMultiOption ? `
-      <div style="margin-bottom: 10px;">
-        <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;">
-          <div style="width:3px; height:12px; background:${primaryColor}; border-radius:2px;"></div>
-          <span style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a;">
-            Quadro Comparativo de Opções e Prazos de Locação
-          </span>
-        </div>
-        <div style="border:1px solid #cbd5e1; border-radius:6px; overflow:hidden; background:#fff;">
-          <table style="width:100%; border-collapse:collapse; font-size:9.5px; text-align:left;">
-            <thead>
-              <tr style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#fff; font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">
-                <th style="padding:6px 8px; text-align:center; width:70px; border-right:1px solid rgba(255,255,255,0.15);">Opção</th>
-                <th style="padding:6px 10px; border-right:1px solid rgba(255,255,255,0.15);">Equipamento / Modelo</th>
-                <th style="padding:6px 10px; border-right:1px solid rgba(255,255,255,0.15);">Prazo / Período</th>
-                <th style="padding:6px 10px; border-right:1px solid rgba(255,255,255,0.15);">Tipo Contrato & Horas</th>
-                <th style="padding:6px 6px; text-align:center; width:40px; border-right:1px solid rgba(255,255,255,0.15);">Qtd</th>
-                <th style="padding:6px 10px; text-align:right; width:135px;">Valor da Locação</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${p.items.map((item, idx) => {
-                const itemValInfo = getRentalValueInfo(item.period_months);
-                return `
-                  <tr style="font-size:9.5px; ${idx % 2 === 1 ? 'background:#f8fafc;' : 'background:#ffffff;'} border-bottom:1px solid #e2e8f0;">
-                    <td style="padding:6px 8px; text-align:center; border-right:1px solid #e2e8f0;">
-                      <span style="display:inline-block; padding:2px 6px; background:#e0f2fe; color:#0284c7; font-weight:800; border-radius:4px; font-size:9px;">Opção #${idx + 1}</span>
-                    </td>
-                    <td style="padding:6px 10px; font-weight:700; color:#0f172a; border-right:1px solid #e2e8f0;">
-                      ${item.machine_name || p.machine_name || 'Equipamento'}
-                    </td>
-                    <td style="padding:6px 10px; font-weight:600; color:#1e293b; border-right:1px solid #e2e8f0;">
-                      ${formatPeriod(item.period_months)}
-                    </td>
-                    <td style="padding:6px 10px; color:#334155; font-size:9px; border-right:1px solid #e2e8f0; line-height:1.25;">
-                      <span style="font-weight:700; color:#0f172a;">${item.contract_type || '0 - Sem cobertura'}</span><br/>
-                      <span style="color:#64748b; font-weight:500; font-size:8.5px;">${formatHoursForPeriod(item.hours_per_month, item.period_months)}</span>
-                    </td>
-                    <td style="padding:6px 6px; text-align:center; font-weight:700; color:#0f172a; border-right:1px solid #e2e8f0;">
-                      ${item.quantity || 1}
-                    </td>
-                    <td style="padding:6px 10px; text-align:right; font-weight:800; color:${primaryColor}; font-size:11px; white-space:nowrap;">
-                      R$ ${Number(item.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span style="font-size:8.5px; font-weight:600; color:#64748b;">${itemValInfo.suffix}</span>
-                    </td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
+      <div style="margin-bottom: 24px;">
+        <h3 class="box-title" style="margin-bottom: 12px;">Quadro Comparativo de Opções e Prazos de Locação</h3>
+        <table class="table-rental" style="width:100%; border-collapse:collapse; border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; margin-bottom:0;">
+          <thead>
+            <tr style="background:${primaryColor}; color:#fff; font-size:10px; text-transform:uppercase; letter-spacing:0.5px;">
+              <th style="padding:10px 8px; text-align:center; width:80px; border-right:1px solid rgba(255,255,255,0.2);">Opção</th>
+              <th style="padding:10px 12px; text-align:left; border-right:1px solid rgba(255,255,255,0.2);">Equipamento / Modelo</th>
+              <th style="padding:10px 12px; text-align:left; border-right:1px solid rgba(255,255,255,0.2);">Prazo / Período</th>
+              <th style="padding:10px 12px; text-align:left; border-right:1px solid rgba(255,255,255,0.2);">Tipo Contrato & Horas</th>
+              <th style="padding:10px 8px; text-align:center; width:45px; border-right:1px solid rgba(255,255,255,0.2);">Qtd</th>
+              <th style="padding:10px 12px; text-align:right;">Valor da Locação</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${p.items.map((item, idx) => {
+              const itemValInfo = getRentalValueInfo(item.period_months);
+              return `
+                <tr style="font-size:11px; ${idx % 2 === 1 ? 'background:#f8fafc;' : 'background:#ffffff;'} border-bottom:1px solid #e2e8f0;">
+                  <td style="padding:10px 8px; text-align:center; font-weight:800; color:${primaryColor}; border-right:1px solid #e2e8f0;">
+                    <span style="display:inline-block; padding:2px 8px; background:${primaryColor}15; border-radius:4px; font-size:10px;">Opção #${idx + 1}</span>
+                  </td>
+                  <td style="padding:10px 12px; font-weight:700; color:#0f172a; border-right:1px solid #e2e8f0;">
+                    ${item.machine_name || p.machine_name || 'Equipamento'}
+                  </td>
+                  <td style="padding:10px 12px; font-weight:600; color:#334155; border-right:1px solid #e2e8f0;">
+                    ${formatPeriod(item.period_months)}
+                  </td>
+                  <td style="padding:10px 12px; color:#475569; font-size:10px; border-right:1px solid #e2e8f0; line-height:1.4;">
+                    <span style="font-weight:700; color:#1e293b;">${item.contract_type || '0 - Sem cobertura'}</span><br/>
+                    <span style="color:#64748b;">${item.hours_per_month || '100 horas/mês'}</span>
+                  </td>
+                  <td style="padding:10px 8px; text-align:center; font-weight:700; color:#0f172a; border-right:1px solid #e2e8f0;">
+                    ${item.quantity || 1}
+                  </td>
+                  <td style="padding:10px 12px; text-align:right; font-weight:800; color:${primaryColor}; font-size:12px; white-space:nowrap;">
+                    R$ ${Number(item.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span style="font-size:10px; font-weight:600; color:#64748b;">${itemValInfo.suffix}</span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
       </div>
 
-      <div style="margin-bottom: 10px;">
-        <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;">
-          <div style="width:3px; height:12px; background:${primaryColor}; border-radius:2px;"></div>
-          <span style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a;">
-            Condições Gerais de Fornecimento
-          </span>
-        </div>
-        <div style="border:1px solid #cbd5e1; border-radius:6px; overflow:hidden; background:#fff;">
-          <table style="width:100%; border-collapse:collapse; font-size:9px;">
-            <tr>
-              <td style="padding:5px 8px; background:#f8fafc; font-weight:700; color:#475569; width:120px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; text-transform:uppercase; font-size:8.5px;">Região Utilizada</td>
-              <td style="padding:5px 8px; font-weight:700; color:#0f172a; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0;">${p.region_used || 'Curitiba e Região'}</td>
-              <td style="padding:5px 8px; background:#f8fafc; font-weight:700; color:#475569; width:120px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0; text-transform:uppercase; font-size:8.5px;">Tempo de Entrega</td>
-              <td style="padding:5px 8px; font-weight:700; color:#0f172a; border-bottom:1px solid #e2e8f0;">${p.delivery_time || 'Imediato'}</td>
-            </tr>
-            <tr>
-              <td style="padding:5px 8px; background:#f8fafc; font-weight:700; color:#475569; border-right:1px solid #e2e8f0; text-transform:uppercase; font-size:8.5px; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">Custo do Frete</td>
-              <td style="padding:5px 8px; font-weight:700; color:#0f172a; border-right:1px solid #e2e8f0; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${Number(p.freight_cost) > 0 ? 'R$ ' + Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : 'Incluso'}</td>
-              <td style="padding:5px 8px; background:#f8fafc; font-weight:700; color:#475569; border-right:1px solid #e2e8f0; text-transform:uppercase; font-size:8.5px; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">Validade Proposta</td>
-              <td style="padding:5px 8px; font-weight:700; color:#0f172a; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${p.validity_days || '10 dias'}</td>
-            </tr>
-            ${p.notes ? '<tr><td style="padding:5px 8px; background:#f8fafc; font-weight:700; color:#475569; border-right:1px solid #e2e8f0; text-transform:uppercase; font-size:8.5px;">Observações</td><td colspan="3" style="padding:5px 8px; color:#334155; font-size:9px; font-style:italic;">' + p.notes + '</td></tr>' : ''}
-          </table>
-        </div>
+      <div style="margin-top: 24px; margin-bottom: 20px;">
+        <h3 class="box-title" style="margin-bottom: 12px;">Condições Gerais de Fornecimento</h3>
+        <table class="table-rental" style="width:100%; border-collapse:collapse; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+          <tr>
+            <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Região Utilizada</td>
+            <td style="padding:9px 14px; font-weight:600; color:#0f172a; font-size:11px; border:1px solid #e2e8f0;">${p.region_used || 'Curitiba e Região'}</td>
+            <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Tempo de Entrega</td>
+            <td style="padding:9px 14px; font-weight:600; color:#0f172a; font-size:11px; border:1px solid #e2e8f0;">${p.delivery_time || 'Imediato'}</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Custo do Frete</td>
+            <td style="padding:9px 14px; font-weight:600; color:#0f172a; font-size:11px; border:1px solid #e2e8f0;">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
+            <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Validade da Proposta</td>
+            <td style="padding:9px 14px; font-weight:600; color:#0f172a; font-size:11px; border:1px solid #e2e8f0;">${p.validity_days || '10 dias'}</td>
+          </tr>
+          ${p.notes ? `
+          <tr>
+            <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:160px; border:1px solid #e2e8f0;">Observações</td>
+            <td colspan="3" style="padding:9px 14px; font-weight:400; color:#334155; font-size:11px; border:1px solid #e2e8f0; line-height:1.4;">${p.notes}</td>
+          </tr>` : ''}
+        </table>
       </div>
     ` : `
-      <div style="margin-bottom: 12px;">
-        <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;">
-          <div style="width:3px; height:12px; background:${primaryColor}; border-radius:2px;"></div>
-          <span style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#0f172a;">
-            Valores e Condições de Locação
-          </span>
-        </div>
-        <div style="border:1px solid #cbd5e1; border-radius:6px; overflow:hidden; background:#fff;">
-          <table style="width:100%; border-collapse:collapse; font-size:9.5px;">
-            <tr>
-              <td style="padding:6px 10px; background:#f8fafc; font-weight:700; color:#475569; font-size:9px; text-transform:uppercase; width:160px; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0;">${valInfo.label}</td>
-              <td style="padding:6px 10px; font-size:12px; color:${primaryColor}; font-weight:800; border-bottom:1px solid #e2e8f0;">R$ ${Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span style="font-size:9px; font-weight:600; color:#64748b;">${valInfo.suffix}</span></td>
-            </tr>
-            <tr>
-              <td style="padding:5px 10px; background:#f8fafc; font-weight:700; color:#475569; font-size:8.5px; text-transform:uppercase; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0;">Tipo de Contrato</td>
-              <td style="padding:5px 10px; font-weight:700; color:#0f172a; border-bottom:1px solid #e2e8f0;">${p.contract_type || '0 - Sem cobertura'}</td>
-            </tr>
-            <tr>
-              <td style="padding:5px 10px; background:#f8fafc; font-weight:700; color:#475569; font-size:8.5px; text-transform:uppercase; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0;">Período / Franquia</td>
-              <td style="padding:5px 10px; font-weight:600; color:#0f172a; border-bottom:1px solid #e2e8f0;">${formatPeriod(p.period_months)} • ${formatHoursForPeriod(p.hours_per_month, p.period_months)}</td>
-            </tr>
-            <tr>
-              <td style="padding:5px 10px; background:#f8fafc; font-weight:700; color:#475569; font-size:8.5px; text-transform:uppercase; border-bottom:1px solid #e2e8f0; border-right:1px solid #e2e8f0;">Região / Entrega</td>
-              <td style="padding:5px 10px; font-weight:600; color:#0f172a; border-bottom:1px solid #e2e8f0;">${p.region_used || 'Curitiba e Região'} • Entrega: ${p.delivery_time || 'Imediato'}</td>
-            </tr>
-            <tr>
-              <td style="padding:5px 10px; background:#f8fafc; font-weight:700; color:#475569; font-size:8.5px; text-transform:uppercase; border-right:1px solid #e2e8f0; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">Frete / Validade</td>
-              <td style="padding:5px 10px; font-weight:600; color:#0f172a; ${p.notes ? 'border-bottom:1px solid #e2e8f0;' : ''}">${Number(p.freight_cost) > 0 ? 'R$ ' + Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : 'Incluso'} • Validade: ${p.validity_days || '10 dias'}</td>
-            </tr>
-            ${p.notes ? '<tr><td style="padding:5px 10px; background:#f8fafc; font-weight:700; color:#475569; font-size:8.5px; text-transform:uppercase; border-right:1px solid #e2e8f0;">Observações</td><td style="padding:5px 10px; color:#475569; font-size:9px;">' + p.notes + '</td></tr>' : ''}
-          </table>
-        </div>
-      </div>
+      <h3 class="box-title" style="margin-bottom: 12px;">Valores e Condições de Locação</h3>
+      <table class="table-rental" style="width:100%; border-collapse:collapse; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; margin-bottom:20px;">
+        <tr>
+          <td style="padding:10px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; width:220px; border:1px solid #e2e8f0;">${valInfo.label}</td>
+          <td style="padding:10px 14px; font-size: 14px; color: ${primaryColor}; font-weight: 800; border:1px solid #e2e8f0;">R$ ${Number(p.monthly_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} <span style="font-size:11px; font-weight:600; color:#64748b;">${valInfo.suffix}</span></td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Tipo de Contrato</td>
+          <td style="padding:9px 14px; font-weight: 700; color:#0f172a; border:1px solid #e2e8f0;">${p.contract_type || '0 - Sem cobertura'}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Período de Locação</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${formatPeriod(p.period_months)}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Franquia de Horas</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${p.hours_per_month || '100 horas/mês'}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Região Utilizada</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${p.region_used || 'Curitiba e Região'}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Tempo de Entrega</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${p.delivery_time || 'Imediato'}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Custo do Frete</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${Number(p.freight_cost) > 0 ? `R$ ${Number(p.freight_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Incluso'}</td>
+        </tr>
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Validade da Proposta</td>
+          <td style="padding:9px 14px; font-weight:600; color:#0f172a; border:1px solid #e2e8f0;">${p.validity_days || '10 dias'}</td>
+        </tr>
+        ${p.notes ? `
+        <tr>
+          <td style="padding:9px 14px; background:#f8fafc; font-weight:700; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #e2e8f0;">Observações</td>
+          <td style="padding:9px 14px; font-weight: 400; color: #475569; border:1px solid #e2e8f0;">${p.notes}</td>
+        </tr>` : ''}
+      </table>
     `;
 
     const html = `<!DOCTYPE html>
@@ -393,242 +353,161 @@ export default function VisualizarPropostaPublica() {
 <meta charset="UTF-8">
 <title>Proposta de Locação #${String(p.id).padStart(4,'0')}</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-print-color-adjust: exact !important;
-  print-color-adjust: exact !important;
-  color-adjust: exact !important;
-}
-body {
-  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f1f5f9;
-  color: #0f172a;
-  font-size: 10px;
-  line-height: 1.35;
-  padding-top: 50px;
-}
-.print-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: #0f172a;
-  color: #fff;
-  padding: 10px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 999;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-}
-.btn-print {
-  background: ${primaryColor};
-  color: #fff;
-  border: none;
-  padding: 8px 22px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-.btn-print:hover {
-  filter: brightness(1.1);
-}
-.page {
-  background: #fff;
-  width: 210mm;
-  height: 296mm;
-  max-height: 296mm;
-  margin: 15px auto;
-  padding: 11mm 15mm;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-sizing: border-box;
-  overflow: hidden;
-  position: relative;
-}
-@media print {
-  .print-bar, .no-print { display: none !important; }
-  body { background: #fff !important; padding-top: 0 !important; }
-  .page {
-    box-shadow: none !important;
-    margin: 0 !important;
-    padding: 10mm 12mm !important;
-    border-radius: 0 !important;
-    width: 210mm !important;
-    height: 297mm !important;
-    max-height: 297mm !important;
-    page-break-after: always !important;
-    page-break-inside: avoid !important;
-    break-after: page !important;
-    break-inside: avoid !important;
-  }
-  .page:last-child {
-    page-break-after: auto !important;
-    break-after: auto !important;
-  }
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:12px;line-height:1.5}
+.page{background:#fff;max-width:870px;margin:20px auto;padding:52px 60px;box-shadow:0 4px 24px rgba(0,0,0,.08);border-radius:12px;position:relative}
+.header{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid #e2e8f0;margin-bottom:20px}
+.tagline{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:2px;text-transform:uppercase}
+.logo-img{max-height:60px;object-fit:contain}
+.box-title{font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;color:${primaryColor};text-transform:uppercase;margin-bottom:15px;letter-spacing:0.5px;border-bottom:2px solid ${primaryColor};padding-bottom:6px}
+.table-rental{width:100%;border-collapse:collapse;margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}
+.table-rental td{padding:10px 14px;border:1px solid #e2e8f0}
+.table-rental td.label-col{font-weight:700;color:#475569;background:#f8fafc;width:250px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+.table-rental td.value-col{font-weight:600;color:#0f172a;font-size:12px}
+.legal-text{font-size:10px;color:#64748b;line-height:1.5;margin-bottom:25px;text-align:justify}
+.table-comparison{width:100%;border-collapse:collapse;margin-bottom:25px;border:1px solid #e2e8f0;font-size:10px}
+.table-comparison th{background:${primaryColor};color:#fff;padding:6px 10px;font-weight:600;text-align:left}
+.table-comparison td{padding:6px 10px;border:1px solid #e2e8f0;color:#475569}
+.footer-cols{display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:end;margin-top:35px;border-top:1px solid #e2e8f0;padding-top:15px}
+.seller-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px 16px;font-size:11px}
+.seller-box b{display:block;margin-bottom:4px;color:${primaryColor};text-transform:uppercase;font-size:9px;letter-spacing:0.5px}
+.brand-footer{text-align:right}
+.brand-footer img{max-height:40px;margin-bottom:6px;object-fit:contain}
+.brand-footer-text{font-size:9px;color:#94a3b8;line-height:1.3}
+@media print{
+  body{background:#fff}
+  .page{box-shadow:none;margin:0;padding:20px 30px;border-radius:0;max-width:100%}
+  @page{margin:10mm 12mm}
 }
 </style>
 </head>
 <body>
-<div class="print-bar no-print">
-  <strong>📄 Proposta de Locação #${String(p.id).padStart(4,'0')} &mdash; ${p.client_name}</strong>
-  <button class="btn-print" onclick="window.print()">🖨️&nbsp; Salvar / Imprimir PDF</button>
-</div>
 
 <!-- PAGE 1: Presentation & Technical Specs -->
 <div class="page">
-  <div>
-    <!-- Header -->
-    <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid ${primaryColor}; padding-bottom:8px; margin-bottom:10px;">
-      <div style="flex:1; text-align:left;">
-        <h1 style="font-size:15px; font-weight:800; color:#0f172a; text-transform:uppercase; letter-spacing:0.5px; margin:0;">${companyName}</h1>
-        <div style="font-size:9.5px; font-weight:700; color:#1e293b; margin-top:2px;">CNPJ: ${companyCnpj}</div>
-        <div style="font-size:8.5px; color:#64748b; margin-top:1px;">${companyAddress} • Tel: ${companyPhone} ${companyEmail ? '• ' + companyEmail : ''}</div>
-      </div>
-      ${companyLogo ? '<div style="max-width:140px; display:flex; justify-content:flex-end;"><img src="' + companyLogo + '" alt="Logo" style="max-height:50px; max-width:140px; object-fit:contain;" /></div>' : ''}
+  <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid ${primaryColor}; padding-bottom: 20px; margin-bottom: 25px;">
+    ${companyLogo ? `<div style="width: 180px; display: block;"></div>` : ''}
+    <div style="flex: 1; text-align: center;">
+      <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">${companyName}</h1>
+      <div style="font-size: 11px; font-weight: bold; color: #1e293b; margin-top: 4px;">CNPJ: ${companyCnpj}</div>
+      <div style="font-size: 10px; color: #475569; margin-top: 2px;">${companyAddress}</div>
+      <div style="font-size: 10px; color: #475569; margin-top: 2px;">Telefone: ${companyPhone}</div>
+      ${companyEmail ? `<div style="font-size: 10px; color: #475569; margin-top: 2px;">Email: ${companyEmail}</div>` : ''}
     </div>
-
-    <!-- Title -->
-    <div style="text-align:center; margin-bottom:10px;">
-      <h2 style="font-size:13px; font-weight:800; color:#0f172a; text-transform:uppercase; margin:0 0 2px 0; letter-spacing:0.5px;">Proposta Comercial de Locação de Equipamentos</h2>
-      <div style="font-size:9.5px; font-weight:700; color:#475569;">Proposta nº #${String(p.id).padStart(4,'0')} • Data: ${emissao}</div>
-    </div>
-
-    <!-- Client Box -->
-    <div style="margin-bottom:10px; border-left:4px solid ${primaryColor}; border-radius:6px; padding:7px 12px; background:#f8fafc; border:1px solid #cbd5e1; border-left-width:4px;">
-      <div style="font-size:9.5px; font-weight:800; text-transform:uppercase; color:${primaryColor}; margin-bottom:4px; letter-spacing:0.5px;">Dados do Cliente</div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; font-size:9px;">
-        <div><b>Cliente:</b> ${p.client_razao_social || p.client_name || 'Não informado'}</div>
-        <div><b>CNPJ/CPF:</b> ${p.client_document || '&mdash;'}</div>
-        <div><b>Endereço:</b> ${p.client_address || '&mdash;'}</div>
-        <div><b>Contato:</b> ${p.client_contact || (p.client_email ? p.client_email.split('@')[0] : '&mdash;')}</div>
-        <div><b>Telefone:</b> ${p.client_phone || p.client_email || '&mdash;'}</div>
-        <div><b>Serviço:</b> Locação de Equipamento</div>
+    ${companyLogo ? `
+      <div style="width: 180px; display: flex; justify-content: flex-end;">
+        <img src="${companyLogo}" alt="Logo" style="max-height: 100px; max-width: 180px; object-fit: contain;" />
       </div>
-    </div>
+    ` : ''}
+  </div>
 
-    <!-- 2-Column Grid for Image + Specs -->
-    <div style="display:grid; grid-template-columns:1fr 1.2fr; gap:16px; align-items:start;">
-      <!-- Coluna Esquerda: Imagem e Diferenciais -->
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        <div style="height:140px; background:#fff; border:1px solid #e2e8f0; border-radius:6px; display:flex; align-items:center; justify-content:center; padding:6px;">
-          <img src="${mainPhoto}" alt="${p.machine_name}" style="max-height:100%; max-width:100%; object-fit:contain; mix-blend-multiply;" />
-        </div>
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; font-size:8.5px; color:#475569; line-height:1.35;">
-          <h4 style="font-weight:800; color:#0f172a; margin-bottom:4px; text-transform:uppercase; font-size:8.5px; border-bottom:1px solid #cbd5e1; padding-bottom:2px;">Diferenciais Operacionais</h4>
-          <p style="margin-bottom:2px;">• Alta produtividade e rendimento em grandes áreas.</p>
-          <p style="margin-bottom:2px;">• Facilidade de operação com controles intuitivos.</p>
-          <p style="margin-bottom:2px;">• Robustez construtiva Tennant líder mundial.</p>
-          <p>• Suporte técnico especializado e peças originais.</p>
-        </div>
-      </div>
+  <div style="text-align: center; margin-bottom: 25px;">
+    <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin: 0 0 4px 0; letter-spacing: 0.5px;">Proposta Comercial de Locação de Equipamentos</h2>
+    <div style="font-size: 11px; font-weight: bold; color: #475569;">Proposta nº #${String(p.id).padStart(4,'0')}</div>
+    <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Data: ${emissao}</div>
+  </div>
 
-      <!-- Coluna Direita: Nome e Ficha Técnica -->
-      <div>
-        <h3 style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:3px; border-bottom:2px solid ${primaryColor}; padding-bottom:3px; text-transform:uppercase;">
-          ${p.machine_name}
-        </h3>
-        <p style="font-size:8.5px; color:#64748b; line-height:1.25; margin-bottom:6px; font-style:italic;">
-          ${introText}
-        </p>
-        <div>
-          <div style="font-size:8.5px; font-weight:800; color:${primaryColor}; text-transform:uppercase; border-bottom:1px solid #cbd5e1; padding-bottom:2px; margin-bottom:4px; letter-spacing:0.5px;">Especificações Técnicas</div>
-          ${specsHTML || '<p style="color:#94a3b8; font-style:italic; font-size:8.5px;">Consulte a ficha técnica anexa.</p>'}
-        </div>
-      </div>
+  <div class="box" style="margin-bottom: 25px; border-left: 4px solid ${primaryColor}; border-radius: 4px; padding: 15px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-left-width: 4px; text-align: left;">
+    <div class="box-title" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: ${primaryColor}; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-align: left; letter-spacing: 0.5px;">Dados do Cliente</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 30px;">
+      <div class="row"><b>Cliente:</b> ${p.client_razao_social || p.client_name || 'Não informado'}</div>
+      <div class="row"><b>CNPJ/CPF:</b> ${p.client_document || '&mdash;'}</div>
+      <div class="row"><b>Endereço:</b> ${p.client_address || '&mdash;'}</div>
+      <div class="row"><b>Contato:</b> ${p.client_contact || (p.client_email ? p.client_email.split('@')[0] : '&mdash;')}</div>
+      <div class="row"><b>Telefone:</b> ${p.client_phone || p.client_email || '&mdash;'}</div>
+      <div class="row"><b>Serviço:</b> Locação de Equipamento</div>
     </div>
   </div>
 
-  <!-- Page 1 Footer Note -->
-  <div style="border-top:1px solid #e2e8f0; padding-top:4px; text-align:right; font-size:8px; color:#94a3b8;">
-    Página 1 de 2 • Proposta Comercial #${String(p.id).padStart(4,'0')}
+  <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px; margin-top: 20px; align-items: start;">
+    <!-- Coluna Esquerda: Imagem e Diferenciais -->
+    <div style="display: flex; flex-direction: column; gap: 15px;">
+      <div style="height: 220px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 10px;">
+        <img src="${mainPhoto}" alt="${p.machine_name}" style="max-height: 100%; max-width: 100%; object-fit: contain; mix-blend-mode: multiply;" />
+      </div>
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 11px; color: #475569; line-height: 1.5;">
+        <h4 style="font-weight: 700; color: #0f172a; margin-bottom: 6px; text-transform: uppercase; font-size: 10px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">Diferenciais</h4>
+        <p style="margin-bottom: 4px;">• Alta produtividade e eficiência em grandes áreas.</p>
+        <p style="margin-bottom: 4px;">• Facilidade de operação e controles simples.</p>
+        <p style="margin-bottom: 4px;">• Robustez construtiva Tennant reconhecida.</p>
+        <p>• Suporte técnico e peças originais Alfa Tennant.</p>
+      </div>
+    </div>
+
+    <!-- Coluna Direita: Nome e Ficha Técnica -->
+    <div>
+      <h3 style="font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 8px; border-bottom: 2px solid ${primaryColor}; padding-bottom: 6px; text-transform: uppercase;">
+        ${p.machine_name}
+      </h3>
+      <p style="font-size: 11px; color: #64748b; line-height: 1.4; margin-bottom: 12px; font-style: italic;">
+        ${introText}
+      </p>
+      <div>
+        <div style="font-size: 10px; font-weight: 700; color: ${primaryColor}; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; letter-spacing: 0.5px;">Especificações Técnicas</div>
+        ${specsHTML || '<p style="color: #94a3b8; font-style: italic;">Consulte a ficha técnica anexa.</p>'}
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- PAGE 2: Financial Terms & Conditions -->
-<div class="page" style="page-break-before:always;">
-  <div>
-    <!-- Page 2 Header -->
-    <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e2e8f0; padding-bottom:6px; margin-bottom:10px;">
-      <span style="font-size:9.5px; font-weight:800; color:#0f172a; text-transform:uppercase; letter-spacing:1px;">Valores e Condições de Locação</span>
-      <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" style="max-height:24px; object-fit:contain;" />
-    </div>
-
-    <!-- Financial & Conditions Tables -->
-    ${financialSectionHTML}
-
-    <!-- Legal text -->
-    <p style="font-size:7.5px; color:#64748b; line-height:1.3; margin-bottom:8px; text-align:justify;">
-      Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <b>3º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital &ndash; São Paulo</b>, cuja cópia digitalizada está disponível no site: <i>www.alfatennant.com.br/terms</i> e também por e-mail ou correio quando solicitada. Os valores acima definidos englobam única e exclusivamente os impostos, taxas e demais encargos fiscais e tributários incidentes nas alíquotas vigentes no Estado de origem (São Paulo) de responsabilidade da <b>TENNANT COMPANY</b>.
-    </p>
-
-    <!-- Contract Types Table -->
-    <div style="margin-bottom:8px;">
-      <div style="font-size:8px; font-weight:800; color:#475569; text-transform:uppercase; margin-bottom:3px; letter-spacing:0.5px;">* Tabela Descritiva de Tipos de Contrato</div>
-      <table style="width:100%; border-collapse:collapse; border:1px solid #cbd5e1; border-radius:4px; overflow:hidden; font-size:7.5px;">
-        <thead>
-          <tr style="background:${primaryColor}; color:#fff; font-size:7.5px; font-weight:700;">
-            <th style="width:110px; padding:3px 6px; text-align:left; border-right:1px solid rgba(255,255,255,0.2);">Tipo de Contrato</th>
-            <th style="padding:3px 6px; text-align:left;">Descrição de Cobertura</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr ${p.contract_type?.startsWith('0') ? 'style="background-color:#fef9c3; font-weight:bold; color:#854d0e;"' : 'style="background:#fff;"'}>
-            <td style="padding:3px 6px; border-top:1px solid #e2e8f0; border-right:1px solid #e2e8f0; font-weight:700;">${p.contract_type?.startsWith('0') ? '★ ' : ''}0 - Sem Cobertura</td>
-            <td style="padding:3px 6px; border-top:1px solid #e2e8f0;">Incluso: Somente locação do Equipamento. ${p.contract_type?.startsWith('0') ? '(PLANO SELECIONADO)' : ''}</td>
-          </tr>
-          <tr ${p.contract_type?.startsWith('1') ? 'style="background-color:#fef9c3; font-weight:bold; color:#854d0e;"' : 'style="background:#f8fafc;"'}>
-            <td style="padding:3px 6px; border-top:1px solid #e2e8f0; border-right:1px solid #e2e8f0; font-weight:700;">${p.contract_type?.startsWith('1') ? '★ ' : ''}1 - Ouro</td>
-            <td style="padding:3px 6px; border-top:1px solid #e2e8f0;">Incluso: Manutenção, Mão de Obra, Peças, Água Destilada e Deslocamento do técnico autorizado TENNANT COMPANY. Não incluso: Combustíveis e Químicos. ${p.contract_type?.startsWith('1') ? '(PLANO SELECIONADO)' : ''}</td>
-          </tr>
-          <tr ${p.contract_type?.startsWith('2') ? 'style="background-color:#fef9c3; font-weight:bold; color:#854d0e;"' : 'style="background:#fff;"'}>
-            <td style="padding:3px 6px; border-top:1px solid #e2e8f0; border-right:1px solid #e2e8f0; font-weight:700;">${p.contract_type?.startsWith('2') ? '★ ' : ''}2 - Prata</td>
-            <td style="padding:3px 6px; border-top:1px solid #e2e8f0;">Incluso: Igual ao Ouro. Não incluso: Combustíveis, Químicos, Escovas e Discos. ${p.contract_type?.startsWith('2') ? '(PLANO SELECIONADO)' : ''}</td>
-          </tr>
-          <tr ${p.contract_type?.startsWith('3') ? 'style="background-color:#fef9c3; font-weight:bold; color:#854d0e;"' : 'style="background:#f8fafc;"'}>
-            <td style="padding:3px 6px; border-top:1px solid #e2e8f0; border-right:1px solid #e2e8f0; font-weight:700;">${p.contract_type?.startsWith('3') ? '★ ' : ''}3 - Bronze</td>
-            <td style="padding:3px 6px; border-top:1px solid #e2e8f0;">Incluso: Igual ao Ouro. Não incluso: Combustíveis, Água Destilada, Químicos, Escovas, Discos e Baterias. ${p.contract_type?.startsWith('3') ? '(PLANO SELECIONADO)' : ''}</td>
-          </tr>
-          <tr ${p.contract_type?.startsWith('4') ? 'style="background-color:#fef9c3; font-weight:bold; color:#854d0e;"' : 'style="background:#fff;"'}>
-            <td style="padding:3px 6px; border-top:1px solid #e2e8f0; border-right:1px solid #e2e8f0; font-weight:700;">${p.contract_type?.startsWith('4') ? '★ ' : ''}4 - MOB</td>
-            <td style="padding:3px 6px; border-top:1px solid #e2e8f0;">Incluso: Somente Manutenção, Mão de Obra, e Deslocamento do técnico autorizado TENNANT COMPANY. ${p.contract_type?.startsWith('4') ? '(PLANO SELECIONADO)' : ''}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+<div class="page" style="page-break-before: always; margin-top: 30px;">
+  <div class="header">
+    <span class="tagline">Valores e Condições de Locação</span>
+    <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" class="logo-img" />
   </div>
 
-  <!-- Page 2 Footer -->
-  <div>
-    <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:20px; align-items:end; border-top:1px solid #cbd5e1; padding-top:8px;">
-      <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; font-size:8.5px;">
-        <span style="display:block; margin-bottom:2px; color:${primaryColor}; font-weight:800; text-transform:uppercase; font-size:8px; letter-spacing:0.5px;">Dados do Vendedor</span>
-        <div style="white-space:pre-line; color:#334155; line-height:1.3;">${p.seller_info || 'Alfa Tennant\nAtendimento Comercial'}</div>
-      </div>
-      
-      <div style="text-align:right;">
-        <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" style="max-height:28px; margin-bottom:3px; object-fit:contain;" />
-        <div style="font-size:7.5px; color:#94a3b8; line-height:1.2;">
-          Rua Barão de Campinas, 715 • São Paulo, SP<br>
-          Vendas: (11) 3320-8550
-        </div>
-      </div>
-    </div>
+  ${financialSectionHTML}
 
-    <div style="border-top:1px solid #f1f5f9; margin-top:6px; padding-top:3px; text-align:right; font-size:8px; color:#94a3b8;">
-      Página 2 de 2 • Proposta Comercial #${String(p.id).padStart(4,'0')}
+  <p class="legal-text">
+    Todos os pedidos estão sujeitos aos nossos termos e condições gerais que se encontram registrados perante o <b>3º Oficial de Registro de Títulos e Documentos e Civil de Pessoa Jurídica da Capital &ndash; São Paulo</b>, cuja cópia digitalizada está disponível no site: <i>www.alfatennant.com.br/terms</i> e também por e-mail ou correio quando solicitada.
+  </p>
+
+  <div style="font-size: 9px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px;">* Tabela Descritiva de Tipos de Contrato</div>
+  <table class="table-comparison">
+    <thead>
+      <tr>
+        <th style="width: 140px;">Tipo de Contrato</th>
+        <th>Descrição de Cobertura</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ${p.contract_type?.startsWith('0') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('0') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('0') ? '★ ' : ''}0 - Sem Cobertura</td>
+        <td ${p.contract_type?.startsWith('0') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Somente locação do Equipamento. ${p.contract_type?.startsWith('0') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      </tr>
+      <tr ${p.contract_type?.startsWith('1') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('1') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('1') ? '★ ' : ''}1 - Ouro</td>
+        <td ${p.contract_type?.startsWith('1') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Manutenção, Mão de Obra, Peças, Água Destilada e Deslocamento do técnico autorizado TENNANT COMPANY. Não incluso: Combustíveis e Químicos. ${p.contract_type?.startsWith('1') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      </tr>
+      <tr ${p.contract_type?.startsWith('2') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('2') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('2') ? '★ ' : ''}2 - Prata</td>
+        <td ${p.contract_type?.startsWith('2') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Químicos, Escovas e Discos. ${p.contract_type?.startsWith('2') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      </tr>
+      <tr ${p.contract_type?.startsWith('3') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('3') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('3') ? '★ ' : ''}3 - Bronze</td>
+        <td ${p.contract_type?.startsWith('3') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Igual ao Ouro. Não incluso: Combustíveis, Água Destilada, Químicos, Escovas, Discos e Baterias. ${p.contract_type?.startsWith('3') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      </tr>
+      <tr ${p.contract_type?.startsWith('4') ? 'style="background-color: #fef08a !important; font-weight: bold;"' : ''}>
+        <td style="font-weight: bold; ${p.contract_type?.startsWith('4') ? 'color: #854d0e !important;' : ''}">${p.contract_type?.startsWith('4') ? '★ ' : ''}4 - MOB</td>
+        <td ${p.contract_type?.startsWith('4') ? 'style="color: #854d0e !important;"' : ''}>Incluso: Somente Manutenção, Mão de Obra, e Deslocamento do técnico autorizado TENNANT COMPANY. ${p.contract_type?.startsWith('4') ? '<b>(PLANO SELECIONADO)</b>' : ''}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer-cols">
+    <div class="seller-box">
+      <b>Dados do Vendedor</b>
+      <div style="white-space: pre-line; color: #334155; line-height: 1.4;">${p.seller_info || 'Alfa Tennant\nAtendimento Comercial'}</div>
+    </div>
+    <div class="brand-footer">
+      <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" style="max-height: 40px; margin-bottom: 6px; object-fit: contain;" />
+      <div class="brand-footer-text">
+        Rua Barão de Campinas, 715<br>
+        São Paulo, SP - 01201-902<br>
+        Vendas: (11) 3320-8550
+      </div>
     </div>
   </div>
 </div>
@@ -892,7 +771,7 @@ body {
                                     </td>
                                     <td className="p-3 text-[11px] text-slate-600 border-r border-slate-100 leading-tight">
                                       <div className="font-bold text-slate-800">{item.contract_type || '0 - Sem Cobertura'}</div>
-                                      <div className="text-slate-500 text-[10px] mt-0.5">{formatHoursForPeriod(item.hours_per_month, item.period_months)}</div>
+                                      <div className="text-slate-500 text-[10px] mt-0.5">{item.hours_per_month || '100 horas/mês'}</div>
                                     </td>
                                     <td className="p-3 text-center font-bold text-slate-900 border-r border-slate-100">
                                       {item.quantity || 1}
@@ -964,7 +843,7 @@ body {
                             </tr>
                             <tr>
                               <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Franquia de Horas</td>
-                              <td className="p-3 font-semibold text-slate-900">{formatHoursForPeriod(p.hours_per_month, p.period_months)}</td>
+                              <td className="p-3 font-semibold text-slate-900">{p.hours_per_month || '100 horas/mês'}</td>
                             </tr>
                             <tr>
                               <td className="p-3 font-bold text-slate-600 bg-slate-50/80 border-r border-slate-100 uppercase text-[10px] tracking-wider">Região Utilizada</td>
