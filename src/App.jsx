@@ -28,6 +28,7 @@ import Login from './pages/Login';
 import Usuarios from './pages/Usuarios';
 import LpTennantA260 from './pages/LpTennantA260';
 import ConfigurarLpTennantA260 from './pages/ConfigurarLpTennantA260';
+import AgenteAds from './pages/AgenteAds';
 
 function Placeholder({ title }) {
   return (
@@ -62,6 +63,9 @@ function App() {
           <Route path="configuracoes" element={<Configuracoes />} />
           <Route path="configurar-lp-a260" element={<ConfigurarLpTennantA260 />} />
           <Route path="marketing-lp" element={<ConfigurarLpTennantA260 />} />
+          <Route path="agente-ads" element={<AgenteAds />} />
+          <Route path="marketing-ads" element={<AgenteAds />} />
+          <Route path="otimizador-ads" element={<AgenteAds />} />
           <Route path="tabela-locacao" element={<TabelaLocacao />} />
           <Route path="modelos-maquinas" element={<ModelosMaquinas />} />
           <Route path="proposta-locacao" element={<PropostasLocacao />} />

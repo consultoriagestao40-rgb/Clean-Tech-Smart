@@ -25,7 +25,9 @@ import {
   Layout,
   ShoppingCart,
   ShieldCheck,
-  Globe
+  Globe,
+  Bot,
+  Sparkles
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -74,6 +76,7 @@ export default function Sidebar() {
     { name: 'Tabela Locação', path: '/tabela-locacao', icon: <Coins size={20} /> },
     { name: 'Catálogo Máquinas', path: '/modelos-maquinas', icon: <Layout size={20} /> },
     { name: 'Landing Pages (LPs)', path: '/configurar-lp-a260', icon: <Globe size={20} /> },
+    { name: 'Agente de Ads (IA)', path: '/agente-ads', icon: <Bot size={20} className="text-[#eb6420]" />, badge: 'IA' },
     { name: 'Estoque', path: '/estoque', icon: <Boxes size={20} /> },
     { name: 'Chamados', path: '/chamados', icon: <ClipboardList size={20} /> },
     { name: 'Painel do Técnico (OS)', path: '/tecnico', icon: <Wrench size={20} /> },
@@ -97,7 +100,7 @@ export default function Sidebar() {
         <Link 
           key={link.name} 
           to={link.path}
-          className={`flex items-center px-4 py-2.5 rounded-lg mb-1 transition-all ${
+          className={`flex items-center justify-between px-4 py-2.5 rounded-lg mb-1 transition-all ${
             isCollapsed ? 'justify-center' : ''
           } ${
             isActive 
@@ -106,10 +109,17 @@ export default function Sidebar() {
           }`}
           title={isCollapsed ? link.name : ''}
         >
-          <span className={`${isCollapsed ? 'mr-0' : 'mr-3'} ${isActive ? 'text-blue-600' : 'text-blue-400'} transition-all`}>
-            {link.icon}
-          </span>
-          {!isCollapsed && <span className="truncate text-sm">{link.name}</span>}
+          <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
+            <span className={`${isCollapsed ? 'mr-0' : 'mr-3'} ${isActive ? 'text-blue-600' : 'text-blue-400'} transition-all`}>
+              {link.icon}
+            </span>
+            {!isCollapsed && <span className="truncate text-sm">{link.name}</span>}
+          </div>
+          {!isCollapsed && link.badge && (
+            <span className="bg-gradient-to-r from-[#eb6420] to-[#f58220] text-white text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-xs animate-pulse">
+              {link.badge}
+            </span>
+          )}
         </Link>
       );
     });

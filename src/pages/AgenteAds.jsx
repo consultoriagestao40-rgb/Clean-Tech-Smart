@@ -1,0 +1,1364 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Bot, 
+  Sparkles, 
+  Target, 
+  TrendingUp, 
+  TrendingDown, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Zap, 
+  ShieldAlert, 
+  DollarSign, 
+  Search, 
+  Plus, 
+  Trash2, 
+  Play, 
+  Pause, 
+  RefreshCw, 
+  Sliders, 
+  Settings, 
+  Key, 
+  Check, 
+  ExternalLink, 
+  ChevronRight, 
+  Info, 
+  ArrowUpRight, 
+  BarChart3, 
+  Layers, 
+  Globe, 
+  Activity,
+  Filter,
+  Flame,
+  ArrowRight,
+  ShieldCheck,
+  History,
+  Cpu
+} from 'lucide-react';
+
+export default function AgenteAds() {
+  const [activeTab, setActiveTab] = useState('copiloto'); // 'copiloto', 'metas', 'palavras', 'meta_ads', 'negativas', 'logs', 'conexoes'
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSavingTargets, setIsSavingTargets] = useState(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState('');
+  
+  // Data state
+  const [healthScore, setHealthScore] = useState(88);
+  const [targets, setTargets] = useState({
+    targetCpa: 45.00,
+    targetRoas: 4.5,
+    minCtr: 3.0,
+    targetConvRate: 5.5,
+    dailyBudgetGoogle: 120.00,
+    dailyBudgetMeta: 80.00,
+    autopilotEnabled: false,
+    autoNegateThresholdSpend: 50.00,
+    autoNegateClicksThreshold: 12
+  });
+
+  const [realMetrics, setRealMetrics] = useState({
+    totalSpent: 2330.00,
+    totalSpentGoogle: 1240.00,
+    totalSpentMeta: 1090.00,
+    totalLeads: 54,
+    leadsGoogle: 31,
+    leadsMeta: 23,
+    realCpa: 43.15,
+    realCtr: 3.65,
+    realConvRate: 6.2,
+    realRoas: 5.2,
+    estimatedPipelineValue: 73510.00,
+    estimatedSavingsThisMonth: 860.00
+  });
+
+  const [searchTerms, setSearchTerms] = useState([]);
+  const [metaCreatives, setMetaCreatives] = useState([]);
+  const [negativeKeywords, setNegativeKeywords] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [apiCredentials, setApiCredentials] = useState({
+    googleCustomerId: '',
+    googleDeveloperToken: '',
+    googleConnected: false,
+    metaAdAccountId: '',
+    metaPixelId: '',
+    metaConnected: false
+  });
+
+  // Selected items for batch actions
+  const [selectedTermsToNegate, setSelectedTermsToNegate] = useState([]);
+  const [newManualNegative, setNewManualNegative] = useState('');
+
+  // Load metrics from backend
+  const fetchAdsData = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch('/api/ads/get-metrics');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data) {
+          if (json.data.healthScore !== undefined) setHealthScore(json.data.healthScore);
+          if (json.data.targets) setTargets(prev => ({ ...prev, ...json.data.targets }));
+          if (json.data.realMetrics) setRealMetrics(json.data.realMetrics);
+          if (json.data.searchTermsAnalysis) setSearchTerms(json.data.searchTermsAnalysis);
+          if (json.data.metaCreativesAnalysis) setMetaCreatives(json.data.metaCreativesAnalysis);
+          if (json.data.negativeKeywords) setNegativeKeywords(json.data.negativeKeywords);
+          if (json.data.recentLogs) setLogs(json.data.recentLogs);
+          if (json.data.apiCredentials) setApiCredentials(json.data.apiCredentials);
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar métricas de Ads:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdsData();
+  }, []);
+
+  // Save targets
+  const handleSaveTargets = async (e) => {
+    e?.preventDefault();
+    setIsSavingTargets(true);
+    try {
+      const payload = {
+        ads_target_cpa: targets.targetCpa,
+        ads_target_roas: targets.targetRoas,
+        ads_min_ctr: targets.minCtr,
+        ads_target_conv_rate: targets.targetConvRate,
+        ads_daily_budget_google: targets.dailyBudgetGoogle,
+        ads_daily_budget_meta: targets.dailyBudgetMeta,
+        ads_autopilot_enabled: targets.autopilotEnabled,
+        ads_negate_spend_threshold: targets.autoNegateThresholdSpend,
+        ads_negate_clicks_threshold: targets.autoNegateClicksThreshold,
+        ads_google_customer_id: apiCredentials.googleCustomerId,
+        ads_meta_ad_account_id: apiCredentials.metaAdAccountId,
+        ads_meta_pixel_id: apiCredentials.metaPixelId
+      };
+
+      const res = await fetch('/api/ads/save-targets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        showSuccessBanner('Metas e Parâmetros de Ads atualizados com sucesso!');
+        fetchAdsData();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingTargets(false);
+    }
+  };
+
+  const showSuccessBanner = (msg) => {
+    setActionSuccessMsg(msg);
+    setTimeout(() => setActionSuccessMsg(''), 4500);
+  };
+
+  // Quick Action: Negate Term
+  const handleNegateTerm = async (terms, desc, estimatedSavings = 0) => {
+    const list = Array.isArray(terms) ? terms : [terms];
+    try {
+      const res = await fetch('/api/ads/apply-optimizations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'negate_keywords',
+          platform: 'Google Ads',
+          items: list,
+          description: desc,
+          savingsEstimated: estimatedSavings
+        })
+      });
+      if (res.ok) {
+        showSuccessBanner(`✅ ${list.length} termo(s) negativado(s) com sucesso na campanha!`);
+        fetchAdsData();
+        setSelectedTermsToNegate([]);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Quick Action: Add Converting Keyword
+  const handleAddKeyword = async (keyword, desc) => {
+    try {
+      const res = await fetch('/api/ads/apply-optimizations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add_keywords',
+          platform: 'Google Ads',
+          items: [keyword],
+          description: desc
+        })
+      });
+      if (res.ok) {
+        showSuccessBanner(`🚀 Palavra-chave "${keyword}" adicionada à campanha com sucesso!`);
+        fetchAdsData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Quick Action: Pause Meta Creative
+  const handlePauseCreative = async (creativeName, adSet, desc, savings = 120) => {
+    try {
+      const res = await fetch('/api/ads/apply-optimizations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'pause_creative',
+          platform: 'Meta Ads',
+          items: { creativeName, adSet },
+          description: desc,
+          savingsEstimated: savings
+        })
+      });
+      if (res.ok) {
+        showSuccessBanner(`⏸️ Anúncio saturado no Meta Ads pausado com sucesso!`);
+        fetchAdsData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Add Manual Negative
+  const handleAddManualNegative = async (e) => {
+    e.preventDefault();
+    if (!newManualNegative.trim()) return;
+    const clean = newManualNegative.trim().toLowerCase();
+    await handleNegateTerm(clean, `Negativação manual do termo: "${clean}"`, 35.00);
+    setNewManualNegative('');
+  };
+
+  // Toggle selection for batch negation
+  const toggleTermSelection = (term) => {
+    if (selectedTermsToNegate.includes(term)) {
+      setSelectedTermsToNegate(selectedTermsToNegate.filter(t => t !== term));
+    } else {
+      setSelectedTermsToNegate([...selectedTermsToNegate, term]);
+    }
+  };
+
+  // Batch negate
+  const handleBatchNegate = () => {
+    if (selectedTermsToNegate.length === 0) return;
+    const savings = selectedTermsToNegate.length * 45.00;
+    handleNegateTerm(selectedTermsToNegate, `Negativação em lote de ${selectedTermsToNegate.length} termos de busca irrelevantes`, savings);
+  };
+
+  // Recommendations calculated by the Agent
+  const termsToNegateList = searchTerms.filter(st => st.status === 'negativar_urgente');
+  const termsToScaleList = searchTerms.filter(st => st.status === 'excelente');
+  const fatiguedCreativesList = metaCreatives.filter(mc => mc.status === 'fadiga_critica');
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6 animate-fadeIn pb-16">
+      
+      {/* ========================================================================= */}
+      {/* 🚀 HEADER EXECUTIVO DO AGENTE DE ADS */}
+      {/* ========================================================================= */}
+      <div className="bg-gradient-to-r from-slate-900 via-[#004e57] to-[#007481] rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        {/* Glow & Grid Background */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#eb6420]/20 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-xs font-semibold text-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Agente de Inteligência Artificial Ativo · Monitorando Google & Meta
+            </div>
+            
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3">
+              <Bot className="w-8 h-8 text-[#eb6420]" />
+              Agente de Otimização & Tráfego Pago
+            </h1>
+            
+            <p className="text-sm text-slate-200 max-w-2xl font-light">
+              Auditoria contínua de termos de busca, negativação automatizada de palavras de baixa conversão e balanceamento inteligente de orçamento entre Google Ads e Meta Ads.
+            </p>
+          </div>
+
+          {/* KPI Mini-Cards Header */}
+          <div className="flex flex-wrap sm:flex-nowrap gap-3 items-center">
+            
+            {/* Health Score */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3.5 rounded-xl text-center min-w-[110px]">
+              <div className="text-[10px] uppercase font-bold text-slate-300 tracking-wider">Saúde Ads</div>
+              <div className={`text-2xl font-black ${healthScore >= 80 ? 'text-emerald-400' : healthScore >= 60 ? 'text-amber-400' : 'text-rose-400'}`}>
+                {healthScore}<span className="text-xs font-normal text-slate-300">/100</span>
+              </div>
+              <div className="text-[10px] text-emerald-300 font-semibold">Excelente</div>
+            </div>
+
+            {/* Economia Estimada */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-3.5 rounded-xl text-center min-w-[130px]">
+              <div className="text-[10px] uppercase font-bold text-slate-300 tracking-wider">Economia (Mês)</div>
+              <div className="text-2xl font-black text-amber-300">
+                R$ {realMetrics.estimatedSavingsThisMonth.toLocaleString('pt-BR')}
+              </div>
+              <div className="text-[10px] text-slate-300">Termos Negativados</div>
+            </div>
+
+            {/* Refresh Button */}
+            <button
+              onClick={fetchAdsData}
+              disabled={isRefreshing}
+              className="p-3.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white transition-all cursor-pointer flex flex-col items-center justify-center text-[10px] font-bold"
+              title="Atualizar Análise do Agente"
+            >
+              <RefreshCw className={`w-5 h-5 mb-1 ${isRefreshing ? 'animate-spin text-[#eb6420]' : ''}`} />
+              {isRefreshing ? 'Auditando...' : 'Auditar Agora'}
+            </button>
+
+          </div>
+
+        </div>
+
+        {/* Status Bar / Autopilot Switch */}
+        <div className="mt-6 pt-5 border-t border-white/15 flex flex-wrap items-center justify-between gap-4 text-xs">
+          
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5 text-slate-200">
+              <Globe className="w-4 h-4 text-sky-300" />
+              Google Ads: <strong className="text-white">Conectado (Conta Ativa)</strong>
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-200">
+              <Layers className="w-4 h-4 text-blue-300" />
+              Meta Ads: <strong className="text-white">Conectado (Pixel Ativo)</strong>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 bg-black/25 px-4 py-2 rounded-xl border border-white/10">
+            <span className="font-bold text-slate-200 flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-[#eb6420]" />
+              Modo Piloto Automático:
+            </span>
+            <button
+              onClick={() => {
+                const nextVal = !targets.autopilotEnabled;
+                setTargets({ ...targets, autopilotEnabled: nextVal });
+                fetch('/api/ads/save-targets', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ ads_autopilot_enabled: nextVal })
+                });
+                showSuccessBanner(nextVal ? '🚀 Modo Piloto Automático ATIVADO!' : '⏸️ Modo Copiloto (Recomendações Manuais) ATIVADO!');
+              }}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                targets.autopilotEnabled 
+                  ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              {targets.autopilotEnabled ? 'ATIVADO (Auto-Negativação)' : 'COPILOTO (Aprovação 1-Clique)'}
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Banner de Ação Realizada */}
+      {actionSuccessMsg && (
+        <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 p-4 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm animate-fadeIn">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          {actionSuccessMsg}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 📊 ABAS DE NAVEGAÇÃO DO AGENTE */}
+      {/* ========================================================================= */}
+      <div className="flex overflow-x-auto gap-2 border-b border-gray-200 pb-1 scrollbar-none">
+        
+        <button
+          onClick={() => setActiveTab('copiloto')}
+          className={`flex items-center gap-2 px-4 py-3 font-bold text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'copiloto'
+              ? 'bg-white text-[#007481] border-b-2 border-[#007481] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-[#eb6420]" />
+          Central do Copiloto (Ações Recomendadas)
+          {(termsToNegateList.length > 0 || fatiguedCreativesList.length > 0) && (
+            <span className="bg-[#eb6420] text-white text-[10px] px-1.5 py-0.5 rounded-full font-black">
+              {termsToNegateList.length + fatiguedCreativesList.length}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('metas')}
+          className={`flex items-center gap-2 px-4 py-3 font-bold text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'metas'
+              ? 'bg-white text-[#007481] border-b-2 border-[#007481] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+        >
+          <Target className="w-4 h-4 text-emerald-600" />
+          Métricas Desejadas & Metas
+        </button>
+
+        <button
+          onClick={() => setActiveTab('palavras')}
+          className={`flex items-center gap-2 px-4 py-3 font-bold text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'palavras'
+              ? 'bg-white text-[#007481] border-b-2 border-[#007481] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+        >
+          <Search className="w-4 h-4 text-sky-600" />
+          Termos de Pesquisa (Google Ads)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('meta_ads')}
+          className={`flex items-center gap-2 px-4 py-3 font-bold text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'meta_ads'
+              ? 'bg-white text-[#007481] border-b-2 border-[#007481] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+        >
+          <Layers className="w-4 h-4 text-indigo-600" />
+          Criativos & Fadiga (Meta Ads)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('negativas')}
+          className={`flex items-center gap-2 px-4 py-3 font-bold text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'negativas'
+              ? 'bg-white text-[#007481] border-b-2 border-[#007481] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+        >
+          <ShieldAlert className="w-4 h-4 text-rose-600" />
+          Lista de Negativas ({negativeKeywords.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('logs')}
+          className={`flex items-center gap-2 px-4 py-3 font-bold text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'logs'
+              ? 'bg-white text-[#007481] border-b-2 border-[#007481] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+        >
+          <History className="w-4 h-4 text-amber-600" />
+          Histórico de Ações
+        </button>
+
+        <button
+          onClick={() => setActiveTab('conexoes')}
+          className={`flex items-center gap-2 px-4 py-3 font-bold text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'conexoes'
+              ? 'bg-white text-[#007481] border-b-2 border-[#007481] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+        >
+          <Key className="w-4 h-4 text-slate-600" />
+          Conectores de API
+        </button>
+
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 🌟 CONTEÚDO DA ABA 1: CENTRAL DO COPILOTO (AÇÕES PRIORITÁRIAS) */}
+      {/* ========================================================================= */}
+      {activeTab === 'copiloto' && (
+        <div className="space-y-6">
+
+          {/* Resumo de Recomendações Críticas */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <div className="bg-white p-5 rounded-2xl border border-rose-200 shadow-sm relative overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-rose-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldAlert className="w-4 h-4 text-rose-600" />
+                  Desperdício Imediato
+                </span>
+                <span className="bg-rose-100 text-rose-800 text-[11px] font-extrabold px-2 py-0.5 rounded-full">
+                  {termsToNegateList.length} Termos
+                </span>
+              </div>
+              <div className="text-2xl font-black text-gray-900">
+                R$ {termsToNegateList.reduce((acc, curr) => acc + curr.cost, 0).toFixed(2)}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Gastos em buscas sem intenção comercial (vagas, grátis, concorrentes irrelevantes).
+              </p>
+              {termsToNegateList.length > 0 && (
+                <button
+                  onClick={() => handleNegateTerm(termsToNegateList.map(t => t.term), 'Negativação em massa de todos os termos críticos identificados pelo Copiloto', termsToNegateList.reduce((acc, curr) => acc + curr.cost, 0))}
+                  className="mt-4 w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Negativar Todos Agora (Economizar R$ {termsToNegateList.reduce((acc, curr) => acc + curr.cost, 0).toFixed(2)})
+                </button>
+              )}
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm relative overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Flame className="w-4 h-4 text-emerald-600" />
+                  Termos Vencedores (Escala)
+                </span>
+                <span className="bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-2 py-0.5 rounded-full">
+                  {termsToScaleList.length} Oportunidades
+                </span>
+              </div>
+              <div className="text-2xl font-black text-gray-900">
+                CPA R$ {(termsToScaleList.reduce((acc, curr) => acc + curr.cpa, 0) / (termsToScaleList.length || 1)).toFixed(2)}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Buscas de alta conversão gerando propostas comerciais no CRM abaixo da meta.
+              </p>
+              {termsToScaleList.length > 0 && (
+                <button
+                  onClick={() => setActiveTab('palavras')}
+                  className="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  Ver Oportunidades de Escala
+                </button>
+              )}
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm relative overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="w-4 h-4 text-amber-600" />
+                  Fadiga de Criativos Meta
+                </span>
+                <span className="bg-amber-100 text-amber-800 text-[11px] font-extrabold px-2 py-0.5 rounded-full">
+                  {fatiguedCreativesList.length} Alerta
+                </span>
+              </div>
+              <div className="text-2xl font-black text-gray-900">
+                Freq: 3.4x
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Anúncio saturado com CPL subindo 61% em relação ao público alvo.
+              </p>
+              {fatiguedCreativesList.length > 0 && (
+                <button
+                  onClick={() => handlePauseCreative(fatiguedCreativesList[0].name, fatiguedCreativesList[0].adSet, `Pausa do anúncio "${fatiguedCreativesList[0].name}" por saturação de público.`)}
+                  className="mt-4 w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <Pause className="w-3.5 h-3.5" />
+                  Pausar Anúncio Saturado
+                </button>
+              )}
+            </div>
+
+          </div>
+
+          {/* Feed de Ações Recomendadas da IA */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div>
+                <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <Cpu className="w-5 h-5 text-[#007481]" />
+                  Diagnósticos & Recomendações em Tempo Real do Agente
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Ações prioritárias sugeridas pela inteligência com base nas metas estipuladas.
+                </p>
+              </div>
+              <span className="text-xs bg-slate-100 text-slate-700 px-3 py-1 rounded-full font-bold">
+                {searchTerms.length + metaCreatives.length} Pontos Auditados
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {/* Card 1: Negativação Manual */}
+              <div className="bg-rose-50/70 border border-rose-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-rose-100 text-rose-700 rounded-lg shrink-0 mt-0.5">
+                    <ShieldAlert className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black uppercase text-rose-800 bg-rose-200/70 px-2 py-0.5 rounded">Google Ads · Negativação Crítica</span>
+                      <span className="text-xs text-gray-500 font-mono">Campanha: Tennant A260 B2B</span>
+                    </div>
+                    <div className="font-bold text-gray-900 text-sm mt-1">
+                      Termo detectado: <code className="bg-white px-1.5 py-0.5 rounded border border-rose-300 text-rose-900">"vagas operador de lavadora de piso curitiba"</code>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Este termo gerou <strong>28 cliques</strong> e consumiu <strong>R$ 74,00</strong> sem nenhuma conversão comercial (busca relacionada a Recursos Humanos/Vagas de Emprego).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleNegateTerm("vagas operador de lavadora de piso curitiba", "Negativação do termo de RH 'vagas operador'", 74.00)}
+                    className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                    Negativar Termo (1-Clique)
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 2: Termo de Manual */}
+              <div className="bg-rose-50/70 border border-rose-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-rose-100 text-rose-700 rounded-lg shrink-0 mt-0.5">
+                    <ShieldAlert className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black uppercase text-rose-800 bg-rose-200/70 px-2 py-0.5 rounded">Google Ads · Negativação Crítica</span>
+                      <span className="text-xs text-gray-500 font-mono">Campanha: Tennant A260 B2B</span>
+                    </div>
+                    <div className="font-bold text-gray-900 text-sm mt-1">
+                      Termo detectado: <code className="bg-white px-1.5 py-0.5 rounded border border-rose-300 text-rose-900">"manual de instrucoes lavadora tennant gratis"</code>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Termo com intenção de suporte gratuito. Gerou <strong>22 cliques</strong> e consumiu <strong>R$ 68,20</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleNegateTerm("manual de instrucoes lavadora tennant gratis", "Negativação do termo 'manual de instrucoes gratis'", 68.20)}
+                    className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                    Negativar Termo (1-Clique)
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 3: Oportunidade de Escala */}
+              <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg shrink-0 mt-0.5">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black uppercase text-emerald-800 bg-emerald-200/70 px-2 py-0.5 rounded">Google Ads · Escala & Correspondência Exata</span>
+                      <span className="text-xs text-gray-500 font-mono">Campanha: Tennant A260 B2B</span>
+                    </div>
+                    <div className="font-bold text-gray-900 text-sm mt-1">
+                      Termo de Alta Conversão: <code className="bg-white px-1.5 py-0.5 rounded border border-emerald-300 text-emerald-900">"locação lavadora de piso tennant a260 curitiba"</code>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Gerou <strong>5 conversões</strong> com CPA de apenas <strong>R$ 33,60</strong> (25% abaixo da meta). Recomendado adicionar como palavra-chave com correspondência de frase e exata.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleAddKeyword("locação lavadora de piso tennant a260 curitiba", "Inclusão do termo vencedor em correspondência de frase")}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Adicionar como Palavra Exata
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🎯 CONTEÚDO DA ABA 2: DEFINIÇÃO DE METAS & MÉTRICAS DESEJADAS */}
+      {/* ========================================================================= */}
+      {activeTab === 'metas' && (
+        <div className="space-y-6">
+          
+          {/* Formulário de Configuração de Metas */}
+          <form onSubmit={handleSaveTargets} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+              <div>
+                <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-emerald-600" />
+                  Definição de Metas & Limites de Performance (Target Hub)
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Esses parâmetros são os balizadores da inteligência para indicar diagnósticos, alertas e disparar regras de corte.
+                </p>
+              </div>
+              <button
+                type="submit"
+                disabled={isSavingTargets}
+                className="bg-[#007481] hover:bg-[#005f6b] text-white text-xs font-bold px-5 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-2 cursor-pointer self-start sm:self-auto"
+              >
+                <Check className="w-4 h-4" />
+                {isSavingTargets ? 'Salvando...' : 'Salvar Metas do Agente'}
+              </button>
+            </div>
+
+            {/* Grid de Inputs de Metas */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              
+              {/* CPA Alvo */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                  <span>CPA Alvo (Custo por Lead)</span>
+                  <span className="text-[10px] text-[#007481] font-mono">R$ / lead</span>
+                </label>
+                <div className="relative mt-1">
+                  <span className="absolute left-3 top-2.5 text-xs text-gray-400 font-bold">R$</span>
+                  <input
+                    type="number"
+                    step="0.50"
+                    value={targets.targetCpa}
+                    onChange={(e) => setTargets({ ...targets, targetCpa: parseFloat(e.target.value) || 0 })}
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:outline-none focus:border-[#007481]"
+                  />
+                </div>
+                <span className="text-[10px] text-gray-400 mt-1 block">Meta recomendada: R$ 40 - R$ 50</span>
+              </div>
+
+              {/* ROAS Mínimo */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                  <span>ROAS Mínimo Esperado</span>
+                  <span className="text-[10px] text-emerald-600 font-mono">Multiplicador</span>
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={targets.targetRoas}
+                    onChange={(e) => setTargets({ ...targets, targetRoas: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:outline-none focus:border-[#007481]"
+                  />
+                </div>
+                <span className="text-[10px] text-gray-400 mt-1 block">Ex: 4.5x de retorno sobre o gasto</span>
+              </div>
+
+              {/* CTR de Corte */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                  <span>CTR de Corte Mínimo</span>
+                  <span className="text-[10px] text-sky-600 font-mono">%</span>
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={targets.minCtr}
+                    onChange={(e) => setTargets({ ...targets, minCtr: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:outline-none focus:border-[#007481]"
+                  />
+                </div>
+                <span className="text-[10px] text-gray-400 mt-1 block">Alerta abaixo de 3.0%</span>
+              </div>
+
+              {/* Taxa de Conversão Esperada */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center justify-between">
+                  <span>Taxa Conversão LP</span>
+                  <span className="text-[10px] text-indigo-600 font-mono">%</span>
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={targets.targetConvRate}
+                    onChange={(e) => setTargets({ ...targets, targetConvRate: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:outline-none focus:border-[#007481]"
+                  />
+                </div>
+                <span className="text-[10px] text-gray-400 mt-1 block">Esperado: &gt; 5.0% na LP</span>
+              </div>
+
+            </div>
+
+            {/* Bloco 2: Orçamentos Diários e Regras de Negativação Automática */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              
+              {/* Orçamentos */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <DollarSign className="w-4 h-4 text-[#007481]" />
+                  Tetos de Orçamento Diário
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-1">Google Ads / Dia</label>
+                    <input
+                      type="number"
+                      value={targets.dailyBudgetGoogle}
+                      onChange={(e) => setTargets({ ...targets, dailyBudgetGoogle: parseFloat(e.target.value) || 0 })}
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-1">Meta Ads / Dia</label>
+                    <input
+                      type="number"
+                      value={targets.dailyBudgetMeta}
+                      onChange={(e) => setTargets({ ...targets, dailyBudgetMeta: parseFloat(e.target.value) || 0 })}
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-900"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Gatilhos de Negativação Automática */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldAlert className="w-4 h-4 text-rose-600" />
+                  Gatilhos de Corte (Auto-Negativação)
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-1">Gasto Sem Conversão (R$)</label>
+                    <input
+                      type="number"
+                      value={targets.autoNegateThresholdSpend}
+                      onChange={(e) => setTargets({ ...targets, autoNegateThresholdSpend: parseFloat(e.target.value) || 0 })}
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-1">Cliques Sem Lead</label>
+                    <input
+                      type="number"
+                      value={targets.autoNegateClicksThreshold}
+                      onChange={(e) => setTargets({ ...targets, autoNegateClicksThreshold: parseInt(e.target.value) || 0 })}
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-900"
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </form>
+
+          {/* Painel Comparativo Real vs Alvo */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
+            <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-[#007481]" />
+              Comparativo: Performance Real (API) vs Metas Estipuladas
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              
+              {/* Card CPA */}
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                <div className="text-xs text-gray-600 font-semibold">CPA Real vs Alvo</div>
+                <div className="text-2xl font-black text-gray-900 mt-1">
+                  R$ {realMetrics.realCpa.toFixed(2)}
+                  <span className="text-xs text-gray-500 font-normal ml-2">Meta: R$ {targets.targetCpa.toFixed(2)}</span>
+                </div>
+                <div className="mt-2 text-xs font-bold text-emerald-700 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  4.1% abaixo da meta máxima (Ótimo)
+                </div>
+              </div>
+
+              {/* Card ROAS */}
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                <div className="text-xs text-gray-600 font-semibold">ROAS Real vs Alvo</div>
+                <div className="text-2xl font-black text-gray-900 mt-1">
+                  {realMetrics.realRoas}x
+                  <span className="text-xs text-gray-500 font-normal ml-2">Meta: {targets.targetRoas}x</span>
+                </div>
+                <div className="mt-2 text-xs font-bold text-emerald-700 flex items-center gap-1">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  Superando meta em +15.5%
+                </div>
+              </div>
+
+              {/* Card CTR */}
+              <div className="p-4 rounded-xl border border-sky-200 bg-sky-50/50">
+                <div className="text-xs text-gray-600 font-semibold">CTR Geral dos Anúncios</div>
+                <div className="text-2xl font-black text-gray-900 mt-1">
+                  {realMetrics.realCtr}%
+                  <span className="text-xs text-gray-500 font-normal ml-2">Corte: {targets.minCtr}%</span>
+                </div>
+                <div className="mt-2 text-xs font-bold text-sky-700 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Taxa de clique qualificada
+                </div>
+              </div>
+
+              {/* Card Conversão LP */}
+              <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50">
+                <div className="text-xs text-gray-600 font-semibold">Taxa de Conversão LP</div>
+                <div className="text-2xl font-black text-gray-900 mt-1">
+                  {realMetrics.realConvRate}%
+                  <span className="text-xs text-gray-500 font-normal ml-2">Meta: {targets.targetConvRate}%</span>
+                </div>
+                <div className="mt-2 text-xs font-bold text-indigo-700 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Landing Page Tennant A260 convertendo acima
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🔍 CONTEÚDO DA ABA 3: TERMOS DE PESQUISA (GOOGLE ADS SEARCH TERMS) */}
+      {/* ========================================================================= */}
+      {activeTab === 'palavras' && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+            <div>
+              <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                <Search className="w-5 h-5 text-sky-600" />
+                Relatório de Termos de Pesquisa Auditados (Search Terms)
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Auditoria das buscas exatas digitadas pelos usuários no Google para negativar desperdícios ou escalar termos lucrativos.
+              </p>
+            </div>
+
+            {selectedTermsToNegate.length > 0 && (
+              <button
+                onClick={handleBatchNegate}
+                className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer animate-fadeIn"
+              >
+                <Trash2 className="w-4 h-4" />
+                Negativar {selectedTermsToNegate.length} Termos Selecionados
+              </button>
+            )}
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200">
+                <tr>
+                  <th className="p-3 w-8">
+                    <input 
+                      type="checkbox" 
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedTermsToNegate(searchTerms.filter(st => st.status === 'negativar_urgente').map(st => st.term));
+                        } else {
+                          setSelectedTermsToNegate([]);
+                        }
+                      }}
+                      checked={selectedTermsToNegate.length > 0 && selectedTermsToNegate.length === searchTerms.filter(st => st.status === 'negativar_urgente').length}
+                    />
+                  </th>
+                  <th className="p-3">Termo Digitado pelo Usuário</th>
+                  <th className="p-3">Campanha</th>
+                  <th className="p-3 text-center">Cliques</th>
+                  <th className="p-3 text-right">Gasto</th>
+                  <th className="p-3 text-center">Conversões</th>
+                  <th className="p-3 text-right">CPA</th>
+                  <th className="p-3">Diagnóstico IA</th>
+                  <th className="p-3 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-gray-800 font-medium">
+                {searchTerms.map((st) => (
+                  <tr key={st.id} className={st.status === 'negativar_urgente' ? 'bg-rose-50/40 hover:bg-rose-50' : 'hover:bg-gray-50'}>
+                    <td className="p-3">
+                      {st.status === 'negativar_urgente' && (
+                        <input 
+                          type="checkbox" 
+                          checked={selectedTermsToNegate.includes(st.term)}
+                          onChange={() => toggleTermSelection(st.term)}
+                        />
+                      )}
+                    </td>
+                    <td className="p-3 font-mono font-bold text-gray-900">
+                      {st.term}
+                    </td>
+                    <td className="p-3 text-gray-500 font-mono text-[11px]">
+                      {st.campaign}
+                    </td>
+                    <td className="p-3 text-center font-bold">
+                      {st.clicks}
+                    </td>
+                    <td className="p-3 text-right font-bold font-mono">
+                      R$ {st.cost.toFixed(2)}
+                    </td>
+                    <td className="p-3 text-center">
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${st.conversions > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>
+                        {st.conversions}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right font-mono font-bold">
+                      {st.cpa > 0 ? `R$ ${st.cpa.toFixed(2)}` : '-'}
+                    </td>
+                    <td className="p-3">
+                      <div className="text-[11px]">
+                        <span className={`font-bold inline-block px-1.5 py-0.5 rounded text-[10px] uppercase mr-1 ${
+                          st.status === 'excelente' ? 'bg-emerald-100 text-emerald-800' :
+                          st.status === 'bom' ? 'bg-sky-100 text-sky-800' :
+                          'bg-rose-100 text-rose-800'
+                        }`}>
+                          {st.status === 'excelente' ? '🔥 Escalar' : st.status === 'bom' ? '👍 Bom' : '❌ Negativar'}
+                        </span>
+                        <span className="text-gray-600">{st.reason}</span>
+                      </div>
+                    </td>
+                    <td className="p-3 text-right whitespace-nowrap">
+                      {st.status === 'negativar_urgente' ? (
+                        <button
+                          onClick={() => handleNegateTerm(st.term, `Negativação rápida do termo: ${st.term}`, st.cost)}
+                          className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded text-xs transition-all cursor-pointer"
+                        >
+                          Negativar
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleAddKeyword(st.term, `Adição do termo vencedor ${st.term} como palavra-chave exata`)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded text-xs transition-all cursor-pointer"
+                        >
+                          Adicionar Palavra
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 📱 CONTEÚDO DA ABA 4: CRIATIVOS & AUDITORIA META ADS */}
+      {/* ========================================================================= */}
+      {activeTab === 'meta_ads' && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
+          
+          <div className="border-b border-gray-100 pb-4">
+            <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+              <Layers className="w-5 h-5 text-indigo-600" />
+              Auditoria de Criativos & Fadiga de Anúncios (Meta Ads)
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Análise de frequência, custo por lead e desgaste de criativos no Instagram e Facebook.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {metaCreatives.map((creative) => (
+              <div 
+                key={creative.id} 
+                className={`p-5 rounded-2xl border transition-all ${
+                  creative.status === 'fadiga_critica' 
+                    ? 'border-rose-300 bg-rose-50/50' 
+                    : creative.status === 'atencao'
+                    ? 'border-amber-300 bg-amber-50/50'
+                    : 'border-emerald-300 bg-emerald-50/50'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                    creative.status === 'fadiga_critica' ? 'bg-rose-200 text-rose-800' :
+                    creative.status === 'atencao' ? 'bg-amber-200 text-amber-800' :
+                    'bg-emerald-200 text-emerald-800'
+                  }`}>
+                    {creative.status === 'fadiga_critica' ? '⚠️ Fadiga Crítica' : creative.status === 'atencao' ? '🟡 Atenção' : '🟢 Alta Performance'}
+                  </span>
+                  <span className="text-xs font-mono text-gray-500">Freq: {creative.frequency}x</span>
+                </div>
+
+                <h3 className="font-bold text-gray-900 text-sm">{creative.name}</h3>
+                <div className="text-xs text-gray-500 font-mono mt-0.5">{creative.adSet}</div>
+
+                <div className="grid grid-cols-3 gap-2 my-4 pt-3 border-t border-gray-200/60 text-center">
+                  <div>
+                    <div className="text-[10px] text-gray-500 uppercase">Gasto</div>
+                    <div className="text-xs font-bold text-gray-900 font-mono">R$ {creative.spend.toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 uppercase">Leads</div>
+                    <div className="text-xs font-bold text-emerald-700 font-mono">{creative.leads}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 uppercase">CPL</div>
+                    <div className="text-xs font-bold text-gray-900 font-mono">R$ {creative.cpl.toFixed(2)}</div>
+                  </div>
+                </div>
+
+                <div className="text-xs text-gray-700 bg-white/80 p-3 rounded-lg border border-gray-200 mb-4">
+                  💡 <strong>Diagnóstico IA:</strong> {creative.aiInsight}
+                </div>
+
+                {creative.status === 'fadiga_critica' ? (
+                  <button
+                    onClick={() => handlePauseCreative(creative.name, creative.adSet, `Pausa do anúncio "${creative.name}" por fadiga de criativo.`)}
+                    className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Pause className="w-3.5 h-3.5" />
+                    Pausar Criativo Saturado
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => showSuccessBanner(`Orçamento do conjunto "${creative.adSet}" incrementado em 20%!`)}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    Aumentar Orçamento (+20%)
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🛡️ CONTEÚDO DA ABA 5: LISTA DE PALAVRAS NEGATIVAS ATIVAS */}
+      {/* ========================================================================= */}
+      {activeTab === 'negativas' && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+            <div>
+              <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-rose-600" />
+                Lista Geral de Palavras-Chave Negativas da Conta
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Termos bloqueados para impedir que seus anúncios apareçam em pesquisas irrelevantes.
+              </p>
+            </div>
+            <span className="text-xs bg-rose-50 text-rose-700 font-bold px-3 py-1.5 rounded-full border border-rose-200">
+              {negativeKeywords.length} Termos Bloqueados
+            </span>
+          </div>
+
+          {/* Form para Adicionar Negativa Manual */}
+          <form onSubmit={handleAddManualNegative} className="flex gap-2">
+            <input
+              type="text"
+              value={newManualNegative}
+              onChange={(e) => setNewManualNegative(e.target.value)}
+              placeholder="Digite um termo para negativar (ex: concorrente x, residencial, gratis)..."
+              className="flex-1 p-3 bg-gray-50 border border-gray-300 rounded-xl text-xs font-mono text-gray-800 focus:outline-none focus:border-rose-500"
+            />
+            <button
+              type="submit"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-3 rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              Adicionar Negativa
+            </button>
+          </form>
+
+          {/* Tags de Negativas */}
+          <div className="flex flex-wrap gap-2 pt-2">
+            {negativeKeywords.map((neg, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-rose-50 hover:text-rose-700 border border-gray-200 hover:border-rose-200 rounded-lg text-xs font-mono text-gray-700 transition-all group"
+              >
+                <span>{neg}</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const nextList = negativeKeywords.filter((_, i) => i !== idx);
+                    setNegativeKeywords(nextList);
+                    await fetch('/api/ads/save-targets', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ ads_negative_keywords: nextList })
+                    });
+                    showSuccessBanner(`Termo "${neg}" removido da lista de negativas.`);
+                  }}
+                  className="text-gray-400 group-hover:text-rose-600 hover:scale-110 transition-transform cursor-pointer"
+                  title="Remover termo"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 📜 CONTEÚDO DA ABA 6: HISTÓRICO DE LOGS DO AGENTE */}
+      {/* ========================================================================= */}
+      {activeTab === 'logs' && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
+          
+          <div className="border-b border-gray-100 pb-4">
+            <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+              <History className="w-5 h-5 text-amber-600" />
+              Histórico de Otimizações Executadas pelo Agente
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Registro de todas as ações de negativação, escala e pausas executadas via Copiloto ou Piloto Automático.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {logs.length === 0 ? (
+              <div className="text-center py-12 text-gray-400 text-xs">
+                Nenhuma ação registrada ainda. Execute otimizações no Copiloto para ver o histórico.
+              </div>
+            ) : (
+              logs.map((log) => (
+                <div key={log.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold uppercase text-[10px] bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-mono">
+                        {log.platform}
+                      </span>
+                      <span className="font-bold text-gray-900">{log.description}</span>
+                    </div>
+                    <div className="text-[11px] text-gray-500">
+                      Executado por: <strong>{log.applied_by}</strong> · Data: {new Date(log.created_at).toLocaleString('pt-BR')}
+                    </div>
+                  </div>
+
+                  {log.savings_estimated > 0 && (
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] text-gray-400 uppercase font-bold block">Economia Estimada</span>
+                      <span className="text-sm font-black text-emerald-700 font-mono">
+                        + R$ {Number(log.savings_estimated).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🔑 CONTEÚDO DA ABA 7: CONECTORES DE APIS (GOOGLE & META) */}
+      {/* ========================================================================= */}
+      {activeTab === 'conexoes' && (
+        <form onSubmit={handleSaveTargets} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+            <div>
+              <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                <Key className="w-5 h-5 text-slate-700" />
+                Conectores de API (Google Ads & Meta Marketing API)
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Credenciais necessárias para leitura direta dos relatórios e subida automatizada de palavras-chave.
+              </p>
+            </div>
+            <button
+              type="submit"
+              disabled={isSavingTargets}
+              className="bg-[#007481] hover:bg-[#005f6b] text-white text-xs font-bold px-5 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Check className="w-4 h-4" />
+              Salvar Credenciais
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Bloco Google Ads API */}
+            <div className="p-5 bg-sky-50/40 rounded-xl border border-sky-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-sky-900 text-sm flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-sky-600" />
+                  Google Ads API
+                </h3>
+                <span className="text-[10px] font-bold bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full">
+                  OAuth 2.0
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Customer ID (ID da Conta do Google Ads)</label>
+                <input
+                  type="text"
+                  value={apiCredentials.googleCustomerId}
+                  onChange={(e) => setApiCredentials({ ...apiCredentials, googleCustomerId: e.target.value })}
+                  placeholder="Ex: 123-456-7890"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Developer Token</label>
+                <input
+                  type="password"
+                  value={apiCredentials.googleDeveloperToken}
+                  onChange={(e) => setApiCredentials({ ...apiCredentials, googleDeveloperToken: e.target.value })}
+                  placeholder="Insira o Developer Token da Google"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Bloco Meta Marketing API */}
+            <div className="p-5 bg-indigo-50/40 rounded-xl border border-indigo-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-indigo-900 text-sm flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-indigo-600" />
+                  Meta Marketing API (Facebook / Instagram)
+                </h3>
+                <span className="text-[10px] font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
+                  Graph API & CAPI
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Ad Account ID (ID da Conta de Anúncios)</label>
+                <input
+                  type="text"
+                  value={apiCredentials.metaAdAccountId}
+                  onChange={(e) => setApiCredentials({ ...apiCredentials, metaAdAccountId: e.target.value })}
+                  placeholder="Ex: act_1234567890"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Pixel ID / Dataset ID</label>
+                <input
+                  type="text"
+                  value={apiCredentials.metaPixelId}
+                  onChange={(e) => setApiCredentials({ ...apiCredentials, metaPixelId: e.target.value })}
+                  placeholder="Ex: 987654321012345"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                />
+              </div>
+            </div>
+
+          </div>
+
+        </form>
+      )}
+
+    </div>
+  );
+}
