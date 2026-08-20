@@ -17,6 +17,7 @@ export default function VisualizarPropostaPublica() {
     : ALL_SECTIONS; // if no param, show everything (backward compat)
   const canSee = (section) => visibleSections.includes(section);
 
+  const [proposal, setProposal] = useState(null);
   const [activeTab, setActiveTab] = useState('proposal'); // 'presentation' | 'proposal' | 'minuta' | 'chat'
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
