@@ -223,18 +223,44 @@ export default function VisualizarPropostaPublica() {
   const photosList = (p.machine_photos || p.machine_image || '').split('\n').map(u => u.trim()).filter(Boolean);
   const mainPhoto = photosList.length > 0 ? photosList[0] : 'https://placehold.co/400x300?text=Equipamento';
 
-  const parseSpecsToHTML = (rawSpecs) => {
-    if (!rawSpecs) return '<p class="italic text-slate-400">Consulte a ficha técnica anexa.</p>';
-    let htmlContent = rawSpecs;
-    if (rawSpecs.includes('{') && rawSpecs.includes('}')) {
-      try {
-        const parsed = JSON.parse(rawSpecs);
-        if (Array.isArray(parsed)) {
-          return `<ul class="list-none p-0">${parsed.map(item => `<li class="py-1 border-b border-slate-100"><strong>${item.label || item.key}:</strong> ${item.value}</li>`).join('')}</ul>`;
-        }
-      } catch (e) {}
+  const parseSpecsToHTML = (text) => {
+    if (!text) return '';
+    let htmlContent = '';
+    const lines = text.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      if (trimmed.includes(':')) {
+        const [key, ...valParts] = trimmed.split(':');
+        const val = valParts.join(':').trim();
+        const cleanKey = key.replace(/^[-\s*•]+/, '').trim();
+        htmlContent += `
+          <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding:2px 0; font-size:8.5px; line-height:1.25;">
+            <span style="font-weight:600; color:#475569; width:52%;">${cleanKey}</span>
+            <span style="color:#0f172a; width:48%; text-align:right; font-weight:600;">${val}</span>
+          </div>
+        `;
+      } else if (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) {
+        const cleanLine = trimmed.replace(/^[-\s*•]+/, '').trim();
+        htmlContent += `
+          <div style="display:flex; align-items:start; padding:1.5px 0; font-size:8.5px; color:#334155; line-height:1.25;">
+            <span style="color:${primaryColor}; margin-right:4px; font-weight:bold;">•</span>
+            <span>${cleanLine}</span>
+          </div>
+        `;
+      } else if (trimmed === trimmed.toUpperCase() && trimmed.length > 3) {
+        htmlContent += `
+          <div style="font-weight:800; color:${primaryColor}; font-size:8.5px; text-transform:uppercase; border-bottom:1px solid ${primaryColor}; padding-bottom:2px; margin-top:4px; margin-bottom:2px; letter-spacing:0.5px;">
+            ${trimmed}
+          </div>
+        `;
+      } else {
+        htmlContent += `
+          <p style="font-size:8.5px; color:#475569; padding:1.5px 0; line-height:1.25;">${trimmed}</p>
+        `;
+      }
     }
-    return htmlContent.replace(/\n/g, '<br/>');
+    return htmlContent;
   };
 
   const specsHTML = parseSpecsToHTML(p.machine_technical_description || p.machine_specs);
@@ -387,12 +413,9 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
 @media print{
   .print-bar,.no-print{display:none!important}
   body{background:#fff!important;padding:0!important;margin:0!important}
-  .page{width:210mm!important;height:296mm!important;max-height:296mm!important;box-sizing:border-box!important;margin:0!important;padding:8mm 12mm!important;box-shadow:none!important;border-radius:0!important;page-break-after:always!important;break-after:page!important;overflow:hidden!important}
+  .page{width:210mm!important;height:296mm!important;max-height:296mm!important;box-sizing:border-box!important;margin:0!important;padding:6mm 10mm!important;box-shadow:none!important;border-radius:0!important;page-break-after:always!important;break-after:page!important;overflow:hidden!important}
   .page:last-child{page-break-after:auto!important;break-after:auto!important}
-  @page{size:A4 portrait;margin:0}
-}
-  .page{box-shadow:none;margin:0;padding:20px 30px;border-radius:0;max-width:100%}
-  @page{margin:10mm 12mm}
+  @page{size:A4 portrait;margin:0!important}
 }
 </style>
 </head>

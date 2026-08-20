@@ -1258,9 +1258,9 @@ body{padding-top:60px}
 @media print{
   .print-bar,.no-print{display:none!important}
   body{background:#fff!important;padding:0!important;margin:0!important}
-  .page{width:210mm!important;height:296mm!important;max-height:296mm!important;box-sizing:border-box!important;margin:0!important;padding:8mm 12mm!important;box-shadow:none!important;border-radius:0!important;page-break-after:always!important;break-after:page!important;overflow:hidden!important}
+  .page{width:210mm!important;height:296mm!important;max-height:296mm!important;box-sizing:border-box!important;margin:0!important;padding:6mm 10mm!important;box-shadow:none!important;border-radius:0!important;page-break-after:always!important;break-after:page!important;overflow:hidden!important}
   .page:last-child{page-break-after:auto!important;break-after:auto!important}
-  @page{size:A4 portrait;margin:0}
+  @page{size:A4 portrait;margin:0!important}
 }
 </style>
 </head>
