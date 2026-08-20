@@ -10,7 +10,7 @@ export default function VisualizarPropostaPublica() {
   const location = useLocation();
 
   // Parse visible sections from URL: ?sec=specs,values,conditions,contract_types,seller,minuta
-  const ALL_SECTIONS = ['specs','values','conditions','contract_types','seller','minuta'];
+  const ALL_SECTIONS = ['proposal','minuta','videos','faq'];
   const secParam = new URLSearchParams(location.search).get('sec');
   const visibleSections = secParam
     ? secParam.split(',').map(s => s.trim()).filter(s => ALL_SECTIONS.includes(s))
@@ -385,7 +385,12 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
 .brand-footer img{max-height:40px;margin-bottom:6px;object-fit:contain}
 .brand-footer-text{font-size:9px;color:#94a3b8;line-height:1.3}
 @media print{
-  body{background:#fff}
+  .print-bar,.no-print{display:none!important}
+  body{background:#fff!important;padding:0!important;margin:0!important}
+  .page{width:210mm!important;height:296mm!important;max-height:296mm!important;box-sizing:border-box!important;margin:0!important;padding:8mm 12mm!important;box-shadow:none!important;border-radius:0!important;page-break-after:always!important;break-after:page!important;overflow:hidden!important}
+  .page:last-child{page-break-after:auto!important;break-after:auto!important}
+  @page{size:A4 portrait;margin:0}
+}
   .page{box-shadow:none;margin:0;padding:20px 30px;border-radius:0;max-width:100%}
   @page{margin:10mm 12mm}
 }
@@ -395,7 +400,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
 
 <!-- PAGE 1: Presentation & Technical Specs -->
 <div class="page">
-  <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid ${primaryColor}; padding-bottom: 20px; margin-bottom: 25px;">
+  <div class="header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid ${primaryColor}; padding-bottom: 8px; margin-bottom: 12px;">
     ${companyLogo ? `<div style="width: 180px; display: block;"></div>` : ''}
     <div style="flex: 1; text-align: center;">
       <h1 style="font-size: 20px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">${companyName}</h1>
@@ -417,7 +422,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
     <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Data: ${emissao}</div>
   </div>
 
-  <div class="box" style="margin-bottom: 25px; border-left: 4px solid ${primaryColor}; border-radius: 4px; padding: 15px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-left-width: 4px; text-align: left;">
+  <div class="box" style="margin-bottom: 12px; border-left: 4px solid ${primaryColor}; border-radius: 4px; padding: 15px 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-left-width: 4px; text-align: left;">
     <div class="box-title" style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: ${primaryColor}; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-align: left; letter-spacing: 0.5px;">Dados do Cliente</div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 30px;">
       <div class="row"><b>Cliente:</b> ${p.client_razao_social || p.client_name || 'Não informado'}</div>
@@ -432,7 +437,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
   <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px; margin-top: 20px; align-items: start;">
     <!-- Coluna Esquerda: Imagem e Diferenciais -->
     <div style="display: flex; flex-direction: column; gap: 15px;">
-      <div style="height: 220px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 10px;">
+      <div style="height: 160px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 10px;">
         <img src="${mainPhoto}" alt="${p.machine_name}" style="max-height: 100%; max-width: 100%; object-fit: contain; mix-blend-mode: multiply;" />
       </div>
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 11px; color: #475569; line-height: 1.5;">
@@ -461,7 +466,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
 </div>
 
 <!-- PAGE 2: Financial Terms & Conditions -->
-<div class="page" style="page-break-before: always; margin-top: 30px;">
+<div class="page" style="page-break-before: always;">
   <div class="header">
     <span class="tagline">Valores e Condições de Locação</span>
     <img src="https://www.tennantco.com/content/dam/resources/images/alfa-tennant-logo-150x70.png" alt="Alfa Tennant" class="logo-img" />
@@ -563,6 +568,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
 
           {/* Proposal Navigation Tabs */}
           <nav className="space-y-1.5 flex-1 pr-1">
+            {canSee('videos') && (
             <button
               onClick={() => setActiveTab('presentation')}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
@@ -577,7 +583,9 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
               </div>
               <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
+            )}
 
+            {canSee('proposal') && (
             <button
               onClick={() => setActiveTab('proposal')}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
@@ -592,6 +600,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
               </div>
               <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
+            )}
 
             {canSee('minuta') && (
             <button
@@ -610,6 +619,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
             </button>
             )}
 
+            {canSee('faq') && (
             <button
               onClick={() => setActiveTab('chat')}
               className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
@@ -624,6 +634,7 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;font-size:1
               </div>
               <ChevronRight className="w-3.5 h-3.5 opacity-40 group-hover:translate-x-0.5 transition-transform" />
             </button>
+            )}
           </nav>
         </div>
 

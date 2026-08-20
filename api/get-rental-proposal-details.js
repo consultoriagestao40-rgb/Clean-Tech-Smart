@@ -54,28 +54,34 @@ export default async function handler(req, res) {
     }
 
     if (parsedItems && parsedItems.length > 0) {
-      const machineIds = [...new Set(parsedItems.map(i => i.machine_model_id).filter(Boolean))];
-      const rentalIds = [...new Set(parsedItems.map(i => i.rental_price_id).filter(Boolean))];
-      const eqIds = [...new Set(parsedItems.map(i => i.equipment_id).filter(Boolean))];
+      const machineIds = [...new Set(parsedItems.map(i => parseInt(i.machine_model_id, 10)).filter(n => !isNaN(n) && n > 0))];
+      const rentalIds = [...new Set(parsedItems.map(i => parseInt(i.rental_price_id, 10)).filter(n => !isNaN(n) && n > 0))];
+      const eqIds = [...new Set(parsedItems.map(i => parseInt(i.equipment_id, 10)).filter(n => !isNaN(n) && n > 0))];
 
       let machinesMap = {};
       let rentalMap = {};
       let eqMap = {};
 
-      if (machineIds.length > 0) {
-        const { rows: machines } = await pool.query(`SELECT id, name, photo_urls, technical_description FROM machine_models WHERE id = ANY($1::int[])`, [machineIds]);
-        machines.forEach(m => { machinesMap[m.id] = m; });
-      }
+      try {
+        if (machineIds.length > 0) {
+          const { rows: machines } = await pool.query(`SELECT id, name, photo_urls, technical_description FROM machine_models WHERE id = ANY($1::int[])`, [machineIds]);
+          machines.forEach(m => { machinesMap[m.id] = m; });
+        }
+      } catch (e) { console.error('Err machines:', e); }
 
-      if (rentalIds.length > 0) {
-        const { rows: rentals } = await pool.query(`SELECT id, code, description, list_price, price_12, price_24, price_36, price_48, price_60 FROM rental_prices WHERE id = ANY($1::int[])`, [rentalIds]);
-        rentals.forEach(r => { rentalMap[r.id] = r; });
-      }
+      try {
+        if (rentalIds.length > 0) {
+          const { rows: rentals } = await pool.query(`SELECT id, code, description, list_price, price_12, price_24, price_36, price_48, price_60 FROM rental_prices WHERE id = ANY($1::int[])`, [rentalIds]);
+          rentals.forEach(r => { rentalMap[r.id] = r; });
+        }
+      } catch (e) { console.error('Err rentals:', e); }
 
-      if (eqIds.length > 0) {
-        const { rows: eqs } = await pool.query(`SELECT id, name, serial_number, ownership_type, status FROM equipments WHERE id = ANY($1::int[])`, [eqIds]);
-        eqs.forEach(e => { eqMap[e.id] = e; });
-      }
+      try {
+        if (eqIds.length > 0) {
+          const { rows: eqs } = await pool.query(`SELECT id, name, serial_number, ownership_type, status FROM equipments WHERE id = ANY($1::int[])`, [eqIds]);
+          eqs.forEach(e => { eqMap[e.id] = e; });
+        }
+      } catch (e) { console.error('Err eqs:', e); }
 
       proposal.items = parsedItems.map((item, idx) => {
         const m = machinesMap[item.machine_model_id] || {};
