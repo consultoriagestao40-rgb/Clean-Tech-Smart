@@ -2923,11 +2923,34 @@ export default function AgenteAds() {
                   />
                 </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">Google Client ID (OAuth)</label>
+                    <input
+                      type="text"
+                      value={apiCredentials.googleClientId || ''}
+                      onChange={(e) => setApiCredentials({ ...apiCredentials, googleClientId: e.target.value })}
+                      placeholder="Ex: 123456...apps.googleusercontent.com"
+                      className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">Google Client Secret</label>
+                    <input
+                      type="password"
+                      value={apiCredentials.googleClientSecret || ''}
+                      onChange={(e) => setApiCredentials({ ...apiCredentials, googleClientSecret: e.target.value })}
+                      placeholder="GOCSPX-..."
+                      className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Developer Token (Opcional - API do Agente)</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Developer Token (Google Ads API)</label>
                   <input
                     type="password"
-                    value={apiCredentials.googleDeveloperToken}
+                    value={apiCredentials.googleDeveloperToken || ''}
                     onChange={(e) => setApiCredentials({ ...apiCredentials, googleDeveloperToken: e.target.value })}
                     placeholder="Insira o Developer Token da Google"
                     className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
