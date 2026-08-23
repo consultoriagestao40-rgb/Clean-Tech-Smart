@@ -99,12 +99,34 @@ export default function AgenteAds() {
   const [selectedTermsToNegate, setSelectedTermsToNegate] = useState([]);
   const [newManualNegative, setNewManualNegative] = useState('');
 
-  // Radar de Palavras & Inteligência de Mercado State
-  const [radarCategory, setRadarCategory] = useState('all');
-  const [radarSearchQuery, setRadarSearchQuery] = useState('');
-  const [aiGeneratorInput, setAiGeneratorInput] = useState('Locação Lavadora de Piso Tennant A260 Curitiba');
-  const [isGeneratingGroup, setIsGeneratingGroup] = useState(false);
-  const [generatedKeywords, setGeneratedKeywords] = useState(null);
+  // Campaign ROI & Budget Simulator State
+  const [simMonthlyBudget, setSimMonthlyBudget] = useState(3000); // R$ 3.000/mês
+  const [simAvgCpc, setSimAvgCpc] = useState(6.20); // R$ 6,20
+  const [simLpConvRate, setSimLpConvRate] = useState(6.5); // 6.5%
+  const [simCrmCloseRate, setSimCrmCloseRate] = useState(25); // 25%
+  const [simMonthlyTicket, setSimMonthlyTicket] = useState(3890); // R$ 3.890/mês locação
+  const [simContractMonths, setSimContractMonths] = useState(12); // 12 meses
+
+  const simDailyBudget = simMonthlyBudget / 30;
+  const simTotalClicks = Math.round(simMonthlyBudget / (simAvgCpc || 1));
+  const simTotalLeads = Math.round(simTotalClicks * (simLpConvRate / 100));
+  const simCostPerLead = simTotalLeads > 0 ? (simMonthlyBudget / simTotalLeads) : 0;
+  const simDealsClosed = Math.max(1, Math.round(simTotalLeads * (simCrmCloseRate / 100)));
+  const simMonthlyRevenue = simDealsClosed * simMonthlyTicket;
+  const simAnnualContractValue = simMonthlyRevenue * simContractMonths;
+  const simRoas = simMonthlyBudget > 0 ? (simMonthlyRevenue / simMonthlyBudget) : 0;
+
+  const handleApplySimToTargets = () => {
+    setTargets(prev => ({
+      ...prev,
+      dailyBudgetGoogle: Math.round(simDailyBudget * 0.6),
+      dailyBudgetMeta: Math.round(simDailyBudget * 0.4),
+      targetCpa: Math.round(simCostPerLead) || 45,
+      targetRoas: Number(simRoas.toFixed(1)) || 4.5,
+      targetConvRate: simLpConvRate
+    }));
+    showSuccessBanner('⚡ Parâmetros do Planejador aplicados às Metas do Agente com sucesso!');
+  };
 
   const marketKeywordsData = [
     {
@@ -1053,6 +1075,199 @@ export default function AgenteAds() {
       {activeTab === 'metas' && (
         <div className="space-y-6">
           
+          {/* ========================================================================= */}
+          {/* 📊 SIMULADOR & PLANEJADOR DE CAMPANHA (INVESTIMENTO x CONVERSÃO x ROI) */}
+          {/* ========================================================================= */}
+          <div className="bg-gradient-to-br from-slate-900 via-[#004e57] to-teal-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden space-y-6">
+            <div className="absolute -top-10 -right-10 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-xs font-semibold text-teal-200 mb-2">
+                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                  Planejamento Estratégico de Tráfego Pago & Retorno Comercial
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2.5">
+                  <BarChart3 className="w-6 h-6 text-teal-300" />
+                  Planejador de Campanhas: Investimento ➔ Conversão ➔ Faturamento
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-200 font-light mt-1">
+                  Arraste os parâmetros abaixo para projetar o volume de cliques, contatos no WhatsApp e contratos fechados para a Tennant A260.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleApplySimToTargets}
+                className="bg-[#eb6420] hover:bg-[#d55315] text-white text-xs font-bold px-5 py-3 rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer shrink-0 self-start lg:self-auto"
+              >
+                <Zap className="w-4 h-4 text-white" />
+                Aplicar ao Agente IA
+              </button>
+            </div>
+
+            {/* Grid Interativo do Planejador */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
+              
+              {/* Coluna Esquerda: Sliders de Parâmetros */}
+              <div className="lg:col-span-6 bg-white/10 backdrop-blur-md border border-white/15 p-5 rounded-2xl space-y-5">
+                <h3 className="text-xs font-black uppercase text-teal-300 tracking-wider flex items-center gap-2">
+                  <Sliders className="w-4 h-4" />
+                  Parâmetros de Investimento & Taxas
+                </h3>
+
+                {/* Orçamento Mensal */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-300 font-semibold">Orçamento Mensal Total (Google + Meta):</span>
+                    <span className="font-bold text-amber-300 font-mono text-sm">R$ {simMonthlyBudget.toLocaleString('pt-BR')} <span className="text-[10px] text-slate-300 font-normal">({(simMonthlyBudget / 30).toFixed(0)}/dia)</span></span>
+                  </div>
+                  <input
+                    type="range"
+                    min="500"
+                    max="15000"
+                    step="250"
+                    value={simMonthlyBudget}
+                    onChange={(e) => setSimMonthlyBudget(Number(e.target.value))}
+                    className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#eb6420]"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-400">
+                    <span>R$ 500</span>
+                    <span>R$ 5.000</span>
+                    <span>R$ 10.000</span>
+                    <span>R$ 15.000</span>
+                  </div>
+                </div>
+
+                {/* CPC Médio Estimado */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-300 font-semibold">Custo Médio por Clique (CPC):</span>
+                    <span className="font-bold text-teal-300 font-mono">R$ {simAvgCpc.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="2.00"
+                    max="15.00"
+                    step="0.20"
+                    value={simAvgCpc}
+                    onChange={(e) => setSimAvgCpc(Number(e.target.value))}
+                    className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-teal-400"
+                  />
+                </div>
+
+                {/* Taxa de Conversão da Landing Page */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-300 font-semibold">Taxa de Conversão da LP (WhatsApp):</span>
+                    <span className="font-bold text-indigo-300 font-mono">{simLpConvRate}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="2"
+                    max="15"
+                    step="0.5"
+                    value={simLpConvRate}
+                    onChange={(e) => setSimLpConvRate(Number(e.target.value))}
+                    className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-indigo-400"
+                  />
+                </div>
+
+                {/* Taxa de Fechamento Comercial CRM */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-300 font-semibold">Taxa de Fechamento Comercial (Leads ➔ Contrato):</span>
+                    <span className="font-bold text-emerald-300 font-mono">{simCrmCloseRate}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="50"
+                    step="5"
+                    value={simCrmCloseRate}
+                    onChange={(e) => setSimCrmCloseRate(Number(e.target.value))}
+                    className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                  />
+                </div>
+
+                {/* Mensalidade Locação */}
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                  <span className="text-slate-300">Ticket Locação Mensal Tennant A260:</span>
+                  <span className="font-bold text-white font-mono bg-white/10 px-2 py-1 rounded">R$ {simMonthlyTicket.toLocaleString('pt-BR')}/mês</span>
+                </div>
+              </div>
+
+              {/* Coluna Direita: Resultados Projetados */}
+              <div className="lg:col-span-6 flex flex-col justify-between space-y-4">
+                
+                <div className="grid grid-cols-2 gap-3">
+                  
+                  {/* Cliques Estimados */}
+                  <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-xl">
+                    <div className="text-[10px] uppercase font-bold text-slate-300">Cliques Estimados</div>
+                    <div className="text-2xl font-black text-teal-300 mt-1">
+                      {simTotalClicks.toLocaleString('pt-BR')}
+                    </div>
+                    <div className="text-[10px] text-slate-300 mt-0.5 font-mono">~{Math.round(simTotalClicks / 30)} cliques/dia</div>
+                  </div>
+
+                  {/* Leads / Cotações */}
+                  <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-xl">
+                    <div className="text-[10px] uppercase font-bold text-slate-300">Leads no WhatsApp</div>
+                    <div className="text-2xl font-black text-amber-300 mt-1">
+                      {simTotalLeads}
+                    </div>
+                    <div className="text-[10px] text-slate-300 mt-0.5 font-mono">CPA: R$ {simCostPerLead.toFixed(2)}</div>
+                  </div>
+
+                  {/* Novos Contratos Fechados */}
+                  <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-xl">
+                    <div className="text-[10px] uppercase font-bold text-slate-300">Novos Contratos / Mês</div>
+                    <div className="text-2xl font-black text-emerald-300 mt-1">
+                      {simDealsClosed} <span className="text-xs font-semibold text-slate-300">locações</span>
+                    </div>
+                    <div className="text-[10px] text-slate-300 mt-0.5">Fechamentos estimados</div>
+                  </div>
+
+                  {/* Faturamento Mensal Recorrente */}
+                  <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-xl">
+                    <div className="text-[10px] uppercase font-bold text-slate-300">Novo MRR (Recorrência)</div>
+                    <div className="text-2xl font-black text-white mt-1">
+                      R$ {simMonthlyRevenue.toLocaleString('pt-BR')}
+                    </div>
+                    <div className="text-[10px] text-emerald-300 mt-0.5">Faturamento/mês adicionado</div>
+                  </div>
+
+                </div>
+
+                {/* Banner de Retorno Anual & ROAS */}
+                <div className="bg-emerald-500/20 border border-emerald-400/40 p-5 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-emerald-200 uppercase font-bold tracking-wider">
+                        Retorno do Contrato (12 Meses):
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-black text-emerald-300">
+                        R$ {simAnnualContractValue.toLocaleString('pt-BR')}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-emerald-200 uppercase font-bold">ROAS Projetado:</div>
+                      <div className="text-2xl sm:text-3xl font-black text-amber-300 font-mono">
+                        {simRoas.toFixed(1)}x
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-slate-200 pt-2 border-t border-emerald-400/20">
+                    💡 <strong>Insight da IA:</strong> Para cada <strong>R$ 1,00</strong> investido em tráfego qualificado, a estimativa é de retorno de <strong>R$ {simRoas.toFixed(2)}</strong> em faturamento de locação.
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
           {/* Formulário de Configuração de Metas */}
           <form onSubmit={handleSaveTargets} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
             
