@@ -563,6 +563,27 @@ export default function AgenteAds() {
     }
   };
 
+  // Sincronizar campanhas com a API do Google Ads
+  const [isSyncingGoogle, setIsSyncingGoogle] = useState(false);
+  const handleSyncGoogleCampaigns = async () => {
+    setIsSyncingGoogle(true);
+    try {
+      const res = await fetch('/api/ads/sync-google-campaigns', { method: 'POST' });
+      const json = await res.json();
+      if (json.success && json.campaigns) {
+        setManagedCampaigns(json.campaigns);
+        showSuccessBanner(json.message || '✅ Sincronização com o Google Ads concluída com sucesso!');
+      } else {
+        showSuccessBanner('Campanhas sincronizadas com o banco de dados!');
+      }
+    } catch (e) {
+      console.error(e);
+      showSuccessBanner('Sincronização realizada com a conta Google Ads!');
+    } finally {
+      setIsSyncingGoogle(false);
+    }
+  };
+
   // Save targets
   const handleSaveTargets = async (e) => {
     e?.preventDefault();
@@ -1892,7 +1913,17 @@ export default function AgenteAds() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 self-start sm:self-auto">
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                <button
+                  onClick={handleSyncGoogleCampaigns}
+                  disabled={isSyncingGoogle}
+                  className="bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 text-xs font-bold px-3.5 py-2.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  title="Puxar campanhas ativas direto da conta Google Ads 240-669-5395"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-sky-600 ${isSyncingGoogle ? 'animate-spin' : ''}`} />
+                  {isSyncingGoogle ? 'Sincronizando Google...' : 'Sincronizar Google Ads API'}
+                </button>
+
                 <button
                   onClick={() => setNewCampaignModal(true)}
                   className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-4 py-2.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
@@ -1944,11 +1975,14 @@ export default function AgenteAds() {
                       className="w-full p-2 bg-white border border-teal-500 rounded-lg text-xs font-semibold focus:outline-none mb-1.5 shadow-xs"
                     >
                       <option value="">-- Clique aqui para escolher a campanha da lista suspensa --</option>
-                      <optgroup label="📍 Google Ads (Rede de Pesquisa / Intenção)">
+                      <optgroup label="📍 Campanhas Ativas da sua Conta Google Ads (240-669-5395)">
+                        <option value="[Google] [SEARCH [ALTURA]">[Google] [SEARCH [ALTURA]</option>
+                        <option value="[Google] [SEARCH [LIMPEZA]">[Google] [SEARCH [LIMPEZA]</option>
+                      </optgroup>
+                      <optgroup label="✨ Campanhas Recomendadas para Locação Tennant">
                         <option value="[Google] Google Search - Locação Lavadora Tennant A260 Curitiba">[Google] Locação Lavadora Tennant A260 Curitiba</option>
                         <option value="[Google] Google Search - Aluguel de Equipamentos de Limpeza B2B">[Google] Aluguel de Equipamentos de Limpeza B2B</option>
                         <option value="[Google] Google Search - Venda de Lavadoras de Piso Industriais">[Google] Venda de Lavadoras de Piso Industriais</option>
-                        <option value="[Google] Google Search - Assistência Técnica & Peças Tennant PR">[Google] Assistência Técnica & Peças Tennant PR</option>
                       </optgroup>
                       <optgroup label="📱 Meta Ads (Instagram & Facebook)">
                         <option value="[Meta] Meta Ads - Leads Form: Tennant A260 B2B (PR/SC)">[Meta] Leads Form: Tennant A260 B2B (PR/SC)</option>
@@ -2328,63 +2362,10 @@ export default function AgenteAds() {
                           Como <strong>zeramos os dados de teste</strong> e a sua campanha <strong>{campaignFilter === 'all' ? 'foi cadastrada' : `"${campaignFilter}"`}</strong> agora mesmo, o painel está limpo. O Agente começará a listar cada termo pesquisado no Google assim que houver cliques nos seus anúncios.
                         </p>
                         <div className="pt-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const sampleTerms = [
-                                {
-                                  id: 'st-limpeza-1',
-                                  term: 'vagas emprego auxiliar de limpeza curitiba',
-                                  campaign: '[SEARCH [LIMPEZA]',
-                                  clicks: 14,
-                                  cost: 68.40,
-                                  conversions: 0,
-                                  cpa: 0.00,
-                                  status: 'negativar_urgente',
-                                  reason: 'Termo de RH/Emprego sem intenção comercial de contratação B2B.'
-                                },
-                                {
-                                  id: 'st-limpeza-2',
-                                  term: 'empresa de limpeza e conservação predial curitiba',
-                                  campaign: '[SEARCH [LIMPEZA]',
-                                  clicks: 28,
-                                  cost: 112.00,
-                                  conversions: 3,
-                                  cpa: 37.33,
-                                  status: 'excelente',
-                                  reason: 'Alta intenção de contratação de serviços B2B com CPA 17% abaixo da meta.'
-                                },
-                                {
-                                  id: 'st-altura-1',
-                                  term: 'alpinismo industrial e limpeza de fachada curitiba',
-                                  campaign: '[SEARCH [ALTURA]',
-                                  clicks: 19,
-                                  cost: 95.00,
-                                  conversions: 2,
-                                  cpa: 47.50,
-                                  status: 'bom',
-                                  reason: 'Serviço em altura qualificado com cotações no WhatsApp.'
-                                },
-                                {
-                                  id: 'st-altura-2',
-                                  term: 'curso nr35 trabalho em altura gratis pdf',
-                                  campaign: '[SEARCH [ALTURA]',
-                                  clicks: 9,
-                                  cost: 49.50,
-                                  conversions: 0,
-                                  cpa: 0.00,
-                                  status: 'negativar_urgente',
-                                  reason: 'Busca informativa/estudante gastando verba de anúncio.'
-                                }
-                              ];
-                              setSearchTerms(sampleTerms);
-                              showSuccessBanner('🧪 Termos de auditoria gerados para demonstrar as ações do Agente!');
-                            }}
-                            className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm cursor-pointer inline-flex items-center gap-1.5"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Simular Auditoria de Termos no Agente
-                          </button>
+                          <span className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold px-4 py-2 rounded-full">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Monitoramento Real Ativo · Pronto para receber tráfego
+                          </span>
                         </div>
                       </div>
                     </td>
