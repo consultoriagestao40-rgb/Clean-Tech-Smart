@@ -244,6 +244,12 @@ export default async function handler(req, res) {
     if (realCtr > 0 && realCtr < minCtr) healthScore -= 10;
     healthScore = Math.min(100, Math.max(10, healthScore));
 
+    // Calculate actual savings from database optimization logs
+    let actualSavings = 0;
+    if (logsRes && logsRes.rows) {
+      actualSavings = logsRes.rows.reduce((acc, log) => acc + (parseFloat(log.savings_estimated) || 0), 0);
+    }
+
     return res.status(200).json({
       success: true,
       data: {
@@ -271,7 +277,7 @@ export default async function handler(req, res) {
           realConvRate,
           realRoas: Number(realRoas.toFixed(1)),
           estimatedPipelineValue: Number(estimatedPipelineValue.toFixed(2)),
-          estimatedSavingsThisMonth: 860.00 // Economia calculada de termos já negativados
+          estimatedSavingsThisMonth: isCleanMode ? actualSavings : 860.00
         },
         apiCredentials: {
           googleCustomerId: settings.ads_google_customer_id || '',

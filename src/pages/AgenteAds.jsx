@@ -58,18 +58,18 @@ export default function AgenteAds() {
   });
 
   const [realMetrics, setRealMetrics] = useState({
-    totalSpent: 2330.00,
-    totalSpentGoogle: 1240.00,
-    totalSpentMeta: 1090.00,
-    totalLeads: 54,
-    leadsGoogle: 31,
-    leadsMeta: 23,
-    realCpa: 43.15,
-    realCtr: 3.65,
-    realConvRate: 6.2,
-    realRoas: 5.2,
-    estimatedPipelineValue: 73510.00,
-    estimatedSavingsThisMonth: 860.00
+    totalSpent: 0.00,
+    totalSpentGoogle: 0.00,
+    totalSpentMeta: 0.00,
+    totalLeads: 0,
+    leadsGoogle: 0,
+    leadsMeta: 0,
+    realCpa: 0.00,
+    realCtr: 0.00,
+    realConvRate: 0.00,
+    realRoas: 0.0,
+    estimatedPipelineValue: 0.00,
+    estimatedSavingsThisMonth: 0.00
   });
 
   const [searchTerms, setSearchTerms] = useState([]);
