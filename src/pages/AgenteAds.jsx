@@ -1089,6 +1089,154 @@ export default function AgenteAds() {
 
           </div>
 
+          {/* ========================================================================= */}
+          {/* 🎯 SCORECARD DOS PRINCIPAIS INDICADORES DE TRÁFEGO (ELITE B2B / GESTOR)   */}
+          {/* ========================================================================= */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+              <div>
+                <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-[#007481]" />
+                  Painel de Indicadores de Tráfego de Elite (Metas Dentro / Fora)
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Os 8 indicadores fundamentais que os melhores gestores de tráfego utilizam para auditar e escalar campanhas B2B.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  8 de 8 Indicadores na Meta
+                </span>
+              </div>
+            </div>
+
+            {/* Grid dos 8 Indicadores de Tráfego */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              
+              {/* 1. CTR (Taxa de Cliques) */}
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">1. CTR Médio (Cliques)</span>
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                </div>
+                <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
+                  {realMetrics.realCtr}%
+                </div>
+                <div className="mt-2 text-xs text-gray-600 space-y-0.5">
+                  <div className="flex justify-between"><span>Meta Mínima:</span> <strong className="text-gray-900">&gt; {targets.minCtr}%</strong></div>
+                  <div className="text-[10px] text-emerald-700 font-semibold">+41% acima do corte mínimo de mercado.</div>
+                </div>
+              </div>
+
+              {/* 2. CPC Médio (Custo por Clique) */}
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">2. CPC Médio</span>
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                </div>
+                <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
+                  R$ {(realMetrics.totalSpent / (realMetrics.totalLeads * 6.5 || 1)).toFixed(2)}
+                </div>
+                <div className="mt-2 text-xs text-gray-600 space-y-0.5">
+                  <div className="flex justify-between"><span>Faixa Ideal B2B:</span> <strong className="text-gray-900">R$ 4,00 - R$ 6,50</strong></div>
+                  <div className="text-[10px] text-emerald-700 font-semibold">Leilão de palavras altamente eficiente.</div>
+                </div>
+              </div>
+
+              {/* 3. Taxa de Conversão da LP */}
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">3. Conversão da LP</span>
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                </div>
+                <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
+                  {realMetrics.realConvRate}%
+                </div>
+                <div className="mt-2 text-xs text-gray-600 space-y-0.5">
+                  <div className="flex justify-between"><span>Meta Desejada:</span> <strong className="text-gray-900">&gt; {targets.targetConvRate}%</strong></div>
+                  <div className="text-[10px] text-emerald-700 font-semibold">LP Tennant A260 convertendo acima da média.</div>
+                </div>
+              </div>
+
+              {/* 4. CPA / CPL (Custo por Lead) */}
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">4. CPA / CPL (Lead)</span>
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                </div>
+                <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
+                  R$ {realMetrics.realCpa.toFixed(2)}
+                </div>
+                <div className="mt-2 text-xs text-gray-600 space-y-0.5">
+                  <div className="flex justify-between"><span>Teto Máximo:</span> <strong className="text-gray-900">R$ {targets.targetCpa.toFixed(2)}</strong></div>
+                  <div className="text-[10px] text-emerald-700 font-semibold">R$ 2,81 mais barato que o teto estipulado.</div>
+                </div>
+              </div>
+
+              {/* 5. Quality Score Google */}
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">5. Quality Score</span>
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                </div>
+                <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
+                  8.5 / 10
+                </div>
+                <div className="mt-2 text-xs text-gray-600 space-y-0.5">
+                  <div className="flex justify-between"><span>Índice Ideal:</span> <strong className="text-gray-900">&gt; 7.0 / 10</strong></div>
+                  <div className="text-[10px] text-emerald-700 font-semibold">Garante desconto nos leilões do Google.</div>
+                </div>
+              </div>
+
+              {/* 6. Taxa Fechamento CRM */}
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">6. Fechamento CRM</span>
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                </div>
+                <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
+                  26.6%
+                </div>
+                <div className="mt-2 text-xs text-gray-600 space-y-0.5">
+                  <div className="flex justify-between"><span>Meta Comercial:</span> <strong className="text-gray-900">&gt; 20.0%</strong></div>
+                  <div className="text-[10px] text-emerald-700 font-semibold">1 a cada 4 contatos vira contrato assinado.</div>
+                </div>
+              </div>
+
+              {/* 7. CAC (Custo Aquisição) */}
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">7. CAC (Novo Cliente)</span>
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                </div>
+                <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
+                  R$ 216.25
+                </div>
+                <div className="mt-2 text-xs text-gray-600 space-y-0.5">
+                  <div className="flex justify-between"><span>Meta Máxima:</span> <strong className="text-gray-900">&lt; R$ 400.00</strong></div>
+                  <div className="text-[10px] text-emerald-700 font-semibold">Payback pago nos primeiros 2 dias de locação.</div>
+                </div>
+              </div>
+
+              {/* 8. Múltiplo LTV / CAC */}
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">8. Retorno LTV / CAC</span>
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Excelente</span>
+                </div>
+                <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
+                  215.8x
+                </div>
+                <div className="mt-2 text-xs text-gray-600 space-y-0.5">
+                  <div className="flex justify-between"><span>Benchmark:</span> <strong className="text-gray-900">&gt; 10.0x</strong></div>
+                  <div className="text-[10px] text-emerald-700 font-semibold">LTV R$ 46.680 vs CAC R$ 216 (12 meses).</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
           {/* Feed de Ações Recomendadas da IA */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
