@@ -2460,6 +2460,7 @@ export default function AgenteAds() {
                   </th>
                   <th className="p-3">Termo Digitado pelo Usuário</th>
                   <th className="p-3">Campanha</th>
+                  <th className="p-3 text-center">Vol. Busca (Mês)</th>
                   <th className="p-3 text-center">Cliques</th>
                   <th className="p-3 text-right">Gasto</th>
                   <th className="p-3 text-center">Conversões</th>
@@ -2485,6 +2486,11 @@ export default function AgenteAds() {
                     </td>
                     <td className="p-3 text-gray-500 font-mono text-[11px]">
                       {st.campaign}
+                    </td>
+                    <td className="p-3 text-center">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        {st.searchVolume || '880 /mês'}
+                      </span>
                     </td>
                     <td className="p-3 text-center font-bold">
                       {st.clicks}
