@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Shield, Mail, Key, Loader2, Lock } from 'lucide-react';
 
 export default function Login() {
@@ -6,6 +6,28 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Handle Google OAuth Return
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const googleToken = params.get('google_token');
+    const googleUser = params.get('google_user');
+    const authError = params.get('error');
+
+    if (authError) {
+      setErrorMessage(`Erro ao autenticar com o Google: ${authError}`);
+    }
+
+    if (googleToken && googleUser) {
+      try {
+        localStorage.setItem('token', googleToken);
+        localStorage.setItem('user', googleUser);
+        window.location.href = '/agente-ads';
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
