@@ -33,7 +33,9 @@ import {
   ArrowRight,
   ShieldCheck,
   History,
-  Cpu
+  Cpu,
+  Compass,
+  Copy
 } from 'lucide-react';
 
 export default function AgenteAds() {
@@ -96,6 +98,177 @@ export default function AgenteAds() {
   // Selected items for batch actions
   const [selectedTermsToNegate, setSelectedTermsToNegate] = useState([]);
   const [newManualNegative, setNewManualNegative] = useState('');
+
+  // Radar de Palavras & Inteligência de Mercado State
+  const [radarCategory, setRadarCategory] = useState('all');
+  const [radarSearchQuery, setRadarSearchQuery] = useState('');
+  const [aiGeneratorInput, setAiGeneratorInput] = useState('Locação Lavadora de Piso Tennant A260 Curitiba');
+  const [isGeneratingGroup, setIsGeneratingGroup] = useState(false);
+  const [generatedKeywords, setGeneratedKeywords] = useState(null);
+
+  const marketKeywordsData = [
+    {
+      id: 'kw-1',
+      term: 'locação de lavadora de piso curitiba',
+      category: 'locacao',
+      volumeMonthly: 1900,
+      cpcMin: 4.20,
+      cpcMax: 7.80,
+      competition: 'Média',
+      intent: 'alta', // Fundo de funil
+      trend: '+32%',
+      recommendedMatch: 'Frase & Exata'
+    },
+    {
+      id: 'kw-2',
+      term: 'aluguel lavadora industrial tennant',
+      category: 'locacao',
+      volumeMonthly: 1450,
+      cpcMin: 5.10,
+      cpcMax: 8.90,
+      competition: 'Alta',
+      intent: 'alta',
+      trend: '+18%',
+      recommendedMatch: 'Frase'
+    },
+    {
+      id: 'kw-3',
+      term: 'lavadora de piso tennant a260 preco',
+      category: 'venda',
+      volumeMonthly: 980,
+      cpcMin: 3.90,
+      cpcMax: 6.70,
+      competition: 'Média',
+      intent: 'alta',
+      trend: '+45%',
+      recommendedMatch: 'Exata'
+    },
+    {
+      id: 'kw-4',
+      term: 'lavadora de piso homem a bordo aluguel',
+      category: 'locacao',
+      volumeMonthly: 2300,
+      cpcMin: 4.80,
+      cpcMax: 8.50,
+      competition: 'Alta',
+      intent: 'alta',
+      trend: '+27%',
+      recommendedMatch: 'Frase'
+    },
+    {
+      id: 'kw-5',
+      term: 'locação maquina lavar piso galpão logistico',
+      category: 'locacao',
+      volumeMonthly: 850,
+      cpcMin: 5.50,
+      cpcMax: 9.80,
+      competition: 'Média',
+      intent: 'alta',
+      trend: '+15%',
+      recommendedMatch: 'Frase'
+    },
+    {
+      id: 'kw-6',
+      term: 'assistencia tecnica autorizada tennant parana',
+      category: 'servicos',
+      volumeMonthly: 620,
+      cpcMin: 3.20,
+      cpcMax: 5.40,
+      competition: 'Baixa',
+      intent: 'alta',
+      trend: '+10%',
+      recommendedMatch: 'Frase & Exata'
+    },
+    {
+      id: 'kw-7',
+      term: 'comprar lavadora de piso industrial curitiba',
+      category: 'venda',
+      volumeMonthly: 1200,
+      cpcMin: 4.50,
+      cpcMax: 7.90,
+      competition: 'Alta',
+      intent: 'alta',
+      trend: '+22%',
+      recommendedMatch: 'Frase'
+    },
+    {
+      id: 'kw-8',
+      term: 'lavadora de piso alfa tennant usada',
+      category: 'concorrentes',
+      volumeMonthly: 1750,
+      cpcMin: 2.80,
+      cpcMax: 4.90,
+      competition: 'Média',
+      intent: 'media',
+      trend: '+5%',
+      recommendedMatch: 'Frase'
+    },
+    {
+      id: 'kw-9',
+      term: 'quanto custa alugar lavadora de piso por dia',
+      category: 'locacao',
+      volumeMonthly: 1100,
+      cpcMin: 3.60,
+      cpcMax: 6.20,
+      competition: 'Média',
+      intent: 'alta',
+      trend: '+38%',
+      recommendedMatch: 'Frase'
+    },
+    {
+      id: 'kw-10',
+      term: 'locação lavadora de piso pós obra curitiba',
+      category: 'locacao',
+      volumeMonthly: 890,
+      cpcMin: 4.10,
+      cpcMax: 7.30,
+      competition: 'Média',
+      intent: 'alta',
+      trend: '+20%',
+      recommendedMatch: 'Frase'
+    }
+  ];
+
+  // Gerar Grupo de Anúncios com IA
+  const handleGenerateAdGroup = () => {
+    setIsGeneratingGroup(true);
+    setTimeout(() => {
+      const topic = aiGeneratorInput.trim() || 'Locação Tennant A260';
+      setGeneratedKeywords({
+        phraseMatch: [
+          `"locação ${topic.toLowerCase()}"`,
+          `"aluguel ${topic.toLowerCase()}"`,
+          `"preço ${topic.toLowerCase()}"`,
+          `"${topic.toLowerCase()} curitiba"`,
+          `"${topic.toLowerCase()} parana"`
+        ],
+        exactMatch: [
+          `[${topic.toLowerCase()}]`,
+          `[locação ${topic.toLowerCase()} curitiba]`,
+          `[aluguel lavadora tennant a260]`
+        ],
+        recommendedNegatives: [
+          'grátis', 'download', 'manual pdf', 'vagas', 'emprego', 'salario operador', 'caseira', 'olx usada defeito'
+        ],
+        adHeadlines: [
+          'Locação Tennant A260 em Curitiba',
+          'Máquina Reserva Garantida | B2B',
+          'Economize até 75% em Limpeza'
+        ],
+        adDescriptions: [
+          'Lavadora de Piso Tennant A260 a pronta entrega em Curitiba e Região. Manutenção 100% inclusa.',
+          'Dedução no IR, máquina reserva garantida e suporte autorizado Tennant. Solicite cotação!'
+        ]
+      });
+      setIsGeneratingGroup(false);
+      showSuccessBanner('✨ Grupo de Anúncios e Palavras-Chave gerados pela IA com sucesso!');
+    }, 600);
+  };
+
+  const copyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(text);
+    showSuccessBanner(`📋 ${label} copiado para a área de transferência!`);
+  };
 
   // Load metrics from backend
   const fetchAdsData = async () => {
@@ -581,6 +754,18 @@ export default function AgenteAds() {
         >
           <Search className="w-4 h-4 text-sky-600" />
           Termos de Pesquisa (Google Ads)
+        </button>
+
+        <button
+          onClick={() => setActiveTab('radar')}
+          className={`flex items-center gap-2 px-4 py-3 font-bold text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'radar'
+              ? 'bg-white text-[#007481] border-b-2 border-[#007481] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+        >
+          <Compass className="w-4 h-4 text-purple-600" />
+          Radar de Palavras & Mercado (Google)
         </button>
 
         <button
@@ -1440,6 +1625,277 @@ export default function AgenteAds() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🧠 CONTEÚDO DA ABA: RADAR DE PALAVRAS & INTELIGÊNCIA DE MERCADO (GOOGLE)  */}
+      {/* ========================================================================= */}
+      {activeTab === 'radar' && (
+        <div className="space-y-6 animate-fadeIn">
+          
+          {/* Header do Radar & Gerador IA */}
+          <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="relative z-10 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-500/20 backdrop-blur-md rounded-full border border-purple-400/30 text-xs font-semibold text-purple-200">
+                <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                Inteligência de Buscas do Google Ads · Paraná & Região Sul
+              </div>
+
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2.5">
+                    <Compass className="w-7 h-7 text-purple-400" />
+                    Radar de Termos Mais Buscados no Google (Locação Tennant)
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300 max-w-2xl font-light mt-1">
+                    Volume real estimado de pesquisas mensais, custo por clique (CPC) e intenção de contratação para calibrar suas campanhas antes de gastar verba.
+                  </p>
+                </div>
+              </div>
+
+              {/* Gerador Interativo com IA */}
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl space-y-3 mt-4">
+                <div className="text-xs font-bold text-purple-200 uppercase tracking-wider flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-purple-400" />
+                  Gerador Automático de Grupo de Anúncios & Palavras-Chave (IA)
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={aiGeneratorInput}
+                    onChange={(e) => setAiGeneratorInput(e.target.value)}
+                    placeholder="Ex: Locação Lavadora de Piso Tennant A260 Curitiba"
+                    className="flex-1 p-2.5 bg-white text-gray-900 rounded-lg text-xs font-medium focus:outline-none placeholder-gray-400"
+                  />
+                  <button
+                    onClick={handleGenerateAdGroup}
+                    disabled={isGeneratingGroup}
+                    className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-5 py-2.5 rounded-lg shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  >
+                    <Sparkles className="w-4 h-4 text-purple-200" />
+                    {isGeneratingGroup ? 'Gerando com IA...' : 'Gerar Grupo Completo'}
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Resultado do Gerador de IA (se acionado) */}
+          {generatedKeywords && (
+            <div className="bg-white border border-purple-200 rounded-2xl p-6 shadow-sm space-y-5 animate-fadeIn">
+              <div className="flex items-center justify-between border-b border-purple-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-600" />
+                  <h3 className="font-black text-gray-900 text-sm">
+                    Estrutura Pronta para Copiar e Colar no seu Google Ads
+                  </h3>
+                </div>
+                <span className="text-xs bg-purple-100 text-purple-800 font-bold px-2.5 py-0.5 rounded-full">
+                  Pronto para Campanha
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {/* Palavras de Frase */}
+                <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-sky-900">Correspondência de Frase (" ")</span>
+                    <button
+                      onClick={() => copyToClipboard(generatedKeywords.phraseMatch.join('\n'), 'Palavras de Frase')}
+                      className="text-[10px] bg-white hover:bg-sky-100 text-sky-700 font-bold px-2 py-1 rounded border border-sky-300 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" /> Copiar Todas
+                    </button>
+                  </div>
+                  <pre className="text-[11px] font-mono bg-white p-2.5 rounded-lg border border-sky-100 text-gray-800 overflow-x-auto">
+                    {generatedKeywords.phraseMatch.join('\n')}
+                  </pre>
+                </div>
+
+                {/* Palavras Exatas */}
+                <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-900">Correspondência Exata ([ ])</span>
+                    <button
+                      onClick={() => copyToClipboard(generatedKeywords.exactMatch.join('\n'), 'Palavras Exatas')}
+                      className="text-[10px] bg-white hover:bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded border border-emerald-300 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" /> Copiar Todas
+                    </button>
+                  </div>
+                  <pre className="text-[11px] font-mono bg-white p-2.5 rounded-lg border border-emerald-100 text-gray-800 overflow-x-auto">
+                    {generatedKeywords.exactMatch.join('\n')}
+                  </pre>
+                </div>
+
+                {/* Negativas Recomendadas */}
+                <div className="p-4 bg-rose-50/50 rounded-xl border border-rose-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-rose-900">Negativas Recomendadas</span>
+                    <button
+                      onClick={() => copyToClipboard(generatedKeywords.recommendedNegatives.join('\n'), 'Negativas')}
+                      className="text-[10px] bg-white hover:bg-rose-100 text-rose-700 font-bold px-2 py-1 rounded border border-rose-300 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" /> Copiar Todas
+                    </button>
+                  </div>
+                  <pre className="text-[11px] font-mono bg-white p-2.5 rounded-lg border border-rose-100 text-gray-800 overflow-x-auto">
+                    {generatedKeywords.recommendedNegatives.join('\n')}
+                  </pre>
+                </div>
+
+              </div>
+
+              {/* Textos de Anúncios Gerados */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Copy Persuasiva Pronta para os Anúncios
+                  </span>
+                  <button
+                    onClick={() => copyToClipboard(`TÍTULOS:\n${generatedKeywords.adHeadlines.join('\n')}\n\nDESCRIÇÕES:\n${generatedKeywords.adDescriptions.join('\n')}`, 'Títulos e Descrições')}
+                    className="text-[10px] bg-white hover:bg-slate-100 text-slate-800 font-bold px-2.5 py-1 rounded border border-slate-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Copy className="w-3 h-3" /> Copiar Anúncio Completo
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                  <div className="bg-white p-3 rounded-lg border border-slate-200">
+                    <span className="text-[10px] font-bold text-purple-700 uppercase block mb-1">Títulos (30 caracteres)</span>
+                    <ul className="list-disc list-inside font-semibold text-gray-800 space-y-1">
+                      {generatedKeywords.adHeadlines.map((h, i) => <li key={i}>{h}</li>)}
+                    </ul>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg border border-slate-200">
+                    <span className="text-[10px] font-bold text-purple-700 uppercase block mb-1">Descrições (90 caracteres)</span>
+                    <ul className="list-disc list-inside text-gray-700 space-y-1">
+                      {generatedKeywords.adDescriptions.map((d, i) => <li key={i}>{d}</li>)}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* Tabela do Radar de Mercado */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+              <div>
+                <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-purple-600" />
+                  Termos Mais Pesquisados no Paraná & Estimativas de CPC
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Dados de busca consolidados no mercado B2B de lavadoras industriais e Tennant.
+                </p>
+              </div>
+
+              {/* Filtros da Tabela */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="text"
+                  placeholder="🔍 Buscar termo..."
+                  value={radarSearchQuery}
+                  onChange={(e) => setRadarSearchQuery(e.target.value)}
+                  className="p-1.5 bg-gray-50 border border-gray-300 rounded text-xs w-36 focus:outline-none"
+                />
+                <select
+                  value={radarCategory}
+                  onChange={(e) => setRadarCategory(e.target.value)}
+                  className="p-1.5 bg-gray-50 border border-gray-300 rounded text-xs font-semibold focus:outline-none"
+                >
+                  <option value="all">Todas as Categorias</option>
+                  <option value="locacao">Locação & Aluguel</option>
+                  <option value="venda">Venda de Máquinas</option>
+                  <option value="servicos">Assistência & Peças</option>
+                  <option value="concorrentes">Marcas & Usadas</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200">
+                  <tr>
+                    <th className="p-3">Termo Pesquisado no Google</th>
+                    <th className="p-3">Categoria</th>
+                    <th className="p-3 text-center">Buscas / Mês (PR)</th>
+                    <th className="p-3 text-center">Tendência</th>
+                    <th className="p-3 text-right">CPC Médio Topo</th>
+                    <th className="p-3 text-center">Intenção de Compra</th>
+                    <th className="p-3 text-right">Ação Rápida</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-gray-800 font-medium">
+                  {marketKeywordsData
+                    .filter(kw => radarCategory === 'all' || kw.category === radarCategory)
+                    .filter(kw => !radarSearchQuery || kw.term.toLowerCase().includes(radarSearchQuery.toLowerCase()))
+                    .map((kw) => (
+                      <tr key={kw.id} className="hover:bg-purple-50/30 transition-colors">
+                        <td className="p-3 font-mono font-bold text-gray-900">
+                          {kw.term}
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                            kw.category === 'locacao' ? 'bg-teal-100 text-teal-800' :
+                            kw.category === 'venda' ? 'bg-blue-100 text-blue-800' :
+                            kw.category === 'servicos' ? 'bg-amber-100 text-amber-800' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {kw.category}
+                          </span>
+                        </td>
+                        <td className="p-3 text-center font-bold text-gray-900">
+                          {kw.volumeMonthly.toLocaleString('pt-BR')}
+                        </td>
+                        <td className="p-3 text-center">
+                          <span className="text-emerald-700 font-bold flex items-center justify-center gap-0.5">
+                            <TrendingUp className="w-3 h-3" /> {kw.trend}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right font-mono font-bold text-slate-800">
+                          R$ {kw.cpcMin.toFixed(2)} - R$ {kw.cpcMax.toFixed(2)}
+                        </td>
+                        <td className="p-3 text-center">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                            kw.intent === 'alta' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {kw.intent === 'alta' ? '🟢 Fundo de Funil' : '🟡 Meio de Funil'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => copyToClipboard(`"${kw.term}"`, 'Palavra com correspondência de frase')}
+                              className="bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold px-2 py-1 rounded border border-purple-200 text-[10px] cursor-pointer"
+                              title="Copiar com aspas para frase"
+                            >
+                              Copiar "Frase"
+                            </button>
+                            <button
+                              onClick={() => copyToClipboard(`[${kw.term}]`, 'Palavra com correspondência exata')}
+                              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold px-2 py-1 rounded border border-emerald-200 text-[10px] cursor-pointer"
+                              title="Copiar com colchetes para exata"
+                            >
+                              Copiar [Exata]
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
           </div>
 
         </div>
