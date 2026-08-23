@@ -99,6 +99,13 @@ export default function AgenteAds() {
   const [selectedTermsToNegate, setSelectedTermsToNegate] = useState([]);
   const [newManualNegative, setNewManualNegative] = useState('');
 
+  // Radar de Palavras & Inteligência de Mercado State
+  const [radarCategory, setRadarCategory] = useState('all');
+  const [radarSearchQuery, setRadarSearchQuery] = useState('');
+  const [aiGeneratorInput, setAiGeneratorInput] = useState('Locação Lavadora de Piso Tennant A260 Curitiba');
+  const [isGeneratingGroup, setIsGeneratingGroup] = useState(false);
+  const [generatedKeywords, setGeneratedKeywords] = useState(null);
+
   // AI 3-Scenario Predictive Planner State
   const [plannerCampaignTopic, setPlannerCampaignTopic] = useState('Locação de lavadora de piso Tennant A260');
   const [plannerDailyBudget, setPlannerDailyBudget] = useState(50); // R$ 50/dia padrão
@@ -106,199 +113,143 @@ export default function AgenteAds() {
   const [plannerContractMonths, setPlannerContractMonths] = useState(12); // Duração do contrato editável
   const [plannerRegion, setPlannerRegion] = useState('Curitiba e Região Metropolitana (PR)');
   const [isCalculatingPlanner, setIsCalculatingPlanner] = useState(false);
-  const [plannerResult, setPlannerResult] = useState({
-    topic: 'Locação de lavadora de piso Tennant A260',
-    daily: 50,
-    monthly: 1500,
-    ticket: 3890,
-    months: 12,
-    monthlySearchesDemand: 3850,
-    commercialIntent: '94% (Alta Intenção / Fundo de Funil)',
-    pessimistic: {
-      name: 'Pessimista',
-      subtitle: 'Alta concorrência / início de aprendizado',
-      color: 'rose',
-      cpc: 7.80,
-      clicks: 192,
-      convLp: 4.2,
-      leads: 8,
-      cpa: 187.50,
-      closeRate: 15,
-      contracts: 1,
-      cac: 1500.00,
-      ltv: 46680.00,
-      ltvCac: 31.1,
-      paybackMonths: 0.39,
-      mrr: 3890,
-      annual: 46680,
-      roas: 2.6
-    },
-    realistic: {
-      name: 'Realista (Recomendado)',
-      subtitle: 'Média de mercado com LP otimizada e Agente ativo',
-      color: 'teal',
-      isRecommended: true,
-      cpc: 5.80,
-      clicks: 258,
-      convLp: 6.8,
-      leads: 18,
-      cpa: 83.33,
-      closeRate: 25,
-      contracts: 4,
-      cac: 375.00,
-      ltv: 46680.00,
-      ltvCac: 124.5,
-      paybackMonths: 0.10,
-      mrr: 15560,
-      annual: 186720,
-      roas: 10.4
-    },
-    optimistic: {
-      name: 'Otimista',
-      subtitle: 'Alta conversão, público qualificado e escala',
-      color: 'emerald',
-      cpc: 4.40,
-      clicks: 340,
-      convLp: 9.5,
-      leads: 32,
-      cpa: 46.87,
-      closeRate: 35,
-      contracts: 11,
-      cac: 136.36,
-      ltv: 46680.00,
-      ltvCac: 342.3,
-      paybackMonths: 0.04,
-      mrr: 42790,
-      annual: 513480,
-      roas: 28.5
-    }
-  });
+
+  // Pure function to calculate the 3 scenarios based on user inputs
+  const computeScenarios = (topic, dailyInput, ticketInput, monthsInput) => {
+    const daily = Number(dailyInput) || 30;
+    const monthly = daily * 30;
+    const ticket = Number(ticketInput) || 1300;
+    const months = Number(monthsInput) || 12;
+    const ltvPerClient = ticket * months;
+
+    // Scenario 1: Pessimista (Conservador)
+    const pesCpc = 7.80;
+    const pesClicks = Math.max(1, Math.round(monthly / pesCpc));
+    const pesConvLp = 4.2;
+    const pesLeads = Math.max(1, Math.round(pesClicks * (pesConvLp / 100)));
+    const pesCpa = monthly / pesLeads;
+    const pesCloseRate = 15;
+    const pesContracts = Math.max(1, Math.round(pesLeads * (pesCloseRate / 100)));
+    const pesCac = monthly / (pesContracts || 1);
+    const pesLtvCac = pesCac > 0 ? (ltvPerClient / pesCac) : 0;
+    const pesPayback = ticket > 0 ? (pesCac / ticket) : 0;
+    const pesMrr = pesContracts * ticket;
+    const pesAnnual = pesMrr * months;
+    const pesRoas = monthly > 0 ? (pesMrr / monthly) : 0;
+
+    // Scenario 2: Realista (Recomendado)
+    const realCpc = 5.80;
+    const realClicks = Math.max(1, Math.round(monthly / realCpc));
+    const realConvLp = 6.8;
+    const realLeads = Math.max(1, Math.round(realClicks * (realConvLp / 100)));
+    const realCpa = monthly / realLeads;
+    const realCloseRate = 25;
+    const realContracts = Math.max(1, Math.round(realLeads * (realCloseRate / 100)));
+    const realCac = monthly / (realContracts || 1);
+    const realLtvCac = realCac > 0 ? (ltvPerClient / realCac) : 0;
+    const realPayback = ticket > 0 ? (realCac / ticket) : 0;
+    const realMrr = realContracts * ticket;
+    const realAnnual = realMrr * months;
+    const realRoas = monthly > 0 ? (realMrr / monthly) : 0;
+
+    // Scenario 3: Otimista (Alta Eficiência)
+    const optCpc = 4.40;
+    const optClicks = Math.max(1, Math.round(monthly / optCpc));
+    const optConvLp = 9.5;
+    const optLeads = Math.max(1, Math.round(optClicks * (optConvLp / 100)));
+    const optCpa = monthly / optLeads;
+    const optCloseRate = 35;
+    const optContracts = Math.max(1, Math.round(optLeads * (optCloseRate / 100)));
+    const optCac = monthly / (optContracts || 1);
+    const optLtvCac = optCac > 0 ? (ltvPerClient / optCac) : 0;
+    const optPayback = ticket > 0 ? (optCac / ticket) : 0;
+    const optMrr = optContracts * ticket;
+    const optAnnual = optMrr * months;
+    const optRoas = monthly > 0 ? (optMrr / monthly) : 0;
+
+    return {
+      topic: topic || 'Locação de Lavadora',
+      daily,
+      monthly,
+      ticket,
+      months,
+      monthlySearchesDemand: 3850,
+      commercialIntent: '94% (Alta Intenção / Fundo de Funil)',
+      pessimistic: {
+        name: 'Pessimista',
+        subtitle: 'Alta concorrência / início de aprendizado',
+        color: 'rose',
+        cpc: pesCpc,
+        clicks: pesClicks,
+        convLp: pesConvLp,
+        leads: pesLeads,
+        cpa: pesCpa,
+        closeRate: pesCloseRate,
+        contracts: pesContracts,
+        cac: pesCac,
+        ltv: ltvPerClient,
+        ltvCac: pesLtvCac,
+        paybackMonths: pesPayback,
+        mrr: pesMrr,
+        annual: pesAnnual,
+        roas: pesRoas
+      },
+      realistic: {
+        name: 'Realista (Recomendado)',
+        subtitle: 'Média de mercado com LP otimizada e Agente ativo',
+        color: 'teal',
+        isRecommended: true,
+        cpc: realCpc,
+        clicks: realClicks,
+        convLp: realConvLp,
+        leads: realLeads,
+        cpa: realCpa,
+        closeRate: realCloseRate,
+        contracts: realContracts,
+        cac: realCac,
+        ltv: ltvPerClient,
+        ltvCac: realLtvCac,
+        paybackMonths: realPayback,
+        mrr: realMrr,
+        annual: realAnnual,
+        roas: realRoas
+      },
+      optimistic: {
+        name: 'Otimista',
+        subtitle: 'Alta conversão, público qualificado e escala',
+        color: 'emerald',
+        cpc: optCpc,
+        clicks: optClicks,
+        convLp: optConvLp,
+        leads: optLeads,
+        cpa: optCpa,
+        closeRate: optCloseRate,
+        contracts: optContracts,
+        cac: optCac,
+        ltv: ltvPerClient,
+        ltvCac: optLtvCac,
+        paybackMonths: optPayback,
+        mrr: optMrr,
+        annual: optAnnual,
+        roas: optRoas
+      }
+    };
+  };
+
+  const [plannerResult, setPlannerResult] = useState(() => computeScenarios('Locação de lavadora de piso Tennant A260', 50, 3890, 12));
+
+  // Automatically update scenarios in real-time as user types inputs
+  useEffect(() => {
+    setPlannerResult(computeScenarios(plannerCampaignTopic, plannerDailyBudget, plannerTicketMonthly, plannerContractMonths));
+  }, [plannerCampaignTopic, plannerDailyBudget, plannerTicketMonthly, plannerContractMonths]);
 
   const handleCalculatePlanner = () => {
     setIsCalculatingPlanner(true);
     setTimeout(() => {
-      const daily = Number(plannerDailyBudget) || 50;
-      const monthly = daily * 30;
-      const ticket = Number(plannerTicketMonthly) || 3890; // locação mensal editada
-      const months = Number(plannerContractMonths) || 12; // meses de contrato
-      const ltvPerClient = ticket * months; // LTV por cliente
-
-      // Scenario 1: Pessimista (Conservador)
-      const pesCpc = 7.80;
-      const pesClicks = Math.round(monthly / pesCpc);
-      const pesConvLp = 4.2;
-      const pesLeads = Math.max(1, Math.round(pesClicks * (pesConvLp / 100)));
-      const pesCpa = monthly / pesLeads;
-      const pesCloseRate = 15;
-      const pesContracts = Math.max(1, Math.round(pesLeads * (pesCloseRate / 100)));
-      const pesCac = monthly / (pesContracts || 1);
-      const pesLtvCac = pesCac > 0 ? (ltvPerClient / pesCac) : 0;
-      const pesPayback = ticket > 0 ? (pesCac / ticket) : 0;
-      const pesMrr = pesContracts * ticket;
-      const pesAnnual = pesMrr * months;
-      const pesRoas = monthly > 0 ? (pesMrr / monthly) : 0;
-
-      // Scenario 2: Realista (Recomendado)
-      const realCpc = 5.80;
-      const realClicks = Math.round(monthly / realCpc);
-      const realConvLp = 6.8;
-      const realLeads = Math.max(1, Math.round(realClicks * (realConvLp / 100)));
-      const realCpa = monthly / realLeads;
-      const realCloseRate = 25;
-      const realContracts = Math.max(1, Math.round(realLeads * (realCloseRate / 100)));
-      const realCac = monthly / (realContracts || 1);
-      const realLtvCac = realCac > 0 ? (ltvPerClient / realCac) : 0;
-      const realPayback = ticket > 0 ? (realCac / ticket) : 0;
-      const realMrr = realContracts * ticket;
-      const realAnnual = realMrr * months;
-      const realRoas = monthly > 0 ? (realMrr / monthly) : 0;
-
-      // Scenario 3: Otimista (Alta Eficiência)
-      const optCpc = 4.40;
-      const optClicks = Math.round(monthly / optCpc);
-      const optConvLp = 9.5;
-      const optLeads = Math.max(1, Math.round(optClicks * (optConvLp / 100)));
-      const optCpa = monthly / optLeads;
-      const optCloseRate = 35;
-      const optContracts = Math.max(1, Math.round(optLeads * (optCloseRate / 100)));
-      const optCac = monthly / (optContracts || 1);
-      const optLtvCac = optCac > 0 ? (ltvPerClient / optCac) : 0;
-      const optPayback = ticket > 0 ? (optCac / ticket) : 0;
-      const optMrr = optContracts * ticket;
-      const optAnnual = optMrr * months;
-      const optRoas = monthly > 0 ? (optMrr / monthly) : 0;
-
-      setPlannerResult({
-        topic: plannerCampaignTopic,
-        daily,
-        monthly,
-        ticket,
-        months,
-        monthlySearchesDemand: 3850,
-        commercialIntent: '94% (Alta Intenção / Fundo de Funil)',
-        pessimistic: {
-          name: 'Pessimista',
-          subtitle: 'Alta concorrência / início de aprendizado',
-          color: 'rose',
-          cpc: pesCpc,
-          clicks: pesClicks,
-          convLp: pesConvLp,
-          leads: pesLeads,
-          cpa: pesCpa,
-          closeRate: pesCloseRate,
-          contracts: pesContracts,
-          cac: pesCac,
-          ltv: ltvPerClient,
-          ltvCac: pesLtvCac,
-          paybackMonths: pesPayback,
-          mrr: pesMrr,
-          annual: pesAnnual,
-          roas: pesRoas
-        },
-        realistic: {
-          name: 'Realista (Recomendado)',
-          subtitle: 'Média de mercado com LP otimizada e Agente ativo',
-          color: 'teal',
-          isRecommended: true,
-          cpc: realCpc,
-          clicks: realClicks,
-          convLp: realConvLp,
-          leads: realLeads,
-          cpa: realCpa,
-          closeRate: realCloseRate,
-          contracts: realContracts,
-          cac: realCac,
-          ltv: ltvPerClient,
-          ltvCac: realLtvCac,
-          paybackMonths: realPayback,
-          mrr: realMrr,
-          annual: realAnnual,
-          roas: realRoas
-        },
-        optimistic: {
-          name: 'Otimista',
-          subtitle: 'Alta conversão, público qualificado e escala',
-          color: 'emerald',
-          cpc: optCpc,
-          clicks: optClicks,
-          convLp: optConvLp,
-          leads: optLeads,
-          cpa: optCpa,
-          closeRate: optCloseRate,
-          contracts: optContracts,
-          cac: optCac,
-          ltv: ltvPerClient,
-          ltvCac: optLtvCac,
-          paybackMonths: optPayback,
-          mrr: optMrr,
-          annual: optAnnual,
-          roas: optRoas
-        }
-      });
-
+      setPlannerResult(computeScenarios(plannerCampaignTopic, plannerDailyBudget, plannerTicketMonthly, plannerContractMonths));
       setIsCalculatingPlanner(false);
       showSuccessBanner('✨ Demanda analisada e indicadores (CAC, LTV, LTV/CAC e Payback) calculados nos 3 cenários!');
-    }, 500);
+    }, 400);
   };
 
   const handleApplyScenarioToAgent = (scenario) => {
