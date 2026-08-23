@@ -89,6 +89,9 @@ function App() {
         <Route path="/lp/tennant-a260" element={<LpTennantA260 />} />
         <Route path="/tennant-a260" element={<LpTennantA260 />} />
         <Route path="/lavadora-tennant-a260" element={<LpTennantA260 />} />
+        <Route path="/a260" element={<LpTennantA260 />} />
+        <Route path="/A260" element={<LpTennantA260 />} />
+        <Route path="/tennant" element={<LpTennantA260 />} />
       </Routes>
     </BrowserRouter>
   );
