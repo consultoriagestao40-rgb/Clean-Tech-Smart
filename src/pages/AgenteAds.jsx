@@ -35,7 +35,10 @@ import {
   History,
   Cpu,
   Compass,
-  Copy
+  Copy,
+  Eye,
+  Coins,
+  Users
 } from 'lucide-react';
 
 export default function AgenteAds() {
