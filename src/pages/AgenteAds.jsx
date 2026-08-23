@@ -153,6 +153,22 @@ export default function AgenteAds() {
     }
   };
 
+  // Excluir campanha da lista
+  const handleDeleteCampaign = async (campId) => {
+    const updated = managedCampaigns.filter(c => c.id !== campId);
+    setManagedCampaigns(updated);
+    try {
+      await fetch('/api/ads/save-targets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ads_managed_campaigns: updated })
+      });
+      showSuccessBanner('Campanha removida da gestão do Agente!');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // Atualizar CPA individual da campanha
   const updateCampaignTargetCpa = (campId, newCpa) => {
     const updated = managedCampaigns.map(c => {
@@ -1248,9 +1264,37 @@ export default function AgenteAds() {
                       {camp.isMonitored ? 'Ativa no Agente' : 'Ativar Monitoramento'}
                     </button>
 
+                    {/* Botão Excluir */}
+                    <button
+                      onClick={() => handleDeleteCampaign(camp.id)}
+                      className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                      title="Remover campanha da lista"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+
                   </div>
                 </div>
               ))}
+
+              {managedCampaigns.length === 0 && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center mx-auto">
+                    <Sliders className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">Nenhuma Campanha Cadastrada</h3>
+                  <p className="text-xs text-gray-500 max-w-md mx-auto">
+                    Clique no botão <strong>"+ Adicionar Campanha"</strong> acima para cadastrar os nomes exatos das campanhas que você está rodando no Google Ads e Meta Ads.
+                  </p>
+                  <button
+                    onClick={() => setNewCampaignModal(true)}
+                    className="bg-[#007481] text-white text-xs font-bold px-4 py-2 rounded-lg shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Cadastrar Minha Primeira Campanha
+                  </button>
+                </div>
+              )}
             </div>
 
           </div>
