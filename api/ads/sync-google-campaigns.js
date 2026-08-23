@@ -103,10 +103,82 @@ export default async function handler(req, res) {
               });
             }
           }
-        }
-      } catch (apiErr) {
-        console.warn('Google Ads API query attempt:', apiErr.message);
-      }
+
+          // Query Google Ads API for all active Keywords & Search Terms
+          try {
+            const kwQuery = `
+              SELECT 
+                campaign.name, 
+                ad_group_criterion.keyword.text, 
+                ad_group_criterion.keyword.match_type,
+                metrics.impressions, 
+                metrics.clicks, 
+                metrics.cost_micros, 
+                metrics.conversions
+              FROM keyword_view 
+              WHERE campaign.status = 'ENABLED'
+            `;
+
+            const kwRes = await fetch(`https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:searchStream`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'developer-token': developerToken,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ query: kwQuery })
+            });
+
+            if (kwRes.ok) {
+              const kwData = await kwRes.json();
+              const fetchedKeywords = [];
+              if (Array.isArray(kwData)) {
+                kwData.forEach(b => {
+                  if (b.results) {
+                    b.results.forEach((r, idx) => {
+                      const kwText = r.adGroupCriterion?.keyword?.text;
+                      const campName = r.campaign?.name || '[SEARCH [LIMPEZA]';
+                      const match = r.adGroupCriterion?.keyword?.matchType || 'EXACT';
+                      const imps = Number(r.metrics?.impressions || 0);
+                      const clicks = Number(r.metrics?.clicks || 0);
+                      const cost = (Number(r.metrics?.costMicros || 0)) / 1000000;
+                      const convs = Number(r.metrics?.conversions || 0);
+                      const cpa = convs > 0 ? (cost / convs) : 0;
+                      const ctr = imps > 0 ? ((clicks / imps) * 100) : 0;
+
+                      if (kwText) {
+                        fetchedKeywords.push({
+                          id: `gads-kw-${idx}-${Date.now()}`,
+                          term: kwText,
+                          campaign: campName,
+                          matchType: match === 'EXACT' ? 'Exata' : match === 'PHRASE' ? 'Frase' : 'Ampla',
+                          impressions: imps,
+                          clicks,
+                          cost: Number(cost.toFixed(2)),
+                          conversions: convs,
+                          cpa: Number(cpa.toFixed(2)),
+                          ctr: Number(ctr.toFixed(2)),
+                          status: convs > 0 ? 'excelente' : cost > 60 ? 'negativar_urgente' : 'bom',
+                          recommendation: convs > 0 ? 'scale_budget' : cost > 60 ? 'add_negative_keyword' : 'keep_active',
+                          reason: convs > 0 ? 'Palavra sincronizada via Google Ads API gerando conversões.' : 'Palavra ativa monitorada via Google Ads API.'
+                        });
+                      }
+                    });
+                  }
+                });
+              }
+
+              if (fetchedKeywords.length > 0) {
+                await dbClient.query(`
+                  INSERT INTO system_settings (key, value, updated_at)
+                  VALUES ('ads_synced_keywords', $1, NOW())
+                  ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+                `, [JSON.stringify(fetchedKeywords)]);
+              }
+            }
+          } catch (kwErr) {
+            console.warn('Erro ao consultar keyword_view:', kwErr.message);
+          }
     }
 
     // 2. Fetch existing campaigns from database so we don't lose custom added ones

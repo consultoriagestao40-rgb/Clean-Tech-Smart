@@ -150,7 +150,20 @@ export default async function handler(req, res) {
     }
 
     // Search terms analyzed by the Agent for the active campaigns
-    const searchTermsAnalysis = [
+    let searchTermsAnalysis = [];
+    if (settings.ads_synced_keywords) {
+      try {
+        const parsed = JSON.parse(settings.ads_synced_keywords);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          searchTermsAnalysis.push(...parsed);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    // Default base monitored keywords
+    searchTermsAnalysis.push(
       // -------------------------------------------------------------
       // CAMPANHA [SEARCH [LIMPEZA]
       // -------------------------------------------------------------
@@ -383,7 +396,7 @@ export default async function handler(req, res) {
         recommendation: "add_negative_keyword",
         reason: "Busca informativa de estudante sem intenção comercial de contratação."
       }
-    ];
+    );
 
     // Meta Ads Creatives & Campaign Performance
     const metaCreativesAnalysis = [
