@@ -151,8 +151,71 @@ export default async function handler(req, res) {
 
     // Search terms analyzed by the Agent for the active campaigns
     const searchTermsAnalysis = [
+      // -------------------------------------------------------------
+      // CAMPANHA [SEARCH [LIMPEZA]
+      // -------------------------------------------------------------
       {
         id: "st-limpeza-1",
+        term: "empresa de limpeza e conservação predial curitiba",
+        campaign: "[SEARCH [LIMPEZA]",
+        matchType: "Frase",
+        impressions: 680,
+        clicks: 42,
+        cost: 168.00,
+        conversions: 5,
+        cpa: 33.60,
+        ctr: 6.18,
+        status: "excelente",
+        recommendation: "add_exact_keyword",
+        reason: "Alta intenção de contratação B2B e CPA 25% abaixo da meta estipulada!"
+      },
+      {
+        id: "st-limpeza-2",
+        term: "terceirização de limpeza pós obra curitiba",
+        campaign: "[SEARCH [LIMPEZA]",
+        matchType: "Frase",
+        impressions: 540,
+        clicks: 36,
+        cost: 144.00,
+        conversions: 4,
+        cpa: 36.00,
+        ctr: 6.67,
+        status: "excelente",
+        recommendation: "add_exact_keyword",
+        reason: "Serviço de alto ticket com propostas em negociação no CRM."
+      },
+      {
+        id: "st-limpeza-3",
+        term: "limpeza industrial de galpões e pisos",
+        campaign: "[SEARCH [LIMPEZA]",
+        matchType: "Ampla",
+        impressions: 490,
+        clicks: 32,
+        cost: 160.00,
+        conversions: 4,
+        cpa: 40.00,
+        ctr: 6.53,
+        status: "excelente",
+        recommendation: "scale_budget",
+        reason: "Excelente sinergia com locação de lavadoras de piso Tennant."
+      },
+      {
+        id: "st-limpeza-4",
+        term: "empresa de limpeza terceirizada para empresas",
+        campaign: "[SEARCH [LIMPEZA]",
+        matchType: "Frase",
+        impressions: 610,
+        clicks: 30,
+        cost: 199.60,
+        conversions: 5,
+        cpa: 39.92,
+        ctr: 4.92,
+        status: "excelente",
+        recommendation: "keep_active",
+        reason: "Contratos corporativos recorrentes de facilities."
+      },
+      {
+        id: "st-limpeza-5",
         term: "vagas emprego auxiliar de limpeza curitiba",
         campaign: "[SEARCH [LIMPEZA]",
         matchType: "Ampla",
@@ -164,28 +227,62 @@ export default async function handler(req, res) {
         ctr: 6.66,
         status: "negativar_urgente",
         recommendation: "add_negative_keyword",
-        reason: "Termo de RH/Emprego sem intenção de contratação gastando verba de anúncio."
+        reason: "Termo de RH/Emprego sem intenção comercial de contratação."
+      },
+
+      // -------------------------------------------------------------
+      // CAMPANHA [SEARCH [ALTURA]
+      // -------------------------------------------------------------
+      {
+        id: "st-altura-1",
+        term: "serviço de alpinismo industrial curitiba",
+        campaign: "[SEARCH [ALTURA]",
+        matchType: "Frase",
+        impressions: 520,
+        clicks: 34,
+        cost: 170.00,
+        conversions: 4,
+        cpa: 42.50,
+        ctr: 6.54,
+        status: "excelente",
+        recommendation: "add_exact_keyword",
+        reason: "Busca de alta precisão técnica para serviços em locais de difícil acesso."
       },
       {
-        id: "st-limpeza-2",
-        term: "empresa de limpeza e conservação predial curitiba",
-        campaign: "[SEARCH [LIMPEZA]",
+        id: "st-altura-2",
+        term: "limpeza de fachada em altura curitiba",
+        campaign: "[SEARCH [ALTURA]",
         matchType: "Frase",
         impressions: 480,
         clicks: 28,
-        cost: 112.00,
+        cost: 140.00,
         conversions: 3,
-        cpa: 37.33,
+        cpa: 46.66,
         ctr: 5.83,
-        status: "excelente",
-        recommendation: "add_exact_keyword",
-        reason: "Alta intenção de contratação B2B e CPA 17% abaixo da meta!"
+        status: "bom",
+        recommendation: "keep_active",
+        reason: "Cotações de condomínios comerciais e galpões industriais."
       },
       {
-        id: "st-altura-1",
-        term: "alpinismo industrial e limpeza de fachada curitiba",
+        id: "st-altura-3",
+        term: "empresa pintura predial altura curitiba",
         campaign: "[SEARCH [ALTURA]",
         matchType: "Frase",
+        impressions: 410,
+        clicks: 24,
+        cost: 120.00,
+        conversions: 3,
+        cpa: 40.00,
+        ctr: 5.85,
+        status: "excelente",
+        recommendation: "scale_budget",
+        reason: "Excelente margem de lucro e ticket médio elevado no CRM."
+      },
+      {
+        id: "st-altura-4",
+        term: "manutenção predial trabalho em altura",
+        campaign: "[SEARCH [ALTURA]",
+        matchType: "Ampla",
         impressions: 390,
         clicks: 19,
         cost: 95.00,
@@ -193,23 +290,23 @@ export default async function handler(req, res) {
         cpa: 47.50,
         ctr: 4.87,
         status: "bom",
-        recommendation: "add_exact_keyword",
-        reason: "Serviço em altura qualificado com cotações no WhatsApp."
+        recommendation: "keep_active",
+        reason: "Serviço qualificado com demanda constante em indústrias."
       },
       {
-        id: "st-altura-2",
+        id: "st-altura-5",
         term: "curso nr35 trabalho em altura gratis pdf",
         campaign: "[SEARCH [ALTURA]",
         matchType: "Ampla",
         impressions: 160,
         clicks: 9,
-        cost: 49.50,
+        cost: 45.00,
         conversions: 0,
         cpa: 0.00,
         ctr: 5.62,
         status: "negativar_urgente",
         recommendation: "add_negative_keyword",
-        reason: "Busca informativa de estudante sem intenção comercial."
+        reason: "Busca de estudante/treinamento sem intenção comercial de contratação."
       }
     ];
 
