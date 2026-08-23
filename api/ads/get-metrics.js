@@ -75,6 +75,96 @@ export default async function handler(req, res) {
     const autoNegateThresholdSpend = parseFloat(settings.ads_negate_spend_threshold || '50.00');
     const autoNegateClicksThreshold = parseInt(settings.ads_negate_clicks_threshold || '12', 10);
 
+    // Managed Campaigns list
+    let managedCampaigns = [];
+    if (settings.ads_managed_campaigns) {
+      try {
+        managedCampaigns = JSON.parse(settings.ads_managed_campaigns);
+      } catch (e) {
+        // fallback
+      }
+    }
+
+    if (!managedCampaigns || managedCampaigns.length === 0) {
+      managedCampaigns = [
+        {
+          id: "cmp-g1",
+          name: "Google Search - Tennant A260 B2B",
+          platform: "Google Ads",
+          type: "Rede de Pesquisa",
+          status: "active",
+          isMonitored: true,
+          targetCpa: 45.00,
+          dailyBudget: 120.00,
+          spentMonth: 1240.00,
+          clicksMonth: 284,
+          leadsMonth: 31,
+          currentCpa: 40.00,
+          healthStatus: "no_alvo"
+        },
+        {
+          id: "cmp-g2",
+          name: "Google Search - Venda de Equipamentos & Máquinas",
+          platform: "Google Ads",
+          type: "Rede de Pesquisa",
+          status: "active",
+          isMonitored: true,
+          targetCpa: 75.00,
+          dailyBudget: 60.00,
+          spentMonth: 540.00,
+          clicksMonth: 110,
+          leadsMonth: 8,
+          currentCpa: 67.50,
+          healthStatus: "no_alvo"
+        },
+        {
+          id: "cmp-g3",
+          name: "Google Search - Institucional & Marca Clean Tech",
+          platform: "Google Ads",
+          type: "Branding",
+          status: "active",
+          isMonitored: false,
+          targetCpa: 25.00,
+          dailyBudget: 20.00,
+          spentMonth: 180.00,
+          clicksMonth: 95,
+          leadsMonth: 12,
+          currentCpa: 15.00,
+          healthStatus: "ignorado_ia"
+        },
+        {
+          id: "cmp-m1",
+          name: "Meta Ads - Leads Form: Tennant A260 B2B (PR/SC)",
+          platform: "Meta Ads",
+          type: "Lead Ads & Instagram",
+          status: "active",
+          isMonitored: true,
+          targetCpa: 45.00,
+          dailyBudget: 80.00,
+          spentMonth: 1090.00,
+          clicksMonth: 410,
+          leadsMonth: 23,
+          currentCpa: 47.39,
+          healthStatus: "atencao"
+        },
+        {
+          id: "cmp-m2",
+          name: "Meta Ads - Remarketing Vídeos LP & Calculadora ROI",
+          platform: "Meta Ads",
+          type: "Remarketing",
+          status: "active",
+          isMonitored: true,
+          targetCpa: 35.00,
+          dailyBudget: 30.00,
+          spentMonth: 320.00,
+          clicksMonth: 140,
+          leadsMonth: 9,
+          currentCpa: 35.55,
+          healthStatus: "no_alvo"
+        }
+      ];
+    }
+
     // Negative keywords list saved
     let negativeKeywords = [];
     if (settings.ads_negative_keywords) {
@@ -286,6 +376,7 @@ export default async function handler(req, res) {
         },
         searchTermsAnalysis,
         metaCreativesAnalysis,
+        managedCampaigns,
         negativeKeywords,
         recentLogs: logsRes.rows
       }

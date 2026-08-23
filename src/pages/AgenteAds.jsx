@@ -75,7 +75,12 @@ export default function AgenteAds() {
   const [searchTerms, setSearchTerms] = useState([]);
   const [metaCreatives, setMetaCreatives] = useState([]);
   const [negativeKeywords, setNegativeKeywords] = useState([]);
+  const [managedCampaigns, setManagedCampaigns] = useState([]);
+  const [campaignFilter, setCampaignFilter] = useState('all');
   const [logs, setLogs] = useState([]);
+  const [isSavingCampaigns, setIsSavingCampaigns] = useState(false);
+  const [newCampaignModal, setNewCampaignModal] = useState(false);
+  const [newCampData, setNewCampData] = useState({ name: '', platform: 'Google Ads', type: 'Rede de Pesquisa', targetCpa: 45.00, dailyBudget: 50.00 });
   const [apiCredentials, setApiCredentials] = useState({
     googleCustomerId: '',
     googleDeveloperToken: '',
@@ -105,6 +110,7 @@ export default function AgenteAds() {
           if (json.data.realMetrics) setRealMetrics(json.data.realMetrics);
           if (json.data.searchTermsAnalysis) setSearchTerms(json.data.searchTermsAnalysis);
           if (json.data.metaCreativesAnalysis) setMetaCreatives(json.data.metaCreativesAnalysis);
+          if (json.data.managedCampaigns) setManagedCampaigns(json.data.managedCampaigns);
           if (json.data.negativeKeywords) setNegativeKeywords(json.data.negativeKeywords);
           if (json.data.recentLogs) setLogs(json.data.recentLogs);
           if (json.data.apiCredentials) setApiCredentials(json.data.apiCredentials);
@@ -121,6 +127,94 @@ export default function AgenteAds() {
   useEffect(() => {
     fetchAdsData();
   }, []);
+
+  // Alternar monitoramento da campanha
+  const toggleCampaignMonitoring = async (campId) => {
+    const updated = managedCampaigns.map(c => {
+      if (c.id === campId) {
+        return { ...c, isMonitored: !c.isMonitored };
+      }
+      return c;
+    });
+    setManagedCampaigns(updated);
+    try {
+      await fetch('/api/ads/save-targets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ads_managed_campaigns: updated })
+      });
+      const targetCamp = updated.find(c => c.id === campId);
+      showSuccessBanner(targetCamp.isMonitored 
+        ? `🟢 Monitoramento da campanha "${targetCamp.name}" ATIVADO!` 
+        : `⚪ Campanha "${targetCamp.name}" ignorada pela IA.`
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Atualizar CPA individual da campanha
+  const updateCampaignTargetCpa = (campId, newCpa) => {
+    const updated = managedCampaigns.map(c => {
+      if (c.id === campId) {
+        return { ...c, targetCpa: parseFloat(newCpa) || 0 };
+      }
+      return c;
+    });
+    setManagedCampaigns(updated);
+  };
+
+  // Salvar alterações de campanhas
+  const handleSaveCampaigns = async () => {
+    setIsSavingCampaigns(true);
+    try {
+      await fetch('/api/ads/save-targets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ads_managed_campaigns: managedCampaigns })
+      });
+      showSuccessBanner('Configurações de campanhas monitoradas salvas com sucesso!');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSavingCampaigns(false);
+    }
+  };
+
+  // Adicionar nova campanha manual
+  const handleAddCustomCampaign = async (e) => {
+    e.preventDefault();
+    if (!newCampData.name.trim()) return;
+    const newCamp = {
+      id: `cmp-custom-${Date.now()}`,
+      name: newCampData.name.trim(),
+      platform: newCampData.platform,
+      type: newCampData.type,
+      status: 'active',
+      isMonitored: true,
+      targetCpa: Number(newCampData.targetCpa) || 45.00,
+      dailyBudget: Number(newCampData.dailyBudget) || 50.00,
+      spentMonth: 0,
+      clicksMonth: 0,
+      leadsMonth: 0,
+      currentCpa: 0,
+      healthStatus: 'no_alvo'
+    };
+    const updated = [...managedCampaigns, newCamp];
+    setManagedCampaigns(updated);
+    setNewCampaignModal(false);
+    setNewCampData({ name: '', platform: 'Google Ads', type: 'Rede de Pesquisa', targetCpa: 45.00, dailyBudget: 50.00 });
+    try {
+      await fetch('/api/ads/save-targets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ads_managed_campaigns: updated })
+      });
+      showSuccessBanner(`Nova campanha "${newCamp.name}" adicionada ao monitoramento da IA!`);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Save targets
   const handleSaveTargets = async (e) => {
@@ -143,7 +237,8 @@ export default function AgenteAds() {
         ads_google_conversion_label: apiCredentials.googleConversionLabel,
         ads_meta_ad_account_id: apiCredentials.metaAdAccountId,
         ads_meta_pixel_id: apiCredentials.metaPixelId,
-        ads_meta_capi_token: apiCredentials.metaCapiToken
+        ads_meta_capi_token: apiCredentials.metaCapiToken,
+        ads_managed_campaigns: managedCampaigns
       };
 
       const res = await fetch('/api/ads/save-targets', {
@@ -417,6 +512,18 @@ export default function AgenteAds() {
         >
           <Target className="w-4 h-4 text-emerald-600" />
           Métricas Desejadas & Metas
+        </button>
+
+        <button
+          onClick={() => setActiveTab('campanhas')}
+          className={`flex items-center gap-2 px-4 py-3 font-bold text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'campanhas'
+              ? 'bg-white text-[#007481] border-b-2 border-[#007481] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+        >
+          <Sliders className="w-4 h-4 text-[#eb6420]" />
+          Campanhas sob Gestão ({managedCampaigns.filter(c => c.isMonitored).length}/{managedCampaigns.length})
         </button>
 
         <button
@@ -931,6 +1038,179 @@ export default function AgenteAds() {
       )}
 
       {/* ========================================================================= */}
+      {/* 🎛️ CONTEÚDO DA ABA: CAMPANHAS SOB GESTÃO DO AGENTE IA                    */}
+      {/* ========================================================================= */}
+      {activeTab === 'campanhas' && (
+        <div className="space-y-6">
+          
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+              <div>
+                <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <Sliders className="w-5 h-5 text-[#eb6420]" />
+                  Seleção de Campanhas Monitoradas pelo Agente IA
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Ligue ou desligue o piloto do Agente para cada campanha. O Agente só auditará e negativará termos nas campanhas <strong>Ativas</strong>.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <button
+                  onClick={() => setNewCampaignModal(true)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-4 py-2.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adicionar Campanha
+                </button>
+
+                <button
+                  onClick={handleSaveCampaigns}
+                  disabled={isSavingCampaigns}
+                  className="bg-[#007481] hover:bg-[#005f6b] text-white text-xs font-bold px-5 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                  {isSavingCampaigns ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+              </div>
+            </div>
+
+            {/* Modal de Adicionar Campanha Manual */}
+            {newCampaignModal && (
+              <div className="bg-slate-50 border border-slate-300 rounded-xl p-5 space-y-4 animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Nova Campanha para Monitoramento</h3>
+                  <button onClick={() => setNewCampaignModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                </div>
+                <form onSubmit={handleAddCustomCampaign} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1">Nome da Campanha</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Google Search - Tennant A260 Curitiba"
+                      value={newCampData.name}
+                      onChange={(e) => setNewCampData({ ...newCampData, name: e.target.value })}
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1">Plataforma</label>
+                    <select
+                      value={newCampData.platform}
+                      onChange={(e) => setNewCampData({ ...newCampData, platform: e.target.value })}
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs"
+                    >
+                      <option value="Google Ads">Google Ads</option>
+                      <option value="Meta Ads">Meta Ads</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1">CPA Alvo (R$)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={newCampData.targetCpa}
+                      onChange={(e) => setNewCampData({ ...newCampData, targetCpa: parseFloat(e.target.value) || 45 })}
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold"
+                    />
+                  </div>
+                  <div className="sm:col-span-4 flex justify-end gap-2 pt-2">
+                    <button type="button" onClick={() => setNewCampaignModal(false)} className="px-3 py-1.5 text-xs text-gray-600">Cancelar</button>
+                    <button type="submit" className="bg-[#eb6420] text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-xs">Adicionar ao Agente</button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Grid de Campanhas com Switch Liga/Desliga */}
+            <div className="space-y-3">
+              {managedCampaigns.map((camp) => (
+                <div 
+                  key={camp.id}
+                  className={`p-4 rounded-xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                    camp.isMonitored 
+                      ? 'bg-white border-teal-200 shadow-xs ring-1 ring-teal-50' 
+                      : 'bg-gray-50 border-gray-200 opacity-60'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2.5 rounded-xl shrink-0 mt-0.5 ${camp.platform === 'Google Ads' ? 'bg-sky-100 text-sky-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                      {camp.platform === 'Google Ads' ? <Globe className="w-5 h-5" /> : <Layers className="w-5 h-5" />}
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-gray-900 text-sm">{camp.name}</span>
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                          camp.platform === 'Google Ads' ? 'bg-sky-100 text-sky-800' : 'bg-indigo-100 text-indigo-800'
+                        }`}>
+                          {camp.platform} · {camp.type}
+                        </span>
+                        {camp.isMonitored ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Monitorando & Otimizando
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">
+                            ⚪ Ignorado pela IA
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-600 font-mono">
+                        <span>Gasto Mês: <strong>R$ {camp.spentMonth.toFixed(2)}</strong></span>
+                        <span>Cliques: <strong>{camp.clicksMonth}</strong></span>
+                        <span>Leads Gerados: <strong className="text-emerald-700">{camp.leadsMonth}</strong></span>
+                        <span>CPA Atual: <strong>{camp.currentCpa > 0 ? `R$ ${camp.currentCpa.toFixed(2)}` : '-'}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 self-end md:self-auto shrink-0">
+                    
+                    {/* Campo de Meta Individual de CPA */}
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="text-gray-500 font-semibold text-[11px]">CPA Alvo:</span>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1.5 text-[10px] text-gray-400 font-bold">R$</span>
+                        <input
+                          type="number"
+                          step="1"
+                          disabled={!camp.isMonitored}
+                          value={camp.targetCpa}
+                          onChange={(e) => updateCampaignTargetCpa(camp.id, e.target.value)}
+                          className="w-20 pl-6 pr-2 py-1 bg-white border border-gray-300 rounded text-xs font-bold text-gray-900 disabled:bg-gray-100"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Toggle Switch */}
+                    <button
+                      onClick={() => toggleCampaignMonitoring(camp.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        camp.isMonitored 
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs' 
+                          : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                      }`}
+                    >
+                      {camp.isMonitored ? <Check className="w-3.5 h-3.5" /> : null}
+                      {camp.isMonitored ? 'Ativa no Agente' : 'Ativar Monitoramento'}
+                    </button>
+
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
       {/* 🔍 CONTEÚDO DA ABA 3: TERMOS DE PESQUISA (GOOGLE ADS SEARCH TERMS) */}
       {/* ========================================================================= */}
       {activeTab === 'palavras' && (
@@ -947,15 +1227,33 @@ export default function AgenteAds() {
               </p>
             </div>
 
-            {selectedTermsToNegate.length > 0 && (
-              <button
-                onClick={handleBatchNegate}
-                className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer animate-fadeIn"
-              >
-                <Trash2 className="w-4 h-4" />
-                Negativar {selectedTermsToNegate.length} Termos Selecionados
-              </button>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Filtro por Campanha */}
+              <div className="flex items-center gap-1.5 text-xs bg-gray-50 p-1.5 rounded-lg border border-gray-200">
+                <Filter className="w-3.5 h-3.5 text-gray-500" />
+                <span className="font-bold text-gray-600">Filtrar:</span>
+                <select
+                  value={campaignFilter}
+                  onChange={(e) => setCampaignFilter(e.target.value)}
+                  className="bg-white border border-gray-300 rounded px-2 py-1 text-xs font-medium focus:outline-none"
+                >
+                  <option value="all">Todas as Campanhas Monitoradas</option>
+                  {managedCampaigns.map(c => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedTermsToNegate.length > 0 && (
+                <button
+                  onClick={handleBatchNegate}
+                  className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer animate-fadeIn"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Negativar {selectedTermsToNegate.length} Selecionados
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -986,7 +1284,7 @@ export default function AgenteAds() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-gray-800 font-medium">
-                {searchTerms.map((st) => (
+                {searchTerms.filter(st => campaignFilter === 'all' || st.campaign === campaignFilter).map((st) => (
                   <tr key={st.id} className={st.status === 'negativar_urgente' ? 'bg-rose-50/40 hover:bg-rose-50' : 'hover:bg-gray-50'}>
                     <td className="p-3">
                       {st.status === 'negativar_urgente' && (
