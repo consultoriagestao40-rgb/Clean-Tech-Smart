@@ -1964,35 +1964,25 @@ export default function AgenteAds() {
                       value={newCampData.name}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (val.startsWith('[Google]')) {
-                          setNewCampData({ ...newCampData, name: val.replace('[Google] ', ''), platform: 'Google Ads' });
-                        } else if (val.startsWith('[Meta]')) {
-                          setNewCampData({ ...newCampData, name: val.replace('[Meta] ', ''), platform: 'Meta Ads' });
+                        if (val === '__custom__') {
+                          setNewCampData({ ...newCampData, name: '', platform: 'Google Ads' });
                         } else {
-                          setNewCampData({ ...newCampData, name: val });
+                          setNewCampData({ ...newCampData, name: val, platform: 'Google Ads' });
                         }
                       }}
                       className="w-full p-2 bg-white border border-teal-500 rounded-lg text-xs font-semibold focus:outline-none mb-1.5 shadow-xs"
                     >
-                      <option value="">-- Clique aqui para escolher a campanha da lista suspensa --</option>
-                      <optgroup label="📍 Campanhas Ativas da sua Conta Google Ads (240-669-5395)">
-                        <option value="[Google] [SEARCH [ALTURA]">[Google] [SEARCH [ALTURA]</option>
-                        <option value="[Google] [SEARCH [LIMPEZA]">[Google] [SEARCH [LIMPEZA]</option>
+                      <option value="">-- Clique para selecionar sua campanha ativa --</option>
+                      <optgroup label="📍 Campanhas Ativas da Conta Google Ads (240-669-5395)">
+                        <option value="[SEARCH [ALTURA]">[SEARCH [ALTURA]</option>
+                        <option value="[SEARCH [LIMPEZA]">[SEARCH [LIMPEZA]</option>
                       </optgroup>
-                      <optgroup label="✨ Campanhas Recomendadas para Locação Tennant">
-                        <option value="[Google] Google Search - Locação Lavadora Tennant A260 Curitiba">[Google] Locação Lavadora Tennant A260 Curitiba</option>
-                        <option value="[Google] Google Search - Aluguel de Equipamentos de Limpeza B2B">[Google] Aluguel de Equipamentos de Limpeza B2B</option>
-                        <option value="[Google] Google Search - Venda de Lavadoras de Piso Industriais">[Google] Venda de Lavadoras de Piso Industriais</option>
-                      </optgroup>
-                      <optgroup label="📱 Meta Ads (Instagram & Facebook)">
-                        <option value="[Meta] Meta Ads - Leads Form: Tennant A260 B2B (PR/SC)">[Meta] Leads Form: Tennant A260 B2B (PR/SC)</option>
-                        <option value="[Meta] Meta Ads - Remarketing Vídeos LP & Calculadora ROI">[Meta] Remarketing Vídeos LP & Calculadora ROI</option>
-                      </optgroup>
+                      <option value="__custom__">✏️ Digitar outro nome de campanha ativa...</option>
                     </select>
 
                     <input
                       type="text"
-                      placeholder="Ou confirme/edite o nome da campanha aqui..."
+                      placeholder="Ou digite o nome exato de outra campanha ativa aqui..."
                       value={newCampData.name}
                       onChange={(e) => setNewCampData({ ...newCampData, name: e.target.value })}
                       className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs focus:outline-none"
