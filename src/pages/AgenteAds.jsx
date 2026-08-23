@@ -1225,47 +1225,55 @@ export default function AgenteAds() {
                   </div>
 
                   {/* 6. Taxa Fechamento CRM */}
-                  <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                  <div className={`p-4 rounded-xl border relative ${closeVal > 0 ? 'border-emerald-200 bg-emerald-50/40' : 'border-rose-200 bg-rose-50/40'}`}>
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">6. Fechamento CRM</span>
-                      <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${closeVal > 0 ? 'text-emerald-700 bg-emerald-100' : 'text-rose-700 bg-rose-100'}`}>
+                        {closeVal > 0 ? '🟢 Na Meta' : '🔴 0% (Fora da Meta)'}
+                      </span>
                     </div>
                     <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
                       {closeVal}%
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-0.5">
                       <div className="flex justify-between"><span>Meta Comercial:</span> <strong className="text-gray-900">&gt; 20.0%</strong></div>
-                      <div className="text-[10px] text-emerald-700 font-semibold">1 a cada 4 contatos vira contrato assinado.</div>
+                      <div className={`text-[10px] font-semibold ${closeVal > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                        {closeVal > 0 ? 'Taxa de fechamento ativa no CRM.' : 'Nenhum contrato fechado ainda via Google Ads.'}
+                      </div>
                     </div>
                   </div>
 
                   {/* 7. CAC (Custo Aquisição) */}
-                  <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                  <div className={`p-4 rounded-xl border relative ${cacVal > 0 ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50'}`}>
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">7. CAC (Novo Cliente)</span>
-                      <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${cacVal > 0 && cacVal <= 400 ? 'text-emerald-700 bg-emerald-100' : 'text-slate-600 bg-slate-200'}`}>
+                        {cacVal > 0 ? '🟢 Na Meta' : '⚪ Sem Vendas'}
+                      </span>
                     </div>
                     <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
-                      R$ {cacVal.toFixed(2)}
+                      {cacVal > 0 ? `R$ ${cacVal.toFixed(2)}` : '-'}
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-0.5">
                       <div className="flex justify-between"><span>Meta Máxima:</span> <strong className="text-gray-900">&lt; R$ 400.00</strong></div>
-                      <div className="text-[10px] text-emerald-700 font-semibold">Payback pago nos primeiros dias de contrato.</div>
+                      <div className="text-[10px] text-gray-500 font-semibold">Aguardando primeiro contrato fechado.</div>
                     </div>
                   </div>
 
                   {/* 8. Múltiplo LTV / CAC */}
-                  <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                  <div className={`p-4 rounded-xl border relative ${ltvCacVal !== '0.0x' ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50'}`}>
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">8. Retorno LTV / CAC</span>
-                      <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Excelente</span>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${ltvCacVal !== '0.0x' ? 'text-emerald-700 bg-emerald-100' : 'text-slate-600 bg-slate-200'}`}>
+                        {ltvCacVal !== '0.0x' ? '🟢 Excelente' : '⚪ 0.0x'}
+                      </span>
                     </div>
                     <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
                       {ltvCacVal}
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-0.5">
                       <div className="flex justify-between"><span>Benchmark:</span> <strong className="text-gray-900">&gt; 10.0x</strong></div>
-                      <div className="text-[10px] text-emerald-700 font-semibold">Retorno massivo sobre o valor do contrato.</div>
+                      <div className="text-[10px] text-gray-500 font-semibold">Será calculado após a 1ª conversão em vendas.</div>
                     </div>
                   </div>
 

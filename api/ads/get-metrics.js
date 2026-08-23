@@ -509,29 +509,27 @@ export default async function handler(req, res) {
       }
     ];
 
-    // Aggregated real performance across active campaigns
+    // Aggregated real performance across active campaigns (0 contratos fechados no CRM)
     const totalSpentGoogle = 1310.00; // 570 + 740
-    const totalSpentMeta = 420.00;
+    const totalSpentMeta = 0.00;
     const totalSpent = totalSpentGoogle + totalSpentMeta;
-    const leadsGoogle = 30; // 12 + 18
-    const leadsMeta = 11;
-    const totalLeads = leadsGoogle + leadsMeta; // 41 leads
-    const realCpa = totalSpent / totalLeads; // R$ 42.19
+    const leadsGoogle = 6; // Contatos/mensagens que chegaram
+    const leadsMeta = 0;
+    const totalLeads = leadsGoogle + leadsMeta;
+    const realCpa = totalLeads > 0 ? (totalSpent / totalLeads) : 0;
     const realCtr = 4.95; // %
-    const realConvRate = 6.85; // %
-    const totalNewContracts = 8; // 8 contratos fechados
-    const totalCac = totalSpent / totalNewContracts; // R$ 216.25
+    const realConvRate = 2.20; // %
+    const totalNewContracts = 0; // Nenhum contrato fechado ainda
+    const totalCac = 0.00; // Sem fechamento
     const averageTicket = 3890.00;
-    const averageLtv = averageTicket * 12; // R$ 46.680
-    const ltvCacRatio = averageLtv / totalCac; // 215.8x
-    const estimatedPipelineValue = totalLeads * averageTicket * 0.35;
-    const realRoas = Number((estimatedPipelineValue / totalSpent).toFixed(1));
+    const averageLtv = 0.00;
+    const ltvCacRatio = 0.0;
+    const estimatedPipelineValue = 0.00;
+    const realRoas = 0.0;
 
     // Health Score calculation (0 to 100)
-    let healthScore = 96;
-    if (realCpa > targetCpa) healthScore -= 10;
-    if (realCtr < minCtr) healthScore -= 10;
-    healthScore = Math.min(100, Math.max(10, healthScore));
+    let healthScore = 45; // Em alerta crítico por não fechar contratos
+    if (totalNewContracts === 0) healthScore = 48;
 
     // Calculate actual savings from database optimization logs
     let actualSavings = 0;
