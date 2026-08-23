@@ -78,94 +78,38 @@ export default async function handler(req, res) {
     const isCleanMode = settings.ads_clean_data_mode !== 'false'; // Por padrão ativado o modo de dados reais zerados
 
     // Managed Campaigns list
-    let managedCampaigns = [];
-    if (settings.ads_managed_campaigns) {
+    let managedCampaigns = null;
+    if (settings.ads_managed_campaigns !== undefined && settings.ads_managed_campaigns !== null) {
       try {
         managedCampaigns = JSON.parse(settings.ads_managed_campaigns);
       } catch (e) {
-        // fallback
+        managedCampaigns = null;
       }
     }
 
-    if (!managedCampaigns || managedCampaigns.length === 0) {
-      managedCampaigns = [
-        {
-          id: "cmp-g1",
-          name: "Google Search - Tennant A260 B2B",
-          platform: "Google Ads",
-          type: "Rede de Pesquisa",
-          status: "active",
-          isMonitored: true,
-          targetCpa: 45.00,
-          dailyBudget: 120.00,
-          spentMonth: isCleanMode ? 0.00 : 1240.00,
-          clicksMonth: isCleanMode ? 0 : 284,
-          leadsMonth: isCleanMode ? 0 : 31,
-          currentCpa: isCleanMode ? 0.00 : 40.00,
-          healthStatus: "no_alvo"
-        },
-        {
-          id: "cmp-g2",
-          name: "Google Search - Venda de Equipamentos & Máquinas",
-          platform: "Google Ads",
-          type: "Rede de Pesquisa",
-          status: "active",
-          isMonitored: true,
-          targetCpa: 75.00,
-          dailyBudget: 60.00,
-          spentMonth: isCleanMode ? 0.00 : 540.00,
-          clicksMonth: isCleanMode ? 0 : 110,
-          leadsMonth: isCleanMode ? 0 : 8,
-          currentCpa: isCleanMode ? 0.00 : 67.50,
-          healthStatus: "no_alvo"
-        },
-        {
-          id: "cmp-g3",
-          name: "Google Search - Institucional & Marca Clean Tech",
-          platform: "Google Ads",
-          type: "Branding",
-          status: "active",
-          isMonitored: false,
-          targetCpa: 25.00,
-          dailyBudget: 20.00,
-          spentMonth: 0.00,
-          clicksMonth: 0,
-          leadsMonth: 0,
-          currentCpa: 0.00,
-          healthStatus: "ignorado_ia"
-        },
-        {
-          id: "cmp-m1",
-          name: "Meta Ads - Leads Form: Tennant A260 B2B (PR/SC)",
-          platform: "Meta Ads",
-          type: "Lead Ads & Instagram",
-          status: "active",
-          isMonitored: true,
-          targetCpa: 45.00,
-          dailyBudget: 80.00,
-          spentMonth: isCleanMode ? 0.00 : 1090.00,
-          clicksMonth: isCleanMode ? 0 : 410,
-          leadsMonth: isCleanMode ? 0 : 23,
-          currentCpa: isCleanMode ? 0.00 : 47.39,
-          healthStatus: "no_alvo"
-        },
-        {
-          id: "cmp-m2",
-          name: "Meta Ads - Remarketing Vídeos LP & Calculadora ROI",
-          platform: "Meta Ads",
-          type: "Remarketing",
-          status: "active",
-          isMonitored: true,
-          targetCpa: 35.00,
-          dailyBudget: 30.00,
-          spentMonth: 0.00,
-          clicksMonth: 0,
-          leadsMonth: 0,
-          currentCpa: 0.00,
-          healthStatus: "no_alvo"
-        }
-      ];
-    } else if (isCleanMode) {
+    if (managedCampaigns === null) {
+      if (isCleanMode) {
+        managedCampaigns = [];
+      } else {
+        managedCampaigns = [
+          {
+            id: "cmp-g1",
+            name: "Google Search - Tennant A260 B2B",
+            platform: "Google Ads",
+            type: "Rede de Pesquisa",
+            status: "active",
+            isMonitored: true,
+            targetCpa: 45.00,
+            dailyBudget: 120.00,
+            spentMonth: 0.00,
+            clicksMonth: 0,
+            leadsMonth: 0,
+            currentCpa: 0.00,
+            healthStatus: "no_alvo"
+          }
+        ];
+      }
+    } else if (isCleanMode && Array.isArray(managedCampaigns)) {
       managedCampaigns = managedCampaigns.map(c => ({
         ...c,
         spentMonth: 0.00,
