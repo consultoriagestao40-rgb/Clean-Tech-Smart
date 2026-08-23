@@ -102,12 +102,16 @@ export default function AgenteAds() {
   // AI 3-Scenario Predictive Planner State
   const [plannerCampaignTopic, setPlannerCampaignTopic] = useState('Locação de lavadora de piso Tennant A260');
   const [plannerDailyBudget, setPlannerDailyBudget] = useState(50); // R$ 50/dia padrão
+  const [plannerTicketMonthly, setPlannerTicketMonthly] = useState(3890); // Ticket médio editável
+  const [plannerContractMonths, setPlannerContractMonths] = useState(12); // Duração do contrato editável
   const [plannerRegion, setPlannerRegion] = useState('Curitiba e Região Metropolitana (PR)');
   const [isCalculatingPlanner, setIsCalculatingPlanner] = useState(false);
   const [plannerResult, setPlannerResult] = useState({
     topic: 'Locação de lavadora de piso Tennant A260',
     daily: 50,
     monthly: 1500,
+    ticket: 3890,
+    months: 12,
     monthlySearchesDemand: 3850,
     commercialIntent: '94% (Alta Intenção / Fundo de Funil)',
     pessimistic: {
@@ -175,8 +179,9 @@ export default function AgenteAds() {
     setTimeout(() => {
       const daily = Number(plannerDailyBudget) || 50;
       const monthly = daily * 30;
-      const ticket = 3890; // locação mensal A260
-      const ltvPerClient = ticket * 12; // 12 meses de contrato
+      const ticket = Number(plannerTicketMonthly) || 3890; // locação mensal editada
+      const months = Number(plannerContractMonths) || 12; // meses de contrato
+      const ltvPerClient = ticket * months; // LTV por cliente
 
       // Scenario 1: Pessimista (Conservador)
       const pesCpc = 7.80;
@@ -190,7 +195,7 @@ export default function AgenteAds() {
       const pesLtvCac = pesCac > 0 ? (ltvPerClient / pesCac) : 0;
       const pesPayback = ticket > 0 ? (pesCac / ticket) : 0;
       const pesMrr = pesContracts * ticket;
-      const pesAnnual = pesMrr * 12;
+      const pesAnnual = pesMrr * months;
       const pesRoas = monthly > 0 ? (pesMrr / monthly) : 0;
 
       // Scenario 2: Realista (Recomendado)
@@ -205,7 +210,7 @@ export default function AgenteAds() {
       const realLtvCac = realCac > 0 ? (ltvPerClient / realCac) : 0;
       const realPayback = ticket > 0 ? (realCac / ticket) : 0;
       const realMrr = realContracts * ticket;
-      const realAnnual = realMrr * 12;
+      const realAnnual = realMrr * months;
       const realRoas = monthly > 0 ? (realMrr / monthly) : 0;
 
       // Scenario 3: Otimista (Alta Eficiência)
@@ -220,13 +225,15 @@ export default function AgenteAds() {
       const optLtvCac = optCac > 0 ? (ltvPerClient / optCac) : 0;
       const optPayback = ticket > 0 ? (optCac / ticket) : 0;
       const optMrr = optContracts * ticket;
-      const optAnnual = optMrr * 12;
+      const optAnnual = optMrr * months;
       const optRoas = monthly > 0 ? (optMrr / monthly) : 0;
 
       setPlannerResult({
         topic: plannerCampaignTopic,
         daily,
         monthly,
+        ticket,
+        months,
         monthlySearchesDemand: 3850,
         commercialIntent: '94% (Alta Intenção / Fundo de Funil)',
         pessimistic: {
@@ -1282,7 +1289,7 @@ export default function AgenteAds() {
               <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
                 
                 {/* Nome/Foco da Campanha */}
-                <div className="sm:col-span-6">
+                <div className="sm:col-span-4">
                   <label className="block text-[11px] font-bold text-teal-200 uppercase tracking-wider mb-1">
                     Foco da Campanha / Produto
                   </label>
@@ -1296,9 +1303,9 @@ export default function AgenteAds() {
                 </div>
 
                 {/* Orçamento Diário */}
-                <div className="sm:col-span-3">
+                <div className="sm:col-span-2">
                   <label className="block text-[11px] font-bold text-teal-200 uppercase tracking-wider mb-1">
-                    Gasto Diário (R$/dia)
+                    Gasto Diário
                   </label>
                   <div className="relative">
                     <span className="absolute left-2.5 top-2.5 text-xs text-gray-400 font-bold">R$</span>
@@ -1307,21 +1314,53 @@ export default function AgenteAds() {
                       step="5"
                       value={plannerDailyBudget}
                       onChange={(e) => setPlannerDailyBudget(Number(e.target.value))}
-                      className="w-full pl-8 pr-2.5 py-2.5 bg-white text-gray-900 rounded-lg text-xs font-bold focus:outline-none"
+                      className="w-full pl-8 pr-2 py-2.5 bg-white text-gray-900 rounded-lg text-xs font-bold focus:outline-none"
                     />
                   </div>
                 </div>
 
-                {/* Botão de Calcular */}
+                {/* Ticket Médio da Locação (Editável) */}
                 <div className="sm:col-span-3">
+                  <label className="block text-[11px] font-bold text-teal-200 uppercase tracking-wider mb-1">
+                    Ticket Locação (R$/mês)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-2.5 text-xs text-gray-400 font-bold">R$</span>
+                    <input
+                      type="number"
+                      step="50"
+                      value={plannerTicketMonthly}
+                      onChange={(e) => setPlannerTicketMonthly(Number(e.target.value))}
+                      className="w-full pl-8 pr-2 py-2.5 bg-white text-gray-900 rounded-lg text-xs font-bold focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Duração do Contrato (Editável) */}
+                <div className="sm:col-span-1">
+                  <label className="block text-[11px] font-bold text-teal-200 uppercase tracking-wider mb-1">
+                    Meses
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={plannerContractMonths}
+                    onChange={(e) => setPlannerContractMonths(Number(e.target.value))}
+                    className="w-full p-2.5 bg-white text-gray-900 rounded-lg text-xs font-bold text-center focus:outline-none"
+                  />
+                </div>
+
+                {/* Botão de Calcular */}
+                <div className="sm:col-span-2">
                   <button
                     type="button"
                     onClick={handleCalculatePlanner}
                     disabled={isCalculatingPlanner}
-                    className="w-full bg-[#eb6420] hover:bg-[#d55315] text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full bg-[#eb6420] hover:bg-[#d55315] text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-white" />
-                    {isCalculatingPlanner ? 'Analisando...' : 'Calcular com IA'}
+                    {isCalculatingPlanner ? 'Calculando...' : 'Recalcular IA'}
                   </button>
                 </div>
 
@@ -1343,8 +1382,8 @@ export default function AgenteAds() {
                     <span className="text-lg font-black text-white font-mono">R$ {plannerResult.monthly.toLocaleString('pt-BR')}</span>
                   </div>
                   <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
-                    <span className="text-slate-400 text-[10px] uppercase font-semibold block">Ticket Médio Locação A260</span>
-                    <span className="text-lg font-black text-emerald-300 font-mono">R$ 3.890/mês</span>
+                    <span className="text-slate-400 text-[10px] uppercase font-semibold block">Ticket Médio ({plannerResult.months || 12} meses)</span>
+                    <span className="text-lg font-black text-emerald-300 font-mono">R$ {(plannerResult.ticket || 3890).toLocaleString('pt-BR')}/mês</span>
                   </div>
                 </div>
               )}
