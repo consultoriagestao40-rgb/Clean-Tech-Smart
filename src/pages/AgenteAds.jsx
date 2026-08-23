@@ -2956,6 +2956,27 @@ export default function AgenteAds() {
                     className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
                   />
                 </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/ads/google-auth-url');
+                        const data = await res.json();
+                        if (data.authUrl) {
+                          window.location.href = data.authUrl;
+                        }
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }}
+                    className="w-full bg-[#eb6420] hover:bg-[#d55315] text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Globe className="w-4 h-4 text-white" />
+                    Fazer Login e Conectar Conta Google Ads (OAuth)
+                  </button>
+                </div>
               </div>
             </div>
 

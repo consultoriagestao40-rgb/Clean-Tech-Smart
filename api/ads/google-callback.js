@@ -27,7 +27,9 @@ export default async function handler(req, res) {
 
     const clientId = settings.ads_google_client_id || process.env.GOOGLE_ADS_CLIENT_ID;
     const clientSecret = settings.ads_google_client_secret || process.env.GOOGLE_ADS_CLIENT_SECRET;
-    const redirectUri = 'https://clean-tech-smart.vercel.app/api/ads/google-callback';
+    const host = req.headers.host || 'cleantechsmart.cleantechpro.com.br';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const redirectUri = `${protocol}://${host}/api/ads/google-callback`;
 
     if (clientId && clientSecret) {
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {

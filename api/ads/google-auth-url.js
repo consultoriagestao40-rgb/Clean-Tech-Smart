@@ -27,8 +27,10 @@ export default async function handler(req, res) {
     const settings = {};
     settingsRes.rows.forEach(r => { settings[r.key] = r.value; });
 
-    const clientId = settings.ads_google_client_id || process.env.GOOGLE_ADS_CLIENT_ID || '1084839201948-cleantechsmart.apps.googleusercontent.com';
-    const redirectUri = 'https://clean-tech-smart.vercel.app/api/ads/google-callback';
+    const clientId = settings.ads_google_client_id || process.env.GOOGLE_ADS_CLIENT_ID;
+    const host = req.headers.host || 'cleantechsmart.cleantechpro.com.br';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const redirectUri = `${protocol}://${host}/api/ads/google-callback`;
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + new URLSearchParams({
       client_id: clientId,
