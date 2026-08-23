@@ -28,6 +28,19 @@ export default function ConfigurarLpTennantA260() {
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-in-use.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg"
   ];
 
+  const DEFAULT_VIDEOS = [
+    "https://youtube.com/shorts/fixjCwf2FFY?feature=share",
+    "https://youtube.com/shorts/s1BI9PJNkYo?feature=share",
+    "https://youtube.com/shorts/sUPsu0DBjC0?feature=share",
+    "https://youtube.com/shorts/BAv-ekdc5dI?feature=share",
+    "https://youtube.com/shorts/Ba5_Fg5zC5k?feature=share",
+    "https://youtube.com/shorts/EIw3bS5l-BI?feature=share",
+    "https://youtube.com/shorts/LzwI-B6_3Gk?feature=share",
+    "https://youtube.com/shorts/eizkMAlmmg4?feature=share",
+    "https://youtube.com/shorts/NLkTf9sqtBU?feature=share",
+    "https://youtube.com/shorts/RkWoJxATqyk?feature=share"
+  ];
+
   const DEFAULT_TESTIMONIALS = [
     "https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-in-use.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg"
   ];
@@ -41,7 +54,11 @@ export default function ConfigurarLpTennantA260() {
     return DEFAULT_PHOTOS.join('\n');
   });
   const [videoUrls, setVideoUrls] = useState(() => {
-    return localStorage.getItem('lp_a260_video_urls') || '';
+    const saved = localStorage.getItem('lp_a260_video_urls');
+    if (saved && !saved.includes('drive.google.com') && !saved.includes('dQw4w9WgXcQ')) {
+      return saved;
+    }
+    return DEFAULT_VIDEOS.join('\n');
   });
   const [testimonialUrls, setTestimonialUrls] = useState(localStorage.getItem('lp_a260_testimonials_urls') || DEFAULT_TESTIMONIALS.join('\n'));
   const [whatsappNumber, setWhatsappNumber] = useState(localStorage.getItem('lp_a260_whatsapp') || "5541985083658");

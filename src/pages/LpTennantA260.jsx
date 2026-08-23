@@ -93,30 +93,41 @@ export default function LpTennantA260() {
   }, [photoUrlsText]);
 
   // =========================================================================
-  // 2. 🎥 VÍDEOS DEMONSTRATIVOS (GOOGLE DRIVE / YOUTUBE / MP4)
+  // 2. 🎥 VÍDEOS DEMONSTRATIVOS (YOUTUBE SHORTS OFICIAIS)
   // =========================================================================
   const DEFAULT_VIDEOS = [
-    "https://drive.google.com/file/d/1ah1iYK93vQz7hPwy1gIsZvA0VmuUPkOP/view?usp=drive_link",
-    "https://drive.google.com/file/d/1NECUfkD8NQF7v_ez6NPnPngflbF3Ijcn/view?usp=drive_link",
-    "https://drive.google.com/file/d/165w5slp4jWVplkaYiyY2ptEnKdsnfhra/view?usp=drive_link",
-    "https://drive.google.com/file/d/1fXi10BjSiGmL0DVqlNIHvplzja7inNsE/view?usp=drive_link",
-    "https://drive.google.com/file/d/1oRKXlQOFrBPdF5iGhvoXbGVfObA_SoDu/view?usp=drive_link"
+    "https://youtube.com/shorts/fixjCwf2FFY?feature=share",
+    "https://youtube.com/shorts/s1BI9PJNkYo?feature=share",
+    "https://youtube.com/shorts/sUPsu0DBjC0?feature=share",
+    "https://youtube.com/shorts/BAv-ekdc5dI?feature=share",
+    "https://youtube.com/shorts/Ba5_Fg5zC5k?feature=share",
+    "https://youtube.com/shorts/EIw3bS5l-BI?feature=share",
+    "https://youtube.com/shorts/LzwI-B6_3Gk?feature=share",
+    "https://youtube.com/shorts/eizkMAlmmg4?feature=share",
+    "https://youtube.com/shorts/NLkTf9sqtBU?feature=share",
+    "https://youtube.com/shorts/RkWoJxATqyk?feature=share"
   ];
 
   const [videoUrlsText, setVideoUrlsText] = useState(() => {
     const saved = localStorage.getItem('lp_a260_video_urls');
-    if (saved && !saved.includes('dQw4w9WgXcQ')) {
+    if (saved && !saved.includes('dQw4w9WgXcQ') && !saved.includes('drive.google.com')) {
       return saved;
     }
-    return '';
+    return DEFAULT_VIDEOS.join('\n');
   });
 
-  // Helper universal para vídeos: Google Drive, YouTube ou MP4 direto
+  // Helper universal para vídeos: YouTube (Watch, Shorts, Embed), Google Drive ou MP4 direto
   const parseVideoEmbed = (url) => {
     if (!url) return null;
     const trimmed = url.trim();
 
-    // 1. Google Drive (drive.google.com/file/d/ID, docs.google.com/file/d/ID, open?id=ID, uc?id=ID, etc.)
+    // 1. YouTube (watch?v=ID, youtu.be/ID, shorts/ID, embed/ID)
+    const ytMatch = trimmed.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=0&rel=0&modestbranding=1&playsinline=1`;
+    }
+
+    // 2. Google Drive (drive.google.com/file/d/ID, docs.google.com/file/d/ID, open?id=ID, uc?id=ID, etc.)
     const driveMatch1 = trimmed.match(/(?:drive|docs)\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
     if (driveMatch1 && driveMatch1[1]) {
       return `https://drive.google.com/file/d/${driveMatch1[1]}/preview`;
@@ -125,12 +136,6 @@ export default function LpTennantA260() {
     const driveMatch2 = trimmed.match(/(?:drive|docs)\.google\.com\/[a-zA-Z0-9_/?&=#%+-]*[?&]id=([a-zA-Z0-9_-]+)/i);
     if (driveMatch2 && driveMatch2[1]) {
       return `https://drive.google.com/file/d/${driveMatch2[1]}/preview`;
-    }
-
-    // 2. YouTube (watch?v=ID, youtu.be/ID, shorts/ID, embed/ID)
-    const ytMatch = trimmed.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
-    if (ytMatch && ytMatch[1]) {
-      return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=0&rel=0&modestbranding=1&playsinline=1`;
     }
 
     // 3. Fallback direto se for MP4/WebM
@@ -145,14 +150,16 @@ export default function LpTennantA260() {
   const [activeVideoModal, setActiveVideoModal] = useState(null);
 
   const videoTitles = [
-    "Operação da Tennant A260: Lavagem & Secagem Contínua",
+    "Lavagem & Secagem de Alta Performance - Tennant A260",
+    "Operação Contínua em Galpão Logístico",
     "Demonstração do Rodo Parabólico Linatex em Ação",
-    "Limpeza Pesada de Galpões e Indústrias",
-    "Operação com Painel Touch e Sistema de 1 Botão",
-    "Sucção Perfeita sem Deixar Rastros no Piso",
-    "Manutenção Simplificada e Troca Rápida de Escova",
-    "Abastecimento dos Tanques de 45 Litros",
-    "Desempenho da Bateria e Manobrabilidade em Espaços Estreitos"
+    "Manobrabilidade e Limpeza em Espaços Industriais",
+    "Painel Intuitivo Touch e Sistema de 1 Botão",
+    "Poder de Sucção: Piso 100% Seco sem Rastros",
+    "Eficiência Operacional: Substitui até 5 Serventes",
+    "Abastecimento e Esvaziamento Rápido dos Tanques",
+    "Troca e Manutenção Simplificada da Escova",
+    "Demonstração Completa da Tennant A260 em Operação"
   ];
 
   const videoList = useMemo(() => {
@@ -1247,9 +1254,9 @@ export default function LpTennantA260() {
             {videoList.length === 0 ? (
               <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center max-w-xl mx-auto space-y-3 shadow-xs">
                 <Video className="w-12 h-12 text-[#007481] mx-auto stroke-1" />
-                <h3 className="font-bold text-gray-900 text-base">Vídeos Demonstrativos do Google Drive</h3>
+                <h3 className="font-bold text-gray-900 text-base">Vídeos Demonstrativos Oficiais (YouTube)</h3>
                 <p className="text-xs text-gray-500">
-                  Os vídeos de demonstração da Tennant A260 em operação são carregados diretamente dos links do Google Drive cadastrados no painel.
+                  Os vídeos de demonstração da Tennant A260 em operação são carregados diretamente dos links do YouTube cadastrados no painel.
                 </p>
                 <a
                   href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Gostaria de receber os vídeos de demonstração da Tennant A260 no meu WhatsApp.")}`}
