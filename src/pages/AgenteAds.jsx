@@ -2313,6 +2313,83 @@ export default function AgenteAds() {
                     </td>
                   </tr>
                 ))}
+
+                {searchTerms.filter(st => campaignFilter === 'all' || st.campaign === campaignFilter).length === 0 && (
+                  <tr>
+                    <td colSpan="9" className="p-10 text-center bg-slate-50/60">
+                      <div className="space-y-3 max-w-lg mx-auto">
+                        <div className="w-12 h-12 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center mx-auto">
+                          <Search className="w-6 h-6" />
+                        </div>
+                        <h4 className="font-bold text-gray-900 text-sm">
+                          Nenhum clique registrado ainda para {campaignFilter === 'all' ? 'estas campanhas' : `"${campaignFilter}"`}
+                        </h4>
+                        <p className="text-xs text-gray-500 leading-relaxed">
+                          Como <strong>zeramos os dados de teste</strong> e a sua campanha <strong>{campaignFilter === 'all' ? 'foi cadastrada' : `"${campaignFilter}"`}</strong> agora mesmo, o painel está limpo. O Agente começará a listar cada termo pesquisado no Google assim que houver cliques nos seus anúncios.
+                        </p>
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const sampleTerms = [
+                                {
+                                  id: 'st-limpeza-1',
+                                  term: 'vagas emprego auxiliar de limpeza curitiba',
+                                  campaign: '[SEARCH [LIMPEZA]',
+                                  clicks: 14,
+                                  cost: 68.40,
+                                  conversions: 0,
+                                  cpa: 0.00,
+                                  status: 'negativar_urgente',
+                                  reason: 'Termo de RH/Emprego sem intenção comercial de contratação B2B.'
+                                },
+                                {
+                                  id: 'st-limpeza-2',
+                                  term: 'empresa de limpeza e conservação predial curitiba',
+                                  campaign: '[SEARCH [LIMPEZA]',
+                                  clicks: 28,
+                                  cost: 112.00,
+                                  conversions: 3,
+                                  cpa: 37.33,
+                                  status: 'excelente',
+                                  reason: 'Alta intenção de contratação de serviços B2B com CPA 17% abaixo da meta.'
+                                },
+                                {
+                                  id: 'st-altura-1',
+                                  term: 'alpinismo industrial e limpeza de fachada curitiba',
+                                  campaign: '[SEARCH [ALTURA]',
+                                  clicks: 19,
+                                  cost: 95.00,
+                                  conversions: 2,
+                                  cpa: 47.50,
+                                  status: 'bom',
+                                  reason: 'Serviço em altura qualificado com cotações no WhatsApp.'
+                                },
+                                {
+                                  id: 'st-altura-2',
+                                  term: 'curso nr35 trabalho em altura gratis pdf',
+                                  campaign: '[SEARCH [ALTURA]',
+                                  clicks: 9,
+                                  cost: 49.50,
+                                  conversions: 0,
+                                  cpa: 0.00,
+                                  status: 'negativar_urgente',
+                                  reason: 'Busca informativa/estudante gastando verba de anúncio.'
+                                }
+                              ];
+                              setSearchTerms(sampleTerms);
+                              showSuccessBanner('🧪 Termos de auditoria gerados para demonstrar as ações do Agente!');
+                            }}
+                            className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm cursor-pointer inline-flex items-center gap-1.5"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Simular Auditoria de Termos no Agente
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
