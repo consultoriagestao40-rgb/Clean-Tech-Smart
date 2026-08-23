@@ -1912,37 +1912,74 @@ export default function AgenteAds() {
               </div>
             </div>
 
-            {/* Modal de Adicionar Campanha Manual */}
+            {/* Modal de Adicionar Campanha Manual / Lista Suspensa */}
             {newCampaignModal && (
               <div className="bg-slate-50 border border-slate-300 rounded-xl p-5 space-y-4 animate-fadeIn">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">Nova Campanha para Monitoramento</h3>
-                  <button onClick={() => setNewCampaignModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                  <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">
+                    Nova Campanha para Monitoramento do Agente IA
+                  </h3>
+                  <button onClick={() => setNewCampaignModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">✕</button>
                 </div>
-                <form onSubmit={handleAddCustomCampaign} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-bold text-gray-700 mb-1">Nome da Campanha</label>
+
+                <form onSubmit={handleAddCustomCampaign} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                  
+                  {/* Seletor Dropdown de Campanhas + Campo de Texto */}
+                  <div className="sm:col-span-6">
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                      Escolha na Lista Suspensa ou Digite:
+                    </label>
+                    <select
+                      value={newCampData.name}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val.startsWith('[Google]')) {
+                          setNewCampData({ ...newCampData, name: val.replace('[Google] ', ''), platform: 'Google Ads' });
+                        } else if (val.startsWith('[Meta]')) {
+                          setNewCampData({ ...newCampData, name: val.replace('[Meta] ', ''), platform: 'Meta Ads' });
+                        } else {
+                          setNewCampData({ ...newCampData, name: val });
+                        }
+                      }}
+                      className="w-full p-2 bg-white border border-teal-500 rounded-lg text-xs font-semibold focus:outline-none mb-1.5 shadow-xs"
+                    >
+                      <option value="">-- Clique aqui para escolher a campanha da lista suspensa --</option>
+                      <optgroup label="📍 Google Ads (Rede de Pesquisa / Intenção)">
+                        <option value="[Google] Google Search - Locação Lavadora Tennant A260 Curitiba">[Google] Locação Lavadora Tennant A260 Curitiba</option>
+                        <option value="[Google] Google Search - Aluguel de Equipamentos de Limpeza B2B">[Google] Aluguel de Equipamentos de Limpeza B2B</option>
+                        <option value="[Google] Google Search - Venda de Lavadoras de Piso Industriais">[Google] Venda de Lavadoras de Piso Industriais</option>
+                        <option value="[Google] Google Search - Assistência Técnica & Peças Tennant PR">[Google] Assistência Técnica & Peças Tennant PR</option>
+                      </optgroup>
+                      <optgroup label="📱 Meta Ads (Instagram & Facebook)">
+                        <option value="[Meta] Meta Ads - Leads Form: Tennant A260 B2B (PR/SC)">[Meta] Leads Form: Tennant A260 B2B (PR/SC)</option>
+                        <option value="[Meta] Meta Ads - Remarketing Vídeos LP & Calculadora ROI">[Meta] Remarketing Vídeos LP & Calculadora ROI</option>
+                      </optgroup>
+                    </select>
+
                     <input
                       type="text"
-                      required
-                      placeholder="Ex: Google Search - Tennant A260 Curitiba"
+                      placeholder="Ou confirme/edite o nome da campanha aqui..."
                       value={newCampData.name}
                       onChange={(e) => setNewCampData({ ...newCampData, name: e.target.value })}
-                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs"
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs focus:outline-none"
                     />
                   </div>
-                  <div>
+
+                  {/* Plataforma */}
+                  <div className="sm:col-span-3">
                     <label className="block text-[11px] font-bold text-gray-700 mb-1">Plataforma</label>
                     <select
                       value={newCampData.platform}
                       onChange={(e) => setNewCampData({ ...newCampData, platform: e.target.value })}
-                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs"
+                      className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold"
                     >
                       <option value="Google Ads">Google Ads</option>
                       <option value="Meta Ads">Meta Ads</option>
                     </select>
                   </div>
-                  <div>
+
+                  {/* CPA Alvo */}
+                  <div className="sm:col-span-3">
                     <label className="block text-[11px] font-bold text-gray-700 mb-1">CPA Alvo (R$)</label>
                     <input
                       type="number"
@@ -1952,9 +1989,13 @@ export default function AgenteAds() {
                       className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold"
                     />
                   </div>
-                  <div className="sm:col-span-4 flex justify-end gap-2 pt-2">
-                    <button type="button" onClick={() => setNewCampaignModal(false)} className="px-3 py-1.5 text-xs text-gray-600">Cancelar</button>
-                    <button type="submit" className="bg-[#eb6420] text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-xs">Adicionar ao Agente</button>
+
+                  <div className="sm:col-span-12 flex justify-end gap-2 pt-2 border-t border-slate-200">
+                    <button type="button" onClick={() => setNewCampaignModal(false)} className="px-3 py-1.5 text-xs text-gray-600 cursor-pointer">Cancelar</button>
+                    <button type="submit" className="bg-[#eb6420] hover:bg-[#d55315] text-white px-4 py-2 rounded-lg text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5">
+                      <Plus className="w-3.5 h-3.5" />
+                      Adicionar ao Agente IA
+                    </button>
                   </div>
                 </form>
               </div>
@@ -2050,21 +2091,83 @@ export default function AgenteAds() {
               ))}
 
               {managedCampaigns.length === 0 && (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center mx-auto">
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center space-y-4">
+                  <div className="w-12 h-12 rounded-full bg-teal-100 text-[#007481] flex items-center justify-center mx-auto">
                     <Sliders className="w-6 h-6" />
                   </div>
-                  <h3 className="font-bold text-gray-900 text-sm">Nenhuma Campanha Cadastrada</h3>
-                  <p className="text-xs text-gray-500 max-w-md mx-auto">
-                    Clique no botão <strong>"+ Adicionar Campanha"</strong> acima para cadastrar os nomes exatos das campanhas que você está rodando no Google Ads e Meta Ads.
-                  </p>
-                  <button
-                    onClick={() => setNewCampaignModal(true)}
-                    className="bg-[#007481] text-white text-xs font-bold px-4 py-2 rounded-lg shadow-xs cursor-pointer inline-flex items-center gap-1.5"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Cadastrar Minha Primeira Campanha
-                  </button>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-sm">Nenhuma Campanha Cadastrada</h3>
+                    <p className="text-xs text-gray-500 max-w-md mx-auto mt-1">
+                      Escolha uma campanha na lista suspensa ou carregue a estrutura recomendada para a Tennant A260 em 1 clique.
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                    <button
+                      onClick={() => {
+                        const defaultCamps = [
+                          {
+                            id: 'camp-google-1',
+                            name: 'Google Search - Locação Lavadora Tennant A260 Curitiba',
+                            platform: 'Google Ads',
+                            type: 'Rede de Pesquisa',
+                            isMonitored: true,
+                            spentMonth: 0.00,
+                            clicksMonth: 0,
+                            leadsMonth: 0,
+                            currentCpa: 0.00,
+                            targetCpa: 45.00,
+                            dailyBudget: 50.00
+                          },
+                          {
+                            id: 'camp-google-2',
+                            name: 'Google Search - Aluguel de Equipamentos de Limpeza B2B',
+                            platform: 'Google Ads',
+                            type: 'Rede de Pesquisa',
+                            isMonitored: true,
+                            spentMonth: 0.00,
+                            clicksMonth: 0,
+                            leadsMonth: 0,
+                            currentCpa: 0.00,
+                            targetCpa: 60.00,
+                            dailyBudget: 40.00
+                          },
+                          {
+                            id: 'camp-meta-1',
+                            name: 'Meta Ads - Leads Form: Tennant A260 B2B (PR/SC)',
+                            platform: 'Meta Ads',
+                            type: 'Lead Ads & Instagram',
+                            isMonitored: true,
+                            spentMonth: 0.00,
+                            clicksMonth: 0,
+                            leadsMonth: 0,
+                            currentCpa: 0.00,
+                            targetCpa: 45.00,
+                            dailyBudget: 30.00
+                          }
+                        ];
+                        setManagedCampaigns(defaultCamps);
+                        fetch('/api/ads/save-targets', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ ads_managed_campaigns: defaultCamps })
+                        });
+                        showSuccessBanner('📥 Campanhas estruturadas carregadas com sucesso na sua lista!');
+                      }}
+                      className="bg-[#007481] hover:bg-[#005f6b] text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm cursor-pointer inline-flex items-center gap-2"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-300" />
+                      Carregar Campanhas Recomendadas Tennant A260
+                    </button>
+
+                    <button
+                      onClick={() => setNewCampaignModal(true)}
+                      className="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 text-xs font-bold px-4 py-2.5 rounded-lg shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Selecionar na Lista Suspensa
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
