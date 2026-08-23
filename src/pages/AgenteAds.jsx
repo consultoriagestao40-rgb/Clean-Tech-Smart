@@ -98,6 +98,9 @@ export default function AgenteAds() {
   // Selected items for batch actions
   const [selectedTermsToNegate, setSelectedTermsToNegate] = useState([]);
   const [newManualNegative, setNewManualNegative] = useState('');
+  const [bulkKeywordsModal, setBulkKeywordsModal] = useState(false);
+  const [bulkKeywordsText, setBulkKeywordsText] = useState('');
+  const [bulkKeywordsCampaign, setBulkKeywordsCampaign] = useState('[SEARCH [LIMPEZA]');
 
   // Radar de Palavras & Inteligência de Mercado State
   const [radarCategory, setRadarCategory] = useState('all');
@@ -2416,6 +2419,15 @@ export default function AgenteAds() {
                   ))}
                 </select>
               </div>
+
+              {/* Botão de Importar em Lote */}
+              <button
+                onClick={() => setBulkKeywordsModal(true)}
+                className="bg-[#007481] hover:bg-[#005f6b] text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Colar / Importar Palavras da Conta
+              </button>
 
               {selectedTermsToNegate.length > 0 && (
                 <button
