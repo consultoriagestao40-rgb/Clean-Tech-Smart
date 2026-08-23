@@ -358,6 +358,24 @@ export default function AgenteAds() {
     handleNegateTerm(selectedTermsToNegate, `Negativação em lote de ${selectedTermsToNegate.length} termos de busca irrelevantes`, savings);
   };
 
+  // Reset demo test data
+  const handleResetData = async () => {
+    if (!window.confirm('Deseja realmente zerar os dados de teste para iniciar o monitoramento e contagem real das suas campanhas?')) return;
+    try {
+      const res = await fetch('/api/ads/reset-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'clean' })
+      });
+      if (res.ok) {
+        showSuccessBanner('🧹 Dados de teste zerados com sucesso! O painel está limpo para monitoramento real.');
+        fetchAdsData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // Recommendations calculated by the Agent
   const termsToNegateList = searchTerms.filter(st => st.status === 'negativar_urgente');
   const termsToScaleList = searchTerms.filter(st => st.status === 'excelente');
@@ -401,7 +419,7 @@ export default function AgenteAds() {
               <div className={`text-2xl font-black ${healthScore >= 80 ? 'text-emerald-400' : healthScore >= 60 ? 'text-amber-400' : 'text-rose-400'}`}>
                 {healthScore}<span className="text-xs font-normal text-slate-300">/100</span>
               </div>
-              <div className="text-[10px] text-emerald-300 font-semibold">Excelente</div>
+              <div className="text-[10px] text-emerald-300 font-semibold">{healthScore >= 80 ? 'Excelente' : 'Atenção'}</div>
             </div>
 
             {/* Economia Estimada */}
@@ -413,16 +431,27 @@ export default function AgenteAds() {
               <div className="text-[10px] text-slate-300">Termos Negativados</div>
             </div>
 
-            {/* Refresh Button */}
-            <button
-              onClick={fetchAdsData}
-              disabled={isRefreshing}
-              className="p-3.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white transition-all cursor-pointer flex flex-col items-center justify-center text-[10px] font-bold"
-              title="Atualizar Análise do Agente"
-            >
-              <RefreshCw className={`w-5 h-5 mb-1 ${isRefreshing ? 'animate-spin text-[#eb6420]' : ''}`} />
-              {isRefreshing ? 'Auditando...' : 'Auditar Agora'}
-            </button>
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={fetchAdsData}
+                disabled={isRefreshing}
+                className="px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white transition-all cursor-pointer flex items-center justify-center gap-1.5 text-[11px] font-bold"
+                title="Atualizar Análise do Agente"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#eb6420]' : ''}`} />
+                {isRefreshing ? 'Auditando...' : 'Auditar'}
+              </button>
+
+              <button
+                onClick={handleResetData}
+                className="px-3.5 py-1.5 bg-rose-500/20 hover:bg-rose-500/40 border border-rose-400/30 rounded-xl text-rose-200 transition-all cursor-pointer flex items-center justify-center gap-1.5 text-[10px] font-bold"
+                title="Zerar dados de exemplo e começar contagem real"
+              >
+                <Trash2 className="w-3 h-3 text-rose-300" />
+                Zerar Testes
+              </button>
+            </div>
 
           </div>
 
@@ -698,99 +727,118 @@ export default function AgenteAds() {
             </div>
 
             <div className="space-y-3">
-              {/* Card 1: Negativação Manual */}
-              <div className="bg-rose-50/70 border border-rose-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-rose-100 text-rose-700 rounded-lg shrink-0 mt-0.5">
-                    <ShieldAlert className="w-5 h-5" />
+              {termsToNegateList.length === 0 && termsToScaleList.length === 0 && fatiguedCreativesList.length === 0 ? (
+                <div className="bg-emerald-50/50 border border-emerald-200 rounded-xl p-8 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-6 h-6" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black uppercase text-rose-800 bg-rose-200/70 px-2 py-0.5 rounded">Google Ads · Negativação Crítica</span>
-                      <span className="text-xs text-gray-500 font-mono">Campanha: Tennant A260 B2B</span>
-                    </div>
-                    <div className="font-bold text-gray-900 text-sm mt-1">
-                      Termo detectado: <code className="bg-white px-1.5 py-0.5 rounded border border-rose-300 text-rose-900">"vagas operador de lavadora de piso curitiba"</code>
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Este termo gerou <strong>28 cliques</strong> e consumiu <strong>R$ 74,00</strong> sem nenhuma conversão comercial (busca relacionada a Recursos Humanos/Vagas de Emprego).
-                    </p>
-                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">Conta Zerada & Monitoramento Ativo em Tempo Real</h3>
+                  <p className="text-xs text-gray-600 max-w-lg mx-auto">
+                    Nenhum desperdício ou termo negativo detectado no momento. As campanhas ativas conectadas no Google Ads (<code>{apiCredentials.googleCustomerId || 'Conta Conectada'}</code>) estão sob gestão do Agente IA. Os diagnósticos de palavras e criativos aparecerão aqui em tempo real conforme as campanhas forem gerando cliques.
+                  </p>
                 </div>
+              ) : (
+                <>
+                  {/* Termos para Negativação */}
+                  {termsToNegateList.map((st) => (
+                    <div key={st.id} className="bg-rose-50/70 border border-rose-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-rose-100 text-rose-700 rounded-lg shrink-0 mt-0.5">
+                          <ShieldAlert className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black uppercase text-rose-800 bg-rose-200/70 px-2 py-0.5 rounded">Google Ads · Negativação Crítica</span>
+                            <span className="text-xs text-gray-500 font-mono">Campanha: {st.campaign}</span>
+                          </div>
+                          <div className="font-bold text-gray-900 text-sm mt-1">
+                            Termo detectado: <code className="bg-white px-1.5 py-0.5 rounded border border-rose-300 text-rose-900">"{st.term}"</code>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {st.reason || `Este termo gerou ${st.clicks} cliques e consumiu R$ ${st.cost.toFixed(2)} sem conversão.`}
+                          </p>
+                        </div>
+                      </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => handleNegateTerm("vagas operador de lavadora de piso curitiba", "Negativação do termo de RH 'vagas operador'", 74.00)}
-                    className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Check className="w-4 h-4" />
-                    Negativar Termo (1-Clique)
-                  </button>
-                </div>
-              </div>
-
-              {/* Card 2: Termo de Manual */}
-              <div className="bg-rose-50/70 border border-rose-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-rose-100 text-rose-700 rounded-lg shrink-0 mt-0.5">
-                    <ShieldAlert className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black uppercase text-rose-800 bg-rose-200/70 px-2 py-0.5 rounded">Google Ads · Negativação Crítica</span>
-                      <span className="text-xs text-gray-500 font-mono">Campanha: Tennant A260 B2B</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleNegateTerm(st.term, `Negativação do termo: ${st.term}`, st.cost)}
+                          className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Check className="w-4 h-4" />
+                          Negativar Termo (1-Clique)
+                        </button>
+                      </div>
                     </div>
-                    <div className="font-bold text-gray-900 text-sm mt-1">
-                      Termo detectado: <code className="bg-white px-1.5 py-0.5 rounded border border-rose-300 text-rose-900">"manual de instrucoes lavadora tennant gratis"</code>
+                  ))}
+
+                  {/* Termos Vencedores */}
+                  {termsToScaleList.map((st) => (
+                    <div key={st.id} className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg shrink-0 mt-0.5">
+                          <TrendingUp className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black uppercase text-emerald-800 bg-emerald-200/70 px-2 py-0.5 rounded">Google Ads · Oportunidade de Escala</span>
+                            <span className="text-xs text-gray-500 font-mono">Campanha: {st.campaign}</span>
+                          </div>
+                          <div className="font-bold text-gray-900 text-sm mt-1">
+                            Termo de Alta Conversão: <code className="bg-white px-1.5 py-0.5 rounded border border-emerald-300 text-emerald-900">"{st.term}"</code>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {st.reason || `Gerou ${st.conversions} conversões com CPA de R$ ${st.cpa.toFixed(2)}.`}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleAddKeyword(st.term, `Inclusão do termo vencedor: ${st.term}`)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Adicionar como Palavra Exata
+                        </button>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Termo com intenção de suporte gratuito. Gerou <strong>22 cliques</strong> e consumiu <strong>R$ 68,20</strong>.
-                    </p>
-                  </div>
-                </div>
+                  ))}
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => handleNegateTerm("manual de instrucoes lavadora tennant gratis", "Negativação do termo 'manual de instrucoes gratis'", 68.20)}
-                    className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Check className="w-4 h-4" />
-                    Negativar Termo (1-Clique)
-                  </button>
-                </div>
-              </div>
+                  {/* Criativos Fadigados */}
+                  {fatiguedCreativesList.map((mc) => (
+                    <div key={mc.id} className="bg-amber-50/70 border border-amber-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-amber-100 text-amber-700 rounded-lg shrink-0 mt-0.5">
+                          <Pause className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black uppercase text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded">Meta Ads · Fadiga de Criativo</span>
+                            <span className="text-xs text-gray-500 font-mono">Conjunto: {mc.adSet}</span>
+                          </div>
+                          <div className="font-bold text-gray-900 text-sm mt-1">
+                            Anúncio Saturado: <code className="bg-white px-1.5 py-0.5 rounded border border-amber-300 text-amber-900">"{mc.name}"</code>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {mc.aiInsight || `Frequência de ${mc.frequency}x e CPL de R$ ${mc.cpl.toFixed(2)}.`}
+                          </p>
+                        </div>
+                      </div>
 
-              {/* Card 3: Oportunidade de Escala */}
-              <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg shrink-0 mt-0.5">
-                    <TrendingUp className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black uppercase text-emerald-800 bg-emerald-200/70 px-2 py-0.5 rounded">Google Ads · Escala & Correspondência Exata</span>
-                      <span className="text-xs text-gray-500 font-mono">Campanha: Tennant A260 B2B</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handlePauseCreative(mc.name, mc.adSet, `Pausa do anúncio: ${mc.name}`)}
+                          className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Pause className="w-3.5 h-3.5" />
+                          Pausar Anúncio
+                        </button>
+                      </div>
                     </div>
-                    <div className="font-bold text-gray-900 text-sm mt-1">
-                      Termo de Alta Conversão: <code className="bg-white px-1.5 py-0.5 rounded border border-emerald-300 text-emerald-900">"locação lavadora de piso tennant a260 curitiba"</code>
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Gerou <strong>5 conversões</strong> com CPA de apenas <strong>R$ 33,60</strong> (25% abaixo da meta). Recomendado adicionar como palavra-chave com correspondência de frase e exata.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => handleAddKeyword("locação lavadora de piso tennant a260 curitiba", "Inclusão do termo vencedor em correspondência de frase")}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Adicionar como Palavra Exata
-                  </button>
-                </div>
-              </div>
-
+                  ))}
+                </>
+              )}
             </div>
 
           </div>

@@ -75,6 +75,8 @@ export default async function handler(req, res) {
     const autoNegateThresholdSpend = parseFloat(settings.ads_negate_spend_threshold || '50.00');
     const autoNegateClicksThreshold = parseInt(settings.ads_negate_clicks_threshold || '12', 10);
 
+    const isCleanMode = settings.ads_clean_data_mode !== 'false'; // Por padrão ativado o modo de dados reais zerados
+
     // Managed Campaigns list
     let managedCampaigns = [];
     if (settings.ads_managed_campaigns) {
@@ -96,10 +98,10 @@ export default async function handler(req, res) {
           isMonitored: true,
           targetCpa: 45.00,
           dailyBudget: 120.00,
-          spentMonth: 1240.00,
-          clicksMonth: 284,
-          leadsMonth: 31,
-          currentCpa: 40.00,
+          spentMonth: isCleanMode ? 0.00 : 1240.00,
+          clicksMonth: isCleanMode ? 0 : 284,
+          leadsMonth: isCleanMode ? 0 : 31,
+          currentCpa: isCleanMode ? 0.00 : 40.00,
           healthStatus: "no_alvo"
         },
         {
@@ -111,10 +113,10 @@ export default async function handler(req, res) {
           isMonitored: true,
           targetCpa: 75.00,
           dailyBudget: 60.00,
-          spentMonth: 540.00,
-          clicksMonth: 110,
-          leadsMonth: 8,
-          currentCpa: 67.50,
+          spentMonth: isCleanMode ? 0.00 : 540.00,
+          clicksMonth: isCleanMode ? 0 : 110,
+          leadsMonth: isCleanMode ? 0 : 8,
+          currentCpa: isCleanMode ? 0.00 : 67.50,
           healthStatus: "no_alvo"
         },
         {
@@ -126,10 +128,10 @@ export default async function handler(req, res) {
           isMonitored: false,
           targetCpa: 25.00,
           dailyBudget: 20.00,
-          spentMonth: 180.00,
-          clicksMonth: 95,
-          leadsMonth: 12,
-          currentCpa: 15.00,
+          spentMonth: 0.00,
+          clicksMonth: 0,
+          leadsMonth: 0,
+          currentCpa: 0.00,
           healthStatus: "ignorado_ia"
         },
         {
@@ -141,11 +143,11 @@ export default async function handler(req, res) {
           isMonitored: true,
           targetCpa: 45.00,
           dailyBudget: 80.00,
-          spentMonth: 1090.00,
-          clicksMonth: 410,
-          leadsMonth: 23,
-          currentCpa: 47.39,
-          healthStatus: "atencao"
+          spentMonth: isCleanMode ? 0.00 : 1090.00,
+          clicksMonth: isCleanMode ? 0 : 410,
+          leadsMonth: isCleanMode ? 0 : 23,
+          currentCpa: isCleanMode ? 0.00 : 47.39,
+          healthStatus: "no_alvo"
         },
         {
           id: "cmp-m2",
@@ -156,13 +158,21 @@ export default async function handler(req, res) {
           isMonitored: true,
           targetCpa: 35.00,
           dailyBudget: 30.00,
-          spentMonth: 320.00,
-          clicksMonth: 140,
-          leadsMonth: 9,
-          currentCpa: 35.55,
+          spentMonth: 0.00,
+          clicksMonth: 0,
+          leadsMonth: 0,
+          currentCpa: 0.00,
           healthStatus: "no_alvo"
         }
       ];
+    } else if (isCleanMode) {
+      managedCampaigns = managedCampaigns.map(c => ({
+        ...c,
+        spentMonth: 0.00,
+        clicksMonth: 0,
+        leadsMonth: 0,
+        currentCpa: 0.00
+      }));
     }
 
     // Negative keywords list saved
@@ -180,8 +190,8 @@ export default async function handler(req, res) {
       ];
     }
 
-    // Sample Search terms analyzed by the Agent
-    const searchTermsAnalysis = [
+    // Search terms analyzed by the Agent
+    const searchTermsAnalysis = isCleanMode ? [] : [
       {
         id: "st-1",
         term: "locação lavadora de piso tennant a260 curitiba",
@@ -196,86 +206,11 @@ export default async function handler(req, res) {
         status: "excelente",
         recommendation: "add_exact_keyword",
         reason: "Alta intenção de contratação imediata e CPA 25% abaixo da meta!"
-      },
-      {
-        id: "st-2",
-        term: "aluguel lavadora industrial alfatenant parana",
-        campaign: "Google Search - Tennant A260 B2B",
-        matchType: "Ampla",
-        impressions: 390,
-        clicks: 31,
-        cost: 118.50,
-        conversions: 3,
-        cpa: 39.50,
-        ctr: 7.95,
-        status: "excelente",
-        recommendation: "add_phrase_keyword",
-        reason: "Termo qualificado gerando propostas no CRM."
-      },
-      {
-        id: "st-3",
-        term: "manual de instrucoes lavadora tennant gratis",
-        campaign: "Google Search - Tennant A260 B2B",
-        matchType: "Ampla",
-        impressions: 290,
-        clicks: 22,
-        cost: 68.20,
-        conversions: 0,
-        cpa: 0,
-        ctr: 7.58,
-        status: "negativar_urgente",
-        recommendation: "negate_term",
-        reason: "Gasto de R$ 68,20 com intenção técnica não comercial (grátis/manual)."
-      },
-      {
-        id: "st-4",
-        term: "vagas operador de lavadora de piso curitiba",
-        campaign: "Google Search - Tennant A260 B2B",
-        matchType: "Ampla",
-        impressions: 410,
-        clicks: 28,
-        cost: 74.00,
-        conversions: 0,
-        cpa: 0,
-        ctr: 6.83,
-        status: "negativar_urgente",
-        recommendation: "negate_term",
-        reason: "Busca de emprego/RH que consome verba comercial sem retorno."
-      },
-      {
-        id: "st-5",
-        term: "tennant a260 preco compra maquina nova",
-        campaign: "Google Search - Venda de Equipamentos",
-        matchType: "Frase",
-        impressions: 210,
-        clicks: 19,
-        cost: 85.50,
-        conversions: 2,
-        cpa: 42.75,
-        ctr: 9.05,
-        status: "bom",
-        recommendation: "scale_budget",
-        reason: "Lead de alto ticket para venda de máquina nova."
-      },
-      {
-        id: "st-6",
-        term: "conserto motor lavadora caseira eletrolux",
-        campaign: "Google Search - Tennant A260 B2B",
-        matchType: "Ampla",
-        impressions: 340,
-        clicks: 18,
-        cost: 54.00,
-        conversions: 0,
-        cpa: 0,
-        ctr: 5.29,
-        status: "negativar_urgente",
-        recommendation: "negate_term",
-        reason: "Público residencial e marca não atendida na campanha B2B."
       }
     ];
 
     // Meta Ads Creatives & Campaign Performance
-    const metaCreativesAnalysis = [
+    const metaCreativesAnalysis = isCleanMode ? [] : [
       {
         id: "meta-c1",
         name: "Vídeo Demonstração Rodo Linatex - A260 em Galpão",
@@ -287,51 +222,26 @@ export default async function handler(req, res) {
         ctr: 2.94,
         status: "excelente",
         aiInsight: "Criativo com maior taxa de retenção. Sugerido aumentar orçamento diário em 20%."
-      },
-      {
-        id: "meta-c2",
-        name: "Carrossel Fotos Máquina + Condição de Feira",
-        adSet: "Indústrias & Logística 50k+ m²",
-        spend: 380.00,
-        leads: 8,
-        cpl: 47.50,
-        frequency: 2.3,
-        ctr: 1.82,
-        status: "atencao",
-        aiInsight: "Frequência subindo e CTR em declínio. Recomendado renovar o criativo para evitar saturação."
-      },
-      {
-        id: "meta-c3",
-        name: "Calculadora de ROI - Economize até R$ 8.400/mês",
-        adSet: "Público Geral Limpeza Comercial",
-        spend: 290.00,
-        leads: 4,
-        cpl: 72.50,
-        frequency: 3.4,
-        ctr: 1.10,
-        status: "fadiga_critica",
-        aiInsight: "Frequência elevada (3.4) e CPL 61% acima da meta. Sugerida pausa imediata ou troca de público."
       }
     ];
 
     // Aggregated real performance
-    const totalSpentGoogle = 1240.00;
-    const totalSpentMeta = 1090.00;
+    const totalSpentGoogle = isCleanMode ? 0.00 : 1240.00;
+    const totalSpentMeta = isCleanMode ? 0.00 : 1090.00;
     const totalSpent = totalSpentGoogle + totalSpentMeta;
-    const leadsGoogle = 31;
-    const leadsMeta = 23 + (totalLeadsFromAds > 0 ? totalLeadsFromAds : 0);
+    const leadsGoogle = 0;
+    const leadsMeta = totalLeadsFromAds;
     const totalLeads = leadsGoogle + leadsMeta;
-    const realCpa = totalLeads > 0 ? (totalSpent / totalLeads) : 0;
-    const realCtr = 3.65;
-    const realConvRate = 6.2;
-    const estimatedPipelineValue = totalLeads * 3890.00 * 0.35; // estimativa de taxa de fechamento locação
+    const realCpa = (totalLeads > 0 && totalSpent > 0) ? (totalSpent / totalLeads) : 0;
+    const realCtr = isCleanMode ? 0.00 : 3.65;
+    const realConvRate = isCleanMode ? 0.00 : 6.2;
+    const estimatedPipelineValue = totalLeads * 3890.00 * 0.35;
     const realRoas = totalSpent > 0 ? (estimatedPipelineValue / totalSpent) : 0;
 
     // Health Score calculation (0 to 100)
-    let healthScore = 85;
+    let healthScore = 100;
     if (realCpa > targetCpa) healthScore -= 15;
-    if (realCtr < minCtr) healthScore -= 10;
-    if (realRoas >= targetRoas) healthScore += 5;
+    if (realCtr > 0 && realCtr < minCtr) healthScore -= 10;
     healthScore = Math.min(100, Math.max(10, healthScore));
 
     return res.status(200).json({
