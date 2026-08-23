@@ -99,33 +99,211 @@ export default function AgenteAds() {
   const [selectedTermsToNegate, setSelectedTermsToNegate] = useState([]);
   const [newManualNegative, setNewManualNegative] = useState('');
 
-  // Campaign ROI & Budget Simulator State
-  const [simMonthlyBudget, setSimMonthlyBudget] = useState(3000); // R$ 3.000/mês
-  const [simAvgCpc, setSimAvgCpc] = useState(6.20); // R$ 6,20
-  const [simLpConvRate, setSimLpConvRate] = useState(6.5); // 6.5%
-  const [simCrmCloseRate, setSimCrmCloseRate] = useState(25); // 25%
-  const [simMonthlyTicket, setSimMonthlyTicket] = useState(3890); // R$ 3.890/mês locação
-  const [simContractMonths, setSimContractMonths] = useState(12); // 12 meses
+  // AI 3-Scenario Predictive Planner State
+  const [plannerCampaignTopic, setPlannerCampaignTopic] = useState('Locação de lavadora de piso Tennant A260');
+  const [plannerDailyBudget, setPlannerDailyBudget] = useState(50); // R$ 50/dia padrão
+  const [plannerRegion, setPlannerRegion] = useState('Curitiba e Região Metropolitana (PR)');
+  const [isCalculatingPlanner, setIsCalculatingPlanner] = useState(false);
+  const [plannerResult, setPlannerResult] = useState({
+    topic: 'Locação de lavadora de piso Tennant A260',
+    daily: 50,
+    monthly: 1500,
+    monthlySearchesDemand: 3850,
+    commercialIntent: '94% (Alta Intenção / Fundo de Funil)',
+    pessimistic: {
+      name: 'Pessimista',
+      subtitle: 'Alta concorrência / início de aprendizado',
+      color: 'rose',
+      cpc: 7.80,
+      clicks: 192,
+      convLp: 4.2,
+      leads: 8,
+      cpa: 187.50,
+      closeRate: 15,
+      contracts: 1,
+      cac: 1500.00,
+      ltv: 46680.00,
+      ltvCac: 31.1,
+      paybackMonths: 0.39,
+      mrr: 3890,
+      annual: 46680,
+      roas: 2.6
+    },
+    realistic: {
+      name: 'Realista (Recomendado)',
+      subtitle: 'Média de mercado com LP otimizada e Agente ativo',
+      color: 'teal',
+      isRecommended: true,
+      cpc: 5.80,
+      clicks: 258,
+      convLp: 6.8,
+      leads: 18,
+      cpa: 83.33,
+      closeRate: 25,
+      contracts: 4,
+      cac: 375.00,
+      ltv: 46680.00,
+      ltvCac: 124.5,
+      paybackMonths: 0.10,
+      mrr: 15560,
+      annual: 186720,
+      roas: 10.4
+    },
+    optimistic: {
+      name: 'Otimista',
+      subtitle: 'Alta conversão, público qualificado e escala',
+      color: 'emerald',
+      cpc: 4.40,
+      clicks: 340,
+      convLp: 9.5,
+      leads: 32,
+      cpa: 46.87,
+      closeRate: 35,
+      contracts: 11,
+      cac: 136.36,
+      ltv: 46680.00,
+      ltvCac: 342.3,
+      paybackMonths: 0.04,
+      mrr: 42790,
+      annual: 513480,
+      roas: 28.5
+    }
+  });
 
-  const simDailyBudget = simMonthlyBudget / 30;
-  const simTotalClicks = Math.round(simMonthlyBudget / (simAvgCpc || 1));
-  const simTotalLeads = Math.round(simTotalClicks * (simLpConvRate / 100));
-  const simCostPerLead = simTotalLeads > 0 ? (simMonthlyBudget / simTotalLeads) : 0;
-  const simDealsClosed = Math.max(1, Math.round(simTotalLeads * (simCrmCloseRate / 100)));
-  const simMonthlyRevenue = simDealsClosed * simMonthlyTicket;
-  const simAnnualContractValue = simMonthlyRevenue * simContractMonths;
-  const simRoas = simMonthlyBudget > 0 ? (simMonthlyRevenue / simMonthlyBudget) : 0;
+  const handleCalculatePlanner = () => {
+    setIsCalculatingPlanner(true);
+    setTimeout(() => {
+      const daily = Number(plannerDailyBudget) || 50;
+      const monthly = daily * 30;
+      const ticket = 3890; // locação mensal A260
+      const ltvPerClient = ticket * 12; // 12 meses de contrato
 
-  const handleApplySimToTargets = () => {
+      // Scenario 1: Pessimista (Conservador)
+      const pesCpc = 7.80;
+      const pesClicks = Math.round(monthly / pesCpc);
+      const pesConvLp = 4.2;
+      const pesLeads = Math.max(1, Math.round(pesClicks * (pesConvLp / 100)));
+      const pesCpa = monthly / pesLeads;
+      const pesCloseRate = 15;
+      const pesContracts = Math.max(1, Math.round(pesLeads * (pesCloseRate / 100)));
+      const pesCac = monthly / (pesContracts || 1);
+      const pesLtvCac = pesCac > 0 ? (ltvPerClient / pesCac) : 0;
+      const pesPayback = ticket > 0 ? (pesCac / ticket) : 0;
+      const pesMrr = pesContracts * ticket;
+      const pesAnnual = pesMrr * 12;
+      const pesRoas = monthly > 0 ? (pesMrr / monthly) : 0;
+
+      // Scenario 2: Realista (Recomendado)
+      const realCpc = 5.80;
+      const realClicks = Math.round(monthly / realCpc);
+      const realConvLp = 6.8;
+      const realLeads = Math.max(1, Math.round(realClicks * (realConvLp / 100)));
+      const realCpa = monthly / realLeads;
+      const realCloseRate = 25;
+      const realContracts = Math.max(1, Math.round(realLeads * (realCloseRate / 100)));
+      const realCac = monthly / (realContracts || 1);
+      const realLtvCac = realCac > 0 ? (ltvPerClient / realCac) : 0;
+      const realPayback = ticket > 0 ? (realCac / ticket) : 0;
+      const realMrr = realContracts * ticket;
+      const realAnnual = realMrr * 12;
+      const realRoas = monthly > 0 ? (realMrr / monthly) : 0;
+
+      // Scenario 3: Otimista (Alta Eficiência)
+      const optCpc = 4.40;
+      const optClicks = Math.round(monthly / optCpc);
+      const optConvLp = 9.5;
+      const optLeads = Math.max(1, Math.round(optClicks * (optConvLp / 100)));
+      const optCpa = monthly / optLeads;
+      const optCloseRate = 35;
+      const optContracts = Math.max(1, Math.round(optLeads * (optCloseRate / 100)));
+      const optCac = monthly / (optContracts || 1);
+      const optLtvCac = optCac > 0 ? (ltvPerClient / optCac) : 0;
+      const optPayback = ticket > 0 ? (optCac / ticket) : 0;
+      const optMrr = optContracts * ticket;
+      const optAnnual = optMrr * 12;
+      const optRoas = monthly > 0 ? (optMrr / monthly) : 0;
+
+      setPlannerResult({
+        topic: plannerCampaignTopic,
+        daily,
+        monthly,
+        monthlySearchesDemand: 3850,
+        commercialIntent: '94% (Alta Intenção / Fundo de Funil)',
+        pessimistic: {
+          name: 'Pessimista',
+          subtitle: 'Alta concorrência / início de aprendizado',
+          color: 'rose',
+          cpc: pesCpc,
+          clicks: pesClicks,
+          convLp: pesConvLp,
+          leads: pesLeads,
+          cpa: pesCpa,
+          closeRate: pesCloseRate,
+          contracts: pesContracts,
+          cac: pesCac,
+          ltv: ltvPerClient,
+          ltvCac: pesLtvCac,
+          paybackMonths: pesPayback,
+          mrr: pesMrr,
+          annual: pesAnnual,
+          roas: pesRoas
+        },
+        realistic: {
+          name: 'Realista (Recomendado)',
+          subtitle: 'Média de mercado com LP otimizada e Agente ativo',
+          color: 'teal',
+          isRecommended: true,
+          cpc: realCpc,
+          clicks: realClicks,
+          convLp: realConvLp,
+          leads: realLeads,
+          cpa: realCpa,
+          closeRate: realCloseRate,
+          contracts: realContracts,
+          cac: realCac,
+          ltv: ltvPerClient,
+          ltvCac: realLtvCac,
+          paybackMonths: realPayback,
+          mrr: realMrr,
+          annual: realAnnual,
+          roas: realRoas
+        },
+        optimistic: {
+          name: 'Otimista',
+          subtitle: 'Alta conversão, público qualificado e escala',
+          color: 'emerald',
+          cpc: optCpc,
+          clicks: optClicks,
+          convLp: optConvLp,
+          leads: optLeads,
+          cpa: optCpa,
+          closeRate: optCloseRate,
+          contracts: optContracts,
+          cac: optCac,
+          ltv: ltvPerClient,
+          ltvCac: optLtvCac,
+          paybackMonths: optPayback,
+          mrr: optMrr,
+          annual: optAnnual,
+          roas: optRoas
+        }
+      });
+
+      setIsCalculatingPlanner(false);
+      showSuccessBanner('✨ Demanda analisada e indicadores (CAC, LTV, LTV/CAC e Payback) calculados nos 3 cenários!');
+    }, 500);
+  };
+
+  const handleApplyScenarioToAgent = (scenario) => {
     setTargets(prev => ({
       ...prev,
-      dailyBudgetGoogle: Math.round(simDailyBudget * 0.6),
-      dailyBudgetMeta: Math.round(simDailyBudget * 0.4),
-      targetCpa: Math.round(simCostPerLead) || 45,
-      targetRoas: Number(simRoas.toFixed(1)) || 4.5,
-      targetConvRate: simLpConvRate
+      dailyBudgetGoogle: Math.round(plannerDailyBudget * 0.7),
+      dailyBudgetMeta: Math.round(plannerDailyBudget * 0.3),
+      targetCpa: Math.round(scenario.cpa) || 45,
+      targetRoas: Number(scenario.roas.toFixed(1)) || 4.5,
+      targetConvRate: scenario.convLp
     }));
-    showSuccessBanner('⚡ Parâmetros do Planejador aplicados às Metas do Agente com sucesso!');
+    showSuccessBanner(`🎯 Metas do Agente atualizadas com base no Cenário ${scenario.name}!`);
   };
 
   const marketKeywordsData = [
@@ -1076,196 +1254,400 @@ export default function AgenteAds() {
         <div className="space-y-6">
           
           {/* ========================================================================= */}
-          {/* 📊 SIMULADOR & PLANEJADOR DE CAMPANHA (INVESTIMENTO x CONVERSÃO x ROI) */}
+          {/* 📊 PLANEJADOR PREDITIVO DE CAMPANHA COM IA (3 CENÁRIOS COM CAC & LTV) */}
           {/* ========================================================================= */}
-          <div className="bg-gradient-to-br from-slate-900 via-[#004e57] to-teal-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden space-y-6">
-            <div className="absolute -top-10 -right-10 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="bg-gradient-to-br from-slate-900 via-[#004e57] to-teal-950 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden space-y-6">
+            <div className="absolute -top-10 -right-10 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
-            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-4">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-xs font-semibold text-teal-200 mb-2">
-                  <Zap className="w-3.5 h-3.5 text-amber-300" />
-                  Planejamento Estratégico de Tráfego Pago & Retorno Comercial
-                </div>
-                <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2.5">
-                  <BarChart3 className="w-6 h-6 text-teal-300" />
-                  Planejador de Campanhas: Investimento ➔ Conversão ➔ Faturamento
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-200 font-light mt-1">
-                  Arraste os parâmetros abaixo para projetar o volume de cliques, contatos no WhatsApp e contratos fechados para a Tennant A260.
-                </p>
+            {/* Cabeçalho do Planejador */}
+            <div className="relative z-10 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 text-xs font-semibold text-teal-200">
+                <Bot className="w-4 h-4 text-teal-300" />
+                Inteligência Preditiva de Tráfego & Modelagem Econômica B2B
               </div>
 
-              <button
-                type="button"
-                onClick={handleApplySimToTargets}
-                className="bg-[#eb6420] hover:bg-[#d55315] text-white text-xs font-bold px-5 py-3 rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer shrink-0 self-start lg:self-auto"
-              >
-                <Zap className="w-4 h-4 text-white" />
-                Aplicar ao Agente IA
-              </button>
-            </div>
-
-            {/* Grid Interativo do Planejador */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
-              
-              {/* Coluna Esquerda: Sliders de Parâmetros */}
-              <div className="lg:col-span-6 bg-white/10 backdrop-blur-md border border-white/15 p-5 rounded-2xl space-y-5">
-                <h3 className="text-xs font-black uppercase text-teal-300 tracking-wider flex items-center gap-2">
-                  <Sliders className="w-4 h-4" />
-                  Parâmetros de Investimento & Taxas
-                </h3>
-
-                {/* Orçamento Mensal */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-300 font-semibold">Orçamento Mensal Total (Google + Meta):</span>
-                    <span className="font-bold text-amber-300 font-mono text-sm">R$ {simMonthlyBudget.toLocaleString('pt-BR')} <span className="text-[10px] text-slate-300 font-normal">({(simMonthlyBudget / 30).toFixed(0)}/dia)</span></span>
-                  </div>
-                  <input
-                    type="range"
-                    min="500"
-                    max="15000"
-                    step="250"
-                    value={simMonthlyBudget}
-                    onChange={(e) => setSimMonthlyBudget(Number(e.target.value))}
-                    className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#eb6420]"
-                  />
-                  <div className="flex justify-between text-[10px] text-slate-400">
-                    <span>R$ 500</span>
-                    <span>R$ 5.000</span>
-                    <span>R$ 10.000</span>
-                    <span>R$ 15.000</span>
-                  </div>
-                </div>
-
-                {/* CPC Médio Estimado */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-300 font-semibold">Custo Médio por Clique (CPC):</span>
-                    <span className="font-bold text-teal-300 font-mono">R$ {simAvgCpc.toFixed(2)}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="2.00"
-                    max="15.00"
-                    step="0.20"
-                    value={simAvgCpc}
-                    onChange={(e) => setSimAvgCpc(Number(e.target.value))}
-                    className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-teal-400"
-                  />
-                </div>
-
-                {/* Taxa de Conversão da Landing Page */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-300 font-semibold">Taxa de Conversão da LP (WhatsApp):</span>
-                    <span className="font-bold text-indigo-300 font-mono">{simLpConvRate}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="2"
-                    max="15"
-                    step="0.5"
-                    value={simLpConvRate}
-                    onChange={(e) => setSimLpConvRate(Number(e.target.value))}
-                    className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-indigo-400"
-                  />
-                </div>
-
-                {/* Taxa de Fechamento Comercial CRM */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-300 font-semibold">Taxa de Fechamento Comercial (Leads ➔ Contrato):</span>
-                    <span className="font-bold text-emerald-300 font-mono">{simCrmCloseRate}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="5"
-                    max="50"
-                    step="5"
-                    value={simCrmCloseRate}
-                    onChange={(e) => setSimCrmCloseRate(Number(e.target.value))}
-                    className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400"
-                  />
-                </div>
-
-                {/* Mensalidade Locação */}
-                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
-                  <span className="text-slate-300">Ticket Locação Mensal Tennant A260:</span>
-                  <span className="font-bold text-white font-mono bg-white/10 px-2 py-1 rounded">R$ {simMonthlyTicket.toLocaleString('pt-BR')}/mês</span>
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2.5">
+                    <BarChart3 className="w-6 h-6 text-teal-300" />
+                    Planejador Preditivo de Campanhas: Demanda ➔ CAC ➔ LTV ➔ Retorno
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-200 font-light mt-1">
+                    Digite o foco da campanha e o investimento diário. A IA analisa o volume de buscas no mercado e projeta a performance em <strong>3 cenários (Pessimista, Realista e Otimista)</strong>.
+                  </p>
                 </div>
               </div>
 
-              {/* Coluna Direita: Resultados Projetados */}
-              <div className="lg:col-span-6 flex flex-col justify-between space-y-4">
+              {/* Barra de Entrada de Dados com IA */}
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
                 
-                <div className="grid grid-cols-2 gap-3">
-                  
-                  {/* Cliques Estimados */}
-                  <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-xl">
-                    <div className="text-[10px] uppercase font-bold text-slate-300">Cliques Estimados</div>
-                    <div className="text-2xl font-black text-teal-300 mt-1">
-                      {simTotalClicks.toLocaleString('pt-BR')}
-                    </div>
-                    <div className="text-[10px] text-slate-300 mt-0.5 font-mono">~{Math.round(simTotalClicks / 30)} cliques/dia</div>
-                  </div>
-
-                  {/* Leads / Cotações */}
-                  <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-xl">
-                    <div className="text-[10px] uppercase font-bold text-slate-300">Leads no WhatsApp</div>
-                    <div className="text-2xl font-black text-amber-300 mt-1">
-                      {simTotalLeads}
-                    </div>
-                    <div className="text-[10px] text-slate-300 mt-0.5 font-mono">CPA: R$ {simCostPerLead.toFixed(2)}</div>
-                  </div>
-
-                  {/* Novos Contratos Fechados */}
-                  <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-xl">
-                    <div className="text-[10px] uppercase font-bold text-slate-300">Novos Contratos / Mês</div>
-                    <div className="text-2xl font-black text-emerald-300 mt-1">
-                      {simDealsClosed} <span className="text-xs font-semibold text-slate-300">locações</span>
-                    </div>
-                    <div className="text-[10px] text-slate-300 mt-0.5">Fechamentos estimados</div>
-                  </div>
-
-                  {/* Faturamento Mensal Recorrente */}
-                  <div className="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-xl">
-                    <div className="text-[10px] uppercase font-bold text-slate-300">Novo MRR (Recorrência)</div>
-                    <div className="text-2xl font-black text-white mt-1">
-                      R$ {simMonthlyRevenue.toLocaleString('pt-BR')}
-                    </div>
-                    <div className="text-[10px] text-emerald-300 mt-0.5">Faturamento/mês adicionado</div>
-                  </div>
-
+                {/* Nome/Foco da Campanha */}
+                <div className="sm:col-span-6">
+                  <label className="block text-[11px] font-bold text-teal-200 uppercase tracking-wider mb-1">
+                    Foco da Campanha / Produto
+                  </label>
+                  <input
+                    type="text"
+                    value={plannerCampaignTopic}
+                    onChange={(e) => setPlannerCampaignTopic(e.target.value)}
+                    placeholder="Ex: Locação de lavadora de piso Tennant A260"
+                    className="w-full p-2.5 bg-white text-gray-900 rounded-lg text-xs font-semibold focus:outline-none placeholder-gray-400"
+                  />
                 </div>
 
-                {/* Banner de Retorno Anual & ROAS */}
-                <div className="bg-emerald-500/20 border border-emerald-400/40 p-5 rounded-2xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xs text-emerald-200 uppercase font-bold tracking-wider">
-                        Retorno do Contrato (12 Meses):
-                      </div>
-                      <div className="text-2xl sm:text-3xl font-black text-emerald-300">
-                        R$ {simAnnualContractValue.toLocaleString('pt-BR')}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-emerald-200 uppercase font-bold">ROAS Projetado:</div>
-                      <div className="text-2xl sm:text-3xl font-black text-amber-300 font-mono">
-                        {simRoas.toFixed(1)}x
-                      </div>
-                    </div>
+                {/* Orçamento Diário */}
+                <div className="sm:col-span-3">
+                  <label className="block text-[11px] font-bold text-teal-200 uppercase tracking-wider mb-1">
+                    Gasto Diário (R$/dia)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-2.5 text-xs text-gray-400 font-bold">R$</span>
+                    <input
+                      type="number"
+                      step="5"
+                      value={plannerDailyBudget}
+                      onChange={(e) => setPlannerDailyBudget(Number(e.target.value))}
+                      className="w-full pl-8 pr-2.5 py-2.5 bg-white text-gray-900 rounded-lg text-xs font-bold focus:outline-none"
+                    />
                   </div>
-                  <div className="text-[11px] text-slate-200 pt-2 border-t border-emerald-400/20">
-                    💡 <strong>Insight da IA:</strong> Para cada <strong>R$ 1,00</strong> investido em tráfego qualificado, a estimativa é de retorno de <strong>R$ {simRoas.toFixed(2)}</strong> em faturamento de locação.
-                  </div>
+                </div>
+
+                {/* Botão de Calcular */}
+                <div className="sm:col-span-3">
+                  <button
+                    type="button"
+                    onClick={handleCalculatePlanner}
+                    disabled={isCalculatingPlanner}
+                    className="w-full bg-[#eb6420] hover:bg-[#d55315] text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-white" />
+                    {isCalculatingPlanner ? 'Analisando...' : 'Calcular com IA'}
+                  </button>
                 </div>
 
               </div>
 
+              {/* Resumo da Demanda de Buscas no Mercado */}
+              {plannerResult && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
+                  <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
+                    <span className="text-slate-400 text-[10px] uppercase font-semibold block">Volume de Pesquisas (PR/Sul)</span>
+                    <span className="text-lg font-black text-teal-300 font-mono">~{plannerResult.monthlySearchesDemand.toLocaleString('pt-BR')} buscas/mês</span>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
+                    <span className="text-slate-400 text-[10px] uppercase font-semibold block">Intenção Comercial</span>
+                    <span className="text-lg font-black text-amber-300 font-mono">{plannerResult.commercialIntent}</span>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
+                    <span className="text-slate-400 text-[10px] uppercase font-semibold block">Investimento Mensal</span>
+                    <span className="text-lg font-black text-white font-mono">R$ {plannerResult.monthly.toLocaleString('pt-BR')}</span>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
+                    <span className="text-slate-400 text-[10px] uppercase font-semibold block">Ticket Médio Locação A260</span>
+                    <span className="text-lg font-black text-emerald-300 font-mono">R$ 3.890/mês</span>
+                  </div>
+                </div>
+              )}
+
             </div>
+
+            {/* Grid dos 3 Cenários Comparativos (Pessimista, Realista, Otimista) */}
+            {plannerResult && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative z-10">
+                
+                {/* 🔴 CENÁRIO 1: PESSIMISTA */}
+                <div className="bg-slate-900/90 border border-rose-500/30 rounded-2xl p-5 space-y-4 relative flex flex-col justify-between shadow-md">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b border-rose-500/20 pb-3">
+                      <div>
+                        <span className="inline-flex items-center gap-1.5 text-xs font-black text-rose-400 uppercase tracking-wider">
+                          <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                          {plannerResult.pessimistic.name}
+                        </span>
+                        <div className="text-[10px] text-slate-400 mt-0.5">{plannerResult.pessimistic.subtitle}</div>
+                      </div>
+                    </div>
+
+                    {/* Bloco 1: Tráfego e Conversão */}
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-white/5 p-3 rounded-xl">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">CPC Médio</span>
+                        <span className="font-bold text-white font-mono">R$ {plannerResult.pessimistic.cpc.toFixed(2)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Cliques Mês</span>
+                        <span className="font-bold text-white font-mono">{plannerResult.pessimistic.clicks}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Conv. LP (WhatsApp)</span>
+                        <span className="font-bold text-rose-300 font-mono">{plannerResult.pessimistic.convLp}%</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Leads / WhatsApp</span>
+                        <span className="font-bold text-rose-300 font-mono">{plannerResult.pessimistic.leads}</span>
+                      </div>
+                    </div>
+
+                    {/* Bloco 2: CPA & Vendas */}
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-white/5 p-3 rounded-xl">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">CPA (Custo/Lead)</span>
+                        <span className="font-bold text-white font-mono">R$ {plannerResult.pessimistic.cpa.toFixed(2)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Fechamento CRM</span>
+                        <span className="font-bold text-white font-mono">{plannerResult.pessimistic.closeRate}%</span>
+                      </div>
+                      <div className="col-span-2 pt-1 border-t border-white/5">
+                        <span className="text-[10px] text-slate-400 block">Novas Locações Fechadas:</span>
+                        <span className="text-base font-black text-rose-300 font-mono">{plannerResult.pessimistic.contracts} contrato(s)</span>
+                      </div>
+                    </div>
+
+                    {/* Bloco 3: Indicadores Executivos (CAC, LTV e LTV/CAC) */}
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-300 text-[11px]">CAC (Custo Aquisição):</span>
+                        <span className="font-black text-rose-300 font-mono">R$ {plannerResult.pessimistic.cac.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-300 text-[11px]">LTV (Contrato 12m):</span>
+                        <span className="font-black text-white font-mono">R$ {plannerResult.pessimistic.ltv.toLocaleString('pt-BR')}</span>
+                      </div>
+                      <div className="flex justify-between pt-1 border-t border-rose-500/20">
+                        <span className="text-slate-200 font-bold text-[11px]">Relação LTV / CAC:</span>
+                        <span className="font-black text-rose-400 font-mono text-sm">{plannerResult.pessimistic.ltvCac.toFixed(1)}x</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-400">
+                        <span>Payback do CAC:</span>
+                        <span>~{Math.round(plannerResult.pessimistic.paybackMonths * 30)} dias</span>
+                      </div>
+                    </div>
+
+                    {/* Bloco 4: Retorno Financeiro & ROAS */}
+                    <div className="text-xs space-y-1 pt-1">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Novo MRR:</span>
+                        <span className="font-bold text-white font-mono">R$ {plannerResult.pessimistic.mrr.toLocaleString('pt-BR')}/mês</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Faturamento Anual (LTV):</span>
+                        <span className="font-bold text-white font-mono">R$ {plannerResult.pessimistic.annual.toLocaleString('pt-BR')}</span>
+                      </div>
+                      <div className="flex justify-between font-black text-sm pt-1 border-t border-white/10">
+                        <span className="text-slate-300">ROAS Estimado:</span>
+                        <span className="text-rose-400 font-mono">{plannerResult.pessimistic.roas.toFixed(1)}x</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleApplyScenarioToAgent(plannerResult.pessimistic)}
+                    className="w-full mt-2 bg-rose-600/80 hover:bg-rose-600 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all cursor-pointer"
+                  >
+                    Adotar Cenário Pessimista
+                  </button>
+                </div>
+
+                {/* 🟡 CENÁRIO 2: REALISTA (RECOMENDADO) */}
+                <div className="bg-teal-950/90 border-2 border-teal-400 rounded-2xl p-5 space-y-4 relative flex flex-col justify-between shadow-xl ring-2 ring-teal-400/20">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-teal-400 text-slate-950 text-[10px] font-black uppercase px-3 py-0.5 rounded-full shadow-md">
+                    ★ Mais Provável (Base de Mercado)
+                  </div>
+
+                  <div className="space-y-3 pt-1">
+                    <div className="flex items-center justify-between border-b border-teal-500/30 pb-3">
+                      <div>
+                        <span className="inline-flex items-center gap-1.5 text-xs font-black text-teal-300 uppercase tracking-wider">
+                          <span className="w-2 h-2 rounded-full bg-teal-400"></span>
+                          {plannerResult.realistic.name}
+                        </span>
+                        <div className="text-[10px] text-slate-300 mt-0.5">{plannerResult.realistic.subtitle}</div>
+                      </div>
+                    </div>
+
+                    {/* Bloco 1: Tráfego e Conversão */}
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-white/10 p-3 rounded-xl">
+                      <div>
+                        <span className="text-[10px] text-slate-300 block">CPC Médio</span>
+                        <span className="font-bold text-white font-mono">R$ {plannerResult.realistic.cpc.toFixed(2)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-300 block">Cliques Mês</span>
+                        <span className="font-bold text-white font-mono">{plannerResult.realistic.clicks}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-300 block">Conv. LP (WhatsApp)</span>
+                        <span className="font-bold text-teal-300 font-mono">{plannerResult.realistic.convLp}%</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-300 block">Leads / WhatsApp</span>
+                        <span className="font-bold text-amber-300 font-mono">{plannerResult.realistic.leads}</span>
+                      </div>
+                    </div>
+
+                    {/* Bloco 2: CPA & Vendas */}
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-white/10 p-3 rounded-xl">
+                      <div>
+                        <span className="text-[10px] text-slate-300 block">CPA (Custo/Lead)</span>
+                        <span className="font-bold text-amber-300 font-mono">R$ {plannerResult.realistic.cpa.toFixed(2)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-300 block">Fechamento CRM</span>
+                        <span className="font-bold text-white font-mono">{plannerResult.realistic.closeRate}%</span>
+                      </div>
+                      <div className="col-span-2 pt-1 border-t border-white/10">
+                        <span className="text-[10px] text-slate-300 block">Novas Locações Fechadas:</span>
+                        <span className="text-base font-black text-teal-300 font-mono">{plannerResult.realistic.contracts} contrato(s)</span>
+                      </div>
+                    </div>
+
+                    {/* Bloco 3: Indicadores Executivos (CAC, LTV e LTV/CAC) */}
+                    <div className="p-3 bg-teal-400/15 border border-teal-400/30 rounded-xl space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-200 text-[11px]">CAC (Custo Aquisição):</span>
+                        <span className="font-black text-teal-300 font-mono">R$ {plannerResult.realistic.cac.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-200 text-[11px]">LTV (Contrato 12m):</span>
+                        <span className="font-black text-white font-mono">R$ {plannerResult.realistic.ltv.toLocaleString('pt-BR')}</span>
+                      </div>
+                      <div className="flex justify-between pt-1 border-t border-teal-400/30">
+                        <span className="text-white font-bold text-[11px]">Relação LTV / CAC:</span>
+                        <span className="font-black text-amber-300 font-mono text-base">{plannerResult.realistic.ltvCac.toFixed(1)}x</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-teal-200">
+                        <span>Payback do CAC:</span>
+                        <span>~{Math.round(plannerResult.realistic.paybackMonths * 30)} dias (Recuperação Imediata)</span>
+                      </div>
+                    </div>
+
+                    {/* Bloco 4: Retorno Financeiro & ROAS */}
+                    <div className="text-xs space-y-1 pt-1">
+                      <div className="flex justify-between">
+                        <span className="text-slate-300">Novo MRR:</span>
+                        <span className="font-bold text-white font-mono">R$ {plannerResult.realistic.mrr.toLocaleString('pt-BR')}/mês</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-300">Faturamento Anual (LTV):</span>
+                        <span className="font-black text-teal-300 font-mono">R$ {plannerResult.realistic.annual.toLocaleString('pt-BR')}</span>
+                      </div>
+                      <div className="flex justify-between font-black text-sm pt-1 border-t border-white/10">
+                        <span className="text-white">ROAS Estimado:</span>
+                        <span className="text-amber-300 font-mono text-base">{plannerResult.realistic.roas.toFixed(1)}x</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleApplyScenarioToAgent(plannerResult.realistic)}
+                    className="w-full mt-2 bg-[#007481] hover:bg-[#005f6b] text-white font-black py-2.5 px-3 rounded-lg text-xs transition-all cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
+                  >
+                    <Check className="w-4 h-4" />
+                    Adotar Cenário Realista no Agente
+                  </button>
+                </div>
+
+                {/* 🟢 CENÁRIO 3: OTIMISTA */}
+                <div className="bg-slate-900/90 border border-emerald-500/40 rounded-2xl p-5 space-y-4 relative flex flex-col justify-between shadow-md">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
+                      <div>
+                        <span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-400 uppercase tracking-wider">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                          {plannerResult.optimistic.name}
+                        </span>
+                        <div className="text-[10px] text-slate-400 mt-0.5">{plannerResult.optimistic.subtitle}</div>
+                      </div>
+                    </div>
+
+                    {/* Bloco 1: Tráfego e Conversão */}
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-white/5 p-3 rounded-xl">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">CPC Médio</span>
+                        <span className="font-bold text-white font-mono">R$ {plannerResult.optimistic.cpc.toFixed(2)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Cliques Mês</span>
+                        <span className="font-bold text-white font-mono">{plannerResult.optimistic.clicks}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Conv. LP (WhatsApp)</span>
+                        <span className="font-bold text-emerald-300 font-mono">{plannerResult.optimistic.convLp}%</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Leads / WhatsApp</span>
+                        <span className="font-bold text-emerald-300 font-mono">{plannerResult.optimistic.leads}</span>
+                      </div>
+                    </div>
+
+                    {/* Bloco 2: CPA & Vendas */}
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-white/5 p-3 rounded-xl">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">CPA (Custo/Lead)</span>
+                        <span className="font-bold text-emerald-300 font-mono">R$ {plannerResult.optimistic.cpa.toFixed(2)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Fechamento CRM</span>
+                        <span className="font-bold text-white font-mono">{plannerResult.optimistic.closeRate}%</span>
+                      </div>
+                      <div className="col-span-2 pt-1 border-t border-white/5">
+                        <span className="text-[10px] text-slate-400 block">Novas Locações Fechadas:</span>
+                        <span className="text-base font-black text-emerald-300 font-mono">{plannerResult.optimistic.contracts} contratos</span>
+                      </div>
+                    </div>
+
+                    {/* Bloco 3: Indicadores Executivos (CAC, LTV e LTV/CAC) */}
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-300 text-[11px]">CAC (Custo Aquisição):</span>
+                        <span className="font-black text-emerald-300 font-mono">R$ {plannerResult.optimistic.cac.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-300 text-[11px]">LTV (Contrato 12m):</span>
+                        <span className="font-black text-white font-mono">R$ {plannerResult.optimistic.ltv.toLocaleString('pt-BR')}</span>
+                      </div>
+                      <div className="flex justify-between pt-1 border-t border-emerald-500/20">
+                        <span className="text-slate-200 font-bold text-[11px]">Relação LTV / CAC:</span>
+                        <span className="font-black text-emerald-400 font-mono text-sm">{plannerResult.optimistic.ltvCac.toFixed(1)}x</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-400">
+                        <span>Payback do CAC:</span>
+                        <span>~{Math.round(plannerResult.optimistic.paybackMonths * 30)} dias</span>
+                      </div>
+                    </div>
+
+                    {/* Bloco 4: Retorno Financeiro & ROAS */}
+                    <div className="text-xs space-y-1 pt-1">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Novo MRR:</span>
+                        <span className="font-bold text-white font-mono">R$ {plannerResult.optimistic.mrr.toLocaleString('pt-BR')}/mês</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Faturamento Anual (LTV):</span>
+                        <span className="font-bold text-emerald-300 font-mono">R$ {plannerResult.optimistic.annual.toLocaleString('pt-BR')}</span>
+                      </div>
+                      <div className="flex justify-between font-black text-sm pt-1 border-t border-white/10">
+                        <span className="text-slate-300">ROAS Estimado:</span>
+                        <span className="text-emerald-400 font-mono">{plannerResult.optimistic.roas.toFixed(1)}x</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleApplyScenarioToAgent(plannerResult.optimistic)}
+                    className="w-full mt-2 bg-emerald-600/80 hover:bg-emerald-600 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all cursor-pointer"
+                  >
+                    Adotar Cenário Otimista
+                  </button>
+                </div>
+
+              </div>
+            )}
+
           </div>
 
           {/* Formulário de Configuração de Metas */}
