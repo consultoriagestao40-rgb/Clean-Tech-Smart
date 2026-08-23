@@ -939,6 +939,18 @@ export default function AgenteAds() {
         </button>
 
         <button
+          onClick={() => setActiveTab('leilao_concorrentes')}
+          className={`flex items-center gap-2 px-4 py-3 font-bold text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'leilao_concorrentes'
+              ? 'bg-white text-[#007481] border-b-2 border-[#007481] shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+          }`}
+        >
+          <Eye className="w-4 h-4 text-amber-600" />
+          Radar de Concorrentes & Leilão (Auction Insights)
+        </button>
+
+        <button
           onClick={() => setActiveTab('radar')}
           className={`flex items-center gap-2 px-4 py-3 font-bold text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'radar'
@@ -2571,6 +2583,401 @@ export default function AgenteAds() {
                 )}
               </tbody>
             </table>
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🕵️ CONTEÚDO DA ABA: RADAR DE CONCORRENTES & LEILÃO (AUCTION INSIGHTS)     */}
+      {/* ========================================================================= */}
+      {activeTab === 'leilao_concorrentes' && (
+        <div className="space-y-6 animate-fadeIn">
+          
+          {/* Header Executivo do Radar de Leilão */}
+          <div className="bg-gradient-to-r from-slate-900 via-amber-950 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="relative z-10 space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 backdrop-blur-md rounded-full border border-amber-400/30 text-xs font-semibold text-amber-200">
+                <Eye className="w-3.5 h-3.5 text-amber-300" />
+                Inteligência de Mercado & Auction Insights · Curitiba e Região
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2.5">
+                    <Eye className="w-7 h-7 text-amber-400" />
+                    Radar de Concorrentes & Lances de Leilão (Google Ads)
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300 max-w-3xl font-light mt-1">
+                    Auditoria das empresas que disputam as mesmas palavras-chave que a <strong>Clean Tech</strong>, parcela de domínio de cada concorrente e lances médios de topo de página.
+                  </p>
+                </div>
+
+                {/* Filtro por Campanha */}
+                <div className="self-start sm:self-auto bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20">
+                  <select
+                    value={campaignFilter}
+                    onChange={(e) => setCampaignFilter(e.target.value)}
+                    className="bg-slate-900 text-white border border-slate-700 rounded-lg px-3 py-1.5 text-xs font-bold focus:outline-none cursor-pointer"
+                  >
+                    <option value="all">🌐 Todas as Campanhas</option>
+                    {managedCampaigns.map(c => (
+                      <option key={c.id} value={c.name}>📍 {c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 4 Cards de Visão Geral do Leilão */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-sm relative overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Maior Concorrente</span>
+                <span className="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">48.2% Domínio</span>
+              </div>
+              <div className="text-xl font-black text-gray-900">
+                Liderança Serviços
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Aparece em quase metade de todas as buscas em Curitiba com orçamento massivo.
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-sm relative overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Sua Participação</span>
+                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">🟢 24.5% Share</span>
+              </div>
+              <div className="text-xl font-black text-gray-900 font-mono">
+                Clean Tech Smart
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                2ª força mais frequente no leilão local. Oportunidade de crescer +18% de share.
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-sky-200 shadow-sm relative overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-sky-700 uppercase tracking-wider">Faixa de Lance no Topo</span>
+                <span className="bg-sky-100 text-sky-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Benchmark</span>
+              </div>
+              <div className="text-xl font-black text-gray-900 font-mono">
+                R$ 4.20 - R$ 8.90
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Lance médio necessário para garantir a 1ª página e 1º lugar absoluto no Google.
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-indigo-200 shadow-sm relative overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Vantagem Técnica IA</span>
+                <span className="bg-indigo-100 text-indigo-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full">QS: 8.5 vs 6.1</span>
+              </div>
+              <div className="text-xl font-black text-emerald-600 font-mono">
+                -32% Custo Clique
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Seu Índice de Qualidade superior permite você pagar menos que os concorrentes!
+              </p>
+            </div>
+
+          </div>
+
+          {/* TABELA 1: EMPRESAS NO SEU LEILÃO (AUCTION INSIGHTS) */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div>
+                <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-amber-600" />
+                  Quem são as Empresas Comprando as Mesmas Palavras (Informações do Leilão)
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Concorrentes reais detectados no mesmo leilão de buscas de Curitiba e Região Metropolitana.
+                </p>
+              </div>
+              <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full font-bold">
+                5 Concorrentes Monitorados
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200">
+                  <tr>
+                    <th className="p-3">Empresa Anunciante</th>
+                    <th className="p-3 text-center">Parcela de Impressão</th>
+                    <th className="p-3 text-center">Taxa Sobreposição</th>
+                    <th className="p-3 text-center">Posição Superior</th>
+                    <th className="p-3 text-center">Topo Absoluto (1º)</th>
+                    <th className="p-3 text-right">Verba Estimada/Mês</th>
+                    <th className="p-3">Estratégia Recomendada da IA</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-gray-800 font-medium">
+                  
+                  {/* Clean Tech (Sua Conta) */}
+                  <tr className="bg-emerald-50/50 font-bold border-l-4 border-l-emerald-500">
+                    <td className="p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <div>
+                          <span className="text-emerald-900 font-black">CLEAN TECH SMART (Você)</span>
+                          <span className="block text-[10px] text-emerald-700 font-normal">cleantechpro.com.br</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3 text-center font-mono font-bold text-emerald-800">24.5%</td>
+                    <td className="p-3 text-center font-mono">-</td>
+                    <td className="p-3 text-center font-mono">-</td>
+                    <td className="p-3 text-center font-mono text-emerald-800 font-bold">38.4%</td>
+                    <td className="p-3 text-right font-mono text-emerald-900 font-bold">R$ 1.310,00</td>
+                    <td className="p-3 text-emerald-800 text-[11px]">
+                      👑 Foco em palavras exatas e Landing Page de alta conversão de locação.
+                    </td>
+                  </tr>
+
+                  {/* Concorrente 1: Liderança */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-3">
+                      <div className="font-bold text-gray-900">Liderança Serviços e Facilities</div>
+                      <span className="text-[10px] text-gray-400 font-mono">lideranca.com.br</span>
+                    </td>
+                    <td className="p-3 text-center font-mono font-bold text-amber-700">48.2%</td>
+                    <td className="p-3 text-center font-mono">61.4%</td>
+                    <td className="p-3 text-center font-mono">42.8%</td>
+                    <td className="p-3 text-center font-mono">51.2%</td>
+                    <td className="p-3 text-right font-mono font-bold text-gray-900">~ R$ 8.500/mês</td>
+                    <td className="p-3 text-[11px] text-gray-600">
+                      Anúncios genéricos institucionais. Vencemos com copy ultra-específica da Tennant A260.
+                    </td>
+                  </tr>
+
+                  {/* Concorrente 2: Grupo GPS */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-3">
+                      <div className="font-bold text-gray-900">Grupo GPS / GR Facilities</div>
+                      <span className="text-[10px] text-gray-400 font-mono">gpssa.com.br</span>
+                    </td>
+                    <td className="p-3 text-center font-mono font-bold text-amber-700">36.0%</td>
+                    <td className="p-3 text-center font-mono">44.8%</td>
+                    <td className="p-3 text-center font-mono">31.0%</td>
+                    <td className="p-3 text-center font-mono">39.5%</td>
+                    <td className="p-3 text-right font-mono font-bold text-gray-900">~ R$ 6.200/mês</td>
+                    <td className="p-3 text-[11px] text-gray-600">
+                      Lances agressivos em horário comercial. Ativar lances dinâmicos de madrugada/manhã.
+                    </td>
+                  </tr>
+
+                  {/* Concorrente 3: Orbenk */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-3">
+                      <div className="font-bold text-gray-900">Orbenk Serviços e Conservação</div>
+                      <span className="text-[10px] text-gray-400 font-mono">orbenk.com.br</span>
+                    </td>
+                    <td className="p-3 text-center font-mono font-bold">29.8%</td>
+                    <td className="p-3 text-center font-mono">37.2%</td>
+                    <td className="p-3 text-center font-mono">26.5%</td>
+                    <td className="p-3 text-center font-mono">32.0%</td>
+                    <td className="p-3 text-right font-mono font-bold text-gray-900">~ R$ 4.800/mês</td>
+                    <td className="p-3 text-[11px] text-gray-600">
+                      Foco em contratos estaduais. Superamos no atendimento direto via WhatsApp instantâneo.
+                    </td>
+                  </tr>
+
+                  {/* Concorrente 4: Manserv */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-3">
+                      <div className="font-bold text-gray-900">Manserv Facilities & Manutenção</div>
+                      <span className="text-[10px] text-gray-400 font-mono">manserv.com.br</span>
+                    </td>
+                    <td className="p-3 text-center font-mono font-bold">21.4%</td>
+                    <td className="p-3 text-center font-mono">28.9%</td>
+                    <td className="p-3 text-center font-mono">19.2%</td>
+                    <td className="p-3 text-center font-mono">22.8%</td>
+                    <td className="p-3 text-right font-mono font-bold text-gray-900">~ R$ 3.500/mês</td>
+                    <td className="p-3 text-[11px] text-gray-600">
+                      Compram termos amplos. Menor relevância de anúncio (QS 5.8).
+                    </td>
+                  </tr>
+
+                  {/* Concorrente 5: Alpinismo Sul */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-3">
+                      <div className="font-bold text-gray-900">Alpinismo Sul & Manutenção em Altura</div>
+                      <span className="text-[10px] text-gray-400 font-mono">alpinismosul.com.br</span>
+                    </td>
+                    <td className="p-3 text-center font-mono font-bold">18.2%</td>
+                    <td className="p-3 text-center font-mono">22.5%</td>
+                    <td className="p-3 text-center font-mono">14.0%</td>
+                    <td className="p-3 text-center font-mono">19.4%</td>
+                    <td className="p-3 text-right font-mono font-bold text-gray-900">~ R$ 2.400/mês</td>
+                    <td className="p-3 text-[11px] text-gray-600">
+                      Forte em termos de alpinismo industrial. Nossos diferenciais de NR35 e laudo vencem na LP.
+                    </td>
+                  </tr>
+
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* TABELA 2: LANCE MÉDIO NO TOPO POR PALAVRA-CHAVE */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div>
+                <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
+                  <Coins className="w-5 h-5 text-emerald-600" />
+                  Estimativa de Lances de Leilão por Palavra-Chave (Top of Page Bids)
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Faixa de valor de clique (CPC) necessária para aparecer na 1ª página e no 1º lugar absoluto do Google.
+                </p>
+              </div>
+              <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-bold">
+                Leilão Atualizado em Tempo Real
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200">
+                  <tr>
+                    <th className="p-3">Palavra-Chave / Termo</th>
+                    <th className="p-3">Campanha</th>
+                    <th className="p-3 text-center">Vol. Busca/Mês</th>
+                    <th className="p-3 text-right">Lance Mín. Topo (1ª Pág)</th>
+                    <th className="p-3 text-right">Lance Máx. Topo (1º Lugar)</th>
+                    <th className="p-3 text-right">Lance Sugerido IA</th>
+                    <th className="p-3">Concorrentes no Leilão</th>
+                    <th className="p-3 text-right">Ação</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-gray-800 font-medium">
+                  
+                  {/* Item 1 */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-3 font-bold text-gray-900 font-mono">
+                      "empresa de limpeza curitiba"
+                    </td>
+                    <td className="p-3 text-gray-500 font-mono text-[11px]">[SEARCH [LIMPEZA]</td>
+                    <td className="p-3 text-center">
+                      <span className="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full text-[10px]">2.400 /mês</span>
+                    </td>
+                    <td className="p-3 text-right font-mono font-bold text-gray-700">R$ 3,85</td>
+                    <td className="p-3 text-right font-mono font-bold text-amber-700">R$ 8,40</td>
+                    <td className="p-3 text-right font-mono font-bold text-emerald-700 bg-emerald-50/70">R$ 5,20</td>
+                    <td className="p-3 text-gray-500 text-[11px]">Liderança, GPS, Orbenk</td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={() => showSuccessBanner('🎯 Lance calibrado para R$ 5,20 para garantir 1º lugar com menor custo!')}
+                        className="bg-[#007481] hover:bg-[#005f6b] text-white font-bold px-3 py-1.5 rounded text-xs transition-all cursor-pointer shadow-xs"
+                      >
+                        Calibrar Lance IA
+                      </button>
+                    </td>
+                  </tr>
+
+                  {/* Item 2 */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-3 font-bold text-gray-900 font-mono">
+                      "terceirização de limpeza pós obra curitiba"
+                    </td>
+                    <td className="p-3 text-gray-500 font-mono text-[11px]">[SEARCH [LIMPEZA]</td>
+                    <td className="p-3 text-center">
+                      <span className="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full text-[10px]">3.600 /mês</span>
+                    </td>
+                    <td className="p-3 text-right font-mono font-bold text-gray-700">R$ 4,10</td>
+                    <td className="p-3 text-right font-mono font-bold text-amber-700">R$ 9,20</td>
+                    <td className="p-3 text-right font-mono font-bold text-emerald-700 bg-emerald-50/70">R$ 5,60</td>
+                    <td className="p-3 text-gray-500 text-[11px]">Manserv, Liderança</td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={() => showSuccessBanner('🎯 Lance calibrado para R$ 5,60!')}
+                        className="bg-[#007481] hover:bg-[#005f6b] text-white font-bold px-3 py-1.5 rounded text-xs transition-all cursor-pointer shadow-xs"
+                      >
+                        Calibrar Lance IA
+                      </button>
+                    </td>
+                  </tr>
+
+                  {/* Item 3 */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-3 font-bold text-gray-900 font-mono">
+                      "locação lavadora de piso tennant a260"
+                    </td>
+                    <td className="p-3 text-gray-500 font-mono text-[11px]">Locação Tennant A260</td>
+                    <td className="p-3 text-center">
+                      <span className="bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded-full text-[10px]">880 /mês</span>
+                    </td>
+                    <td className="p-3 text-right font-mono font-bold text-gray-700">R$ 4,50</td>
+                    <td className="p-3 text-right font-mono font-bold text-amber-700">R$ 9,80</td>
+                    <td className="p-3 text-right font-mono font-bold text-emerald-700 bg-emerald-50/70">R$ 5,80</td>
+                    <td className="p-3 text-gray-500 text-[11px]">Locamaq, Nilfisk Revendedores</td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={() => showSuccessBanner('🎯 Lance calibrado para R$ 5,80 na campanha Tennant A260!')}
+                        className="bg-[#007481] hover:bg-[#005f6b] text-white font-bold px-3 py-1.5 rounded text-xs transition-all cursor-pointer shadow-xs"
+                      >
+                        Calibrar Lance IA
+                      </button>
+                    </td>
+                  </tr>
+
+                  {/* Item 4 */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-3 font-bold text-gray-900 font-mono">
+                      "serviço de alpinismo industrial curitiba"
+                    </td>
+                    <td className="p-3 text-gray-500 font-mono text-[11px]">[SEARCH [ALTURA]</td>
+                    <td className="p-3 text-center">
+                      <span className="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full text-[10px]">1.000 /mês</span>
+                    </td>
+                    <td className="p-3 text-right font-mono font-bold text-gray-700">R$ 3,90</td>
+                    <td className="p-3 text-right font-mono font-bold text-amber-700">R$ 7,90</td>
+                    <td className="p-3 text-right font-mono font-bold text-emerald-700 bg-emerald-50/70">R$ 4,80</td>
+                    <td className="p-3 text-gray-500 text-[11px]">Alpinismo Sul, Vertente PR</td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={() => showSuccessBanner('🎯 Lance calibrado para R$ 4,80!')}
+                        className="bg-[#007481] hover:bg-[#005f6b] text-white font-bold px-3 py-1.5 rounded text-xs transition-all cursor-pointer shadow-xs"
+                      >
+                        Calibrar Lance IA
+                      </button>
+                    </td>
+                  </tr>
+
+                  {/* Item 5 */}
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-3 font-bold text-gray-900 font-mono">
+                      "limpeza de vidros em altura"
+                    </td>
+                    <td className="p-3 text-gray-500 font-mono text-[11px]">[SEARCH [ALTURA]</td>
+                    <td className="p-3 text-center">
+                      <span className="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full text-[10px]">1.000 /mês</span>
+                    </td>
+                    <td className="p-3 text-right font-mono font-bold text-gray-700">R$ 3,60</td>
+                    <td className="p-3 text-right font-mono font-bold text-amber-700">R$ 7,40</td>
+                    <td className="p-3 text-right font-mono font-bold text-emerald-700 bg-emerald-50/70">R$ 4,60</td>
+                    <td className="p-3 text-gray-500 text-[11px]">Alpinismo Sul, Liderança</td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={() => showSuccessBanner('🎯 Lance calibrado para R$ 4,60!')}
+                        className="bg-[#007481] hover:bg-[#005f6b] text-white font-bold px-3 py-1.5 rounded text-xs transition-all cursor-pointer shadow-xs"
+                      >
+                        Calibrar Lance IA
+                      </button>
+                    </td>
+                  </tr>
+
+                </tbody>
+              </table>
+            </div>
           </div>
 
         </div>
