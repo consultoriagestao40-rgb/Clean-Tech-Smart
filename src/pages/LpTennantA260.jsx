@@ -1239,9 +1239,9 @@ export default function LpTennantA260() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 5. SEÇÃO DE VÍDEOS & PRINTS DE DEPOIMENTOS DE CLIENTES                    */}
+      {/* 5. SEÇÃO DE VÍDEOS & PRINTS DE DEPOIMENTOS DE CLIENTES (MOBILE & DESKTOP) */}
       {/* ========================================================================= */}
-      <section id="videos-depoimentos" className="hidden md:block py-14 bg-gray-50 border-t border-gray-200">
+      <section id="videos-depoimentos" className="py-10 sm:py-14 bg-gray-50 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           
           {/* BLOCO 1: VÍDEOS DEMONSTRATIVOS */}
