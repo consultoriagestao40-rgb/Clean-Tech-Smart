@@ -276,10 +276,13 @@ export default async function handler(req, res) {
         apiCredentials: {
           googleCustomerId: settings.ads_google_customer_id || '',
           googleDeveloperToken: settings.ads_google_developer_token ? '••••••••••••' : '',
-          googleConnected: Boolean(settings.ads_google_customer_id),
+          googleTagId: settings.ads_google_tag_id || settings.app_google_tag_id || '',
+          googleConversionLabel: settings.ads_google_conversion_label || '',
+          googleConnected: Boolean(settings.ads_google_customer_id || settings.ads_google_tag_id),
           metaAdAccountId: settings.ads_meta_ad_account_id || '',
           metaPixelId: settings.ads_meta_pixel_id || '',
-          metaConnected: Boolean(settings.ads_meta_ad_account_id)
+          metaCapiToken: settings.ads_meta_capi_token ? '••••••••••••' : '',
+          metaConnected: Boolean(settings.ads_meta_ad_account_id || settings.ads_meta_pixel_id)
         },
         searchTermsAnalysis,
         metaCreativesAnalysis,

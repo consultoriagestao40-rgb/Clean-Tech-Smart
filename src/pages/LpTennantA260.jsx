@@ -175,7 +175,14 @@ export default function LpTennantA260() {
 
 
 
-  // Sincroniza fotos e vídeos remotos com a base de dados
+  // =========================================================================
+  // 🏷️ RASTREAMENTO & TAGS DE ANÚNCIOS (GOOGLE ADS & META PIXEL)
+  // =========================================================================
+  const [googleTagId, setGoogleTagId] = useState(localStorage.getItem('ads_google_tag_id') || '');
+  const [googleConversionLabel, setGoogleConversionLabel] = useState(localStorage.getItem('ads_google_conversion_label') || '');
+  const [metaPixelId, setMetaPixelId] = useState(localStorage.getItem('ads_meta_pixel_id') || '');
+
+  // Sincroniza fotos, vídeos e tags remotas com a base de dados
   useEffect(() => {
     async function loadRemoteSettings() {
       try {
@@ -195,6 +202,18 @@ export default function LpTennantA260() {
               setCompanyLogo(data.settings.app_company_logo);
               localStorage.setItem('app_company_logo', data.settings.app_company_logo);
             }
+            if (data.settings.ads_google_tag_id) {
+              setGoogleTagId(data.settings.ads_google_tag_id);
+              localStorage.setItem('ads_google_tag_id', data.settings.ads_google_tag_id);
+            }
+            if (data.settings.ads_google_conversion_label) {
+              setGoogleConversionLabel(data.settings.ads_google_conversion_label);
+              localStorage.setItem('ads_google_conversion_label', data.settings.ads_google_conversion_label);
+            }
+            if (data.settings.ads_meta_pixel_id) {
+              setMetaPixelId(data.settings.ads_meta_pixel_id);
+              localStorage.setItem('ads_meta_pixel_id', data.settings.ads_meta_pixel_id);
+            }
           }
         }
       } catch (err) {
@@ -203,6 +222,49 @@ export default function LpTennantA260() {
     }
     loadRemoteSettings();
   }, []);
+
+  // Injeção da Tag do Google (gtag.js)
+  useEffect(() => {
+    if (googleTagId && !document.getElementById('google-tag-script')) {
+      const s = document.createElement('script');
+      s.id = 'google-tag-script';
+      s.async = true;
+      s.src = `https://www.googletagmanager.com/gtag/js?id=${googleTagId}`;
+      document.head.appendChild(s);
+
+      const inline = document.createElement('script');
+      inline.id = 'google-tag-inline';
+      inline.innerHTML = `
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', '${googleTagId}');
+      `;
+      document.head.appendChild(inline);
+    }
+  }, [googleTagId]);
+
+  // Injeção do Meta Pixel (fbq)
+  useEffect(() => {
+    if (metaPixelId && !document.getElementById('meta-pixel-script')) {
+      const s = document.createElement('script');
+      s.id = 'meta-pixel-script';
+      s.innerHTML = `
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '${metaPixelId}');
+        fbq('track', 'PageView');
+      `;
+      document.head.appendChild(s);
+    }
+  }, [metaPixelId]);
 
   const nextPhoto = () => {
     setActivePhotoIndex((prev) => (prev + 1) % photoList.length);
@@ -278,8 +340,37 @@ export default function LpTennantA260() {
     };
   }, [selectedArea, produtividadeManual, custoServenteOrganico]);
 
-  // Função WhatsApp Direto
+  // Função WhatsApp Direto com Disparo de Conversão Oficial
   const handleWhatsAppRedirect = (customMsg = null) => {
+    // 1. Disparo de Conversão Google Ads
+    try {
+      if (typeof window.gtag === 'function' && googleTagId) {
+        const sendTo = googleConversionLabel ? `${googleTagId}/${googleConversionLabel}` : googleTagId;
+        window.gtag('event', 'conversion', {
+          'send_to': sendTo,
+          'event_category': 'WhatsApp',
+          'event_label': customMsg || 'Contato WhatsApp Tennant A260'
+        });
+      }
+    } catch (e) {
+      console.warn('Google Ads tag conversion error:', e);
+    }
+
+    // 2. Disparo de Conversão Meta Pixel (Lead & Contact)
+    try {
+      if (typeof window.fbq === 'function' && metaPixelId) {
+        window.fbq('track', 'Lead', {
+          content_name: 'Tennant A260',
+          content_category: 'Lavadora de Piso Industrial',
+          value: 3890.00,
+          currency: 'BRL'
+        });
+        window.fbq('track', 'Contact');
+      }
+    } catch (e) {
+      console.warn('Meta Pixel lead event error:', e);
+    }
+
     const text = customMsg || `Olá! Gostaria de informações e proposta para a Lavadora Tennant A260 em Curitiba e Região.`;
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');

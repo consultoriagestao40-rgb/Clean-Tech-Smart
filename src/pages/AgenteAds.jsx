@@ -79,9 +79,12 @@ export default function AgenteAds() {
   const [apiCredentials, setApiCredentials] = useState({
     googleCustomerId: '',
     googleDeveloperToken: '',
+    googleTagId: '',
+    googleConversionLabel: '',
     googleConnected: false,
     metaAdAccountId: '',
     metaPixelId: '',
+    metaCapiToken: '',
     metaConnected: false
   });
 
@@ -135,8 +138,12 @@ export default function AgenteAds() {
         ads_negate_spend_threshold: targets.autoNegateThresholdSpend,
         ads_negate_clicks_threshold: targets.autoNegateClicksThreshold,
         ads_google_customer_id: apiCredentials.googleCustomerId,
+        ads_google_developer_token: apiCredentials.googleDeveloperToken,
+        ads_google_tag_id: apiCredentials.googleTagId,
+        ads_google_conversion_label: apiCredentials.googleConversionLabel,
         ads_meta_ad_account_id: apiCredentials.metaAdAccountId,
-        ads_meta_pixel_id: apiCredentials.metaPixelId
+        ads_meta_pixel_id: apiCredentials.metaPixelId,
+        ads_meta_capi_token: apiCredentials.metaCapiToken
       };
 
       const res = await fetch('/api/ads/save-targets', {
@@ -146,7 +153,7 @@ export default function AgenteAds() {
       });
 
       if (res.ok) {
-        showSuccessBanner('Metas e Parâmetros de Ads atualizados com sucesso!');
+        showSuccessBanner('Credenciais e Metas de Ads salvas com sucesso!');
         fetchAdsData();
       }
     } catch (err) {
@@ -1284,71 +1291,110 @@ export default function AgenteAds() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            {/* Bloco Google Ads API */}
+            {/* Bloco Google Ads API & Conversões */}
             <div className="p-5 bg-sky-50/40 rounded-xl border border-sky-200 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-sky-900 text-sm flex items-center gap-2">
                   <Globe className="w-4 h-4 text-sky-600" />
-                  Google Ads API
+                  Google Ads (Rastreamento & API)
                 </h3>
                 <span className="text-[10px] font-bold bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full">
-                  OAuth 2.0
+                  Google Tag & OAuth
                 </span>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Customer ID (ID da Conta do Google Ads)</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">ID da Tag do Google (Google Tag / Conversion ID)</label>
                 <input
                   type="text"
-                  value={apiCredentials.googleCustomerId}
-                  onChange={(e) => setApiCredentials({ ...apiCredentials, googleCustomerId: e.target.value })}
-                  placeholder="Ex: 123-456-7890"
+                  value={apiCredentials.googleTagId}
+                  onChange={(e) => setApiCredentials({ ...apiCredentials, googleTagId: e.target.value })}
+                  placeholder="Ex: AW-1234567890 ou G-XXXXXXXXXX"
                   className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
                 />
+                <span className="text-[10px] text-gray-400">Instala a Tag do Google na Landing Page automaticamente.</span>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Developer Token</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Rótulo de Conversão (Conversion Label)</label>
                 <input
-                  type="password"
-                  value={apiCredentials.googleDeveloperToken}
-                  onChange={(e) => setApiCredentials({ ...apiCredentials, googleDeveloperToken: e.target.value })}
-                  placeholder="Insira o Developer Token da Google"
+                  type="text"
+                  value={apiCredentials.googleConversionLabel}
+                  onChange={(e) => setApiCredentials({ ...apiCredentials, googleConversionLabel: e.target.value })}
+                  placeholder="Ex: AbCdEfGhIjKlMnOpQr"
                   className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
                 />
+                <span className="text-[10px] text-gray-400">Dispara conversão de Lead nos cliques de WhatsApp e cotação.</span>
+              </div>
+
+              <div className="pt-2 border-t border-sky-100 space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Customer ID (ID da Conta do Google Ads)</label>
+                  <input
+                    type="text"
+                    value={apiCredentials.googleCustomerId}
+                    onChange={(e) => setApiCredentials({ ...apiCredentials, googleCustomerId: e.target.value })}
+                    placeholder="Ex: 123-456-7890"
+                    className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Developer Token (Opcional - API do Agente)</label>
+                  <input
+                    type="password"
+                    value={apiCredentials.googleDeveloperToken}
+                    onChange={(e) => setApiCredentials({ ...apiCredentials, googleDeveloperToken: e.target.value })}
+                    placeholder="Insira o Developer Token da Google"
+                    className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Bloco Meta Marketing API */}
+            {/* Bloco Meta Marketing API & Pixel */}
             <div className="p-5 bg-indigo-50/40 rounded-xl border border-indigo-200 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-indigo-900 text-sm flex items-center gap-2">
                   <Layers className="w-4 h-4 text-indigo-600" />
-                  Meta Marketing API (Facebook / Instagram)
+                  Meta Ads (Pixel & API de Conversões)
                 </h3>
                 <span className="text-[10px] font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">
-                  Graph API & CAPI
+                  Graph API & Pixel
                 </span>
               </div>
 
               <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Pixel ID / Dataset ID (Meta Pixel)</label>
+                <input
+                  type="text"
+                  value={apiCredentials.metaPixelId}
+                  onChange={(e) => setApiCredentials({ ...apiCredentials, metaPixelId: e.target.value })}
+                  placeholder="Ex: 987654321012345"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                />
+                <span className="text-[10px] text-gray-400">Instala o Pixel da Meta na Landing Page para rastrear PageViews e Leads.</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Token de Acesso (API de Conversões / CAPI)</label>
+                <input
+                  type="password"
+                  value={apiCredentials.metaCapiToken}
+                  onChange={(e) => setApiCredentials({ ...apiCredentials, metaCapiToken: e.target.value })}
+                  placeholder="Insira o Token de Acesso da Conversions API (EAAB...)"
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
+                />
+                <span className="text-[10px] text-gray-400">Permite envio de conversões servidor-a-servidor (CAPI).</span>
+              </div>
+
+              <div className="pt-2 border-t border-indigo-100">
                 <label className="block text-xs font-bold text-gray-700 mb-1">Ad Account ID (ID da Conta de Anúncios)</label>
                 <input
                   type="text"
                   value={apiCredentials.metaAdAccountId}
                   onChange={(e) => setApiCredentials({ ...apiCredentials, metaAdAccountId: e.target.value })}
                   placeholder="Ex: act_1234567890"
-                  className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Pixel ID / Dataset ID</label>
-                <input
-                  type="text"
-                  value={apiCredentials.metaPixelId}
-                  onChange={(e) => setApiCredentials({ ...apiCredentials, metaPixelId: e.target.value })}
-                  placeholder="Ex: 987654321012345"
                   className="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-xs font-mono"
                 />
               </div>
