@@ -38,15 +38,48 @@ export default async function handler(req, res) {
       };
     }
 
+    let freshAccess = null;
+    if (refreshResult && refreshResult.status === 200) {
+      const parsed = JSON.parse(refreshResult.body);
+      freshAccess = parsed.access_token;
+      const newRefresh = parsed.refresh_token;
+      const newExpires = Date.now() + (Number(parsed.expires_in || 3600) * 1000);
+
+      const updateClient = await pool.connect();
+      await updateClient.query("UPDATE system_settings SET value = $1 WHERE key = 'conta_azul_access_token'", [freshAccess]);
+      await updateClient.query("UPDATE system_settings SET value = $1 WHERE key = 'conta_azul_refresh_token'", [newRefresh]);
+      await updateClient.query("UPDATE system_settings SET value = $1 WHERE key = 'conta_azul_expires_at'", [String(newExpires)]);
+      updateClient.release();
+    }
+
+    const testToken = freshAccess || tokenMap.conta_azul_access_token;
+
+    // Testar nas duas APIs: api.contaazul.com e api-v2.contaazul.com
+    const resV1 = await fetch('https://api.contaazul.com/v1/sales?number=141', {
+      headers: { 'Authorization': `Bearer ${testToken}` }
+    });
+    const textV1 = await resV1.text();
+
+    const resV2 = await fetch('https://api-v2.contaazul.com/v1/sales?number=141', {
+      headers: { 'Authorization': `Bearer ${testToken}` }
+    });
+    const textV2 = await resV2.text();
+
+    const resV2List = await fetch('https://api-v2.contaazul.com/v1/sales', {
+      headers: { 'Authorization': `Bearer ${testToken}` }
+    });
+    const textV2List = await resV2List.text();
+
+    const resV1List = await fetch('https://api.contaazul.com/v1/sales', {
+      headers: { 'Authorization': `Bearer ${testToken}` }
+    });
+    const textV1List = await resV1List.text();
+
     return res.status(200).json({
-      tokenMap: {
-        hasAccess: !!tokenMap.conta_azul_access_token,
-        hasRefresh: !!tokenMap.conta_azul_refresh_token,
-        expiresAt: tokenMap.conta_azul_expires_at,
-        timeNow: Date.now(),
-        isExpired: Number(tokenMap.conta_azul_expires_at || 0) <= Date.now()
-      },
-      refreshResult
+      resV1: { status: resV1.status, body: textV1 },
+      resV2: { status: resV2.status, body: textV2 },
+      resV1List: { status: resV1List.status, body: textV1List.slice(0, 300) },
+      resV2List: { status: resV2List.status, body: textV2List.slice(0, 300) }
     });
   } catch (e) {
     return res.status(500).json({ error: e.message, stack: e.stack });
