@@ -669,21 +669,21 @@ export default function Faturas() {
             </div>
           ) : (
             <table className="w-full text-left text-sm text-gray-600">
-              <thead className="border-b border-gray-200">
+              <thead className="border-b border-gray-200 bg-gray-50/50">
                 <tr>
-                  <th className="pb-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Cliente</th>
-                  <th className="pb-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Descrição</th>
-                  <th className="pb-3 font-semibold text-gray-500 text-xs uppercase tracking-wider text-right">Valor</th>
-                  <th className="pb-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Vencimento</th>
-                  <th className="pb-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Status</th>
-                  <th className="pb-3 font-semibold text-gray-500 text-xs uppercase tracking-wider text-center">Ações</th>
+                  <th className="px-4 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider text-left">Cliente</th>
+                  <th className="px-4 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider text-left">Descrição</th>
+                  <th className="px-6 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider text-right whitespace-nowrap">Valor</th>
+                  <th className="px-6 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider text-center whitespace-nowrap">Vencimento</th>
+                  <th className="px-4 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider text-center whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider text-center whitespace-nowrap">Ações</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100">
                 {filteredInvoices.map((inv) => (
-                  <tr key={inv.id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="py-4 font-medium text-gray-800">{inv.client_name}</td>
-                    <td className="py-4">
+                  <tr key={inv.id} className="hover:bg-gray-50/80 transition-colors">
+                    <td className="px-4 py-4 font-semibold text-gray-800 whitespace-nowrap">{inv.client_name}</td>
+                    <td className="px-4 py-4">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-medium text-gray-800">{inv.description}</span>
                         {inv.contract_code && (
@@ -704,10 +704,10 @@ export default function Faturas() {
                         )}
                       </div>
                     </td>
-                    <td className="py-4 text-right font-bold text-gray-900">{formatCurrency(inv.amount)}</td>
-                    <td className="py-4">{formatDate(inv.due_date)}</td>
-                    <td className="py-4">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                    <td className="px-6 py-4 text-right font-bold text-gray-900 whitespace-nowrap">{formatCurrency(inv.amount)}</td>
+                    <td className="px-6 py-4 text-center text-gray-600 whitespace-nowrap">{formatDate(inv.due_date)}</td>
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
+                      <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
                         inv.status === 'Paga' ? 'bg-green-100 text-green-700' :
                         inv.status === 'Vencida' ? 'bg-red-100 text-red-700' :
                         'bg-yellow-100 text-yellow-700'
@@ -715,7 +715,7 @@ export default function Faturas() {
                         {inv.status}
                       </span>
                     </td>
-                    <td className="py-4 text-center">
+                    <td className="px-4 py-4 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center space-x-1.5">
                         <button
                           onClick={() => handleViewInvoiceDetails(inv)}
