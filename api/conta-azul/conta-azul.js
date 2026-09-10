@@ -295,25 +295,66 @@ export async function createContaAzulSale(salePayload) {
   return { success: true, data: json };
 }
 
-// Obtém os detalhes atualizados de uma venda e da respectiva NF no Conta Azul
-export async function getContaAzulSaleDetails(saleId) {
+// Obtém os detalhes atualizados de uma venda e da respectiva NF no Conta Azul (por UUID ou por número de venda)
+export async function getContaAzulSaleDetails(saleIdOrNumber) {
   const token = await getValidAccessToken();
   if (!token) return { success: false, error: 'Não autenticado no Conta Azul' };
 
-  try {
-    const res = await fetch(`${BASE_API_URL}/v1/sales/${saleId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+  const clean = String(saleIdOrNumber).trim().replace('#', '');
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
 
-    if (!res.ok) {
-      const err = await res.text();
-      return { success: false, error: err };
+  try {
+    // 1. Se for formato UUID, tenta buscar direto pela rota /v1/sales/{id}
+    if (isUuid) {
+      const res = await fetch(`${BASE_API_URL}/v1/sales/${clean}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const saleData = await res.json();
+        return { success: true, sale: saleData };
+      }
     }
 
-    const saleData = await res.json();
-    return { success: true, sale: saleData };
+    // 2. Se for número ou falhou por UUID, tenta buscar por query ?number=...
+    const numRes = await fetch(`${BASE_API_URL}/v1/sales?number=${encodeURIComponent(clean)}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (numRes.ok) {
+      const numData = await numRes.json();
+      const numItems = Array.isArray(numData) ? numData : (numData.content || numData.items || []);
+      if (numItems.length > 0) {
+        const detailRes = await fetch(`${BASE_API_URL}/v1/sales/${numItems[0].id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (detailRes.ok) {
+          const fullSale = await detailRes.json();
+          return { success: true, sale: fullSale };
+        }
+        return { success: true, sale: numItems[0] };
+      }
+    }
+
+    // 3. Fallback: varredura em lista de vendas recentes
+    const listRes = await fetch(`${BASE_API_URL}/v1/sales?page=1&size=50`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      const items = Array.isArray(listData) ? listData : (listData.content || listData.items || []);
+      const found = items.find(s => String(s.number) === clean || String(s.id) === clean);
+      if (found) {
+        const detailRes = await fetch(`${BASE_API_URL}/v1/sales/${found.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (detailRes.ok) {
+          const fullSale = await detailRes.json();
+          return { success: true, sale: fullSale };
+        }
+        return { success: true, sale: found };
+      }
+    }
+
+    return { success: false, error: 'Venda não localizada no Conta Azul' };
   } catch (err) {
     return { success: false, error: err.message };
   }
