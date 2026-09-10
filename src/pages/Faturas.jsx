@@ -13,6 +13,7 @@ export default function Faturas() {
   // Conta Azul State
   const [contaAzulConnected, setContaAzulConnected] = useState(false);
   const [isConnectingContaAzul, setIsConnectingContaAzul] = useState(false);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
 
   // Modal Detalhes da Fatura & Conta Azul
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -47,8 +48,46 @@ export default function Faturas() {
       const res = await fetch('/api/conta-azul/status');
       const data = await res.json();
       setContaAzulConnected(!!data.connected);
+      // Se conectado, sincroniza baixas pendentes em segundo plano
+      if (data.connected) {
+        syncPendingInvoicesSilently();
+      }
     } catch (e) {
       console.warn('Erro ao checar status do Conta Azul:', e);
+    }
+  }
+
+  async function syncPendingInvoicesSilently() {
+    try {
+      const res = await fetch('/api/conta-azul/sync-invoices', { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.updatedCount > 0) {
+        fetchInvoices();
+      }
+    } catch (e) {
+      console.warn('Sincronização em segundo plano:', e);
+    }
+  }
+
+  async function handleSyncAllInvoicesFromContaAzul() {
+    setIsSyncingAll(true);
+    try {
+      const res = await fetch('/api/conta-azul/sync-invoices', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        await fetchInvoices();
+        if (data.updatedCount > 0) {
+          alert(`🎉 Sucesso! ${data.updatedCount} fatura(s) foram identificadas como baixadas/conciliadas no Conta Azul e marcadas como Pagas!`);
+        } else {
+          alert('Tudo atualizado! Nenhuma nova fatura baixada encontrada no Conta Azul no momento.');
+        }
+      } else {
+        alert('Erro ao sincronizar com Conta Azul: ' + (data.error || 'Erro'));
+      }
+    } catch (e) {
+      alert('Erro de conexão ao sincronizar faturas do Conta Azul');
+    } finally {
+      setIsSyncingAll(false);
     }
   }
 
@@ -419,18 +458,31 @@ export default function Faturas() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0">
-          {/* Status Conta Azul */}
+          {/* Status Conta Azul & Sincronização de Baixas */}
           {contaAzulConnected ? (
-            <div className="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Conta Azul Conectado</span>
-              <button 
-                onClick={handleConnectContaAzul}
-                disabled={isConnectingContaAzul}
-                title="Reconectar ou trocar conta do Conta Azul"
-                className="ml-1 text-emerald-600 hover:text-emerald-800"
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Conta Azul Conectado</span>
+                <button 
+                  onClick={handleConnectContaAzul}
+                  disabled={isConnectingContaAzul}
+                  title="Reconectar ou trocar conta do Conta Azul"
+                  className="ml-1 text-emerald-600 hover:text-emerald-800"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSyncAllInvoicesFromContaAzul}
+                disabled={isSyncingAll}
+                className="flex items-center px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold transition-colors shadow-xs"
+                title="Buscar baixas e conciliações bancárias no Conta Azul e marcar faturas como Pagas"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isSyncingAll ? 'animate-spin' : ''}`} />
+                {isSyncingAll ? 'Sincronizando...' : 'Sincronizar Baixas'}
               </button>
             </div>
           ) : (

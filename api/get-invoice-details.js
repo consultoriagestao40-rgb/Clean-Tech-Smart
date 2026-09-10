@@ -112,15 +112,38 @@ export default async function handler(req, res) {
           }
 
           // Se no Conta Azul a venda foi quitada/paga e aqui ainda está pendente, sincroniza
-          const isCaPaid = s.status === 'PAID' || s.financial_status === 'PAID' || s.payment_status === 'PAID';
+          // Verificar se a venda foi baixada, liquidada ou conciliada no Conta Azul
+          const rawStatus = (s.status || '').toUpperCase();
+          const rawFinStatus = (s.financial_status || '').toUpperCase();
+          const rawPayStatus = (s.payment_status || '').toUpperCase();
+
+          const installments = Array.isArray(s.installments) ? s.installments : (Array.isArray(s.payment?.installments) ? s.payment.installments : []);
+          const allInstallmentsPaid = installments.length > 0 && installments.every(inst => {
+            const st = (inst.status || '').toUpperCase();
+            return st === 'ACQUITTED' || st === 'PAID' || st === 'LIQUIDATED' || st === 'BAIXADO';
+          });
+
+          const isCaPaid = rawStatus === 'PAID' || rawStatus === 'ACQUITTED' || 
+                           rawFinStatus === 'PAID' || rawFinStatus === 'ACQUITTED' ||
+                           rawPayStatus === 'PAID' || rawPayStatus === 'ACQUITTED' ||
+                           allInstallmentsPaid;
+
+          // Obter data de pagamento real da baixa
+          let caPaymentDate = s.payment_date || (installments.length > 0 ? (installments[0].payment_date || installments[0].date) : null);
+          if (caPaymentDate) {
+            caPaymentDate = caPaymentDate.split('T')[0];
+          } else {
+            caPaymentDate = new Date().toISOString().split('T')[0];
+          }
+
           if (isCaPaid && invoice.status !== 'Paga') {
             await client.query(`
               UPDATE invoices 
-              SET status = 'Paga', payment_date = COALESCE(payment_date, CURRENT_DATE) 
-              WHERE id = $1
-            `, [invoice.id]);
+              SET status = 'Paga', payment_date = $1 
+              WHERE id = $2
+            `, [caPaymentDate, invoice.id]);
             invoice.status = 'Paga';
-            invoice.payment_date = new Date().toISOString().split('T')[0];
+            invoice.payment_date = caPaymentDate;
           }
 
           contaAzulInfo = {
