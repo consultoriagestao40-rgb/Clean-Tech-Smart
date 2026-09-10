@@ -16,7 +16,15 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
-    // Buscar faturas que ainda estão pendentes/vencidas e possuem venda no Conta Azul
+    // 1. Garantir que as colunas existem na tabela invoices
+    await client.query(`
+      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS budget_id INT;
+      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS invoice_type VARCHAR(50);
+      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS conta_azul_sale_id VARCHAR(100);
+      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS ncm_info TEXT;
+    `);
+
+    // 2. Buscar faturas que ainda estão pendentes/vencidas e possuem venda no Conta Azul
     const pendingRes = await client.query(`
       SELECT id, conta_azul_sale_id, status 
       FROM invoices 
