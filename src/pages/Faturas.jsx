@@ -8,7 +8,11 @@ export default function Faturas() {
   const [isLoading, setIsLoading] = useState(true);
   
   const [periodoFilter, setPeriodoFilter] = useState('Todos');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [clientFilter, setClientFilter] = useState('Todos');
   const [statusFilter, setStatusFilter] = useState('Todos');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Conta Azul State
   const [contaAzulConnected, setContaAzulConnected] = useState(false);
@@ -154,17 +158,106 @@ export default function Faturas() {
   };
 
   const filteredInvoices = invoices.filter(inv => {
+    // 1. Filtro de Status
     if (statusFilter !== 'Todos' && inv.status !== statusFilter) return false;
-    // Lógica simples de período omitida para o MVP
+
+    // 2. Filtro de Cliente
+    if (clientFilter !== 'Todos') {
+      const matchClientId = String(inv.client_id) === String(clientFilter);
+      const matchClientName = (inv.client_name || '').toLowerCase() === String(clientFilter).toLowerCase();
+      if (!matchClientId && !matchClientName) return false;
+    }
+
+    // 3. Busca por texto
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchClient = (inv.client_name || '').toLowerCase().includes(q);
+      const matchDesc = (inv.description || '').toLowerCase().includes(q);
+      const matchContract = (inv.contract_code || '').toLowerCase().includes(q);
+      const matchBudget = inv.budget_id && String(inv.budget_id).includes(q);
+      const matchSale = inv.conta_azul_sale_id && String(inv.conta_azul_sale_id).toLowerCase().includes(q);
+      if (!matchClient && !matchDesc && !matchContract && !matchBudget && !matchSale) {
+        return false;
+      }
+    }
+
+    // 4. Filtro de Período (7 dias, 14 dias, este mês, este ano, personalizado)
+    if (periodoFilter !== 'Todos') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Coleta as datas relevantes da fatura (vencimento ou emissão)
+      const datesToTest = [];
+      if (inv.due_date) {
+        const dParts = String(inv.due_date).split('T')[0].split('-');
+        if (dParts.length === 3) {
+          datesToTest.push(new Date(Number(dParts[0]), Number(dParts[1]) - 1, Number(dParts[2])));
+        }
+      }
+      if (inv.created_at) {
+        datesToTest.push(new Date(inv.created_at));
+      }
+
+      if (datesToTest.length === 0) return false;
+
+      if (periodoFilter === '7d') {
+        const matches = datesToTest.some(d => {
+          const diffDays = Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          return diffDays >= -7 && diffDays <= 7;
+        });
+        if (!matches) return false;
+      } else if (periodoFilter === '14d') {
+        const matches = datesToTest.some(d => {
+          const diffDays = Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          return diffDays >= -14 && diffDays <= 14;
+        });
+        if (!matches) return false;
+      } else if (periodoFilter === 'mes') {
+        const curMonth = today.getMonth();
+        const curYear = today.getFullYear();
+        const matches = datesToTest.some(d => d.getMonth() === curMonth && d.getFullYear() === curYear);
+        if (!matches) return false;
+      } else if (periodoFilter === 'ano') {
+        const curYear = today.getFullYear();
+        const matches = datesToTest.some(d => d.getFullYear() === curYear);
+        if (!matches) return false;
+      } else if (periodoFilter === 'custom') {
+        const start = customStartDate ? new Date(customStartDate + 'T00:00:00') : null;
+        const end = customEndDate ? new Date(customEndDate + 'T23:59:59') : null;
+
+        const matches = datesToTest.some(d => {
+          if (start && d < start) return false;
+          if (end && d > end) return false;
+          return true;
+        });
+        if (!matches) return false;
+      }
+    }
+
     return true;
   });
 
   const summary = {
-    total: filteredInvoices.length,
-    pendentes: filteredInvoices.filter(i => i.status === 'Pendente').length,
-    faturadas: filteredInvoices.filter(i => i.status === 'Faturada').length,
-    pagas: filteredInvoices.filter(i => i.status === 'Paga').length,
-    vencidas: filteredInvoices.filter(i => i.status === 'Vencida').length,
+    total: {
+      count: filteredInvoices.length,
+      amount: filteredInvoices.reduce((acc, i) => acc + (Number(i.amount) || 0), 0)
+    },
+    pendentes: {
+      count: filteredInvoices.filter(i => i.status === 'Pendente').length,
+      amount: filteredInvoices.filter(i => i.status === 'Pendente').reduce((acc, i) => acc + (Number(i.amount) || 0), 0)
+    },
+    faturadas: {
+      count: filteredInvoices.filter(i => i.status === 'Faturada').length,
+      amount: filteredInvoices.filter(i => i.status === 'Faturada').reduce((acc, i) => acc + (Number(i.amount) || 0), 0)
+    },
+    pagas: {
+      count: filteredInvoices.filter(i => i.status === 'Paga').length,
+      amount: filteredInvoices.filter(i => i.status === 'Paga').reduce((acc, i) => acc + (Number(i.amount) || 0), 0)
+    },
+    vencidas: {
+      count: filteredInvoices.filter(i => i.status === 'Vencida').length,
+      amount: filteredInvoices.filter(i => i.status === 'Vencida').reduce((acc, i) => acc + (Number(i.amount) || 0), 0)
+    },
   };
 
   const handleSave = async (e) => {
@@ -605,75 +698,250 @@ export default function Faturas() {
         </div>
       </header>
 
-      {/* Filtros */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-sm font-bold text-gray-700 mb-4 flex items-center">
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-          Filtros
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Período</label>
+      {/* Barra de Filtros Avançados */}
+      <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-5 space-y-4">
+        {/* Linha 1: Busca e Seletores Principais */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+          {/* Busca por texto */}
+          <div className="lg:col-span-4 relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar cliente, descrição, contrato..."
+              className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Filtro por Cliente */}
+          <div className="lg:col-span-3">
             <select 
-              value={periodoFilter} onChange={e => setPeriodoFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={clientFilter} 
+              onChange={e => setClientFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
-              <option value="Todos">Todos</option>
-              <option value="Este Mês">Este Mês</option>
+              <option value="Todos">Todos os Clientes</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
             </select>
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">Status</label>
+
+          {/* Filtro por Status */}
+          <div className="lg:col-span-2">
             <select 
-              value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={statusFilter} 
+              onChange={e => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
-              <option value="Todos">Todos</option>
+              <option value="Todos">Status: Todos</option>
               <option value="Pendente">Pendente</option>
               <option value="Faturada">Faturada</option>
               <option value="Paga">Paga</option>
               <option value="Vencida">Vencida</option>
             </select>
           </div>
+
+          {/* Filtro por Período */}
+          <div className="lg:col-span-3">
+            <select 
+              value={periodoFilter} 
+              onChange={e => setPeriodoFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="Todos">Período: Todos</option>
+              <option value="7d">Últimos / Próx. 7 Dias</option>
+              <option value="14d">Últimos / Próx. 14 Dias</option>
+              <option value="mes">Este Mês</option>
+              <option value="ano">Este Ano</option>
+              <option value="custom">Personalizado...</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Linha 2: Botões Rápidos de Período & Período Personalizado */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="font-semibold text-gray-500 mr-1">Atalhos de Período:</span>
+            {[
+              { id: 'Todos', label: 'Todos' },
+              { id: '7d', label: '7 dias' },
+              { id: '14d', label: '14 dias' },
+              { id: 'mes', label: 'Este Mês' },
+              { id: 'ano', label: 'Este Ano' },
+              { id: 'custom', label: 'Personalizado' },
+            ].map(preset => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => setPeriodoFilter(preset.id)}
+                className={`px-2.5 py-1 rounded-md font-medium text-xs transition-colors ${
+                  periodoFilter === preset.id
+                    ? 'bg-blue-600 text-white shadow-xs font-semibold'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Range de Datas Customizado */}
+          {periodoFilter === 'custom' && (
+            <div className="flex items-center gap-2 text-xs bg-blue-50/70 border border-blue-200 px-3 py-1.5 rounded-lg animate-in fade-in">
+              <span className="font-semibold text-blue-900">De:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="px-2 py-1 bg-white border border-blue-200 rounded text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <span className="font-semibold text-blue-900">Até:</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="px-2 py-1 bg-white border border-blue-200 rounded text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
+          {/* Limpar Filtros */}
+          {(statusFilter !== 'Todos' || clientFilter !== 'Todos' || periodoFilter !== 'Todos' || searchQuery.trim()) && (
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter('Todos');
+                setClientFilter('Todos');
+                setPeriodoFilter('Todos');
+                setCustomStartDate('');
+                setCustomEndDate('');
+                setSearchQuery('');
+              }}
+              className="text-xs text-blue-600 hover:text-blue-800 font-semibold underline flex items-center ml-auto"
+            >
+              <X className="w-3.5 h-3.5 mr-1" />
+              Limpar Filtros
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Cartões de Resumo */}
+      {/* Cartões de Resumo com Quantidades e Valores Financeiros */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-semibold text-gray-500">Total</span>
-            <FileText className="w-4 h-4 text-gray-400" />
+        {/* Total */}
+        <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-4 flex flex-col justify-between relative overflow-hidden hover:border-gray-300 transition-all">
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total</span>
+              <div className="p-1.5 bg-gray-100 rounded-lg text-gray-600">
+                <FileText className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">
+              {formatCurrency(summary.total.amount)}
+            </div>
           </div>
-          <span className="text-2xl font-bold text-gray-900">{summary.total}</span>
+          <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>Quantidade</span>
+            <span className="font-bold bg-gray-100 px-2 py-0.5 rounded-full text-gray-700">
+              {summary.total.count} {summary.total.count === 1 ? 'fatura' : 'faturas'}
+            </span>
+          </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-semibold text-gray-500">Pendentes</span>
-            <DollarSign className="w-4 h-4 text-amber-500" />
+
+        {/* Pendentes */}
+        <div className="bg-white rounded-xl shadow-xs border border-amber-100/80 p-4 flex flex-col justify-between relative overflow-hidden hover:border-amber-300 transition-all">
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Pendentes</span>
+              <div className="p-1.5 bg-amber-50 rounded-lg text-amber-600">
+                <DollarSign className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-xl md:text-2xl font-black text-amber-600 tracking-tight">
+              {formatCurrency(summary.pendentes.amount)}
+            </div>
           </div>
-          <span className="text-2xl font-bold text-amber-600">{summary.pendentes}</span>
+          <div className="mt-2.5 pt-2 border-t border-amber-50 flex items-center justify-between text-xs text-gray-500">
+            <span>Quantidade</span>
+            <span className="font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+              {summary.pendentes.count} {summary.pendentes.count === 1 ? 'fatura' : 'faturas'}
+            </span>
+          </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-semibold text-gray-500">Faturadas</span>
-            <Receipt className="w-4 h-4 text-blue-500" />
+
+        {/* Faturadas */}
+        <div className="bg-white rounded-xl shadow-xs border border-blue-100/80 p-4 flex flex-col justify-between relative overflow-hidden hover:border-blue-300 transition-all">
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">Faturadas</span>
+              <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600">
+                <Receipt className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-xl md:text-2xl font-black text-blue-600 tracking-tight">
+              {formatCurrency(summary.faturadas.amount)}
+            </div>
           </div>
-          <span className="text-2xl font-bold text-blue-600">{summary.faturadas}</span>
+          <div className="mt-2.5 pt-2 border-t border-blue-50 flex items-center justify-between text-xs text-gray-500">
+            <span>Quantidade</span>
+            <span className="font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+              {summary.faturadas.count} {summary.faturadas.count === 1 ? 'fatura' : 'faturas'}
+            </span>
+          </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-semibold text-gray-500">Pagas</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+
+        {/* Pagas */}
+        <div className="bg-white rounded-xl shadow-xs border border-emerald-100/80 p-4 flex flex-col justify-between relative overflow-hidden hover:border-emerald-300 transition-all">
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Pagas</span>
+              <div className="p-1.5 bg-emerald-50 rounded-lg text-emerald-600">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-xl md:text-2xl font-black text-emerald-600 tracking-tight">
+              {formatCurrency(summary.pagas.amount)}
+            </div>
           </div>
-          <span className="text-2xl font-bold text-emerald-600">{summary.pagas}</span>
+          <div className="mt-2.5 pt-2 border-t border-emerald-50 flex items-center justify-between text-xs text-gray-500">
+            <span>Quantidade</span>
+            <span className="font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+              {summary.pagas.count} {summary.pagas.count === 1 ? 'fatura' : 'faturas'}
+            </span>
+          </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden col-span-2 md:col-span-1">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-semibold text-gray-500">Vencidas</span>
-            <AlertCircle className="w-4 h-4 text-red-400" />
+
+        {/* Vencidas / Atrasadas */}
+        <div className="bg-white rounded-xl shadow-xs border border-red-100/80 p-4 flex flex-col justify-between relative overflow-hidden hover:border-red-300 transition-all col-span-2 md:col-span-1">
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-xs font-bold text-red-700 uppercase tracking-wider">Atrasadas</span>
+              <div className="p-1.5 bg-red-50 rounded-lg text-red-600">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-xl md:text-2xl font-black text-red-600 tracking-tight">
+              {formatCurrency(summary.vencidas.amount)}
+            </div>
           </div>
-          <span className="text-2xl font-bold text-red-500">{summary.vencidas}</span>
+          <div className="mt-2.5 pt-2 border-t border-red-50 flex items-center justify-between text-xs text-gray-500">
+            <span>Quantidade</span>
+            <span className="font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded-full">
+              {summary.vencidas.count} {summary.vencidas.count === 1 ? 'fatura' : 'faturas'}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -748,6 +1016,26 @@ export default function Faturas() {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
+                        {inv.conta_azul_sale_id ? (
+                          <a
+                            href={`/api/conta-azul/download-nf?invoiceId=${inv.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 rounded-lg transition-colors inline-flex items-center"
+                            title="Baixar / Exportar Nota Fiscal (Conta Azul)"
+                          >
+                            <FileDown className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled
+                            className="p-1.5 text-gray-300 cursor-not-allowed rounded-lg"
+                            title="Fatura ainda sem venda vinculada no Conta Azul"
+                          >
+                            <FileDown className="w-4 h-4" />
+                          </button>
+                        )}
                         {inv.status !== 'Paga' && (
                           <button
                             onClick={() => handleMarkAsPaid(inv)}
@@ -873,21 +1161,34 @@ export default function Faturas() {
                     <div>
                       <span className="text-gray-500 block mb-0.5">Número da NF</span>
                       {detailedInvoice?.contaAzulInfo?.nfNumber ? (
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center space-x-1.5">
                           <span className="font-bold text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200 font-mono">
                             NF #{detailedInvoice.contaAzulInfo.nfNumber}
                           </span>
-                          {detailedInvoice.contaAzulInfo.nfUrl && (
-                            <a 
-                              href={detailedInvoice.contaAzulInfo.nfUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="text-blue-600 hover:text-blue-800 p-0.5" 
-                              title="Baixar PDF da NF"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          )}
+                          <a 
+                            href={`/api/conta-azul/download-nf?invoiceId=${selectedInvoice.id}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-cyan-700 hover:text-cyan-900 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200 font-semibold inline-flex items-center text-[11px]" 
+                            title="Baixar PDF da Nota Fiscal"
+                          >
+                            <FileDown className="w-3.5 h-3.5 mr-1" />
+                            Baixar NF
+                          </a>
+                        </div>
+                      ) : selectedInvoice.conta_azul_sale_id ? (
+                        <div className="flex items-center space-x-1.5">
+                          <span className="text-gray-500 italic">Vinculada</span>
+                          <a 
+                            href={`/api/conta-azul/download-nf?invoiceId=${selectedInvoice.id}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-cyan-700 hover:text-cyan-900 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200 font-semibold inline-flex items-center text-[11px]" 
+                            title="Baixar ou verificar Nota Fiscal"
+                          >
+                            <FileDown className="w-3.5 h-3.5 mr-1" />
+                            Baixar NF
+                          </a>
                         </div>
                       ) : (
                         <span className="text-gray-400 italic">Aguardando emissão no CA</span>
@@ -1050,7 +1351,7 @@ export default function Faturas() {
 
             {/* Footer Ações */}
             <div className="flex flex-wrap items-center justify-between p-6 border-t border-gray-100 bg-gray-50 gap-2">
-              <div>
+              <div className="flex items-center space-x-2">
                 <button
                   type="button"
                   onClick={() => handleExportPDF(detailedInvoice)}
@@ -1058,8 +1359,21 @@ export default function Faturas() {
                   className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-lg text-xs transition-colors shadow-xs"
                 >
                   <FileDown className="w-4 h-4 mr-1.5" />
-                  Exportar PDF
+                  Exportar Fatura PDF
                 </button>
+
+                {selectedInvoice.conta_azul_sale_id && (
+                  <a
+                    href={`/api/conta-azul/download-nf?invoiceId=${selectedInvoice.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center px-4 py-2 bg-cyan-700 hover:bg-cyan-800 text-white font-semibold rounded-lg text-xs transition-colors shadow-xs"
+                    title="Baixar Nota Fiscal emitida no Conta Azul"
+                  >
+                    <FileDown className="w-4 h-4 mr-1.5" />
+                    Baixar NF (Conta Azul)
+                  </a>
+                )}
               </div>
 
               <div className="flex items-center space-x-2">
