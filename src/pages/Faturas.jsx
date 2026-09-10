@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, FileText, CheckCircle2, AlertCircle, DollarSign, Loader2, Plus, Edit } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ArrowLeft, FileText, CheckCircle2, AlertCircle, DollarSign, Loader2, Plus, Edit, ExternalLink, RefreshCw } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
 
 export default function Faturas() {
+  const [searchParams] = useSearchParams();
   const [invoices, setInvoices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [periodoFilter, setPeriodoFilter] = useState('Todos');
   const [statusFilter, setStatusFilter] = useState('Todos');
+
+  // Conta Azul State
+  const [contaAzulConnected, setContaAzulConnected] = useState(false);
+  const [isConnectingContaAzul, setIsConnectingContaAzul] = useState(false);
 
   // Modal para fins de teste/inserção rápida
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,7 +23,44 @@ export default function Faturas() {
   useEffect(() => {
     fetchInvoices();
     fetchClients();
+    checkContaAzul();
+
+    // Checar retorno de autorização do Conta Azul
+    const caStatus = searchParams.get('conta_azul');
+    if (caStatus === 'sucesso') {
+      alert('🎉 Conta Azul conectado com sucesso!');
+    } else if (caStatus === 'erro') {
+      const msg = searchParams.get('msg') || 'Erro desconhecido';
+      alert('⚠️ Erro ao conectar com o Conta Azul: ' + msg);
+    }
   }, []);
+
+  async function checkContaAzul() {
+    try {
+      const res = await fetch('/api/conta-azul/status');
+      const data = await res.json();
+      setContaAzulConnected(!!data.connected);
+    } catch (e) {
+      console.warn('Erro ao checar status do Conta Azul:', e);
+    }
+  }
+
+  async function handleConnectContaAzul() {
+    setIsConnectingContaAzul(true);
+    try {
+      const res = await fetch('/api/conta-azul/auth-url');
+      const data = await res.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      } else {
+        alert('Erro ao obter link de conexão com Conta Azul');
+      }
+    } catch (e) {
+      alert('Erro de conexão ao iniciar login no Conta Azul');
+    } finally {
+      setIsConnectingContaAzul(false);
+    }
+  }
 
   async function fetchInvoices() {
     setIsLoading(true);
@@ -118,10 +160,41 @@ export default function Faturas() {
             <h1 className="text-2xl font-bold text-gray-900">Faturas</h1>
           </div>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="mt-4 md:mt-0 flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Fatura Manual
-        </button>
+        <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0">
+          {/* Status Conta Azul */}
+          {contaAzulConnected ? (
+            <div className="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Conta Azul Conectado</span>
+              <button 
+                onClick={handleConnectContaAzul}
+                disabled={isConnectingContaAzul}
+                title="Reconectar ou trocar conta do Conta Azul"
+                className="ml-1 text-emerald-600 hover:text-emerald-800"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={handleConnectContaAzul}
+              disabled={isConnectingContaAzul}
+              className="flex items-center px-3.5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-xs font-bold transition-colors shadow-xs"
+            >
+              {isConnectingContaAzul ? (
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              ) : (
+                <ExternalLink className="w-4 h-4 mr-1.5" />
+              )}
+              Conectar Conta Azul
+            </button>
+          )}
+
+          <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-xs">
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Fatura Manual
+          </button>
+        </div>
       </header>
 
       {/* Filtros */}
@@ -217,7 +290,27 @@ export default function Faturas() {
                 {filteredInvoices.map((inv) => (
                   <tr key={inv.id} className="border-b border-gray-50 hover:bg-gray-50">
                     <td className="py-4 font-medium text-gray-800">{inv.client_name}</td>
-                    <td className="py-4">{inv.description} {inv.contract_code && <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full ml-2">{inv.contract_code}</span>}</td>
+                    <td className="py-4">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-medium text-gray-800">{inv.description}</span>
+                        {inv.contract_code && (
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-mono">
+                            {inv.contract_code}
+                          </span>
+                        )}
+                        {inv.budget_id && (
+                          <span className="text-xs text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full font-semibold">
+                            Orç. #{inv.budget_id}
+                          </span>
+                        )}
+                        {inv.conta_azul_sale_id && (
+                          <span className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold flex items-center">
+                            <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
+                            Conta Azul
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-4 text-right font-bold text-gray-900">{formatCurrency(inv.amount)}</td>
                     <td className="py-4">{formatDate(inv.due_date)}</td>
                     <td className="py-4">

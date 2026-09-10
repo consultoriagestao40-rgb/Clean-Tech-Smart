@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, FileText, Loader2, Filter, Eye, Check, X, FileDown, Edit, Trash2, Link2 } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, Filter, Eye, Check, X, FileDown, Edit, Trash2, Link2, Receipt, AlertCircle, CheckCircle2, ShieldCheck, ArrowRight, ExternalLink, RefreshCw, Wrench, Package } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -21,6 +21,20 @@ export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
+  // Invoice & Conta Azul Modal States
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [isInvoiceLoading, setIsInvoiceLoading] = useState(false);
+  const [isSubmittingInvoice, setIsSubmittingInvoice] = useState(false);
+  const [invoiceBudgetData, setInvoiceBudgetData] = useState(null);
+  const [invoiceForm, setInvoiceForm] = useState({
+    dueDate: '',
+    serviceDescription: '',
+    serviceAmount: 0,
+    parts: [],
+    sendToContaAzul: true
+  });
+  const [contaAzulConnected, setContaAzulConnected] = useState(false);
+
   const fetchBudgets = async () => {
     try {
       const res = await fetch('/api/get-budgets');
@@ -35,8 +49,19 @@ export default function Dashboard() {
     }
   };
 
+  const checkContaAzulStatus = async () => {
+    try {
+      const res = await fetch('/api/conta-azul/status');
+      const data = await res.json();
+      setContaAzulConnected(!!data.connected);
+    } catch (e) {
+      console.warn('Conta Azul status check error:', e);
+    }
+  };
+
   useEffect(() => {
     fetchBudgets();
+    checkContaAzulStatus();
   }, []);
 
   const handleDeleteBudget = async (id) => {
@@ -118,9 +143,146 @@ export default function Dashboard() {
   };
 
   const handleShareBudget = (budgetId) => {
-    const url = `${window.location.origin}/visualizar-orcamento/${budgetId}`;
+    const url = `${window.location.origin}/proposta/${budgetId}`;
     navigator.clipboard.writeText(url);
-    alert('Link público do orçamento copiado para a área de transferência!');
+    alert('Link público da proposta copiado para a área de transferência!');
+  };
+
+  const handleOpenInvoiceModal = async (budgetId) => {
+    setIsInvoiceModalOpen(true);
+    setIsInvoiceLoading(true);
+    setInvoiceBudgetData(null);
+
+    try {
+      // 1. Carregar detalhes do orçamento
+      const res = await fetch(`/api/get-budget-details?id=${budgetId}`);
+      const data = await res.json();
+      if (!data.success) {
+        alert('Erro ao carregar detalhes do orçamento para faturamento: ' + (data.error || 'Erro'));
+        setIsInvoiceModalOpen(false);
+        return;
+      }
+
+      // 2. Tentar buscar peças do estoque para mapear NCM
+      let inventoryParts = [];
+      try {
+        const pRes = await fetch('/api/get-parts');
+        const pData = await pRes.json();
+        if (pData.parts) inventoryParts = pData.parts;
+      } catch (err) {
+        console.warn('Não foi possível carregar peças do estoque:', err);
+      }
+
+      const b = data.budget;
+      setInvoiceBudgetData(data);
+
+      // 3. Montar descrição automática do serviço
+      const serviceTypeStr = b.service_type || 'corretiva';
+      const eqName = b.equipment_name || b.machine_model_name || 'Equipamento';
+      const eqSerial = b.equipment_serial_number ? ` - Nº de Série: ${b.equipment_serial_number}` : '';
+      const autoServiceDesc = `Serviços de manutenção ${serviceTypeStr} do equipamento ${eqName}${eqSerial}`;
+
+      // 4. Somar mão de obra + deslocamento
+      const laborVal = Number(b.total_labor || 0);
+      const logisticsVal = Number(b.total_logistics || 0);
+      const totalServicesVal = laborVal + logisticsVal;
+
+      // 5. Mapear peças com NCM do estoque e CFOP padrão
+      const mappedParts = (data.partsItems || []).map(item => {
+        const stockMatch = inventoryParts.find(p => 
+          (p.name && item.part_name && p.name.toLowerCase().trim() === item.part_name.toLowerCase().trim()) ||
+          (p.sku && item.part_name && p.sku.toLowerCase().trim() === item.part_name.toLowerCase().trim())
+        );
+        return {
+          id: item.id,
+          partName: item.part_name,
+          quantity: Number(item.quantity || 1),
+          unitPrice: Number(item.unit_price || 0),
+          ncm: item.ncm || stockMatch?.ncm || '',
+          cfop: '5102',
+          simplesCredit: false,
+          total: Number(item.quantity || 1) * Number(item.unit_price || 0)
+        };
+      });
+
+      // Data de vencimento padrão: hoje + 15 dias
+      const defaultDueDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      setInvoiceForm({
+        dueDate: defaultDueDate,
+        serviceDescription: autoServiceDesc,
+        serviceAmount: totalServicesVal,
+        parts: mappedParts,
+        sendToContaAzul: true
+      });
+    } catch (error) {
+      console.error('Erro ao preparar faturamento:', error);
+      alert('Erro ao carregar dados para faturamento.');
+      setIsInvoiceModalOpen(false);
+    } finally {
+      setIsInvoiceLoading(false);
+    }
+  };
+
+  const handleConfirmGenerateInvoice = async (e) => {
+    e?.preventDefault();
+    if (!invoiceForm.dueDate) {
+      alert('Por favor, informe a data de vencimento.');
+      return;
+    }
+
+    setIsSubmittingInvoice(true);
+    try {
+      const budget = invoiceBudgetData.budget;
+      const partsTotal = invoiceForm.parts.reduce((acc, p) => acc + (Number(p.quantity || 1) * Number(p.unitPrice || 0)), 0);
+
+      const payload = {
+        budgetId: budget.id,
+        dueDate: invoiceForm.dueDate,
+        clientData: {
+          id: budget.client_id,
+          name: budget.client_name,
+          document: budget.client_document,
+          email: budget.client_email,
+          phone: budget.client_phone
+        },
+        services: {
+          description: invoiceForm.serviceDescription,
+          amount: Number(invoiceForm.serviceAmount || 0)
+        },
+        parts: {
+          items: invoiceForm.parts,
+          total: partsTotal
+        },
+        sendToContaAzul: invoiceForm.sendToContaAzul
+      };
+
+      const res = await fetch('/api/generate-invoice-from-budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        let msg = '✅ Fatura(s) gerada(s) com sucesso!';
+        if (data.contaAzulSales && data.contaAzulSales.length > 0) {
+          msg += `\n\n🎉 ${data.contaAzulSales.length} venda(s) criada(s) no Conta Azul com sucesso!`;
+        } else if (invoiceForm.sendToContaAzul && data.contaAzulError) {
+          msg += `\n\n⚠️ Aviso Conta Azul: ${data.contaAzulError}`;
+        }
+        alert(msg);
+        setIsInvoiceModalOpen(false);
+        navigate('/faturas');
+      } else {
+        alert('Erro ao gerar faturas: ' + (data.error || 'Erro desconhecido'));
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de conexão ao gerar fatura.');
+    } finally {
+      setIsSubmittingInvoice(false);
+    }
   };
 
   const handleGeneratePDF = (budgetData) => {
@@ -560,9 +722,27 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-1.5">
+                        {/* Botão Gerar Fatura */}
+                        {budget.status === 'Aprovado' ? (
+                          <button 
+                            onClick={() => handleOpenInvoiceModal(budget.id)}
+                            className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 rounded-lg transition-colors border border-emerald-200"
+                            title="Gerar Fatura & Venda no Conta Azul"
+                          >
+                            <Receipt className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button 
+                            disabled
+                            className="p-1.5 bg-gray-50 text-gray-300 rounded-lg cursor-not-allowed"
+                            title="Faturamento liberado apenas para orçamentos Aprovados"
+                          >
+                            <Receipt className="w-4 h-4" />
+                          </button>
+                        )}
                         <button 
                           onClick={() => handleShareBudget(budget.id)}
-                          className="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors"
+                          className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           title="Compartilhar Link Público"
                         >
                           <Link2 className="w-4 h-4" />
@@ -805,6 +985,18 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
                 )}
               </div>
               <div className="flex space-x-3">
+                {selectedBudget && selectedBudget.budget && selectedBudget.budget.status === 'Aprovado' && (
+                  <button
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      handleOpenInvoiceModal(selectedBudget.budget.id);
+                    }}
+                    className="flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-sm transition-colors shadow-sm"
+                  >
+                    <Receipt className="w-4 h-4 mr-2" />
+                    Gerar Fatura
+                  </button>
+                )}
                 {selectedBudget && (
                   <>
                     <button
@@ -831,6 +1023,281 @@ td.empty{text-align:center;color:#94a3b8;font-style:italic;padding:12px}
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Geração de Fatura & Conta Azul */}
+      {isInvoiceModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+              <div className="flex items-center space-x-3">
+                <div className="p-2.5 bg-emerald-600 text-white rounded-xl shadow-sm">
+                  <Receipt className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Gerar Fatura do Orçamento #{invoiceBudgetData?.budget?.id}
+                  </h2>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    Cliente: <span className="font-semibold text-gray-800">{invoiceBudgetData?.budget?.client_name || invoiceBudgetData?.budget?.client_id}</span> &bull; 
+                    Equipamento: <span className="font-semibold text-gray-800">{invoiceBudgetData?.budget?.equipment_name || invoiceBudgetData?.budget?.machine_model_name || 'Geral'}</span>
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsInvoiceModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white/60 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            {isInvoiceLoading ? (
+              <div className="p-12 text-center text-gray-500">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-3" />
+                <p>Preparando dados fiscais e de faturamento...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleConfirmGenerateInvoice} className="p-6 overflow-y-auto max-h-[calc(100vh-220px)] space-y-6">
+                {/* 1. Dados Básicos e Vencimento */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Cliente</label>
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {invoiceBudgetData?.budget?.client_name || 'Não informado'}
+                    </p>
+                    <p className="text-xs text-gray-500">{invoiceBudgetData?.budget?.client_document || 'Sem documento cadastrado'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Equipamento / Ativo</label>
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {invoiceBudgetData?.budget?.equipment_name || invoiceBudgetData?.budget?.machine_model_name || 'Não informado'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Série: {invoiceBudgetData?.budget?.equipment_serial_number || 'S/N'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-800 uppercase mb-1">Data de Vencimento *</label>
+                    <input
+                      type="date"
+                      required
+                      value={invoiceForm.dueDate}
+                      onChange={(e) => setInvoiceForm({ ...invoiceForm, dueDate: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Venda de Serviços (NFS-e Municipal) */}
+                <div className="bg-white border border-blue-200 rounded-xl overflow-hidden shadow-xs">
+                  <div className="bg-blue-50/80 px-4 py-3 border-b border-blue-100 flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-blue-900 font-semibold text-sm">
+                      <Wrench className="w-4 h-4 text-blue-600" />
+                      <span>1. Venda de Serviços (NFS-e Municipal)</span>
+                    </div>
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full font-bold">
+                      Item Único Consolidado
+                    </span>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Descrição do Serviço (automática a partir do equipamento e manutenção):
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={invoiceForm.serviceDescription}
+                        onChange={(e) => setInvoiceForm({ ...invoiceForm, serviceDescription: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                      <span className="text-xs text-gray-500">
+                        Total de Serviços (Mão de Obra + Deslocamento):
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-bold text-gray-700">R$</span>
+                        <input 
+                          type="number"
+                          step="0.01"
+                          value={invoiceForm.serviceAmount}
+                          onChange={(e) => setInvoiceForm({ ...invoiceForm, serviceAmount: parseFloat(e.target.value) || 0 })}
+                          className="w-32 px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-bold text-blue-900 text-right focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Venda de Peças (NF-e Estadual) */}
+                <div className="bg-white border border-amber-200 rounded-xl overflow-hidden shadow-xs">
+                  <div className="bg-amber-50/80 px-4 py-3 border-b border-amber-100 flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-amber-900 font-semibold text-sm">
+                      <Package className="w-4 h-4 text-amber-600" />
+                      <span>2. Venda de Peças (NF-e Estadual Modelo 55)</span>
+                    </div>
+                    <span className="text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-bold">
+                      {invoiceForm.parts.length} {invoiceForm.parts.length === 1 ? 'item' : 'itens'} (Item a Item)
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    {invoiceForm.parts.length === 0 ? (
+                      <p className="text-xs text-gray-400 text-center py-3">Este orçamento não possui peças de reposição cadastradas.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="border-b border-gray-200 text-gray-500">
+                              <th className="pb-2 font-semibold">Peça / Produto</th>
+                              <th className="pb-2 font-semibold w-16 text-center">Qtd</th>
+                              <th className="pb-2 font-semibold w-24 text-right">Unitário</th>
+                              <th className="pb-2 font-semibold w-28">NCM *</th>
+                              <th className="pb-2 font-semibold w-24">CFOP *</th>
+                              <th className="pb-2 font-semibold w-28 text-center">Créd. Simples</th>
+                              <th className="pb-2 font-semibold w-24 text-right">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {invoiceForm.parts.map((p, idx) => (
+                              <tr key={idx} className="hover:bg-amber-50/30">
+                                <td className="py-2.5 font-medium text-gray-800">{p.partName}</td>
+                                <td className="py-2.5 text-center text-gray-600">{p.quantity}</td>
+                                <td className="py-2.5 text-right font-medium">R$ {formatBRL(p.unitPrice)}</td>
+                                <td className="py-2.5 pr-2">
+                                  <input 
+                                    type="text"
+                                    placeholder="Ex: 84798999"
+                                    value={p.ncm}
+                                    onChange={(e) => {
+                                      const updated = [...invoiceForm.parts];
+                                      updated[idx].ncm = e.target.value;
+                                      setInvoiceForm({ ...invoiceForm, parts: updated });
+                                    }}
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="py-2.5 pr-2">
+                                  <select
+                                    value={p.cfop}
+                                    onChange={(e) => {
+                                      const updated = [...invoiceForm.parts];
+                                      updated[idx].cfop = e.target.value;
+                                      setInvoiceForm({ ...invoiceForm, parts: updated });
+                                    }}
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                                  >
+                                    <option value="5102">5102 (Dentro do Estado)</option>
+                                    <option value="6102">6102 (Interestadual)</option>
+                                    <option value="5405">5405 (Subst. Tributária)</option>
+                                  </select>
+                                </td>
+                                <td className="py-2.5 text-center">
+                                  <input 
+                                    type="checkbox"
+                                    checked={p.simplesCredit}
+                                    onChange={(e) => {
+                                      const updated = [...invoiceForm.parts];
+                                      updated[idx].simplesCredit = e.target.checked;
+                                      setInvoiceForm({ ...invoiceForm, parts: updated });
+                                    }}
+                                    className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                                  />
+                                </td>
+                                <td className="py-2.5 text-right font-bold text-gray-900">
+                                  R$ {formatBRL(p.total)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 4. Integração com Conta Azul */}
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                  <div className="flex items-center space-x-3">
+                    <input 
+                      type="checkbox"
+                      id="contaAzulSync"
+                      checked={invoiceForm.sendToContaAzul}
+                      onChange={(e) => setInvoiceForm({ ...invoiceForm, sendToContaAzul: e.target.checked })}
+                      className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <div>
+                      <label htmlFor="contaAzulSync" className="text-sm font-bold text-gray-800 cursor-pointer">
+                        Transmitir Vendas para o Conta Azul
+                      </label>
+                      <p className="text-xs text-gray-500">
+                        Gera automaticamente 2 vendas separadas (Serviços e Peças) com dados fiscais para emissão de notas.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 text-xs font-semibold">
+                    {contaAzulConnected ? (
+                      <span className="flex items-center text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                        Conta Azul Conectado
+                      </span>
+                    ) : (
+                      <span className="flex items-center text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
+                        <AlertCircle className="w-3.5 h-3.5 mr-1" />
+                        Conta Azul não conectado
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Resumo Total Geral */}
+                <div className="flex items-center justify-between p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl">
+                  <div>
+                    <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Total Geral a Faturar</span>
+                    <p className="text-xs text-emerald-700">Serviços + Peças de Reposição</p>
+                  </div>
+                  <div className="text-2xl font-black text-emerald-900">
+                    R$ {formatBRL(
+                      Number(invoiceForm.serviceAmount || 0) + 
+                      invoiceForm.parts.reduce((acc, p) => acc + (Number(p.quantity || 1) * Number(p.unitPrice || 0)), 0)
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setIsInvoiceModalOpen(false)}
+                    disabled={isSubmittingInvoice}
+                    className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 font-medium rounded-lg text-sm transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingInvoice}
+                    className="flex items-center px-6 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold rounded-lg text-sm transition-colors shadow-sm"
+                  >
+                    {isSubmittingInvoice ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Gerando Faturas...
+                      </>
+                    ) : (
+                      <>
+                        <Receipt className="w-4 h-4 mr-2" />
+                        Confirmar e Gerar Faturas
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

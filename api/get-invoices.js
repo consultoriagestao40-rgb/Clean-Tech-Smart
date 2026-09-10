@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         i.*,
         c.name as client_name
       FROM invoices i
-      JOIN clients c ON i.client_id = c.id
+      LEFT JOIN clients c ON i.client_id::text = c.id::text
       ORDER BY i.due_date DESC;
     `);
     
