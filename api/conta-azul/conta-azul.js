@@ -10,6 +10,7 @@ const pool = new Pool({
 const CLIENT_ID = process.env.CONTA_AZUL_CLIENT_ID || '5ngbq1tfnlm0aklaa8tun7v8vu';
 const CLIENT_SECRET = process.env.CONTA_AZUL_CLIENT_SECRET || '12682kvjplg1cfokkj97qgllce92e9mi9vt59b3i9bef9556o5gh';
 export const BASE_API_URL = 'https://api-v2.contaazul.com';
+export const SALES_API_URL = 'https://api.contaazul.com';
 
 // Garante que a tabela system_settings existe
 export async function ensureSettingsTable(client) {
@@ -30,8 +31,8 @@ export async function setSetting(key, value) {
     await client.query(`
       INSERT INTO system_settings (key, value, updated_at)
       VALUES ($1, $2, CURRENT_TIMESTAMP)
-      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP;
-    `, [key, typeof value === 'object' ? JSON.stringify(value) : String(value)]);
+      ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP;
+    `, [key, value]);
   } finally {
     client.release();
   }
@@ -66,12 +67,21 @@ export async function getValidAccessToken() {
     const refreshToken = tokens.conta_azul_refresh_token;
     const expiresAt = Number(tokens.conta_azul_expires_at || 0);
 
-    // Se ainda for válido por pelo menos mais 1 minuto
-    if (accessToken && expiresAt > Date.now() + 60000) {
-      return accessToken;
+    // Se temos accessToken e expiresAt é futuro, faz verificação rápida de validade
+    if (accessToken && expiresAt > Date.now()) {
+      try {
+        const testRes = await fetch(`${SALES_API_URL}/v1/sales?size=1`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        if (testRes.ok || testRes.status === 200) {
+          return accessToken;
+        }
+      } catch (e) {
+        // ignora erro de rede temporario
+      }
     }
 
-    // Se temos refresh token, renova
+    // Se o token falhou ou expirou, tenta renovar com refresh_token
     if (refreshToken) {
       const basicAuth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
       const tokenRes = await fetch(`${BASE_API_URL}/oauth/token`, {
@@ -97,6 +107,13 @@ export async function getValidAccessToken() {
         await setSetting('conta_azul_expires_at', String(newExpires));
 
         return newAccess;
+      } else {
+        const errText = await tokenRes.text();
+        console.warn('Falha ao renovar token no Conta Azul:', errText);
+        if (errText.includes('invalid_grant') || tokenRes.status === 400 || tokenRes.status === 401) {
+          // Tokens revogados ou expirados definitivamente: limpar para forçar reconexão limpa
+          await client.query("DELETE FROM system_settings WHERE key IN ('conta_azul_access_token', 'conta_azul_refresh_token', 'conta_azul_expires_at')");
+        }
       }
     }
 
@@ -270,7 +287,7 @@ export async function createContaAzulSale(salePayload) {
   const token = await getValidAccessToken();
   if (!token) throw new Error('Conta Azul não autenticado ou token expirado.');
 
-  const res = await fetch(`${BASE_API_URL}/v1/sales`, {
+  const res = await fetch(`${SALES_API_URL}/v1/sales`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -306,7 +323,7 @@ export async function getContaAzulSaleDetails(saleIdOrNumber) {
   try {
     // 1. Se for formato UUID, tenta buscar direto pela rota /v1/sales/{id}
     if (isUuid) {
-      const res = await fetch(`${BASE_API_URL}/v1/sales/${clean}`, {
+      const res = await fetch(`${SALES_API_URL}/v1/sales/${clean}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -316,14 +333,14 @@ export async function getContaAzulSaleDetails(saleIdOrNumber) {
     }
 
     // 2. Se for número ou falhou por UUID, tenta buscar por query ?number=...
-    const numRes = await fetch(`${BASE_API_URL}/v1/sales?number=${encodeURIComponent(clean)}`, {
+    const numRes = await fetch(`${SALES_API_URL}/v1/sales?number=${encodeURIComponent(clean)}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (numRes.ok) {
       const numData = await numRes.json();
       const numItems = Array.isArray(numData) ? numData : (numData.content || numData.items || []);
       if (numItems.length > 0) {
-        const detailRes = await fetch(`${BASE_API_URL}/v1/sales/${numItems[0].id}`, {
+        const detailRes = await fetch(`${SALES_API_URL}/v1/sales/${numItems[0].id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (detailRes.ok) {
@@ -335,7 +352,7 @@ export async function getContaAzulSaleDetails(saleIdOrNumber) {
     }
 
     // 3. Fallback: varredura em lista de vendas recentes
-    const listRes = await fetch(`${BASE_API_URL}/v1/sales?page=1&size=50`, {
+    const listRes = await fetch(`${SALES_API_URL}/v1/sales?page=1&size=50`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (listRes.ok) {
@@ -343,7 +360,7 @@ export async function getContaAzulSaleDetails(saleIdOrNumber) {
       const items = Array.isArray(listData) ? listData : (listData.content || listData.items || []);
       const found = items.find(s => String(s.number) === clean || String(s.id) === clean);
       if (found) {
-        const detailRes = await fetch(`${BASE_API_URL}/v1/sales/${found.id}`, {
+        const detailRes = await fetch(`${SALES_API_URL}/v1/sales/${found.id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (detailRes.ok) {
