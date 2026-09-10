@@ -20,6 +20,12 @@ export default async function handler(req, res) {
       ALTER TABLE invoices ADD COLUMN IF NOT EXISTS invoice_type VARCHAR(50);
       ALTER TABLE invoices ADD COLUMN IF NOT EXISTS conta_azul_sale_id VARCHAR(100);
       ALTER TABLE invoices ADD COLUMN IF NOT EXISTS ncm_info TEXT;
+      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_date DATE;
+
+      UPDATE invoices 
+      SET status = 'Faturada' 
+      WHERE conta_azul_sale_id IS NOT NULL 
+        AND (status = 'Pendente' OR status IS NULL);
     `);
 
     const result = await client.query(`
@@ -31,7 +37,7 @@ export default async function handler(req, res) {
       ORDER BY i.due_date DESC;
     `);
     
-    // Processar inteligência de "Vencida" no backend se estiver pendente e a data passou
+    // Processar inteligência de "Vencida" no backend se a data passou
     const today = new Date();
     today.setHours(0,0,0,0);
 
@@ -39,10 +45,12 @@ export default async function handler(req, res) {
       const dueDate = new Date(inv.due_date);
       let status = inv.status;
       
-      if (status === 'Pendente' && dueDate < today) {
+      if ((status === 'Pendente' || !status) && inv.conta_azul_sale_id) {
+        status = 'Faturada';
+      }
+
+      if ((status === 'Pendente' || status === 'Faturada') && dueDate < today) {
         status = 'Vencida';
-        // Opcional: atualizar no banco automaticamente ou apenas exibir assim.
-        // Como é uma dashboard financeira, a leitura dinâmica é melhor.
       }
 
       return { ...inv, status };

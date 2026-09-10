@@ -47,6 +47,10 @@ export default async function handler(req, res) {
     }
 
     const invoice = invRes.rows[0];
+    if (invoice.conta_azul_sale_id && invoice.status === 'Pendente') {
+      invoice.status = 'Faturada';
+      await client.query("UPDATE invoices SET status = 'Faturada' WHERE id = $1 AND status = 'Pendente'", [invoice.id]);
+    }
 
     // 2. Buscar dados do orçamento caso a fatura tenha vindo de um orçamento
     let budget = null;
