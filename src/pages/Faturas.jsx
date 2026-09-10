@@ -44,7 +44,8 @@ export default function Faturas() {
     // Checar retorno de autorização do Conta Azul
     const caStatus = searchParams.get('conta_azul');
     if (caStatus === 'sucesso') {
-      alert('🎉 Conta Azul conectado com sucesso!');
+      alert('🎉 Conta Azul conectado com sucesso! Sincronizando faturas...');
+      syncPendingInvoicesSilently();
     } else if (caStatus === 'erro') {
       const msg = searchParams.get('msg') || 'Erro desconhecido';
       alert('⚠️ Erro ao conectar com o Conta Azul: ' + msg);
