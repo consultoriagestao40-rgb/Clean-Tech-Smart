@@ -186,11 +186,11 @@ export default async function handler(req, res) {
             totalValue: s.total || invoice.amount
           };
         } else {
-          contaAzulInfo = { error: caResult.error || 'Falha ao obter venda' };
+          contaAzulInfo = null;
         }
       } catch (caErr) {
         console.warn('Não foi possível obter dados do Conta Azul para a fatura:', caErr.message);
-        contaAzulInfo = { error: caErr.message };
+        contaAzulInfo = null;
       }
     }
 

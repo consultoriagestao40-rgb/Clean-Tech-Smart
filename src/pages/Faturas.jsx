@@ -854,7 +854,7 @@ export default function Faturas() {
 
                     <div>
                       <span className="text-gray-500 block mb-0.5">Status da Nota Fiscal (NF)</span>
-                      {detailedInvoice?.contaAzulInfo ? (
+                      {detailedInvoice?.contaAzulInfo?.nfStatus ? (
                         <span className={`inline-flex items-center font-bold px-2 py-0.5 rounded-full ${
                           detailedInvoice.contaAzulInfo.nfStatus.includes('Emitida') ? 'bg-green-100 text-green-800' :
                           detailedInvoice.contaAzulInfo.nfStatus.includes('Solicitada') ? 'bg-amber-100 text-amber-800' :
@@ -864,7 +864,9 @@ export default function Faturas() {
                           {detailedInvoice.contaAzulInfo.nfStatus}
                         </span>
                       ) : (
-                        <span className="text-gray-400">Pendente de emissão</span>
+                        <span className="text-gray-400">
+                          {selectedInvoice.conta_azul_sale_id ? 'Aguardando sincronização' : 'Pendente de emissão'}
+                        </span>
                       )}
                     </div>
 
