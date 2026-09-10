@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, FileText, CheckCircle2, AlertCircle, DollarSign, Loader2, Plus, Edit, ExternalLink, RefreshCw } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle2, AlertCircle, DollarSign, Loader2, Plus, Edit, ExternalLink, RefreshCw, Eye, Trash2, X, Receipt, Check } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 export default function Faturas() {
@@ -13,6 +13,10 @@ export default function Faturas() {
   // Conta Azul State
   const [contaAzulConnected, setContaAzulConnected] = useState(false);
   const [isConnectingContaAzul, setIsConnectingContaAzul] = useState(false);
+
+  // Modal Detalhes da Fatura
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Modal para fins de teste/inserção rápida
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -135,7 +139,7 @@ export default function Faturas() {
   };
 
   const handleMarkAsPaid = async (inv) => {
-    if (!confirm('Marcar como Paga?')) return;
+    if (!confirm('Marcar esta fatura como Paga?')) return;
     try {
       const payload = { ...inv, status: 'Paga', payment_date: new Date().toISOString().split('T')[0] };
       const res = await fetch('/api/save-invoice', {
@@ -144,7 +148,32 @@ export default function Faturas() {
         body: JSON.stringify(payload)
       });
       if (res.ok) fetchInvoices();
-    } catch (error) {}
+    } catch (error) {
+      alert('Erro ao atualizar status da fatura');
+    }
+  };
+
+  const handleDeleteInvoice = async (id) => {
+    if (!confirm('Tem certeza que deseja excluir esta fatura?')) return;
+    try {
+      const res = await fetch('/api/delete-invoice', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      if (res.ok) {
+        fetchInvoices();
+      } else {
+        alert('Erro ao excluir fatura');
+      }
+    } catch (error) {
+      alert('Erro de conexão ao excluir fatura');
+    }
+  };
+
+  const handleViewInvoiceDetails = (inv) => {
+    setSelectedInvoice(inv);
+    setIsDetailModalOpen(true);
   };
 
   return (
@@ -323,11 +352,31 @@ export default function Faturas() {
                       </span>
                     </td>
                     <td className="py-4 text-center">
-                      {inv.status !== 'Paga' && (
-                        <button onClick={() => handleMarkAsPaid(inv)} className="text-xs font-medium text-blue-600 hover:text-blue-800 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
-                          Marcar Paga
+                      <div className="flex items-center justify-center space-x-1.5">
+                        <button
+                          onClick={() => handleViewInvoiceDetails(inv)}
+                          className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                          title="Visualizar Detalhes da Fatura"
+                        >
+                          <Eye className="w-4 h-4" />
                         </button>
-                      )}
+                        {inv.status !== 'Paga' && (
+                          <button
+                            onClick={() => handleMarkAsPaid(inv)}
+                            className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
+                            title="Marcar como Paga"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteInvoice(inv.id)}
+                          className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                          title="Excluir Fatura"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -336,6 +385,102 @@ export default function Faturas() {
           )}
         </div>
       </div>
+
+      {/* Modal de Detalhes da Fatura */}
+      {isDetailModalOpen && selectedInvoice && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-600 text-white rounded-lg">
+                  <Receipt className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Detalhes da Fatura #{selectedInvoice.id}</h2>
+                  <p className="text-xs text-gray-500">
+                    {selectedInvoice.created_at ? `Emitida em ${new Date(selectedInvoice.created_at).toLocaleDateString('pt-BR')}` : ''}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsDetailModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-200/60 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <div>
+                  <span className="text-xs font-bold text-gray-500 uppercase block">Cliente</span>
+                  <p className="font-semibold text-gray-900 mt-0.5">{selectedInvoice.client_name || 'Não informado'}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-gray-500 uppercase block">Status</span>
+                  <span className={`inline-block mt-0.5 px-2.5 py-0.5 text-xs font-bold rounded-full ${
+                    selectedInvoice.status === 'Paga' ? 'bg-green-100 text-green-700' :
+                    selectedInvoice.status === 'Vencida' ? 'bg-red-100 text-red-700' :
+                    'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {selectedInvoice.status}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs font-bold text-gray-500 uppercase block">Descrição</span>
+                <p className="text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-100 mt-1 font-medium">
+                  {selectedInvoice.description}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-bold text-gray-500 uppercase block">Vencimento</span>
+                  <p className="font-medium text-gray-900 mt-0.5">{formatDate(selectedInvoice.due_date)}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-gray-500 uppercase block">Pagamento</span>
+                  <p className="font-medium text-gray-900 mt-0.5">{selectedInvoice.payment_date ? formatDate(selectedInvoice.payment_date) : 'Pendente'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {selectedInvoice.budget_id && (
+                  <div>
+                    <span className="text-xs font-bold text-gray-500 uppercase block">Origem</span>
+                    <p className="font-semibold text-blue-600 mt-0.5">Orçamento #{selectedInvoice.budget_id}</p>
+                  </div>
+                )}
+                {selectedInvoice.conta_azul_sale_id && (
+                  <div>
+                    <span className="text-xs font-bold text-emerald-700 uppercase block">Conta Azul</span>
+                    <p className="font-semibold text-emerald-700 mt-0.5 flex items-center">
+                      <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
+                      Venda #{selectedInvoice.conta_azul_sale_id}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 flex justify-between items-center">
+                <span className="text-xs font-bold text-emerald-900 uppercase">Valor Total</span>
+                <span className="text-2xl font-black text-emerald-900">{formatCurrency(selectedInvoice.amount)}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 p-6 border-t border-gray-100 bg-gray-50">
+              <button
+                onClick={() => setIsDetailModalOpen(false)}
+                className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 font-medium rounded-lg text-sm transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Fatura Manual */}
       {isModalOpen && (
