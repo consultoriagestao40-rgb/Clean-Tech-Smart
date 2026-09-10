@@ -127,10 +127,11 @@ export default async function handler(req, res) {
       }
 
       // Salvar na tabela invoices
+      const initialStatus = caSaleId ? 'Faturada' : 'Pendente';
       const invRes = await client.query(`
         INSERT INTO invoices (
           contract_code, client_id, description, amount, due_date, status, budget_id, invoice_type, conta_azul_sale_id
-        ) VALUES ($1, $2, $3, $4, $5, 'Pendente', $6, 'servicos', $7)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'servicos', $8)
         RETURNING *;
       `, [
         `ORC-${budgetId}-SERV`,
@@ -138,6 +139,7 @@ export default async function handler(req, res) {
         serviceDesc,
         servicesAmount,
         dueDate,
+        initialStatus,
         budgetId,
         caSaleId
       ]);
@@ -193,10 +195,11 @@ export default async function handler(req, res) {
       }
 
       // Salvar na tabela invoices
+      const initialStatusParts = caSaleId ? 'Faturada' : 'Pendente';
       const invRes = await client.query(`
         INSERT INTO invoices (
           contract_code, client_id, description, amount, due_date, status, budget_id, invoice_type, conta_azul_sale_id, ncm_info
-        ) VALUES ($1, $2, $3, $4, $5, 'Pendente', $6, 'pecas', $7, $8)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pecas', $8, $9)
         RETURNING *;
       `, [
         `ORC-${budgetId}-PECA`,
@@ -204,6 +207,7 @@ export default async function handler(req, res) {
         `Orçamento #${budgetId} - Venda de Peças (${partsList.length} itens)`,
         partsAmount,
         dueDate,
+        initialStatusParts,
         budgetId,
         caSaleId,
         JSON.stringify(partsList)

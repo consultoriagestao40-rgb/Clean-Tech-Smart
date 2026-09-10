@@ -84,10 +84,14 @@ export default function Faturas() {
       const data = await res.json();
       if (data.success) {
         await fetchInvoices();
-        if (data.updatedCount > 0) {
-          alert(`🎉 Sucesso! ${data.updatedCount} fatura(s) foram identificadas como baixadas/conciliadas no Conta Azul e marcadas como Pagas!`);
+        if (data.paidCount > 0 || data.faturadaCount > 0 || data.dueDateUpdatedCount > 0) {
+          alert(`🎉 Sincronização concluída com sucesso!\n` +
+            (data.paidCount > 0 ? `• ${data.paidCount} fatura(s) baixada(s)/conciliada(s) como PAGA(s)\n` : '') +
+            (data.faturadaCount > 0 ? `• ${data.faturadaCount} fatura(s) atualizada(s) para FATURADA\n` : '') +
+            (data.dueDateUpdatedCount > 0 ? `• ${data.dueDateUpdatedCount} data(s) de vencimento sincronizada(s) do Conta Azul` : '')
+          );
         } else {
-          alert('Tudo atualizado! Nenhuma nova fatura baixada encontrada no Conta Azul no momento.');
+          alert('Tudo atualizado! Nenhuma nova alteração no Conta Azul no momento.');
         }
       } else {
         alert('Erro ao sincronizar com Conta Azul: ' + (data.error || 'Erro'));
@@ -157,6 +161,7 @@ export default function Faturas() {
   const summary = {
     total: filteredInvoices.length,
     pendentes: filteredInvoices.filter(i => i.status === 'Pendente').length,
+    faturadas: filteredInvoices.filter(i => i.status === 'Faturada').length,
     pagas: filteredInvoices.filter(i => i.status === 'Paga').length,
     vencidas: filteredInvoices.filter(i => i.status === 'Vencida').length,
   };
@@ -624,6 +629,7 @@ export default function Faturas() {
             >
               <option value="Todos">Todos</option>
               <option value="Pendente">Pendente</option>
+              <option value="Faturada">Faturada</option>
               <option value="Paga">Paga</option>
               <option value="Vencida">Vencida</option>
             </select>
@@ -632,29 +638,36 @@ export default function Faturas() {
       </div>
 
       {/* Cartões de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col relative overflow-hidden">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-semibold text-gray-500">Total de Faturas</span>
+            <span className="text-xs font-semibold text-gray-500">Total</span>
             <FileText className="w-4 h-4 text-gray-400" />
           </div>
           <span className="text-2xl font-bold text-gray-900">{summary.total}</span>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col relative overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-semibold text-gray-500">Pendentes</span>
-            <DollarSign className="w-4 h-4 text-gray-400" />
+            <DollarSign className="w-4 h-4 text-amber-500" />
           </div>
-          <span className="text-2xl font-bold text-gray-900">{summary.pendentes}</span>
+          <span className="text-2xl font-bold text-amber-600">{summary.pendentes}</span>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col relative overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-xs font-semibold text-gray-500">Faturadas</span>
+            <Receipt className="w-4 h-4 text-blue-500" />
+          </div>
+          <span className="text-2xl font-bold text-blue-600">{summary.faturadas}</span>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-semibold text-gray-500">Pagas</span>
-            <CheckCircle2 className="w-4 h-4 text-gray-400" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           </div>
-          <span className="text-2xl font-bold text-gray-900">{summary.pagas}</span>
+          <span className="text-2xl font-bold text-emerald-600">{summary.pagas}</span>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col relative overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col relative overflow-hidden col-span-2 md:col-span-1">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-semibold text-gray-500">Vencidas</span>
             <AlertCircle className="w-4 h-4 text-red-400" />
@@ -718,6 +731,7 @@ export default function Faturas() {
                     <td className="px-4 py-4 text-center whitespace-nowrap">
                       <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
                         inv.status === 'Paga' ? 'bg-green-100 text-green-700' :
+                        inv.status === 'Faturada' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
                         inv.status === 'Vencida' ? 'bg-red-100 text-red-700' :
                         'bg-yellow-100 text-yellow-700'
                       }`}>
@@ -773,16 +787,17 @@ export default function Faturas() {
                   <div className="flex items-center space-x-2">
                     <h2 className="text-xl font-bold text-gray-900">Fatura #{selectedInvoice.id}</h2>
                     <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
-                      selectedInvoice.status === 'Paga' ? 'bg-green-100 text-green-800' :
-                      selectedInvoice.status === 'Vencida' ? 'bg-red-100 text-red-800' :
+                      (detailedInvoice?.invoice?.status || selectedInvoice.status) === 'Paga' ? 'bg-green-100 text-green-800' :
+                      (detailedInvoice?.invoice?.status || selectedInvoice.status) === 'Faturada' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                      (detailedInvoice?.invoice?.status || selectedInvoice.status) === 'Vencida' ? 'bg-red-100 text-red-800' :
                       'bg-yellow-100 text-yellow-800'
                     }`}>
-                      {selectedInvoice.status}
+                      {detailedInvoice?.invoice?.status || selectedInvoice.status}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {selectedInvoice.created_at ? `Emitida em ${new Date(selectedInvoice.created_at).toLocaleDateString('pt-BR')}` : ''}
-                    {selectedInvoice.due_date ? ` &bull; Vencimento: ${formatDate(selectedInvoice.due_date)}` : ''}
+                    {(detailedInvoice?.invoice?.due_date || selectedInvoice.due_date) ? ` &bull; Vencimento: ${formatDate(detailedInvoice?.invoice?.due_date || selectedInvoice.due_date)}` : ''}
                   </p>
                 </div>
               </div>

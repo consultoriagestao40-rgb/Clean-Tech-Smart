@@ -22,18 +22,21 @@ export default async function handler(req, res) {
       ALTER TABLE invoices ADD COLUMN IF NOT EXISTS invoice_type VARCHAR(50);
       ALTER TABLE invoices ADD COLUMN IF NOT EXISTS conta_azul_sale_id VARCHAR(100);
       ALTER TABLE invoices ADD COLUMN IF NOT EXISTS ncm_info TEXT;
+      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_date DATE;
     `);
 
-    // 2. Buscar faturas que ainda estão pendentes/vencidas e possuem venda no Conta Azul
+    // 2. Buscar faturas que possuem venda vinculada no Conta Azul e ainda não estão 'Pagas'
     const pendingRes = await client.query(`
-      SELECT id, conta_azul_sale_id, status 
+      SELECT id, conta_azul_sale_id, status, due_date
       FROM invoices 
       WHERE conta_azul_sale_id IS NOT NULL 
         AND status != 'Paga';
     `);
 
     const invoicesToCheck = pendingRes.rows;
-    let updatedCount = 0;
+    let paidCount = 0;
+    let faturadaCount = 0;
+    let dueDateUpdatedCount = 0;
 
     for (const inv of invoicesToCheck) {
       try {
@@ -56,6 +59,17 @@ export default async function handler(req, res) {
                         rawPayStatus === 'PAID' || rawPayStatus === 'ACQUITTED' ||
                         allInstallmentsPaid;
 
+          // Sincronizar data de vencimento se cadastrada/alterada no Conta Azul
+          let caDueDate = s.due_date || (installments.length > 0 ? (installments[0].due_date || installments[0].date) : null);
+          if (caDueDate) {
+            caDueDate = caDueDate.split('T')[0];
+            const currentDue = inv.due_date ? new Date(inv.due_date).toISOString().split('T')[0] : null;
+            if (caDueDate !== currentDue) {
+              await client.query(`UPDATE invoices SET due_date = $1 WHERE id = $2`, [caDueDate, inv.id]);
+              dueDateUpdatedCount++;
+            }
+          }
+
           if (isPaid) {
             let caPaymentDate = s.payment_date || (installments.length > 0 ? (installments[0].payment_date || installments[0].date) : null);
             if (caPaymentDate) {
@@ -70,7 +84,16 @@ export default async function handler(req, res) {
               WHERE id = $2
             `, [caPaymentDate, inv.id]);
 
-            updatedCount++;
+            paidCount++;
+          } else if (inv.status === 'Pendente') {
+            // Se já tem venda vinculada no Conta Azul mas ainda não foi paga, o status é "Faturada"
+            await client.query(`
+              UPDATE invoices 
+              SET status = 'Faturada' 
+              WHERE id = $1
+            `, [inv.id]);
+
+            faturadaCount++;
           }
         }
       } catch (err) {
@@ -81,7 +104,10 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       totalChecked: invoicesToCheck.length,
-      updatedCount
+      paidCount,
+      faturadaCount,
+      dueDateUpdatedCount,
+      updatedCount: paidCount + faturadaCount
     });
   } catch (error) {
     console.error('Erro na sincronização em lote com o Conta Azul:', error);

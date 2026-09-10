@@ -143,6 +143,17 @@ export default async function handler(req, res) {
             caPaymentDate = new Date().toISOString().split('T')[0];
           }
 
+          // Sincronizar data de vencimento cadastrada no Conta Azul
+          let caDueDate = s.due_date || (installments.length > 0 ? (installments[0].due_date || installments[0].date) : null);
+          if (caDueDate) {
+            caDueDate = caDueDate.split('T')[0];
+            const currentDue = invoice.due_date ? new Date(invoice.due_date).toISOString().split('T')[0] : null;
+            if (caDueDate !== currentDue) {
+              await client.query(`UPDATE invoices SET due_date = $1 WHERE id = $2`, [caDueDate, invoice.id]);
+              invoice.due_date = caDueDate;
+            }
+          }
+
           if (isCaPaid && invoice.status !== 'Paga') {
             await client.query(`
               UPDATE invoices 
@@ -151,6 +162,13 @@ export default async function handler(req, res) {
             `, [caPaymentDate, invoice.id]);
             invoice.status = 'Paga';
             invoice.payment_date = caPaymentDate;
+          } else if (!isCaPaid && invoice.status === 'Pendente') {
+            await client.query(`
+              UPDATE invoices 
+              SET status = 'Faturada' 
+              WHERE id = $1
+            `, [invoice.id]);
+            invoice.status = 'Faturada';
           }
 
           contaAzulInfo = {

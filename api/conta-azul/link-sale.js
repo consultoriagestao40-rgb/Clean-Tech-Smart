@@ -170,7 +170,10 @@ export default async function handler(req, res) {
       let updateQuery = 'UPDATE invoices SET conta_azul_sale_id = $1';
       const params = [saleIdToSave];
 
-      // Se a venda no Conta Azul já estiver quitada / paga
+      let isCaPaid = false;
+      let caPaymentDate = null;
+      let caDueDate = null;
+
       if (caSale) {
         const rawStatus = (caSale.status || '').toUpperCase();
         const rawFinStatus = (caSale.financial_status || '').toUpperCase();
@@ -182,19 +185,33 @@ export default async function handler(req, res) {
           return st === 'ACQUITTED' || st === 'PAID' || st === 'LIQUIDATED' || st === 'BAIXADO';
         });
 
-        const isCaPaid = rawStatus === 'PAID' || rawStatus === 'ACQUITTED' || 
-                         rawFinStatus === 'PAID' || rawFinStatus === 'ACQUITTED' ||
-                         rawPayStatus === 'PAID' || rawPayStatus === 'ACQUITTED' ||
-                         allInstallmentsPaid;
+        isCaPaid = rawStatus === 'PAID' || rawStatus === 'ACQUITTED' || 
+                   rawFinStatus === 'PAID' || rawFinStatus === 'ACQUITTED' ||
+                   rawPayStatus === 'PAID' || rawPayStatus === 'ACQUITTED' ||
+                   allInstallmentsPaid;
 
         if (isCaPaid) {
-          let caPaymentDate = caSale.payment_date || (installments.length > 0 ? (installments[0].payment_date || installments[0].date) : null);
+          caPaymentDate = caSale.payment_date || (installments.length > 0 ? (installments[0].payment_date || installments[0].date) : null);
           if (caPaymentDate) caPaymentDate = caPaymentDate.split('T')[0];
           else caPaymentDate = new Date().toISOString().split('T')[0];
-
-          updateQuery += ', status = $2, payment_date = COALESCE(payment_date, $3)';
-          params.push('Paga', caPaymentDate);
         }
+
+        caDueDate = caSale.due_date || (installments.length > 0 ? (installments[0].due_date || installments[0].date) : null);
+        if (caDueDate) caDueDate = caDueDate.split('T')[0];
+      }
+
+      if (isCaPaid) {
+        updateQuery += `, status = $${params.length + 1}, payment_date = COALESCE(payment_date, $${params.length + 2})`;
+        params.push('Paga', caPaymentDate);
+      } else {
+        // Se foi vinculada ao Conta Azul mas ainda não paga, passa a ser Faturada
+        updateQuery += `, status = $${params.length + 1}`;
+        params.push('Faturada');
+      }
+
+      if (caDueDate) {
+        updateQuery += `, due_date = $${params.length + 1}`;
+        params.push(caDueDate);
       }
 
       updateQuery += ` WHERE id = $${params.length + 1} RETURNING *;`;
