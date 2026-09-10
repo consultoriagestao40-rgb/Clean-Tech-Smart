@@ -292,7 +292,16 @@ export default function Faturas() {
           saleIdOrNumber: String(saleIdOrNumber).trim()
         })
       });
-      const data = await res.json();
+
+      let data;
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const rawText = await res.text();
+        throw new Error(rawText || `Servidor retornou status HTTP ${res.status}`);
+      }
+
       if (data.success) {
         alert('🎉 Venda vinculada com sucesso! Os dados fiscais e status foram sincronizados com o Conta Azul.');
         setIsLinkSaleModalOpen(false);
@@ -304,7 +313,7 @@ export default function Faturas() {
         alert('Erro ao vincular venda: ' + (data.error || 'Falha ao vincular'));
       }
     } catch (err) {
-      alert('Erro de conexão ao vincular venda do Conta Azul: ' + err.message);
+      alert('Erro ao vincular venda do Conta Azul: ' + err.message);
     } finally {
       setIsLinkingSale(false);
     }

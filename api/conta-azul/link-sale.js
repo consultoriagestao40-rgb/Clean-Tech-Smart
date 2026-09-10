@@ -1,6 +1,8 @@
 import { Pool } from 'pg';
 import { getContaAzulSaleDetails, getValidAccessToken, BASE_API_URL } from './conta-azul.js';
 
+const API_URL = BASE_API_URL || 'https://api-v2.contaazul.com';
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || "postgresql://neondb_owner:npg_DtfA7VXHw8ym@ep-winter-cloud-apstwhit-pooler.c-7.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require",
   ssl: {
@@ -12,6 +14,12 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
+    // Garantir colunas necessárias na tabela invoices
+    await client.query(`
+      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS conta_azul_sale_id VARCHAR(100);
+      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_date DATE;
+    `);
+
     // GET: Listar vendas recentes do Conta Azul para o usuário escolher e vincular
     if (req.method === 'GET') {
       const { invoiceId } = req.query;
@@ -36,21 +44,22 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Conta Azul não conectado.' });
       }
 
-      const listRes = await fetch(`${BASE_API_URL}/v1/sales?page=1&size=50`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      let rawSales = [];
+      try {
+        const listRes = await fetch(`${API_URL}/v1/sales?page=1&size=50`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-      if (!listRes.ok) {
-        const errText = await listRes.text();
-        return res.status(500).json({ error: 'Erro ao buscar vendas no Conta Azul: ' + errText });
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          rawSales = Array.isArray(listData) ? listData : (listData.content || listData.items || []);
+        }
+      } catch (listErr) {
+        console.warn('Aviso ao listar vendas no Conta Azul:', listErr.message);
       }
-
-      const listData = await listRes.json();
-      const rawSales = Array.isArray(listData) ? listData : (listData.content || listData.items || []);
 
       const invAmount = Number(inv.amount || 0);
       const invClientName = (inv.client_name || '').toLowerCase();
-      const invDocClean = (inv.client_document || '').replace(/\D/g, '');
 
       // Formatar e classificar vendas por relevância para esta fatura
       const sales = rawSales.map(s => {
@@ -103,43 +112,61 @@ export default async function handler(req, res) {
       if (directRes.success && directRes.sale) {
         caSale = directRes.sale;
       } else {
-        // 2. Tentar achar na lista de vendas por número da venda ou por número de NF
+        // 2. Tentar buscar por number direto
         try {
-          const listRes = await fetch(`${BASE_API_URL}/v1/sales?page=1&size=100`, {
+          const numRes = await fetch(`${API_URL}/v1/sales?number=${encodeURIComponent(cleanInput)}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          if (listRes.ok) {
-            const listData = await listRes.json();
-            const items = Array.isArray(listData) ? listData : (listData.content || listData.items || []);
-            
-            // Buscar por number ou id
-            let found = items.find(s => String(s.number) === cleanInput || String(s.id) === cleanInput);
-            
-            // Se não achou por número da venda, pode ser que o usuário digitou o número da NF
-            if (!found) {
-              for (const item of items) {
-                // Se o item tiver nfe/nfse detalhada
-                if (item.nfe?.number === cleanInput || item.nfse?.number === cleanInput) {
-                  found = item;
-                  break;
-                }
-              }
-            }
-
-            if (found) {
-              // Buscar detalhes completos da venda encontrada
-              const fullDetails = await getContaAzulSaleDetails(found.id);
-              caSale = (fullDetails.success && fullDetails.sale) ? fullDetails.sale : found;
+          if (numRes.ok) {
+            const numData = await numRes.json();
+            const numItems = Array.isArray(numData) ? numData : (numData.content || numData.items || []);
+            if (numItems.length > 0) {
+              const fullDetails = await getContaAzulSaleDetails(numItems[0].id);
+              caSale = (fullDetails.success && fullDetails.sale) ? fullDetails.sale : numItems[0];
             }
           }
-        } catch (err) {
-          console.warn('Aviso ao listar vendas para encontrar número:', err);
+        } catch (numErr) {
+          console.warn('Aviso busca por number:', numErr.message);
+        }
+
+        // 3. Se ainda não achou, tentar varrer a lista de vendas recentes
+        if (!caSale) {
+          try {
+            const listRes = await fetch(`${API_URL}/v1/sales?page=1&size=100`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (listRes.ok) {
+              const listData = await listRes.json();
+              const items = Array.isArray(listData) ? listData : (listData.content || listData.items || []);
+              
+              // Buscar por number ou id
+              let found = items.find(s => String(s.number) === cleanInput || String(s.id) === cleanInput);
+              
+              // Se não achou por número da venda, pode ser que o usuário digitou o número da NF
+              if (!found) {
+                for (const item of items) {
+                  if (item.nfe?.number === cleanInput || item.nfse?.number === cleanInput) {
+                    found = item;
+                    break;
+                  }
+                }
+              }
+
+              if (found) {
+                const fullDetails = await getContaAzulSaleDetails(found.id);
+                caSale = (fullDetails.success && fullDetails.sale) ? fullDetails.sale : found;
+              }
+            }
+          } catch (err) {
+            console.warn('Aviso ao listar vendas para encontrar número:', err);
+          }
         }
       }
 
+      // Se achou no Conta Azul, usa o ID real (UUID). Se não achou, salva o próprio input fornecido (ex: 141)
       const saleIdToSave = caSale ? String(caSale.id) : cleanInput;
 
-      // 3. Atualizar a fatura no banco de dados com a venda vinculada
+      // 4. Atualizar a fatura no banco de dados com a venda vinculada
       let updateQuery = 'UPDATE invoices SET conta_azul_sale_id = $1';
       const params = [saleIdToSave];
 

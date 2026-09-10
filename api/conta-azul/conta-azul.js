@@ -9,7 +9,7 @@ const pool = new Pool({
 
 const CLIENT_ID = process.env.CONTA_AZUL_CLIENT_ID || '5ngbq1tfnlm0aklaa8tun7v8vu';
 const CLIENT_SECRET = process.env.CONTA_AZUL_CLIENT_SECRET || '12682kvjplg1cfokkj97qgllce92e9mi9vt59b3i9bef9556o5gh';
-const BASE_API_URL = 'https://api-v2.contaazul.com';
+export const BASE_API_URL = 'https://api-v2.contaazul.com';
 
 // Garante que a tabela system_settings existe
 export async function ensureSettingsTable(client) {
