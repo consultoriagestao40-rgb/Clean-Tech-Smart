@@ -211,3 +211,27 @@ export async function createContaAzulSale(salePayload) {
 
   return { success: true, data: json };
 }
+
+// Obtém os detalhes atualizados de uma venda e da respectiva NF no Conta Azul
+export async function getContaAzulSaleDetails(saleId) {
+  const token = await getValidAccessToken();
+  if (!token) return { success: false, error: 'Não autenticado no Conta Azul' };
+
+  try {
+    const res = await fetch(`${BASE_API_URL}/v1/sales/${saleId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      return { success: false, error: err };
+    }
+
+    const saleData = await res.json();
+    return { success: true, sale: saleData };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
