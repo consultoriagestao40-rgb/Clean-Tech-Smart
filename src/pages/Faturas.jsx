@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, FileText, CheckCircle2, AlertCircle, DollarSign, Loader2, Plus, Edit, ExternalLink, RefreshCw, Eye, Trash2, X, Receipt, Check, FileDown, Wrench, Package, Building2, User, Printer } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle2, AlertCircle, DollarSign, Loader2, Plus, Edit, ExternalLink, RefreshCw, Eye, Trash2, X, Receipt, Check, FileDown, Wrench, Package, Building2, User, Printer, Link2, Send, Search } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 export default function Faturas() {
@@ -21,6 +21,14 @@ export default function Faturas() {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isSyncingContaAzul, setIsSyncingContaAzul] = useState(false);
+
+  // Modal Vinculação de Venda Manual / Existente do Conta Azul
+  const [isLinkSaleModalOpen, setIsLinkSaleModalOpen] = useState(false);
+  const [linkSaleInput, setLinkSaleInput] = useState('');
+  const [isLinkingSale, setIsLinkingSale] = useState(false);
+  const [suggestedSales, setSuggestedSales] = useState([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [isTransmittingToCA, setIsTransmittingToCA] = useState(false);
 
   // Modal para fins de teste/inserção rápida
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -251,6 +259,81 @@ export default function Faturas() {
       alert('Erro de conexão ao sincronizar com Conta Azul');
     } finally {
       setIsSyncingContaAzul(false);
+    }
+  };
+
+  const handleOpenLinkSaleModal = async (invoiceId) => {
+    setIsLinkSaleModalOpen(true);
+    setLinkSaleInput('');
+    setSuggestedSales([]);
+    setIsLoadingSuggestions(true);
+    try {
+      const res = await fetch(`/api/conta-azul/link-sale?invoiceId=${invoiceId}`);
+      const data = await res.json();
+      if (data.success && data.suggestedSales) {
+        setSuggestedSales(data.suggestedSales);
+      }
+    } catch (err) {
+      console.warn('Erro ao buscar sugestões de vendas do Conta Azul:', err);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const handleConfirmLinkSale = async (saleIdOrNumber) => {
+    if (!saleIdOrNumber || !selectedInvoice?.id) return;
+    setIsLinkingSale(true);
+    try {
+      const res = await fetch('/api/conta-azul/link-sale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoiceId: selectedInvoice.id,
+          saleIdOrNumber: String(saleIdOrNumber).trim()
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('🎉 Venda vinculada com sucesso! Os dados fiscais e status foram sincronizados com o Conta Azul.');
+        setIsLinkSaleModalOpen(false);
+        const updatedInv = { ...selectedInvoice, conta_azul_sale_id: data.invoice?.conta_azul_sale_id || saleIdOrNumber };
+        setSelectedInvoice(updatedInv);
+        handleViewInvoiceDetails(updatedInv);
+        fetchInvoices();
+      } else {
+        alert('Erro ao vincular venda: ' + (data.error || 'Falha ao vincular'));
+      }
+    } catch (err) {
+      alert('Erro de conexão ao vincular venda do Conta Azul: ' + err.message);
+    } finally {
+      setIsLinkingSale(false);
+    }
+  };
+
+  const handleTransmitInvoiceNow = async (invoiceId) => {
+    if (!invoiceId) return;
+    if (!confirm('Deseja transmitir os dados desta fatura para gerar a venda no Conta Azul agora?')) return;
+    setIsTransmittingToCA(true);
+    try {
+      const res = await fetch('/api/conta-azul/transmit-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('🎉 Fatura transmitida ao Conta Azul com sucesso! Venda #' + (data.saleData?.number || data.saleId) + ' gerada.');
+        const updatedInv = { ...selectedInvoice, conta_azul_sale_id: data.saleId };
+        setSelectedInvoice(updatedInv);
+        handleViewInvoiceDetails(updatedInv);
+        fetchInvoices();
+      } else {
+        alert('Erro ao transmitir fatura ao Conta Azul: ' + (data.error || 'Falha'));
+      }
+    } catch (err) {
+      alert('Erro de conexão ao transmitir fatura: ' + err.message);
+    } finally {
+      setIsTransmittingToCA(false);
     }
   };
 
@@ -784,6 +867,62 @@ export default function Faturas() {
                       )}
                     </div>
                   </div>
+
+                  {(!selectedInvoice.conta_azul_sale_id && !detailedInvoice?.contaAzulInfo?.saleNumber) ? (
+                    <div className="mt-3 pt-3 border-t border-cyan-200/80">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/90 p-3 rounded-lg border border-cyan-200 shadow-xs">
+                        <div>
+                          <p className="text-xs font-bold text-amber-800 flex items-center">
+                            <AlertCircle className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
+                            Venda ainda não vinculada ao Conta Azul
+                          </p>
+                          <p className="text-[11px] text-gray-600 mt-0.5">
+                            Como a NF foi emitida direto no Conta Azul, vincule o número da venda/NF para sincronizar o status da nota e as baixas de pagamento.
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenLinkSaleModal(selectedInvoice.id)}
+                            className="px-3 py-1.5 bg-cyan-700 hover:bg-cyan-800 text-white rounded-lg text-xs font-semibold flex items-center shadow-xs transition-all"
+                          >
+                            <Link2 className="w-3.5 h-3.5 mr-1.5" />
+                            Vincular Venda / NF
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleTransmitInvoiceNow(selectedInvoice.id)}
+                            disabled={isTransmittingToCA}
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center shadow-xs transition-all disabled:opacity-50"
+                            title="Criar a venda automaticamente no Conta Azul agora"
+                          >
+                            {isTransmittingToCA ? (
+                              <>
+                                <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                                Transmitindo...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="w-3.5 h-3.5 mr-1.5" />
+                                Transmitir ao CA
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenLinkSaleModal(selectedInvoice.id)}
+                        className="text-[11px] text-cyan-700 hover:text-cyan-900 underline inline-flex items-center"
+                      >
+                        <Link2 className="w-3 h-3 mr-1" />
+                        Alterar ou re-vincular venda no Conta Azul
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* 2. Dados do Cliente e Equipamento */}
@@ -956,6 +1095,127 @@ export default function Faturas() {
               <button type="submit" disabled={isSaving} className="px-4 py-2 text-white bg-blue-600 rounded-lg">Salvar Fatura</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Modal de Vinculação de Venda do Conta Azul */}
+      {isLinkSaleModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-cyan-700 to-blue-700 px-5 py-4 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Link2 className="w-5 h-5 text-cyan-200" />
+                <h3 className="font-bold text-base">Vincular Venda do Conta Azul</h3>
+              </div>
+              <button
+                onClick={() => setIsLinkSaleModalOpen(false)}
+                className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-sm">
+              <p className="text-gray-600 text-xs leading-relaxed">
+                Informe o <strong>Número da Venda</strong> ou o <strong>Número da NF</strong> emitida no Conta Azul para a Fatura #{selectedInvoice?.id} ({formatCurrency(selectedInvoice?.amount)}).
+              </p>
+
+              {/* Input manual */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Número da Venda ou da NF no Conta Azul
+                </label>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    placeholder="Ex: 45 ou 1002"
+                    value={linkSaleInput}
+                    onChange={(e) => setLinkSaleInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleConfirmLinkSale(linkSaleInput);
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-hidden font-mono text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleConfirmLinkSale(linkSaleInput)}
+                    disabled={isLinkingSale || !linkSaleInput.trim()}
+                    className="px-4 py-2 bg-cyan-700 hover:bg-cyan-800 disabled:opacity-50 text-white rounded-lg font-semibold text-xs transition-all flex items-center shrink-0"
+                  >
+                    {isLinkingSale ? <RefreshCw className="w-4 h-4 animate-spin mr-1" /> : <Link2 className="w-4 h-4 mr-1" />}
+                    Vincular
+                  </button>
+                </div>
+              </div>
+
+              {/* Sugestões automáticas trazidas do Conta Azul */}
+              <div className="pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Vendas Recentes no Conta Azul
+                  </span>
+                  {isLoadingSuggestions && (
+                    <span className="text-xs text-cyan-600 flex items-center">
+                      <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> Buscando...
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                  {suggestedSales.length > 0 ? (
+                    suggestedSales.map((sale) => (
+                      <div 
+                        key={sale.id}
+                        className={`p-2.5 rounded-lg border text-xs flex items-center justify-between transition-all ${
+                          sale.matchScore > 30 ? 'bg-cyan-50/80 border-cyan-300' : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="mr-2 overflow-hidden">
+                          <div className="flex items-center space-x-1.5">
+                            <span className="font-bold text-gray-900 font-mono">Venda #{sale.number}</span>
+                            {sale.matchScore > 30 && (
+                              <span className="text-[10px] bg-green-100 text-green-800 font-bold px-1.5 py-0.5 rounded">
+                                Sugerida
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-gray-700 font-medium truncate max-w-[210px] mt-0.5">{sale.customerName}</p>
+                          <p className="text-gray-500 text-[11px]">
+                            {formatCurrency(sale.total)} • {formatDate(sale.emission)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmLinkSale(sale.number || sale.id)}
+                          disabled={isLinkingSale}
+                          className="px-3 py-1.5 bg-white hover:bg-cyan-700 hover:text-white text-cyan-800 border border-cyan-300 font-bold rounded-lg text-xs transition-colors shadow-xs shrink-0"
+                        >
+                          Vincular
+                        </button>
+                      </div>
+                    ))
+                  ) : !isLoadingSuggestions ? (
+                    <p className="text-xs text-gray-400 italic py-2 text-center">
+                      Nenhuma venda recente encontrada. Digite o número acima.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsLinkSaleModalOpen(false)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

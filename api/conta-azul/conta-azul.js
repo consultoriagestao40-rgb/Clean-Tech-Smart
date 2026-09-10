@@ -106,56 +106,88 @@ export async function getValidAccessToken() {
   }
 }
 
-// Busca ou cadastra cliente no Conta Azul
+// Busca ou cadastra cliente no Conta Azul (compatível com v2 /v1/pessoas e v1 /v1/customers)
 export async function findOrCreateContaAzulCustomer(clientData) {
   const token = await getValidAccessToken();
   if (!token) throw new Error('Conta Azul não autenticado ou token expirado.');
 
   const documentClean = (clientData.document || '').replace(/\D/g, '');
-  
-  // 1. Tenta buscar cliente existente pelo documento ou nome
+  const clientName = (clientData.name || '').trim();
+
+  // Helper para testar múltiplos endpoints de busca
+  async function trySearch(url) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.content || data.items || data.pessoas || data.customers || []);
+        if (list.length > 0) {
+          // Se tiver busca por documento, tenta encontrar exato
+          if (documentClean) {
+            const matchDoc = list.find(c => {
+              const doc = (c.document || c.cpf_cnpj || c.cpfCnpj || c.cnpj || c.cpf || '').replace(/\D/g, '');
+              return doc === documentClean;
+            });
+            if (matchDoc) return matchDoc.id;
+          }
+          // Se tiver busca por nome
+          if (clientName) {
+            const matchName = list.find(c => {
+              const n = (c.name || c.nome || c.razao_social || c.company_name || '').toLowerCase();
+              return n.includes(clientName.toLowerCase()) || clientName.toLowerCase().includes(n);
+            });
+            if (matchName) return matchName.id;
+          }
+          return list[0].id;
+        }
+      }
+    } catch (e) {
+      console.warn(`Aviso na busca Conta Azul (${url}):`, e.message);
+    }
+    return null;
+  }
+
+  // 1. Busca na API v2 (/v1/pessoas) por documento e nome
   if (documentClean) {
-    try {
-      const searchRes = await fetch(`${BASE_API_URL}/v1/customers?document=${encodeURIComponent(documentClean)}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (searchRes.ok) {
-        const customers = await searchRes.json();
-        if (Array.isArray(customers) && customers.length > 0) {
-          return customers[0].id;
-        }
-      }
-    } catch (e) {
-      console.warn('Erro ao buscar cliente por documento no Conta Azul:', e.message);
+    const idByDoc = await trySearch(`${BASE_API_URL}/v1/pessoas?busca=${encodeURIComponent(documentClean)}`);
+    if (idByDoc) return idByDoc;
+    
+    // Tenta formato formatado caso o Conta Azul espere com pontuação
+    const formattedDoc = clientData.document?.trim();
+    if (formattedDoc && formattedDoc !== documentClean) {
+      const idByFmtDoc = await trySearch(`${BASE_API_URL}/v1/pessoas?busca=${encodeURIComponent(formattedDoc)}`);
+      if (idByFmtDoc) return idByFmtDoc;
     }
   }
 
-  // 2. Se não encontrou, busca por nome/razão social
-  if (clientData.name) {
-    try {
-      const searchRes = await fetch(`${BASE_API_URL}/v1/customers?name=${encodeURIComponent(clientData.name.trim())}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (searchRes.ok) {
-        const customers = await searchRes.json();
-        if (Array.isArray(customers) && customers.length > 0) {
-          return customers[0].id;
-        }
-      }
-    } catch (e) {
-      console.warn('Erro ao buscar cliente por nome no Conta Azul:', e.message);
-    }
+  if (clientName) {
+    const idByName = await trySearch(`${BASE_API_URL}/v1/pessoas?busca=${encodeURIComponent(clientName)}`);
+    if (idByName) return idByName;
   }
 
-  // 3. Cadastra o novo cliente no Conta Azul
+  // 2. Busca de fallback na rota /v1/customers
+  if (documentClean) {
+    const idByCustDoc = await trySearch(`${BASE_API_URL}/v1/customers?search=${encodeURIComponent(documentClean)}`) ||
+                        await trySearch(`${BASE_API_URL}/v1/customers?document=${encodeURIComponent(documentClean)}`);
+    if (idByCustDoc) return idByCustDoc;
+  }
+
+  if (clientName) {
+    const idByCustName = await trySearch(`${BASE_API_URL}/v1/customers?name=${encodeURIComponent(clientName)}`) ||
+                         await trySearch(`${BASE_API_URL}/v1/customers?search=${encodeURIComponent(clientName)}`);
+    if (idByCustName) return idByCustName;
+  }
+
+  // 3. Se não encontrou nenhuma pessoa, tenta criar
   const isCnpj = documentClean.length > 11;
   const newCustomerPayload = {
-    name: clientData.name || 'Cliente Sem Nome',
-    company_name: isCnpj ? (clientData.name || '') : undefined,
+    name: clientName || 'Cliente Sem Nome',
+    company_name: isCnpj ? clientName : undefined,
     person_type: isCnpj ? 'LEGAL' : 'NATURAL',
     document: documentClean || undefined,
     email: clientData.email || undefined,
@@ -163,6 +195,34 @@ export async function findOrCreateContaAzulCustomer(clientData) {
     mobile_phone: clientData.phone || undefined
   };
 
+  // Tenta criar primeiro via /v1/pessoas (API v2)
+  const v2Payload = {
+    nome: clientName || 'Cliente Sem Nome',
+    tipo_pessoa: isCnpj ? 'JURIDICA' : 'FISICA',
+    cpf_cnpj: documentClean || undefined,
+    email: clientData.email || undefined,
+    telefone: clientData.phone || undefined
+  };
+
+  try {
+    const v2Res = await fetch(`${BASE_API_URL}/v1/pessoas`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(v2Payload)
+    });
+
+    if (v2Res.ok) {
+      const createdV2 = await v2Res.json();
+      if (createdV2?.id) return createdV2.id;
+    }
+  } catch (errV2) {
+    console.warn('Tentativa via /v1/pessoas falhou, tentando /v1/customers:', errV2.message);
+  }
+
+  // Fallback para /v1/customers
   const createRes = await fetch(`${BASE_API_URL}/v1/customers`, {
     method: 'POST',
     headers: {
@@ -174,8 +234,31 @@ export async function findOrCreateContaAzulCustomer(clientData) {
 
   if (!createRes.ok) {
     const errText = await createRes.text();
-    console.error('Erro ao cadastrar cliente no Conta Azul:', errText);
-    throw new Error(`Falha ao cadastrar cliente no Conta Azul: ${errText}`);
+    console.warn('Resposta ao cadastrar cliente no Conta Azul:', errText);
+
+    // Se avisou que já existe ou está duplicado, faz varredura ampla para pegar o ID existente
+    if (errText.toLowerCase().includes('existe') || errText.toLowerCase().includes('duplicad') || errText.toLowerCase().includes('already') || createRes.status === 400 || createRes.status === 409) {
+      // Tenta listar as pessoas mais recentes
+      try {
+        const listRes = await fetch(`${BASE_API_URL}/v1/pessoas?tamanho_pagina=100`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          const items = Array.isArray(listData) ? listData : (listData.content || listData.items || []);
+          const found = items.find(i => {
+            const doc = (i.cpf_cnpj || i.document || '').replace(/\D/g, '');
+            const n = (i.nome || i.name || '').toLowerCase();
+            return (documentClean && doc === documentClean) || (clientName && n.includes(clientName.toLowerCase()));
+          });
+          if (found?.id) return found.id;
+        }
+      } catch (scanErr) {
+        console.warn('Erro na varredura:', scanErr);
+      }
+    }
+
+    throw new Error(`Falha no cadastro do cliente no Conta Azul: ${errText}`);
   }
 
   const created = await createRes.json();

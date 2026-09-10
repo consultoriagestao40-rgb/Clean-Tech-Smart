@@ -42,7 +42,12 @@ export default async function handler(req, res) {
     `);
 
     // 2. Verificar orçamento no banco
-    const budgetRes = await client.query('SELECT * FROM budgets WHERE id = $1', [budgetId]);
+    const budgetRes = await client.query(`
+      SELECT b.*, c.name as client_name, c.document as client_document, c.email as client_email, c.phone as client_phone
+      FROM budgets b
+      LEFT JOIN clients c ON b.client_id::text = c.id::text
+      WHERE b.id = $1
+    `, [budgetId]);
     if (budgetRes.rows.length === 0) {
       return res.status(404).json({ error: 'Orçamento não encontrado.' });
     }
@@ -51,6 +56,14 @@ export default async function handler(req, res) {
     if (budget.status !== 'Aprovado') {
       return res.status(400).json({ error: 'Apenas orçamentos com status Aprovado podem gerar faturas.' });
     }
+
+    const resolvedClient = {
+      id: clientData?.id || budget.client_id,
+      name: clientData?.name || budget.client_name,
+      document: clientData?.document || budget.client_document,
+      email: clientData?.email || budget.client_email,
+      phone: clientData?.phone || budget.client_phone
+    };
 
     const createdInvoices = [];
     const contaAzulSales = [];
@@ -62,12 +75,7 @@ export default async function handler(req, res) {
       try {
         const token = await getValidAccessToken();
         if (token) {
-          contaAzulCustomerId = await findOrCreateContaAzulCustomer({
-            name: clientData.name,
-            document: clientData.document,
-            email: clientData.email,
-            phone: clientData.phone
-          });
+          contaAzulCustomerId = await findOrCreateContaAzulCustomer(resolvedClient);
         }
       } catch (caErr) {
         console.warn('Aviso: Conta Azul não pode preparar cliente:', caErr.message);
@@ -126,7 +134,7 @@ export default async function handler(req, res) {
         RETURNING *;
       `, [
         `ORC-${budgetId}-SERV`,
-        clientData.id || budget.client_id,
+        resolvedClient.id,
         serviceDesc,
         servicesAmount,
         dueDate,
@@ -192,7 +200,7 @@ export default async function handler(req, res) {
         RETURNING *;
       `, [
         `ORC-${budgetId}-PECA`,
-        clientData.id || budget.client_id,
+        resolvedClient.id,
         `Orçamento #${budgetId} - Venda de Peças (${partsList.length} itens)`,
         partsAmount,
         dueDate,
