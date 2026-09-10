@@ -2,37 +2,51 @@ import { getValidAccessToken, BASE_API_URL } from './conta-azul.js';
 
 export default async function handler(req, res) {
   try {
-    const token = await getValidAccessToken();
-    if (!token) return res.status(401).json({ error: 'Sem token' });
-
-    const resV1Sales = await fetch(`https://api.contaazul.com/v1/sales?number=141`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+    const { Pool } = await import('pg');
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
     });
-    const textV1Sales = await resV1Sales.text();
+    const dbClient = await pool.connect();
+    const tokenRows = await dbClient.query("SELECT key, value FROM system_settings WHERE key LIKE 'conta_azul%'");
+    dbClient.release();
 
-    const resV1SalesList = await fetch(`https://api.contaazul.com/v1/sales?size=10`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const textV1SalesList = await resV1SalesList.text();
+    const tokenMap = {};
+    tokenRows.rows.forEach(r => { tokenMap[r.key] = r.value; });
 
-    const resV2Vendas = await fetch(`https://api-v2.contaazul.com/v1/vendas?numero=141`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const textV2Vendas = await resV2Vendas.text();
+    // Testar renovar token
+    const clientId = process.env.CONTA_AZUL_CLIENT_ID || '5ngbq1tfnlm0aklaa8tun7v8vu';
+    const clientSecret = process.env.CONTA_AZUL_CLIENT_SECRET || '12682kvjplg1cfokkj97qgllce92e9mi9vt59b3i9bef9556o5gh';
+    const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+    let refreshResult = null;
+    if (tokenMap.conta_azul_refresh_token) {
+      const rfRes = await fetch('https://api-v2.contaazul.com/oauth/token', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${basicAuth}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: tokenMap.conta_azul_refresh_token
+        })
+      });
+      refreshResult = {
+        status: rfRes.status,
+        body: await rfRes.text()
+      };
+    }
 
     return res.status(200).json({
-      v1SalesByNumber: {
-        status: resV1Sales.status,
-        body: textV1Sales
+      tokenMap: {
+        hasAccess: !!tokenMap.conta_azul_access_token,
+        hasRefresh: !!tokenMap.conta_azul_refresh_token,
+        expiresAt: tokenMap.conta_azul_expires_at,
+        timeNow: Date.now(),
+        isExpired: Number(tokenMap.conta_azul_expires_at || 0) <= Date.now()
       },
-      v1SalesList: {
-        status: resV1SalesList.status,
-        body: textV1SalesList
-      },
-      v2Vendas: {
-        status: resV2Vendas.status,
-        body: textV2Vendas
-      }
+      refreshResult
     });
   } catch (e) {
     return res.status(500).json({ error: e.message, stack: e.stack });
