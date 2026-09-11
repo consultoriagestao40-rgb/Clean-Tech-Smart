@@ -34,22 +34,23 @@ function formatCep(val) {
 
 function formatDate(isoStr) {
   if (!isoStr) return '';
-  try {
-    const d = new Date(isoStr);
-    return d.toLocaleDateString('pt-BR');
-  } catch {
-    return isoStr;
+  if (isoStr.includes('-')) {
+    const datePart = isoStr.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
   }
+  return isoStr;
 }
 
 function formatTime(isoStr) {
   if (!isoStr) return '';
-  try {
-    const d = new Date(isoStr);
-    return d.toLocaleTimeString('pt-BR');
-  } catch {
-    return '';
+  if (isoStr.includes('T')) {
+    const timePart = isoStr.split('T')[1];
+    return timePart.substring(0, 8);
   }
+  return '';
 }
 
 function formatChave(chave) {
@@ -144,7 +145,69 @@ export default async function handler(req, res) {
       } catch (e) {}
     }
 
-    // 2. Se temos a chave de acesso, busca o XML oficial da NF-e na SEFAZ / Conta Azul
+    // Se for solicitado debug para inspecionar endpoints e dados da NF no Conta Azul
+    if (req.query.debug === '1') {
+      const probeUrls = [
+        `${BASE_API_URL}/v1/notas-fiscais/${chaveAcesso}/pdf`,
+        `${BASE_API_URL}/v1/notas-fiscais/${chaveAcesso}/danfe`,
+        `${BASE_API_URL}/v1/notas-fiscais/${chaveAcesso}/imprimir`,
+        `${BASE_API_URL}/v1/notas-fiscais/${chaveAcesso}/download`,
+        `${BASE_API_URL}/v1/venda/${targetSaleId}/imprimir`,
+        `${BASE_API_URL}/v1/notas-fiscais?id_venda=${targetSaleId}`
+      ];
+      const results = {};
+      for (const u of probeUrls) {
+        try {
+          const r = await fetch(u, { headers: { 'Authorization': `Bearer ${token}`, 'Accept': '*/*' } });
+          const contentType = r.headers.get('content-type') || '';
+          results[u] = { status: r.status, ok: r.ok, contentType };
+          if (contentType.includes('json')) {
+            results[u].body = await r.json();
+          } else if (contentType.includes('pdf')) {
+            results[u].isPdf = true;
+          }
+        } catch (err) {
+          results[u] = { error: err.message };
+        }
+      }
+      return res.json({ chaveAcesso, sale: s, probes: results });
+    }
+
+    // 2. Se temos a chave de acesso, tenta primeiro obter o PDF nativo oficial da Conta Azul
+    let nativePdfBuffer = null;
+    if (chaveAcesso) {
+      const candidatePdfUrls = [
+        `${BASE_API_URL}/v1/notas-fiscais/${chaveAcesso}/pdf`,
+        `${BASE_API_URL}/v1/notas-fiscais/${chaveAcesso}/danfe`,
+        `${BASE_API_URL}/v1/notas-fiscais/${chaveAcesso}/imprimir`,
+        `${BASE_API_URL}/v1/notas-fiscais/${chaveAcesso}/download`
+      ];
+
+      for (const pdfUrl of candidatePdfUrls) {
+        try {
+          const pdfRes = await fetch(pdfUrl, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/pdf, */*'
+            }
+          });
+          const ct = pdfRes.headers.get('content-type') || '';
+          if (pdfRes.ok && ct.includes('pdf')) {
+            nativePdfBuffer = await pdfRes.arrayBuffer();
+            break;
+          }
+        } catch (e) {}
+      }
+
+      // Se a Conta Azul retornou o PDF nativo oficial (141_0.pdf)
+      if (nativePdfBuffer && type !== 'xml') {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${s.nfe?.number || '141'}_0.pdf"`);
+        return res.send(Buffer.from(nativePdfBuffer));
+      }
+    }
+
+    // 3. Se não tiver endpoint de PDF binário na Conta Azul, busca o XML oficial da NF-e
     let xmlData = null;
     if (chaveAcesso) {
       try {
@@ -222,23 +285,27 @@ export default async function handler(req, res) {
       const vIPI = parseXmlField(totXml, 'vIPI') || '0.00';
       const vNF = parseXmlField(totXml, 'vNF') || String(s.total || 0);
 
+      const emitIm = parseXmlField(emitXml, 'IM') || '84054';
+
       // Itens
       const detMatches = xmlData.match(/<det\b[\s\S]*?<\/det>/g) || [];
       const itens = detMatches.map(detXml => {
+        const qCom = parseXmlField(detXml, 'qCom') || '1';
+        const vUnCom = parseXmlField(detXml, 'vUnCom') || '0';
         return {
           cProd: parseXmlField(detXml, 'cProd'),
           xProd: parseXmlField(detXml, 'xProd'),
           NCM: parseXmlField(detXml, 'NCM'),
           CFOP: parseXmlField(detXml, 'CFOP') || '5102',
-          uCom: parseXmlField(detXml, 'uCom') || 'UN',
-          qCom: parseXmlField(detXml, 'qCom') || '1',
-          vUnCom: parseXmlField(detXml, 'vUnCom') || '0',
+          uCom: parseXmlField(detXml, 'uCom') || 'JG',
+          qCom: parseFloat(qCom).toFixed(0),
+          vUnCom: parseFloat(vUnCom).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
           vProd: parseXmlField(detXml, 'vProd') || '0',
           vBC: parseXmlField(detXml, 'vBC') || '0.00',
           vICMS: parseXmlField(detXml, 'vICMS') || '0.00',
           vIPI: parseXmlField(detXml, 'vIPI') || '0.00',
-          pICMS: parseXmlField(detXml, 'pICMS') || '0.00',
-          pIPI: parseXmlField(detXml, 'pIPI') || '0.00',
+          pICMS: parseXmlField(detXml, 'pICMS') || '0',
+          pIPI: parseXmlField(detXml, 'pIPI') || '0',
           CST: parseXmlField(detXml, 'CSOSN') || parseXmlField(detXml, 'CST') || '0102'
         };
       });
@@ -256,8 +323,9 @@ export default async function handler(req, res) {
       }
 
       // Dados Adicionais
-      const infCpl = parseXmlField(xmlData, 'infCpl').replace(/#/g, '<br/>') || 
-        'DOCUMENTO EMITIDO POR ME OU EPP OPTANTE PELO SIMPLES NACIONAL. NÃO GERA DIREITO A CRÉDITO FISCAL DE IPI.';
+      const infCpl = (parseXmlField(xmlData, 'infCpl') || '')
+        .replace(/#/g, '<br/>')
+        .trim() || 'DOCUMENTO EMITIDO POR ME OU EPP OPTANTE PELO SIMPLES NACIONAL.<br/>NAO GERA DIREITO A CREDITO FISCAL DE IPI.';
 
       const htmlDanfe = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -266,36 +334,37 @@ export default async function handler(req, res) {
   <title>DANFE NF-e Nº ${nNF} - Série ${serie} - ${destNome}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 8px; color: #000; background: #525659; padding: 20px 0; }
-    .danfe-sheet { width: 210mm; min-height: 297mm; margin: 0 auto; background: #fff; padding: 6mm 7mm; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 7.5px; color: #000; background: #525659; padding: 10px 0; }
+    .danfe-sheet { width: 204mm; max-width: 204mm; margin: 0 auto; background: #fff; padding: 3mm 4mm; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
     .b { font-weight: bold; }
     .border { border: 1px solid #000; }
     .border-b { border-bottom: 1px solid #000; }
     .border-r { border-right: 1px solid #000; }
     .border-t { border-top: 1px solid #000; }
     .border-l { border-left: 1px solid #000; }
-    .title-box { font-size: 6.5px; font-weight: bold; text-transform: uppercase; color: #000; padding: 1px 3px 0; display: block; line-height: 1.1; }
-    .value-box { font-size: 8.5px; font-weight: bold; padding: 1px 3px 2px; min-height: 14px; line-height: 1.2; word-break: break-word; }
+    .title-box { font-size: 5.5px; font-weight: bold; text-transform: uppercase; color: #000; padding: 1px 2px 0; display: block; line-height: 1; }
+    .value-box { font-size: 8px; font-weight: bold; padding: 0.5px 2px 1px; min-height: 11px; line-height: 1.15; word-break: break-word; }
     .table-danfe { width: 100%; border-collapse: collapse; }
-    .table-danfe th, .table-danfe td { border: 1px solid #000; padding: 2px 3px; font-size: 7.5px; text-align: left; }
-    .table-danfe th { font-size: 6.5px; text-transform: uppercase; font-weight: bold; background: #f2f2f2; }
+    .table-danfe th, .table-danfe td { border: 1px solid #000; padding: 1.5px 2px; font-size: 6.8px; text-align: left; }
+    .table-danfe th { font-size: 5.8px; text-transform: uppercase; font-weight: bold; background: #fff; }
     .text-center { text-align: center !important; }
     .text-right { text-align: right !important; }
-    .canhoto { border-bottom: 1px dashed #000; padding-bottom: 6px; margin-bottom: 6px; }
+    .canhoto { border-bottom: 1px dashed #000; padding-bottom: 2px; margin-bottom: 2px; }
+    .sec-title { font-size: 6px; font-weight: bold; margin-bottom: 1px; text-transform: uppercase; }
     
     /* Top Bar */
-    .top-actions { position: sticky; top: 0; z-index: 1000; background: #1e293b; color: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); max-width: 210mm; margin: 0 auto 15px; border-radius: 8px; }
-    .top-btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: none; }
+    .top-actions { position: sticky; top: 0; z-index: 1000; background: #1e293b; color: #fff; padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); max-width: 204mm; margin: 0 auto 10px; border-radius: 6px; }
+    .top-btn { padding: 6px 14px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: none; }
     .btn-print { background: #0284c7; color: #fff; }
     .btn-print:hover { background: #0369a1; }
     .btn-xml { background: #334155; color: #fff; border: 1px solid #64748b; }
     .btn-xml:hover { background: #475569; }
 
     @media print {
-      body { background: #fff; padding: 0; }
-      .danfe-sheet { width: 100%; box-shadow: none; padding: 0; margin: 0; }
+      @page { size: A4 portrait; margin: 3mm 4mm; }
+      html, body { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; overflow: hidden !important; }
+      .danfe-sheet { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; page-break-after: avoid !important; page-break-inside: avoid !important; }
       .no-print { display: none !important; }
-      @page { size: A4 portrait; margin: 5mm; }
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
@@ -305,8 +374,8 @@ export default async function handler(req, res) {
   <!-- Barra de Ações Superior -->
   <div class="top-actions no-print">
     <div style="display: flex; align-items: center; gap: 10px;">
-      <span style="font-size: 14px; font-weight: bold; color: #38bdf8;">DANFE NF-e Nº ${nNF}</span>
-      <span style="font-size: 11px; background: #0f766e; color: #ccfbf1; padding: 2px 8px; rounded-full: 9999px; font-weight: bold; border-radius: 12px;">AUTORIZADA SEFAZ</span>
+      <span style="font-size: 13px; font-weight: bold; color: #38bdf8;">DANFE NF-e Nº ${nNF}</span>
+      <span style="font-size: 10px; background: #0f766e; color: #ccfbf1; padding: 2px 8px; font-weight: bold; border-radius: 12px;">AUTORIZADA SEFAZ</span>
     </div>
     <div style="display: flex; gap: 10px;">
       <a href="/api/conta-azul/download-nf?invoiceId=${inv?.id || ''}&type=xml" target="_blank" class="top-btn btn-xml">
@@ -322,36 +391,36 @@ export default async function handler(req, res) {
     
     <!-- 1. CANHOTO DE RECEBIMENTO -->
     <div class="canhoto">
-      <div style="display: flex; gap: 4px; align-items: stretch;">
+      <div style="display: flex; gap: 3px; align-items: stretch;">
         <div class="border" style="flex: 1;">
-          <div style="padding: 2px 4px; font-size: 7px; line-height: 1.2;">
+          <div style="padding: 1px 3px; font-size: 6.5px; line-height: 1.15;">
             RECEBEMOS DE <b>${emitNome}</b> OS PRODUTOS CONSTANTES DA NOTA FISCAL INDICADA AO LADO.
           </div>
-          <div style="display: flex; border-top: 1px solid #000; min-height: 25px;">
-            <div style="width: 140px; border-right: 1px solid #000; padding: 2px 4px;">
+          <div style="display: flex; border-top: 1px solid #000; min-height: 20px;">
+            <div style="width: 130px; border-right: 1px solid #000; padding: 1px 3px;">
               <span class="title-box">DATA DE RECEBIMENTO</span>
             </div>
-            <div style="flex: 1; padding: 2px 4px;">
+            <div style="flex: 1; padding: 1px 3px;">
               <span class="title-box">IDENTIFICAÇÃO E ASSINATURA DO RECEBEDOR</span>
             </div>
           </div>
         </div>
-        <div class="border text-center" style="width: 130px; display: flex; flex-direction: column; justify-content: center; padding: 4px;">
-          <div style="font-size: 8px; font-weight: bold;">NF-e</div>
-          <div style="font-size: 11px; font-weight: 900; margin: 2px 0;">Nº ${nNF}</div>
-          <div style="font-size: 8px; font-weight: bold;">SÉRIE: ${serie}</div>
+        <div class="border text-center" style="width: 110px; display: flex; flex-direction: column; justify-content: center; padding: 2px;">
+          <div style="font-size: 7.5px; font-weight: bold;">NF-e</div>
+          <div style="font-size: 10px; font-weight: 900; margin: 1px 0;">Nº ${nNF}</div>
+          <div style="font-size: 7.5px; font-weight: bold;">SÉRIE: ${serie}</div>
         </div>
       </div>
     </div>
 
     <!-- 2. CABEÇALHO DO EMITENTE & DANFE & CHAVE -->
-    <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+    <div style="display: flex; gap: 3px; margin-bottom: 2px;">
       <!-- Emitente -->
-      <div class="border" style="flex: 1.1; padding: 4px; display: flex; align-items: center; gap: 6px;">
-        <img src="/cleantechpro-official-logo.png" alt="Clean Tech Pro" style="height: 55px; width: 65px; object-fit: contain;" onerror="this.style.display='none'" />
+      <div class="border" style="flex: 1.1; padding: 3px; display: flex; align-items: center; gap: 6px;">
+        <img src="/cleantechpro-official-logo.png" alt="Clean Tech Pro" style="height: 50px; width: 60px; object-fit: contain;" onerror="this.style.display='none'" />
         <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; text-align: center;">
-          <div style="font-size: 9.5px; font-weight: 900; text-transform: uppercase; margin-bottom: 2px; line-height: 1.15;">${emitNome}</div>
-          <div style="font-size: 8px; color: #111; line-height: 1.3;">
+          <div style="font-size: 8.5px; font-weight: 900; text-transform: uppercase; margin-bottom: 1px; line-height: 1.15;">${emitNome}</div>
+          <div style="font-size: 7.5px; color: #111; line-height: 1.25;">
             ${emitLgr}, ${emitNro}${emitCpl ? ', ' + emitCpl : ''}<br/>
             ${emitBairro} - ${formatCep(emitCep)}<br/>
             ${emitMun} - ${emitUf}<br/>
@@ -361,35 +430,37 @@ export default async function handler(req, res) {
       </div>
 
       <!-- DANFE Box -->
-      <div class="border text-center" style="width: 110px; padding: 4px; display: flex; flex-direction: column; justify-content: space-between;">
-        <div style="font-size: 14px; font-weight: 900; letter-spacing: 0.5px;">DANFE</div>
-        <div style="font-size: 7px; font-weight: bold; line-height: 1.1;">DOCUMENTO AUXILIAR DA NOTA FISCAL ELETRÔNICA</div>
-        <div style="margin: 3px 0; font-size: 8px; line-height: 1.3;">
+      <div class="border text-center" style="width: 105px; padding: 3px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="font-size: 13px; font-weight: 900; letter-spacing: 0.5px;">DANFE</div>
+        <div style="font-size: 6.5px; font-weight: bold; line-height: 1.05;">DOCUMENTO AUXILIAR DA NOTA FISCAL ELETRÔNICA</div>
+        <div style="margin: 2px 0; font-size: 7.5px; line-height: 1.2;">
           <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
-            <span>0 - ENTRADA</span><br/>
-            <span>1 - SAÍDA</span>
-            <span style="border: 1px solid #000; padding: 1px 6px; font-weight: 900; font-size: 10px;">${tpNF}</span>
+            <div style="text-align: left; font-size: 7px;">
+              <div>0 - ENTRADA</div>
+              <div>1 - SAÍDA</div>
+            </div>
+            <span style="border: 1px solid #000; padding: 1px 5px; font-weight: 900; font-size: 9.5px;">${tpNF}</span>
           </div>
         </div>
         <div>
-          <div style="font-size: 10px; font-weight: 900;">Nº ${nNF}</div>
-          <div style="font-size: 8px; font-weight: bold;">SÉRIE: ${serie}</div>
-          <div style="font-size: 7px;">FOLHA 1 / 1</div>
+          <div style="font-size: 9.5px; font-weight: 900;">Nº ${nNF}</div>
+          <div style="font-size: 7.5px; font-weight: bold;">SÉRIE: ${serie}</div>
+          <div style="font-size: 6.5px;">FOLHA 1 / 1</div>
         </div>
       </div>
 
       <!-- Chave & Código de Barras -->
-      <div class="border" style="flex: 1.2; padding: 4px; display: flex; flex-direction: column; justify-content: space-between; text-align: center;">
-        <div style="display: flex; justify-content: center; height: 42px; margin-bottom: 2px;">
+      <div class="border" style="flex: 1.25; padding: 3px; display: flex; flex-direction: column; justify-content: space-between; text-align: center;">
+        <div style="display: flex; justify-content: center; height: 38px; margin-bottom: 1px;">
           <svg id="barcode"></svg>
         </div>
-        <div class="border-t pt-1">
+        <div class="border-t" style="padding-top: 1px;">
           <span class="title-box">CHAVE DE ACESSO</span>
-          <div style="font-size: 8.5px; font-weight: 900; letter-spacing: 0.3px; font-family: monospace;">
+          <div style="font-size: 8px; font-weight: 900; letter-spacing: 0.2px; font-family: monospace;">
             ${formatChave(chaveAcesso)}
           </div>
         </div>
-        <div style="font-size: 6.5px; color: #333; line-height: 1.1; margin-top: 2px;">
+        <div style="font-size: 6px; color: #333; line-height: 1.05; margin-top: 1px;">
           Consulta de autenticidade no portal nacional da NF-e<br/>
           <b>www.nfe.fazenda.gov.br/portal</b> ou no site da Sefaz Autorizadora.
         </div>
@@ -397,7 +468,7 @@ export default async function handler(req, res) {
     </div>
 
     <!-- 3. NATUREZA DA OPERAÇÃO & PROTOCOLO -->
-    <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+    <div style="display: flex; gap: 3px; margin-bottom: 2px;">
       <div class="border" style="flex: 1.4;">
         <span class="title-box">NATUREZA DA OPERAÇÃO</span>
         <div class="value-box">${natOp}</div>
@@ -409,7 +480,7 @@ export default async function handler(req, res) {
     </div>
 
     <!-- 4. INSCRIÇÃO ESTADUAL & CNPJ -->
-    <div style="display: flex; gap: 4px; margin-bottom: 4px;">
+    <div style="display: flex; gap: 3px; margin-bottom: 2px;">
       <div class="border" style="flex: 1;">
         <span class="title-box">INSCRIÇÃO ESTADUAL</span>
         <div class="value-box">${emitIe}</div>
@@ -425,8 +496,8 @@ export default async function handler(req, res) {
     </div>
 
     <!-- 5. DESTINATÁRIO / REMETENTE -->
-    <div style="margin-bottom: 4px;">
-      <div style="font-size: 7px; font-weight: bold; margin-bottom: 1px;">DESTINATÁRIO / REMETENTE</div>
+    <div style="margin-bottom: 2px;">
+      <div class="sec-title">DESTINATÁRIO / REMETENTE</div>
       <div class="border">
         <!-- Linha 1 -->
         <div style="display: flex; border-bottom: 1px solid #000;">
@@ -447,7 +518,7 @@ export default async function handler(req, res) {
         <div style="display: flex; border-bottom: 1px solid #000;">
           <div style="flex: 2.2; border-right: 1px solid #000;">
             <span class="title-box">ENDEREÇO</span>
-            <div class="value-box">${destLgr} ${destNro ? ', ' + destNro : ''}</div>
+            <div class="value-box">${destLgr}${destNro ? ' , ' + destNro : ''}</div>
           </div>
           <div style="flex: 1.2; border-right: 1px solid #000;">
             <span class="title-box">BAIRRO / DISTRITO</span>
@@ -472,7 +543,7 @@ export default async function handler(req, res) {
             <span class="title-box">FONE / FAX</span>
             <div class="value-box">${destFone}</div>
           </div>
-          <div style="width: 35px; border-right: 1px solid #000;">
+          <div style="width: 30px; border-right: 1px solid #000;">
             <span class="title-box">UF</span>
             <div class="value-box text-center">${destUf}</div>
           </div>
@@ -489,28 +560,28 @@ export default async function handler(req, res) {
     </div>
 
     <!-- 6. FATURA / DUPLICATAS -->
-    <div style="margin-bottom: 4px;">
-      <div style="font-size: 7px; font-weight: bold; margin-bottom: 1px;">FATURA / DUPLICATA</div>
-      <div class="border" style="display: flex; flex-wrap: wrap;">
+    <div style="margin-bottom: 2px;">
+      <div class="sec-title">FATURA / DUPLICATA</div>
+      <div class="border" style="display: flex; flex-wrap: wrap; min-height: 22px; padding: 2px 4px;">
         ${duplicatas.map(d => `
-          <div style="border-right: 1px solid #000; padding: 2px 8px; min-width: 110px;">
-            <div style="font-size: 6.5px; color: #555;">Nº ${d.nDup}</div>
-            <div style="font-size: 8px; font-weight: bold;">Venc: ${formatDate(d.dVenc)}</div>
-            <div style="font-size: 8px; font-weight: bold; color: #000;">R$ ${formatCurrency(d.vDup)}</div>
+          <div style="margin-right: 20px; line-height: 1.15;">
+            <div style="font-size: 6.5px; color: #000;">${d.nDup}</div>
+            <div style="font-size: 6.5px; color: #000;">${formatDate(d.dVenc)}</div>
+            <div style="font-size: 7.5px; font-weight: bold; color: #000;">${formatCurrency(d.vDup)}</div>
           </div>
         `).join('')}
       </div>
     </div>
 
     <!-- 7. CÁLCULO DO IMPOSTO -->
-    <div style="margin-bottom: 4px;">
-      <div style="font-size: 7px; font-weight: bold; margin-bottom: 1px;">CÁLCULO DO IMPOSTO</div>
+    <div style="margin-bottom: 2px;">
+      <div class="sec-title">CÁLCULO DO IMPOSTO</div>
       <div class="border">
         <div style="display: flex; border-bottom: 1px solid #000;">
           <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">BASE DE CÁLCULO DO ICMS</span><div class="value-box text-right">${formatCurrency(vBC)}</div></div>
           <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">VALOR DO ICMS</span><div class="value-box text-right">${formatCurrency(vICMS)}</div></div>
-          <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">BASE DE CÁLCULO DO ICMS ST</span><div class="value-box text-right">${formatCurrency(vBCST)}</div></div>
-          <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">VALOR DO ICMS ST</span><div class="value-box text-right">${formatCurrency(vST)}</div></div>
+          <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">BASE DE CÁLCULO DO ICMS SUBST.</span><div class="value-box text-right">${formatCurrency(vBCST)}</div></div>
+          <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">VALOR DO ICMS SUBST.</span><div class="value-box text-right">${formatCurrency(vST)}</div></div>
           <div style="flex: 1;"><span class="title-box">VALOR TOTAL DOS PRODUTOS</span><div class="value-box text-right">${formatCurrency(vProd)}</div></div>
         </div>
         <div style="display: flex;">
@@ -518,23 +589,29 @@ export default async function handler(req, res) {
           <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">VALOR DO SEGURO</span><div class="value-box text-right">${formatCurrency(vSeg)}</div></div>
           <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">DESCONTO</span><div class="value-box text-right">${formatCurrency(vDesc)}</div></div>
           <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">OUTRAS DESPESAS ACESSÓRIAS</span><div class="value-box text-right">0,00</div></div>
-          <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">VALOR DO IPI</span><div class="value-box text-right">${formatCurrency(vIPI)}</div></div>
-          <div style="flex: 1.2; background: #fdfdfd;"><span class="title-box" style="font-weight: 900;">VALOR TOTAL DA NOTA</span><div class="value-box text-right" style="font-size: 10px; font-weight: 900;">R$ ${formatCurrency(vNF)}</div></div>
+          <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">VALOR TOTAL DO IPI</span><div class="value-box text-right">${formatCurrency(vIPI)}</div></div>
+          <div style="flex: 1.2; background: #fff;"><span class="title-box" style="font-weight: 900;">VALOR TOTAL DA NOTA</span><div class="value-box text-right" style="font-size: 9px; font-weight: 900;">${formatCurrency(vNF)}</div></div>
         </div>
       </div>
     </div>
 
     <!-- 8. TRANSPORTADOR / VOLUMES TRANSPORTADOS -->
-    <div style="margin-bottom: 4px;">
-      <div style="font-size: 7px; font-weight: bold; margin-bottom: 1px;">TRANSPORTADOR / VOLUMES TRANSPORTADOS</div>
+    <div style="margin-bottom: 2px;">
+      <div class="sec-title">TRANSPORTADOR / VOLUMES TRANSPORTADOS</div>
       <div class="border">
         <div style="display: flex; border-bottom: 1px solid #000;">
-          <div style="flex: 2; border-right: 1px solid #000;"><span class="title-box">RAZÃO SOCIAL</span><div class="value-box">-</div></div>
+          <div style="flex: 2; border-right: 1px solid #000;"><span class="title-box">NOME / RAZÃO SOCIAL</span><div class="value-box">-</div></div>
           <div style="flex: 1; border-right: 1px solid #000;"><span class="title-box">FRETE POR CONTA</span><div class="value-box">9 - SEM FRETE</div></div>
           <div style="flex: 0.8; border-right: 1px solid #000;"><span class="title-box">CÓDIGO ANTT</span><div class="value-box">-</div></div>
           <div style="flex: 0.8; border-right: 1px solid #000;"><span class="title-box">PLACA DO VEÍCULO</span><div class="value-box">-</div></div>
-          <div style="width: 35px; border-right: 1px solid #000;"><span class="title-box">UF</span><div class="value-box">-</div></div>
+          <div style="width: 30px; border-right: 1px solid #000;"><span class="title-box">UF</span><div class="value-box">-</div></div>
           <div style="flex: 1.2;"><span class="title-box">CNPJ / CPF</span><div class="value-box">-</div></div>
+        </div>
+        <div style="display: flex; border-bottom: 1px solid #000;">
+          <div style="flex: 2.2; border-right: 1px solid #000;"><span class="title-box">ENDEREÇO</span><div class="value-box">-</div></div>
+          <div style="flex: 1.5; border-right: 1px solid #000;"><span class="title-box">MUNICÍPIO</span><div class="value-box">-</div></div>
+          <div style="width: 30px; border-right: 1px solid #000;"><span class="title-box">UF</span><div class="value-box">-</div></div>
+          <div style="flex: 1.2;"><span class="title-box">INSCRIÇÃO ESTADUAL</span><div class="value-box">-</div></div>
         </div>
         <div style="display: flex;">
           <div style="flex: 0.6; border-right: 1px solid #000;"><span class="title-box">QUANTIDADE</span><div class="value-box text-center">0</div></div>
@@ -548,25 +625,25 @@ export default async function handler(req, res) {
     </div>
 
     <!-- 9. DADOS DOS PRODUTOS / SERVIÇOS -->
-    <div style="margin-bottom: 4px;">
-      <div style="font-size: 7px; font-weight: bold; margin-bottom: 1px;">DADOS DOS PRODUTOS / SERVIÇOS</div>
+    <div style="margin-bottom: 2px;">
+      <div class="sec-title">DADOS DOS PRODUTOS / SERVIÇOS</div>
       <table class="table-danfe">
         <thead>
           <tr>
-            <th style="width: 65px;">CÓDIGO</th>
-            <th>DESCRIÇÃO DO PRODUTO / SERVIÇO</th>
-            <th style="width: 48px;">NCM/SH</th>
-            <th style="width: 32px;">CST</th>
-            <th style="width: 32px;">CFOP</th>
-            <th style="width: 25px;">UNID</th>
-            <th style="width: 35px; text-align: right;">QTD</th>
-            <th style="width: 55px; text-align: right;">VLR UNIT</th>
-            <th style="width: 55px; text-align: right;">VLR TOTAL</th>
-            <th style="width: 45px; text-align: right;">BC ICMS</th>
-            <th style="width: 40px; text-align: right;">VLR ICMS</th>
-            <th style="width: 40px; text-align: right;">VLR IPI</th>
-            <th style="width: 30px; text-align: right;">ALÍQ ICMS</th>
-            <th style="width: 30px; text-align: right;">ALÍQ IPI</th>
+            <th style="width: 55px;">CÓDIGO</th>
+            <th>DESCRIÇÃO DOS PRODUTOS / SERVIÇOS</th>
+            <th style="width: 44px; text-align: center;">NCM/SH</th>
+            <th style="width: 28px; text-align: center;">CSOSN</th>
+            <th style="width: 28px; text-align: center;">CFOP</th>
+            <th style="width: 22px; text-align: center;">UNID</th>
+            <th style="width: 26px; text-align: right;">QUANT.</th>
+            <th style="width: 50px; text-align: right;">VALOR UNITÁRIO</th>
+            <th style="width: 50px; text-align: right;">VALOR TOTAL</th>
+            <th style="width: 42px; text-align: right;">BASE CÁLCULO</th>
+            <th style="width: 36px; text-align: right;">VALOR ICMS</th>
+            <th style="width: 36px; text-align: right;">VALOR IPI</th>
+            <th style="width: 30px; text-align: right;">ALÍQUOTA ICMS %</th>
+            <th style="width: 30px; text-align: right;">ALÍQUOTA IPI %</th>
           </tr>
         </thead>
         <tbody>
@@ -578,34 +655,54 @@ export default async function handler(req, res) {
               <td class="text-center">${it.CST}</td>
               <td class="text-center">${it.CFOP}</td>
               <td class="text-center">${it.uCom}</td>
-              <td class="text-right">${parseFloat(it.qCom).toFixed(2)}</td>
-              <td class="text-right">${formatCurrency(it.vUnCom)}</td>
+              <td class="text-right">${it.qCom}</td>
+              <td class="text-right">${it.vUnCom}</td>
               <td class="text-right"><b>${formatCurrency(it.vProd)}</b></td>
               <td class="text-right">${formatCurrency(it.vBC)}</td>
               <td class="text-right">${formatCurrency(it.vICMS)}</td>
               <td class="text-right">${formatCurrency(it.vIPI)}</td>
-              <td class="text-right">${parseFloat(it.pICMS).toFixed(0)}%</td>
-              <td class="text-right">${parseFloat(it.pIPI).toFixed(0)}%</td>
+              <td class="text-right">${parseFloat(it.pICMS).toFixed(0)}</td>
+              <td class="text-right">${parseFloat(it.pIPI).toFixed(0)}</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
     </div>
 
-    <!-- 10. DADOS ADICIONAIS -->
+    <!-- 10. CÁLCULO DO ISSQN -->
+    <div style="margin-bottom: 2px;">
+      <div class="sec-title">CÁLCULO DO ISSQN</div>
+      <div class="border" style="display: flex;">
+        <div style="flex: 1.2; border-right: 1px solid #000;">
+          <span class="title-box">INSCRIÇÃO MUNICIPAL</span>
+          <div class="value-box">${emitIm}</div>
+        </div>
+        <div style="flex: 1.2; border-right: 1px solid #000;">
+          <span class="title-box">VALOR TOTAL DOS SERVIÇOS</span>
+          <div class="value-box text-right"></div>
+        </div>
+        <div style="flex: 1.2; border-right: 1px solid #000;">
+          <span class="title-box">BASE DE CÁLCULO DO ISSQN</span>
+          <div class="value-box text-right"></div>
+        </div>
+        <div style="flex: 1;">
+          <span class="title-box">VALOR DO ISSQN</span>
+          <div class="value-box text-right">0,00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. DADOS ADICIONAIS -->
     <div>
-      <div style="font-size: 7px; font-weight: bold; margin-bottom: 1px;">DADOS ADICIONAIS</div>
-      <div class="border" style="display: flex; min-height: 80px;">
-        <div style="flex: 2; border-right: 1px solid #000; padding: 4px;">
+      <div class="sec-title">DADOS ADICIONAIS</div>
+      <div class="border" style="display: flex; min-height: 48px; height: 48px;">
+        <div style="flex: 2; border-right: 1px solid #000; padding: 2px 4px;">
           <span class="title-box">INFORMAÇÕES COMPLEMENTARES</span>
-          <div style="font-size: 7.5px; line-height: 1.4; color: #111; margin-top: 2px;">
+          <div style="font-size: 6.8px; line-height: 1.25; color: #000; font-family: monospace; margin-top: 1px;">
             ${infCpl}
-            <br/><br/>
-            <b>Venda no Conta Azul:</b> #${s.number || targetSaleId} &bull; 
-            <b>Chave:</b> ${chaveAcesso}
           </div>
         </div>
-        <div style="flex: 1; padding: 4px;">
+        <div style="flex: 1; padding: 2px 4px;">
           <span class="title-box">RESERVADO AO FISCO</span>
         </div>
       </div>
@@ -618,8 +715,8 @@ export default async function handler(req, res) {
       if (typeof JsBarcode !== 'undefined') {
         JsBarcode("#barcode", "${chaveAcesso}", {
           format: "CODE128",
-          width: 1.05,
-          height: 38,
+          width: 1.0,
+          height: 34,
           displayValue: false,
           margin: 0
         });
