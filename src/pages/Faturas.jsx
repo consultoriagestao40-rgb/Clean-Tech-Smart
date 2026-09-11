@@ -40,10 +40,29 @@ export default function Faturas() {
   const [formData, setFormData] = useState({ client_id: '', description: '', amount: '', due_date: '', status: 'Pendente' });
   const [isSaving, setIsSaving] = useState(false);
 
+  // Modal Faturamento de Locação & Conta Azul
+  const [isRentalModalOpen, setIsRentalModalOpen] = useState(false);
+  const [rentalProposals, setRentalProposals] = useState([]);
+  const [isLoadingRentalProposals, setIsLoadingRentalProposals] = useState(false);
+  const [selectedRentalProposalId, setSelectedRentalProposalId] = useState('');
+  const [rentalInvoiceForm, setRentalInvoiceForm] = useState({
+    dueDate: '',
+    amount: '',
+    description: '',
+    sendToContaAzul: true
+  });
+  const [isSubmittingRentalInvoice, setIsSubmittingRentalInvoice] = useState(false);
+
   useEffect(() => {
     fetchInvoices();
     fetchClients();
     checkContaAzul();
+
+    // Checar se veio com comando de faturar locação específica
+    const faturarLocacaoId = searchParams.get('faturar_locacao');
+    if (faturarLocacaoId) {
+      handleOpenRentalModal(faturarLocacaoId);
+    }
 
     // Checar retorno de autorização do Conta Azul
     const caStatus = searchParams.get('conta_azul');
@@ -147,6 +166,128 @@ export default function Faturas() {
       if (data.clients) setClients(data.clients);
     } catch (error) {}
   }
+
+  const formatRentalPeriod = (months) => {
+    const m = Number(months);
+    if (m === 1) return 'Diária (1 dia)';
+    if (m === 7) return 'Semanal (7 dias)';
+    if (m === 15) return 'Quinzenal (15 dias)';
+    if (m === 30) return 'Mensal Avulso (01 mês)';
+    if (m === 12) return '12 Meses';
+    return `${m} Meses`;
+  };
+
+  const isRentalAvulsa = (months) => {
+    const m = Number(months);
+    return m === 1 || m === 7 || m === 15 || m === 30;
+  };
+
+  const handleOpenRentalModal = async (preselectedProposalId = null) => {
+    setIsRentalModalOpen(true);
+    setIsLoadingRentalProposals(true);
+    try {
+      const res = await fetch('/api/get-rental-proposals');
+      const data = await res.json();
+      if (data.proposals) {
+        // Filtrar apenas propostas aprovadas / fechadas / contrato
+        const approved = data.proposals.filter(p => 
+          ['Fechada', 'Aprovada', 'Contrato'].includes(p.status)
+        );
+        setRentalProposals(approved);
+
+        if (preselectedProposalId) {
+          const prop = approved.find(p => String(p.id) === String(preselectedProposalId));
+          if (prop) selectProposalToInvoice(prop);
+        } else if (approved.length > 0) {
+          selectProposalToInvoice(approved[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao buscar propostas de locação:', err);
+    } finally {
+      setIsLoadingRentalProposals(false);
+    }
+  };
+
+  const selectProposalToInvoice = (prop) => {
+    setSelectedRentalProposalId(String(prop.id));
+    const periodStr = formatRentalPeriod(prop.period_months);
+    const machineName = prop.equipment_name 
+      ? `${prop.machine_name || 'Máquina'} (Ativo: ${prop.equipment_name}${prop.equipment_serial ? ' - S/N: ' + prop.equipment_serial : ''})` 
+      : (prop.machine_name || 'Equipamento de Locação');
+    
+    // Vencimento padrão: hoje + 7 dias
+    const defaultDue = new Date();
+    defaultDue.setDate(defaultDue.getDate() + 7);
+    const dueStr = defaultDue.toISOString().split('T')[0];
+
+    setRentalInvoiceForm({
+      dueDate: dueStr,
+      amount: String(prop.monthly_value || ''),
+      description: `Locação: ${machineName} - Período: ${periodStr} (Ref. Proposta #${prop.id})`,
+      sendToContaAzul: contaAzulConnected
+    });
+  };
+
+  const handleProposalChange = (e) => {
+    const id = e.target.value;
+    setSelectedRentalProposalId(id);
+    const prop = rentalProposals.find(p => String(p.id) === String(id));
+    if (prop) selectProposalToInvoice(prop);
+  };
+
+  const handleSubmitRentalInvoice = async (e) => {
+    e.preventDefault();
+    if (!selectedRentalProposalId) {
+      alert('Selecione uma proposta de locação.');
+      return;
+    }
+    if (!rentalInvoiceForm.dueDate) {
+      alert('Informe a data de vencimento da fatura.');
+      return;
+    }
+    if (!rentalInvoiceForm.amount || Number(rentalInvoiceForm.amount) <= 0) {
+      alert('Informe um valor válido para a fatura.');
+      return;
+    }
+
+    setIsSubmittingRentalInvoice(true);
+    try {
+      const payload = {
+        proposalId: Number(selectedRentalProposalId),
+        dueDate: rentalInvoiceForm.dueDate,
+        amount: Number(rentalInvoiceForm.amount),
+        description: rentalInvoiceForm.description,
+        sendToContaAzul: rentalInvoiceForm.sendToContaAzul
+      };
+
+      const res = await fetch('/api/generate-invoice-from-rental-proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        let msg = '✅ Fatura de locação gerada com sucesso!';
+        if (data.contaAzulSaleId) {
+          msg += `\n\n🎉 Venda de locação criada no Conta Azul (ID: ${data.contaAzulSaleId})!`;
+        } else if (rentalInvoiceForm.sendToContaAzul && data.contaAzulError) {
+          msg += `\n\n⚠️ Aviso Conta Azul: ${data.contaAzulError}`;
+        }
+        alert(msg);
+        setIsRentalModalOpen(false);
+        fetchInvoices();
+      } else {
+        alert('Erro ao gerar fatura: ' + (data.error || 'Erro desconhecido'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro de conexão ao faturar proposta de locação.');
+    } finally {
+      setIsSubmittingRentalInvoice(false);
+    }
+  };
 
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
@@ -691,6 +832,16 @@ export default function Faturas() {
             </button>
           )}
 
+          <button 
+            type="button"
+            onClick={() => handleOpenRentalModal()}
+            className="flex items-center px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm font-semibold shadow-xs"
+            title="Faturar proposta de locação aprovada (avulsa ou contrato)"
+          >
+            <Building2 className="w-4 h-4 mr-1.5" />
+            Faturar Locação
+          </button>
+
           <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-xs">
             <Plus className="w-4 h-4 mr-2" />
             Nova Fatura Manual
@@ -987,6 +1138,13 @@ export default function Faturas() {
                             Orç. #{inv.budget_id}
                           </span>
                         )}
+                        {inv.rental_proposal_id && (
+                          <span className="text-xs text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                            <Building2 className="w-3 h-3 text-purple-600" />
+                            Locação #{inv.rental_proposal_id}
+                            {inv.rental_period_months ? ` (${formatRentalPeriod(inv.rental_period_months)})` : ''}
+                          </span>
+                        )}
                         {inv.conta_azul_sale_id && (
                           <span className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold flex items-center">
                             <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
@@ -1273,8 +1431,22 @@ export default function Faturas() {
                         </p>
                         <p className="text-gray-500">Série: {detailedInvoice.equipment?.serialNumber || 'S/N'}</p>
                       </>
+                    ) : (detailedInvoice?.rentalProposal || selectedInvoice.rental_proposal_id) ? (
+                      <>
+                        <p className="font-bold text-purple-700 flex items-center gap-1">
+                          <Building2 className="w-3.5 h-3.5 text-purple-600" />
+                          Proposta de Locação #{detailedInvoice?.rentalProposal?.id || selectedInvoice.rental_proposal_id}
+                        </p>
+                        <p className="text-gray-800 font-medium mt-0.5">
+                          {detailedInvoice?.rentalProposal?.machine_name || detailedInvoice?.equipment?.name || 'Equipamento de Locação'}
+                        </p>
+                        <p className="text-gray-500">
+                          {detailedInvoice?.rentalProposal?.period_months ? `Período: ${formatRentalPeriod(detailedInvoice.rentalProposal.period_months)}` : ''}
+                          {detailedInvoice?.rentalProposal?.equipment_name ? ` • Ativo: ${detailedInvoice.rentalProposal.equipment_name}` : ''}
+                        </p>
+                      </>
                     ) : (
-                      <p className="text-gray-500 italic">Fatura avulsa / Contrato de locação</p>
+                      <p className="text-gray-500 italic">Fatura manual avulsa</p>
                     )}
                   </div>
                 </div>
@@ -1286,8 +1458,8 @@ export default function Faturas() {
                       <Package className="w-3.5 h-3.5 mr-1.5 text-gray-600" />
                       Itens Faturados
                     </span>
-                    <span className="text-xs text-gray-500">
-                      {selectedInvoice.invoice_type === 'servicos' ? 'Prestação de Serviços' : selectedInvoice.invoice_type === 'pecas' ? 'Venda de Peças / Mercadorias' : 'Geral'}
+                    <span className="text-xs font-bold text-gray-600">
+                      {selectedInvoice.invoice_type === 'servicos' ? 'Prestação de Serviços' : selectedInvoice.invoice_type === 'pecas' ? 'Venda de Peças / Mercadorias' : selectedInvoice.invoice_type === 'locacao' ? 'Locação de Equipamentos' : 'Geral'}
                     </span>
                   </div>
 
@@ -1555,7 +1727,224 @@ export default function Faturas() {
               >
                 Fechar
               </button>
+      {/* Modal Faturar Proposta de Locação */}
+      {isRentalModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="bg-gradient-to-r from-indigo-700 via-indigo-800 to-purple-800 px-6 py-4 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center space-x-2.5">
+                <Building2 className="w-5 h-5 text-indigo-200" />
+                <div>
+                  <h3 className="font-bold text-base">Faturar Proposta de Locação</h3>
+                  <p className="text-xs text-indigo-200">Geração de fatura e criação automática de venda no Conta Azul</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRentalModalOpen(false)}
+                className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
+
+            <form onSubmit={handleSubmitRentalInvoice} className="p-6 overflow-y-auto space-y-4 flex-1 text-sm">
+              {isLoadingRentalProposals ? (
+                <div className="flex flex-col items-center justify-center p-8 space-y-2">
+                  <Loader2 className="w-7 h-7 animate-spin text-indigo-600" />
+                  <span className="text-xs text-gray-500 font-medium">Carregando propostas de locação aprovadas...</span>
+                </div>
+              ) : rentalProposals.length === 0 ? (
+                <div className="text-center p-8 bg-gray-50 rounded-xl border border-gray-200">
+                  <Building2 className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                  <p className="font-bold text-gray-700">Nenhuma proposta de locação aprovada encontrada</p>
+                  <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
+                    Apenas propostas com status <strong>Fechada</strong>, <strong>Aprovada</strong> ou <strong>Contrato</strong> podem ser faturadas.
+                  </p>
+                  <Link
+                    to="/proposta-locacao"
+                    className="inline-flex items-center mt-4 px-3.5 py-1.5 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-xs hover:bg-indigo-100"
+                  >
+                    Ver Propostas de Locação
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  {/* Seletor de Proposta */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                      Selecione a Proposta de Locação Aprovada
+                    </label>
+                    <select
+                      value={selectedRentalProposalId}
+                      onChange={handleProposalChange}
+                      required
+                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    >
+                      {rentalProposals.map(p => {
+                        const isAvulsa = isRentalAvulsa(p.period_months);
+                        const periodStr = formatRentalPeriod(p.period_months);
+                        const machine = p.machine_name || 'Equipamento';
+                        const val = formatCurrency(p.monthly_value);
+                        return (
+                          <option key={p.id} value={p.id}>
+                            #{p.id} - {p.client_name} • {machine} • {periodStr} ({val}) {isAvulsa ? '⭐ [Avulsa]' : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  {/* Card de Resumo da Proposta Selecionada */}
+                  {(() => {
+                    const currentProp = rentalProposals.find(p => String(p.id) === String(selectedRentalProposalId));
+                    if (!currentProp) return null;
+
+                    const isAvulsa = isRentalAvulsa(currentProp.period_months);
+                    const periodStr = formatRentalPeriod(currentProp.period_months);
+
+                    return (
+                      <div className="bg-indigo-50/60 border border-indigo-200 rounded-xl p-4 text-xs space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-indigo-950 text-sm">{currentProp.client_name}</span>
+                            {isAvulsa ? (
+                              <span className="bg-emerald-100 text-emerald-800 font-extrabold text-[10px] px-2 py-0.5 rounded-full border border-emerald-300">
+                                Locação Avulsa
+                              </span>
+                            ) : (
+                              <span className="bg-blue-100 text-blue-800 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                                Contrato Longo Prazo
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-bold text-indigo-700 font-mono text-sm">
+                            {formatCurrency(currentProp.monthly_value)}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-gray-700 pt-1 border-t border-indigo-100">
+                          <div>
+                            <span className="text-gray-400 block text-[10px] uppercase font-bold">Máquina / Modelo</span>
+                            <span className="font-semibold text-gray-800">{currentProp.machine_name || 'Não informado'}</span>
+                            {currentProp.equipment_name && (
+                              <span className="block text-gray-500 text-[11px]">Ativo: {currentProp.equipment_name}</span>
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block text-[10px] uppercase font-bold">Período de Uso</span>
+                            <span className="font-semibold text-gray-800">{periodStr}</span>
+                            <span className="block text-gray-500 text-[11px]">{isAvulsa ? 'Sem recorrência contratual' : `${currentProp.period_months} parcelas mensais`}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Campos da Fatura */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Data de Vencimento *
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={rentalInvoiceForm.dueDate}
+                        onChange={e => setRentalInvoiceForm({ ...rentalInvoiceForm, dueDate: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        Valor da Fatura (R$) *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        required
+                        value={rentalInvoiceForm.amount}
+                        onChange={e => setRentalInvoiceForm({ ...rentalInvoiceForm, amount: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                      Descrição da Fatura *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={rentalInvoiceForm.description}
+                      onChange={e => setRentalInvoiceForm({ ...rentalInvoiceForm, description: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      placeholder="Ex: Locação de Equipamento..."
+                    />
+                  </div>
+
+                  {/* Integração Conta Azul */}
+                  <div className="p-3.5 rounded-xl border border-gray-200 bg-gray-50 space-y-2">
+                    <label className="flex items-center space-x-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={rentalInvoiceForm.sendToContaAzul}
+                        onChange={e => setRentalInvoiceForm({ ...rentalInvoiceForm, sendToContaAzul: e.target.checked })}
+                        className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                      />
+                      <span className="font-bold text-xs text-gray-800">
+                        Criar venda e lançar financeiro automaticamente no Conta Azul
+                      </span>
+                    </label>
+
+                    {contaAzulConnected ? (
+                      <p className="text-[11px] text-emerald-700 flex items-center font-medium pl-6">
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600 shrink-0" />
+                        Conta Azul Conectado — A venda será lançada via API oficial com status de faturamento.
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-amber-700 flex items-center font-medium pl-6">
+                        <AlertCircle className="w-3.5 h-3.5 mr-1 text-amber-600 shrink-0" />
+                        Conta Azul não conectado. A fatura será registrada apenas no Clean Tech Smart.
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              <div className="pt-3 border-t border-gray-100 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setIsRentalModalOpen(false)}
+                  disabled={isSubmittingRentalInvoice}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  Cancelar
+                </button>
+                {rentalProposals.length > 0 && (
+                  <button
+                    type="submit"
+                    disabled={isSubmittingRentalInvoice}
+                    className="px-5 py-2 bg-indigo-700 hover:bg-indigo-800 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center"
+                  >
+                    {isSubmittingRentalInvoice ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        Gerando Fatura & Venda...
+                      </>
+                    ) : (
+                      <>
+                        <Building2 className="w-3.5 h-3.5 mr-1.5" />
+                        Gerar Fatura & Venda no Conta Azul
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </form>
           </div>
         </div>
       )}

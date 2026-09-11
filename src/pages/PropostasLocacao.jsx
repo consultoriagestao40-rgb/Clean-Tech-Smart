@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, ShieldAlert, Check, Link2, Clock, Copy, Sparkles, Layers } from 'lucide-react';
+import { Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, ShieldAlert, Check, Link2, Clock, Copy, Sparkles, Layers, Receipt } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function PropostasLocacao() {
@@ -1642,6 +1642,25 @@ body{padding-top:60px}
                                 >
                                   <Edit className="w-3.5 h-3.5" />
                                 </button>
+                                {['Fechada', 'Aprovada', 'Contrato'].includes(colStatus || p.status) && (
+                                  p.invoice_id ? (
+                                    <Link 
+                                      to="/faturas"
+                                      className="p-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-md transition-colors inline-flex items-center"
+                                      title={`Fatura #${p.invoice_id} gerada - Ver em Faturas`}
+                                    >
+                                      <Receipt className="w-3.5 h-3.5 text-blue-600" />
+                                    </Link>
+                                  ) : (
+                                    <Link 
+                                      to={`/faturas?faturar_locacao=${p.id}`}
+                                      className="p-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-md transition-colors inline-flex items-center"
+                                      title="Faturar Locação & Criar Venda no Conta Azul"
+                                    >
+                                      <Receipt className="w-3.5 h-3.5 text-indigo-600" />
+                                    </Link>
+                                  )
+                                )}
                               </div>
                               <button 
                                 type="button"
@@ -1739,6 +1758,27 @@ body{padding-top:60px}
                             <Printer className="w-3.5 h-3.5 mr-1" />
                             Gerar PDF
                           </button>
+                          {['Fechada', 'Aprovada', 'Contrato'].includes(p.status) && (
+                            p.invoice_id ? (
+                              <Link
+                                to="/faturas"
+                                className="flex items-center px-2.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-semibold transition-colors"
+                                title={`Fatura #${p.invoice_id} gerada - Ver em Faturas`}
+                              >
+                                <Receipt className="w-3.5 h-3.5 mr-1 text-blue-600" />
+                                Faturada
+                              </Link>
+                            ) : (
+                              <Link
+                                to={`/faturas?faturar_locacao=${p.id}`}
+                                className="flex items-center px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-semibold transition-colors"
+                                title="Faturar e criar venda no Conta Azul"
+                              >
+                                <Receipt className="w-3.5 h-3.5 mr-1 text-indigo-600" />
+                                Faturar
+                              </Link>
+                            )
+                          )}
                           <button 
                             onClick={() => handleEdit(p)}
                             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"

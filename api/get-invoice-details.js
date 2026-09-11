@@ -86,6 +86,30 @@ export default async function handler(req, res) {
       }
     }
 
+    // 2.1 Buscar dados da proposta de locação caso a fatura seja de locação
+    let rentalProposal = null;
+    if (invoice.rental_proposal_id) {
+      const propRes = await client.query(`
+        SELECT rp.*,
+               mm.name as machine_name,
+               eq.name as equipment_name,
+               eq.serial_number as equipment_serial
+        FROM rental_proposals rp
+        LEFT JOIN machine_models mm ON rp.machine_model_id = mm.id
+        LEFT JOIN equipments eq ON rp.equipment_id = eq.id
+        WHERE rp.id = $1
+      `, [invoice.rental_proposal_id]);
+      if (propRes.rows.length > 0) {
+        rentalProposal = propRes.rows[0];
+        if (!equipment && (rentalProposal.equipment_name || rentalProposal.machine_name)) {
+          equipment = {
+            name: rentalProposal.equipment_name || rentalProposal.machine_name,
+            serialNumber: rentalProposal.equipment_serial || 'S/N'
+          };
+        }
+      }
+    }
+
     // 3. Processar itens fiscais salvos na fatura (se houver)
     let parsedNcmInfo = [];
     if (invoice.ncm_info) {
@@ -210,6 +234,7 @@ export default async function handler(req, res) {
       laborItems,
       partsItems,
       parsedNcmInfo,
+      rentalProposal,
       contaAzulInfo
     });
   } catch (error) {
