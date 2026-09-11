@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, FileText, CheckCircle2, AlertCircle, DollarSign, Loader2, Plus, Edit, ExternalLink, RefreshCw, Eye, Trash2, X, Receipt, Check, FileDown, Wrench, Package, Building2, User, Printer, Link2, Send, Search } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle2, AlertCircle, DollarSign, Loader2, Plus, ExternalLink, RefreshCw, Eye, Trash2, X, Receipt, Check, FileDown, Package, Building2, Link2, Send, Search } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 export default function Faturas() {
@@ -1727,6 +1727,11 @@ export default function Faturas() {
               >
                 Fechar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Faturar Proposta de Locação */}
       {isRentalModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
