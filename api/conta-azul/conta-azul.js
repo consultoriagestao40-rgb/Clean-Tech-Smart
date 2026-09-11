@@ -67,21 +67,14 @@ export async function getValidAccessToken() {
     const refreshToken = tokens.conta_azul_refresh_token;
     const expiresAt = Number(tokens.conta_azul_expires_at || 0);
 
-    // Se temos accessToken e expiresAt é futuro, faz verificação rápida de validade
-    if (accessToken && expiresAt > Date.now()) {
-      try {
-        const testRes = await fetch(`${SALES_API_URL}/v1/sales?size=1`, {
-          headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        if (testRes.ok || testRes.status === 200) {
-          return accessToken;
-        }
-      } catch (e) {
-        // ignora erro de rede temporario
-      }
+    const now = Date.now();
+
+    // 1. Se temos accessToken e ainda é válido (com margem de 60 segundos), retorna direto
+    if (accessToken && expiresAt > (now + 60000)) {
+      return accessToken;
     }
 
-    // Se o token falhou ou expirou, tenta renovar com refresh_token
+    // 2. Se está prestes a expirar ou expirou, tenta renovar com refresh_token
     if (refreshToken) {
       const basicAuth = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
       const tokenRes = await fetch(`${BASE_API_URL}/oauth/token`, {
@@ -110,11 +103,28 @@ export async function getValidAccessToken() {
       } else {
         const errText = await tokenRes.text();
         console.warn('Falha ao renovar token no Conta Azul:', errText);
-        if (errText.includes('invalid_grant') || tokenRes.status === 400 || tokenRes.status === 401) {
-          // Tokens revogados ou expirados definitivamente: limpar para forçar reconexão limpa
+
+        // Se falhou ao renovar, mas outro processo concorrente já pode ter salvo um novo token:
+        const checkRes = await client.query("SELECT value FROM system_settings WHERE key = 'conta_azul_access_token'");
+        if (checkRes.rows.length > 0 && checkRes.rows[0].value && checkRes.rows[0].value !== accessToken) {
+          return checkRes.rows[0].value;
+        }
+
+        // Se o accessToken ainda tem alguns instantes de validade
+        if (accessToken && expiresAt > now) {
+          return accessToken;
+        }
+
+        // Só remove se explicitamente for invalid_grant
+        if (errText.includes('invalid_grant')) {
           await client.query("DELETE FROM system_settings WHERE key IN ('conta_azul_access_token', 'conta_azul_refresh_token', 'conta_azul_expires_at')");
         }
       }
+    }
+
+    // 3. Fallback: se ainda tem accessToken não expirado
+    if (accessToken && expiresAt > now) {
+      return accessToken;
     }
 
     return null;

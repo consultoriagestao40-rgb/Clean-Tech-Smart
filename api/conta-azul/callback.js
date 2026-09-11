@@ -56,7 +56,20 @@ export default async function handler(req, res) {
     await setSetting('conta_azul_expires_at', String(expiresAt));
     await setSetting('conta_azul_connected_at', new Date().toISOString());
 
-    return res.redirect('/faturas?conta_azul=sucesso');
+    let targetRedirect = '/faturas?conta_azul=sucesso';
+    const rawState = req.query.state;
+    if (rawState) {
+      try {
+        const decoded = JSON.parse(Buffer.from(rawState, 'base64').toString('utf-8'));
+        if (decoded.returnTo) {
+          targetRedirect = decoded.returnTo;
+        }
+      } catch (e) {
+        // state simples
+      }
+    }
+
+    return res.redirect(targetRedirect);
   } catch (err) {
     console.error('Exceção no callback do Conta Azul:', err);
     return res.redirect(`/faturas?conta_azul=erro&msg=${encodeURIComponent(err.message)}`);
