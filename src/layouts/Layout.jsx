@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import PortalCliente from '../pages/PortalCliente';
 
 export default function Layout() {
   const token = localStorage.getItem('token');
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const forcePortal = searchParams.get('portal') === 'true';
 
-  if (!token) {
+  if (!token || forcePortal) {
+    if (location.pathname === '/chamados' || location.pathname === '/chamados/') {
+      return <PortalCliente />;
+    }
     return <Navigate to="/login" replace />;
   }
   const [isCollapsed, setIsCollapsed] = useState(localStorage.getItem('sidebar_collapsed') === 'true');

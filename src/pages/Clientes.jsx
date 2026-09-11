@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Loader2, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Search, Loader2, Edit, Trash2, X, ShieldCheck, Key, Send, CheckCircle2, Lock } from 'lucide-react';
 
 export default function Clientes() {
   const [clients, setClients] = useState([]);
@@ -10,7 +10,17 @@ export default function Clientes() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    id: null, name: '', razao_social: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: ''
+    id: null, 
+    name: '', 
+    razao_social: '', 
+    document: '', 
+    email: '', 
+    phone: '', 
+    status: 'Ativo', 
+    contact_person: '', 
+    address: '',
+    password: '',
+    lgpd_accepted: true
   });
 
   useEffect(() => {
@@ -42,13 +52,27 @@ export default function Clientes() {
       phone: client.phone || '',
       status: client.status || 'Ativo',
       contact_person: client.contact_person || '',
-      address: client.address || ''
+      address: client.address || '',
+      password: '',
+      lgpd_accepted: !!client.lgpd_accepted
     });
     setIsModalOpen(true);
   };
 
   const openNewClient = () => {
-    setFormData({ id: null, name: '', razao_social: '', document: '', email: '', phone: '', status: 'Ativo', contact_person: '', address: '' });
+    setFormData({ 
+      id: null, 
+      name: '', 
+      razao_social: '', 
+      document: '', 
+      email: '', 
+      phone: '', 
+      status: 'Ativo', 
+      contact_person: '', 
+      address: '',
+      password: '',
+      lgpd_accepted: true 
+    });
     setIsModalOpen(true);
   };
 
@@ -78,6 +102,20 @@ export default function Clientes() {
     }
   };
 
+  const sendPortalAccess = (client) => {
+    const rawPhone = String(client.phone || '').replace(/\D/g, '');
+    const phoneWithDdi = rawPhone.startsWith('55') ? rawPhone : `55${rawPhone}`;
+    const portalUrl = 'https://cleantechsmart.cleantechpro.com.br/chamados';
+    const message = `Olá ${client.name || 'Cliente'}! Segue seu link de acesso exclusivo ao Portal do Cliente Clean Tech Pro (Assistência Técnica Autorizada Tennant):\n\n🔗 Acesse: ${portalUrl}\n👤 Login: ${client.email || client.document || 'Seu E-mail ou CNPJ'}\n\nNo portal você pode abrir chamados de manutenção com agilidade, acompanhar ordens de serviço e consultar o histórico e custos do seu parque de máquinas.`;
+    
+    if (rawPhone.length >= 10) {
+      window.open(`https://wa.me/${phoneWithDdi}?text=${encodeURIComponent(message)}`, '_blank');
+    } else {
+      navigator.clipboard.writeText(message);
+      alert('Mensagem e link do portal copiados para a área de transferência!');
+    }
+  };
+
   const filteredClients = clients.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.razao_social?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -85,13 +123,13 @@ export default function Clientes() {
   );
 
   return (
-    <div className="font-sans text-gray-800 max-w-6xl mx-auto space-y-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-          <p className="text-sm text-gray-500 mt-1">Gerencie a carteira de clientes do sistema</p>
+          <h1 className="text-2xl font-bold text-gray-900">Clientes & Portal</h1>
+          <p className="text-sm text-gray-500 mt-1">Gerencie a carteira de clientes, libere acessos ao portal e valide conformidade LGPD</p>
         </div>
         <div className="flex space-x-3 mt-4 md:mt-0">
           <button 
@@ -126,8 +164,8 @@ export default function Clientes() {
                 <th className="px-6 py-4 font-semibold text-gray-700">Nome / Razão Social</th>
                 <th className="px-6 py-4 font-semibold text-gray-700">Documento</th>
                 <th className="px-6 py-4 font-semibold text-gray-700">Contato</th>
-                <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
-                <th className="px-6 py-4 font-semibold text-gray-700 text-right">Ações</th>
+                <th className="px-6 py-4 font-semibold text-gray-700">Status & LGPD</th>
+                <th className="px-6 py-4 font-semibold text-gray-700 text-right">Ações & Acesso</th>
               </tr>
             </thead>
             <tbody>
@@ -157,18 +195,39 @@ export default function Clientes() {
                       <p className="text-xs text-gray-500">{client.email || '-'} | {client.phone || '-'}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${client.status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {client.status}
-                      </span>
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${client.status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {client.status}
+                        </span>
+                        {client.lgpd_accepted ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                            <ShieldCheck className="w-3 h-3 text-teal-600" /> LGPD OK
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                            Pendente LGPD
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleEdit(client)}
-                        className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all mr-2" 
-                        title="Editar cliente"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => sendPortalAccess(client)}
+                          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors"
+                          title="Enviar link e dados de acesso do portal via WhatsApp"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Mandar Acesso</span>
+                        </button>
+                        <button 
+                          onClick={() => handleEdit(client)}
+                          className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all" 
+                          title="Editar cliente"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -256,10 +315,48 @@ export default function Clientes() {
                 <textarea 
                   value={formData.address}
                   onChange={e => setFormData({...formData, address: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none h-20"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none h-16"
                   placeholder="Rua, Número, Bairro, Cidade - Estado"
                 ></textarea>
               </div>
+
+              {/* Seção Credenciais do Portal do Cliente & LGPD */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800 uppercase tracking-wider">
+                    <Lock className="w-3.5 h-3.5 text-[#007481]" /> Acesso ao Portal do Cliente
+                  </div>
+                  <span className="text-[11px] text-gray-500">cleantechsmart.cleantechpro.com.br/chamados</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Senha do Portal (Opcional - caso queira definir)
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={e => setFormData({ ...formData, password: e.target.value })}
+                    placeholder={formData.id ? "Deixe em branco para manter a senha atual" : "Definir senha inicial de acesso"}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#007481] focus:outline-none"
+                  />
+                </div>
+
+                <div className="pt-1">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.lgpd_accepted}
+                      onChange={e => setFormData({ ...formData, lgpd_accepted: e.target.checked })}
+                      className="mt-0.5 rounded text-[#007481] focus:ring-[#007481] w-4 h-4"
+                    />
+                    <span className="text-xs text-gray-600 leading-tight">
+                      <strong>Consentimento LGPD validado:</strong> O cliente autorizou o armazenamento de dados cadastrais e de equipamentos estritamente para ordens de serviço, suporte técnico e garantias (Lei 13.709/2018).
+                    </span>
+                  </label>
+                </div>
+              </div>
+
               <div className="pt-4 flex justify-end space-x-3">
                 <button 
                   type="button"

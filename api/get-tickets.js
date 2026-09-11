@@ -19,11 +19,13 @@ export default async function handler(req, res) {
       SELECT st.*, 
              c.name as client_name, c.phone as client_phone, c.address as client_address,
              e.name as equipment_name, e.brand as equipment_brand, e.model as equipment_model, e.serial_number as equipment_serial_number,
-             COALESCE(t.name, st.technician_name) as technician_name
+             COALESCE(t.name, st.technician_name) as technician_name,
+             b.id as budget_id, b.grand_total as budget_grand_total, b.status as budget_status
       FROM service_tickets st
       LEFT JOIN clients c ON st.client_id::text = c.id::text
       LEFT JOIN equipments e ON st.equipment_id = e.id
       LEFT JOIN technicians t ON st.technician_id = t.id
+      LEFT JOIN budgets b ON (st.budget_id = b.id OR (b.equipment_id = st.equipment_id AND b.equipment_id IS NOT NULL AND b.client_id::text = st.client_id::text))
       ORDER BY st.created_at DESC
     `);
     

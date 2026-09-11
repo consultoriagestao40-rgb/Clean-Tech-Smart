@@ -892,9 +892,14 @@ export default function Chamados() {
                   </tr>
                 ) : (
                   filteredTickets.map((ticket) => (
-                    <tr key={ticket.id} className="hover:bg-gray-50/30 transition-colors">
+                    <tr key={ticket.id} className={`hover:bg-gray-50/30 transition-colors ${ticket.origin === 'portal_cliente' && ticket.status === 'Aberto' ? 'bg-teal-50/30' : ''}`}>
                       <td className="px-6 py-4 font-mono font-bold text-blue-600">
                         #{ticket.id}
+                        {ticket.origin === 'portal_cliente' && (
+                          <span className="block mt-1 text-[10px] font-bold text-teal-700 bg-teal-100/70 border border-teal-200 px-1.5 py-0.5 rounded text-center">
+                            🌐 Portal
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-semibold text-gray-900">
@@ -943,6 +948,11 @@ export default function Chamados() {
                         <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getTicketTypeClass(ticket.ticket_type)}`}>
                           {getTicketTypeLabel(ticket.ticket_type)}
                         </span>
+                        {ticket.budget_grand_total && (
+                          <div className="text-[11px] font-bold text-emerald-600 mt-1">
+                            Orç: R$ {Number(ticket.budget_grand_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <select

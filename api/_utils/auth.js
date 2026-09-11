@@ -8,7 +8,8 @@ export function sha256(text) {
 
 export function signToken(user) {
   const payload = {
-    userId: user.id,
+    userId: user.id || user.userId,
+    clientId: user.clientId || user.id || user.userId,
     name: user.name,
     email: user.email,
     role: user.role,
@@ -45,6 +46,10 @@ export function verifyToken(token) {
     throw new Error('Token expirado');
   }
   
+  if (!payload.clientId && payload.userId) {
+    payload.clientId = payload.userId;
+  }
+
   return payload;
 }
 

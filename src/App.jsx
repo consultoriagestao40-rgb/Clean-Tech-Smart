@@ -30,6 +30,26 @@ import LpTennantA260 from './pages/LpTennantA260';
 import ConfigurarLpTennantA260 from './pages/ConfigurarLpTennantA260';
 import AgenteAds from './pages/AgenteAds';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
+import PortalCliente from './pages/PortalCliente';
+
+function ChamadosRouter() {
+  const token = localStorage.getItem('token');
+  let user = {};
+  try {
+    user = JSON.parse(localStorage.getItem('user') || '{}');
+  } catch {}
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const forcePortal = searchParams.get('portal') === 'true';
+
+  // Se for operador/admin interno no CRM e não solicitou explicitamente a visão do portal
+  if (token && user.role && user.role !== 'client' && !forcePortal) {
+    return <Chamados />;
+  }
+
+  // Clientes, visitantes públicos e links externos acessam o Portal do Cliente
+  return <PortalCliente />;
+}
 
 function Placeholder({ title }) {
   return (
@@ -86,6 +106,10 @@ function App() {
         <Route path="/visualizar-orcamento/:id" element={<VisualizarOrcamentoPublico />} />
         <Route path="/tecnico" element={<TecnicoPainel />} />
         
+        {/* Portal do Cliente (Rotas Públicas e Isoladas) */}
+        <Route path="/portal-cliente" element={<PortalCliente />} />
+        <Route path="/portal" element={<PortalCliente />} />
+
         {/* Landing Pages Públicas de Alta Conversão */}
         <Route path="/lp/tennant-a260" element={<LpTennantA260 />} />
         <Route path="/tennant-a260" element={<LpTennantA260 />} />
