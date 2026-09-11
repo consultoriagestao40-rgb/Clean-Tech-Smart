@@ -29,6 +29,7 @@ import Usuarios from './pages/Usuarios';
 import LpTennantA260 from './pages/LpTennantA260';
 import ConfigurarLpTennantA260 from './pages/ConfigurarLpTennantA260';
 import AgenteAds from './pages/AgenteAds';
+import PwaInstallPrompt from './components/PwaInstallPrompt';
 
 function Placeholder({ title }) {
   return (
@@ -93,6 +94,7 @@ function App() {
         <Route path="/A260" element={<LpTennantA260 />} />
         <Route path="/tennant" element={<LpTennantA260 />} />
       </Routes>
+      <PwaInstallPrompt />
     </BrowserRouter>
   );
 }

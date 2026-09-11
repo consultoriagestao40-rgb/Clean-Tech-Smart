@@ -1,21 +1,41 @@
 {
-  "short_name": "CleanTechOS",
-  "name": "Clean Tech Pro - Ordens de Serviço",
+  "id": "/",
+  "name": "Clean Tech Smart",
+  "short_name": "CleanTech",
+  "description": "Sistema de Gestão, Faturas e Propostas Clean Tech Smart",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#0284c7",
+  "lang": "pt-BR",
+  "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/favicon.png",
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "sizes": "192x192"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/favicon.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "sizes": "512x512"
+      "purpose": "any"
     }
-  ],
-  "start_url": "/tecnico",
-  "background_color": "#1e3a8a",
-  "theme_color": "#1e3a8a",
-  "display": "standalone",
-  "orientation": "portrait"
+  ]
 }
