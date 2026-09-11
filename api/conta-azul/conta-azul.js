@@ -242,34 +242,120 @@ export async function findOrCreateContaAzulCustomer(clientData) {
   throw new Error(`Falha no cadastro do cliente no Conta Azul: ${errText}`);
 }
 
-// Cria uma venda no Conta Azul (Venda de Serviços ou Venda de Produtos)
+// Cria uma venda no Conta Azul (compatível com API v2 /v1/venda)
 export async function createContaAzulSale(salePayload) {
   const token = await getValidAccessToken();
   if (!token) throw new Error('Conta Azul não autenticado ou token expirado.');
 
-  const res = await fetch(`${SALES_API_URL}/v1/sales`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(salePayload)
-  });
-
-  const responseBody = await res.text();
-  let json;
   try {
-    json = JSON.parse(responseBody);
-  } catch {
-    json = { raw: responseBody };
-  }
+    // 1. Obter próximo número sequencial da venda no Conta Azul
+    let saleNumber = salePayload.numero;
+    if (!saleNumber) {
+      try {
+        const numRes = await fetch(`${BASE_API_URL}/v1/venda/proximo-numero`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (numRes.ok) {
+          const numText = await numRes.text();
+          saleNumber = parseInt(numText, 10) || undefined;
+        }
+      } catch (numErr) {
+        console.warn('Erro ao obter proximo-numero:', numErr);
+      }
+    }
 
-  if (!res.ok) {
-    console.error('Erro na criação de venda no Conta Azul:', responseBody);
-    return { success: false, error: responseBody, status: res.status };
-  }
+    // 2. Se a chamada enviou formato legado (customer_id, services/products), converter para formato API v2
+    let v2Body = salePayload;
+    if (salePayload.customer_id || !salePayload.id_cliente) {
+      // Obter serviço padrão do catálogo da Conta Azul
+      let serviceId = null;
+      try {
+        const sRes = await fetch(`${BASE_API_URL}/v1/servicos`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (sRes.ok) {
+          const sData = await sRes.json();
+          const items = Array.isArray(sData) ? sData : (sData.itens || sData.items || []);
+          const isLocacao = (salePayload.services?.[0]?.description || '').toLowerCase().includes('loca');
+          const matched = isLocacao
+            ? (items.find(s => (s.descricao || '').toLowerCase().includes('loca')) || items[0])
+            : (items.find(s => (s.descricao || '').toLowerCase().includes('manuten') || (s.descricao || '').toLowerCase().includes('assist')) || items[0]);
+          if (matched?.id) serviceId = matched.id;
+        }
+      } catch (sErr) {
+        console.warn('Erro ao buscar servicos no Conta Azul:', sErr);
+      }
 
-  return { success: true, data: json };
+      // Montar itens no formato da API v2
+      const servicesList = salePayload.services || [];
+      const productsList = salePayload.products || [];
+      const rawItems = [...servicesList, ...productsList];
+
+      const v2Itens = rawItems.map(item => ({
+        id: serviceId || '888d2fdd-4ea6-4151-8f4c-5ff4589de44e', // fallback para serviço de Locação existente
+        descricao: item.description || 'Locação de Equipamento',
+        valor: Number(item.value || 0),
+        quantidade: Number(item.quantity || 1)
+      }));
+
+      // Calcular valor total e montar parcelas
+      const installments = salePayload.payment?.installments || [];
+      const totalVal = v2Itens.reduce((sum, it) => sum + (it.valor * it.quantidade), 0);
+
+      const v2Parcelas = installments.length > 0
+        ? installments.map(p => ({
+            numero: p.number || 1,
+            valor: Number(p.value || totalVal),
+            data_vencimento: p.due_date || new Date().toISOString().split('T')[0]
+          }))
+        : [{
+            numero: 1,
+            valor: totalVal,
+            data_vencimento: new Date().toISOString().split('T')[0]
+          }];
+
+      v2Body = {
+        id_cliente: salePayload.customer_id,
+        numero: saleNumber || 10000,
+        situacao: 'EM_ANDAMENTO',
+        data_venda: salePayload.emission || new Date().toISOString().split('T')[0],
+        observacoes: salePayload.notes || '',
+        itens: v2Itens,
+        condicao_pagamento: {
+          opcao_condicao_pagamento: `${v2Parcelas.length}x`,
+          parcelas: v2Parcelas
+        }
+      };
+    }
+
+    // 3. Efetua a criação da venda na API v2 (/v1/venda)
+    const res = await fetch(`${BASE_API_URL}/v1/venda`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(v2Body)
+    });
+
+    const responseBody = await res.text();
+    let json;
+    try {
+      json = JSON.parse(responseBody);
+    } catch {
+      json = { raw: responseBody };
+    }
+
+    if (!res.ok) {
+      console.error('Erro na criação de venda no Conta Azul (v2):', responseBody);
+      return { success: false, error: responseBody, status: res.status };
+    }
+
+    return { success: true, data: json };
+  } catch (err) {
+    console.error('Exceção ao criar venda no Conta Azul:', err);
+    return { success: false, error: err.message };
+  }
 }
 
 // Obtém os detalhes atualizados de uma venda e da respectiva NF no Conta Azul (compatível com API v2)
