@@ -1901,14 +1901,14 @@ export default function Faturas() {
                         className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                       />
                       <span className="font-bold text-xs text-gray-800">
-                        Criar venda e lançar financeiro automaticamente no Conta Azul
+                        Criar venda no Conta Azul (pronta para emissão da NF)
                       </span>
                     </label>
 
                     {contaAzulConnected ? (
                       <p className="text-[11px] text-emerald-700 flex items-center font-medium pl-6">
                         <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600 shrink-0" />
-                        Conta Azul Conectado — A venda será lançada via API oficial com status de faturamento.
+                        Conta Azul Conectado — A venda será criada com cliente, itens e valor, pronta para emissão da NF no Conta Azul.
                       </p>
                     ) : (
                       <p className="text-[11px] text-amber-700 flex items-center font-medium pl-6">
