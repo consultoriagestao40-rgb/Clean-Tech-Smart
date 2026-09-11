@@ -56,13 +56,11 @@ export default async function handler(req, res) {
     const propRes = await client.query(`
       SELECT rp.*, 
              c.name as client_name, 
+             c.razao_social as client_razao_social,
              c.document as client_document, 
              c.email as client_email, 
              c.phone as client_phone,
              c.address as client_address,
-             c.city as client_city,
-             c.state as client_state,
-             c.zip_code as client_zip_code,
              mm.name as machine_name,
              eq.name as equipment_name,
              eq.serial_number as equipment_serial
@@ -81,14 +79,11 @@ export default async function handler(req, res) {
 
     const resolvedClient = {
       id: clientData?.id || proposal.client_id,
-      name: clientData?.name || proposal.client_name || 'Cliente Sem Nome',
+      name: clientData?.name || proposal.client_razao_social || proposal.client_name || 'Cliente Sem Nome',
       document: clientData?.document || proposal.client_document || '',
       email: clientData?.email || proposal.client_email || '',
       phone: clientData?.phone || proposal.client_phone || '',
-      address: proposal.client_address || '',
-      city: proposal.client_city || '',
-      state: proposal.client_state || '',
-      zip_code: proposal.client_zip_code || ''
+      address: proposal.client_address || ''
     };
 
     const finalAmount = parseFloat(amount || proposal.monthly_value || 0);
