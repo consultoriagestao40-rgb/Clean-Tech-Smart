@@ -453,29 +453,35 @@ export default function PortalCliente() {
       <header className="sticky top-0 z-50 bg-[#007481] text-white shadow-lg border-b border-[#005d68]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
           
-          {/* Logo Oficial + Título */}
-          <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+          {/* Logos Oficiais Clean Tech Pro + Alfa Tennant */}
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <a href="/chamados" className="flex items-center gap-2 flex-shrink-0">
               <img 
                 src="/cleantechpro-official-white.png" 
                 alt="Clean Tech Pro" 
-                className="h-9 sm:h-12 w-auto object-contain"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "/alfa-tennant-logo-hd.png";
-                }}
+                className="h-8 sm:h-11 w-auto object-contain"
               />
             </a>
 
-            <div className="hidden md:block h-8 w-[1px] bg-white/30" />
+            <div className="h-7 sm:h-8 w-[1px] bg-white/30 flex-shrink-0" />
 
-            <div className="min-w-0">
+            <div className="bg-white px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl shadow-md flex items-center flex-shrink-0">
+              <img 
+                src="/alfa-tennant-logo-hd.png" 
+                alt="Alfa Tennant" 
+                className="h-5 sm:h-7 w-auto object-contain"
+              />
+            </div>
+
+            <div className="hidden xl:block h-8 w-[1px] bg-white/30" />
+
+            <div className="min-w-0 hidden lg:block">
               <div className="flex items-center gap-2">
                 <span className="font-black text-sm sm:text-base tracking-wide uppercase text-white truncate">
                   Portal do Cliente
                 </span>
-                <span className="hidden lg:inline-flex items-center gap-1 bg-white/15 px-2 py-0.5 rounded text-[11px] font-semibold text-teal-100 uppercase tracking-wider">
-                  <Award className="w-3 h-3 text-amber-300" /> Autorizada Tennant
+                <span className="inline-flex items-center gap-1 bg-white/15 px-2 py-0.5 rounded text-[11px] font-semibold text-teal-100 uppercase tracking-wider">
+                  <Award className="w-3 h-3 text-amber-300" /> Autorizada Oficial
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-teal-100/90 truncate">
@@ -549,6 +555,16 @@ export default function PortalCliente() {
             <div className="lg:col-span-1">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sticky top-24 shadow-xl">
                 
+                {/* Selo Oficial Alfa Tennant na Sidebar */}
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+                  <div className="bg-white px-2.5 py-1 rounded-lg shadow-xs flex items-center">
+                    <img src="/alfa-tennant-logo-hd.png" alt="Alfa Tennant" className="h-5 w-auto object-contain" />
+                  </div>
+                  <span className="text-[10px] font-black text-teal-400 uppercase bg-teal-950/60 px-2 py-0.5 rounded border border-teal-800/50">
+                    Autorizada
+                  </span>
+                </div>
+
                 {/* Perfil Compacto */}
                 <div className="pb-4 mb-4 border-b border-slate-800">
                   <div className="text-xs text-[#00a3b4] font-bold uppercase tracking-wider mb-1">Empresa Cadastrada</div>
@@ -1028,10 +1044,21 @@ export default function PortalCliente() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
               <div className="max-w-3xl">
                 
-                {/* Badges de Confiança */}
-                <div className="inline-flex items-center gap-2 bg-[#007481]/25 border border-[#007481]/50 px-3.5 py-1.5 rounded-full text-xs font-bold text-[#00a3b4] mb-6">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>ASSISTÊNCIA TÉCNICA AUTORIZADA TENNANT OFICIAL</span>
+                {/* Selo Oficial com Logo Alfa Tennant */}
+                <div className="inline-flex items-center gap-3 bg-slate-900/90 border border-teal-500/40 p-2 pr-4 rounded-2xl shadow-xl mb-6">
+                  <div className="bg-white px-3 py-1.5 rounded-xl shadow-xs flex items-center">
+                    <img 
+                      src="/alfa-tennant-logo-hd.png" 
+                      alt="Alfa Tennant" 
+                      className="h-6 sm:h-7 w-auto object-contain" 
+                    />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-[10px] sm:text-xs font-black text-teal-300 uppercase tracking-wide flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 inline" /> Representante & Assistência Técnica Autorizada Alfa Tennant
+                    </div>
+                    <div className="text-[10px] text-slate-400">Peças Originais, Manutenção Certificada e Entrega Técnica • Paraná</div>
+                  </div>
                 </div>
 
                 <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight mb-6">
@@ -1215,9 +1242,27 @@ export default function PortalCliente() {
             </div>
           </section>
 
-          {/* Rodapé da Página Pública com Link LGPD */}
+          {/* Rodapé da Página Pública com Link LGPD e Logos */}
           <footer className="border-t border-slate-900 bg-slate-950 py-10 text-center text-xs text-slate-500">
-            <div className="max-w-7xl mx-auto px-4 space-y-3">
+            <div className="max-w-7xl mx-auto px-4 space-y-4">
+              
+              {/* Logos no Rodapé */}
+              <div className="flex items-center justify-center gap-4 flex-wrap">
+                <img 
+                  src="/cleantechpro-official-white.png" 
+                  alt="Clean Tech Pro" 
+                  className="h-8 w-auto object-contain opacity-80" 
+                />
+                <span className="text-slate-700">|</span>
+                <div className="bg-white px-2.5 py-1 rounded-lg opacity-90 flex items-center shadow-xs">
+                  <img 
+                    src="/alfa-tennant-logo-hd.png" 
+                    alt="Alfa Tennant" 
+                    className="h-5 w-auto object-contain" 
+                  />
+                </div>
+              </div>
+
               <p>© {new Date().getFullYear()} Clean Tech Pro • Representante & Assistência Técnica Autorizada Tennant. Todos os direitos reservados.</p>
               <div className="flex items-center justify-center gap-4 text-slate-400">
                 <button 
@@ -1251,7 +1296,14 @@ export default function PortalCliente() {
             </button>
 
             <div className="mb-6">
-              <span className="text-xs font-bold text-[#00a3b4] uppercase tracking-wider">Acesso Rápido ao Portal</span>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="bg-white px-2.5 py-1 rounded-lg shadow-xs flex items-center">
+                  <img src="/alfa-tennant-logo-hd.png" alt="Alfa Tennant" className="h-5 w-auto object-contain" />
+                </div>
+                <span className="text-[11px] font-bold text-teal-400 uppercase tracking-wider">
+                  Assistência Técnica Autorizada
+                </span>
+              </div>
               <h3 className="text-xl sm:text-2xl font-black text-white mt-1">Criar Conta no Portal do Cliente</h3>
               <p className="text-xs text-slate-400 mt-1">
                 Cadastre sua empresa para abrir chamados, acompanhar serviços e gerenciar seus equipamentos.
@@ -1500,8 +1552,10 @@ export default function PortalCliente() {
             </button>
 
             <div className="mb-6 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-[#007481]/20 text-[#00a3b4] flex items-center justify-center mx-auto mb-3 border border-[#007481]/30">
-                <Lock className="w-6 h-6" />
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="bg-white px-3 py-1.5 rounded-xl shadow-md flex items-center">
+                  <img src="/alfa-tennant-logo-hd.png" alt="Alfa Tennant" className="h-6 w-auto object-contain" />
+                </div>
               </div>
               <h3 className="text-2xl font-black text-white">Login do Cliente</h3>
               <p className="text-xs text-slate-400 mt-1">Acesse seus chamados e equipamentos cadastrados</p>
