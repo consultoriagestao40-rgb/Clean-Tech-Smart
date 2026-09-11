@@ -34,7 +34,29 @@ export default function TecnicoPainel() {
       const res = await fetch('/api/get-technicians');
       if (res.ok) {
         const data = await res.json();
-        setTechnicians(data.technicians || []);
+        const techList = data.technicians || [];
+        setTechnicians(techList);
+
+        // Auto-detect technician from session (e.g., Jaime Freitas)
+        try {
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          if (user?.name) {
+            const myTech = techList.find(t => 
+              t.name?.toLowerCase().includes(user.name.toLowerCase()) ||
+              user.name.toLowerCase().includes(t.name?.toLowerCase()) ||
+              (user.email && t.email && t.email.toLowerCase() === user.email.toLowerCase())
+            );
+            if (myTech) {
+              setSelectedTechId(String(myTech.id));
+              return;
+            }
+          }
+        } catch {}
+
+        // Default to 'todos' or first technician
+        if (techList.length > 0 && !selectedTechId) {
+          setSelectedTechId('todos');
+        }
       }
     } catch (e) {
       console.error('Erro ao buscar técnicos:', e);
@@ -80,6 +102,7 @@ export default function TecnicoPainel() {
   // Filter tickets by selected technician
   const activeTickets = tickets.filter(t => {
     if (!selectedTechId) return false;
+    if (selectedTechId === 'todos') return true;
     return String(t.technician_id) === String(selectedTechId);
   });
 
@@ -296,7 +319,7 @@ export default function TecnicoPainel() {
                 onChange={e => setSelectedTechId(e.target.value)}
                 className="w-full h-11 px-3.5 bg-slate-50 border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               >
-                <option value="">Selecione o seu nome...</option>
+                <option value="todos">📋 Ver Todos os Chamados da Empresa</option>
                 {technicians.map(t => (
                   <option key={t.id} value={t.id}>{t.name}</option>
                 ))}

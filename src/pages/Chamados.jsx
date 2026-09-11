@@ -14,7 +14,9 @@ import {
   User,
   SlidersHorizontal,
   ChevronRight,
-  FileText
+  FileText,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 
 export default function Chamados() {
@@ -759,6 +761,18 @@ export default function Chamados() {
               Kanban
             </button>
           </div>
+
+          <a 
+            href="/chamado" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center px-3.5 py-2.5 bg-teal-900/90 hover:bg-teal-800 text-teal-100 border border-teal-700/50 rounded-xl font-bold transition-all shadow-xs text-xs"
+            title="Abrir o Portal do Cliente em nova aba"
+          >
+            <Globe className="w-4 h-4 mr-1.5 text-teal-300" />
+            Portal do Cliente
+            <ExternalLink className="w-3.5 h-3.5 ml-1 text-teal-400" />
+          </a>
 
           <button 
             onClick={handleOpenNew}
