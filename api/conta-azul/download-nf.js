@@ -52,16 +52,15 @@ export default async function handler(req, res) {
         scope: 'openid profile aws.cognito.signin.user.admin'
       }).toString();
 
-      // Se acessado diretamente pelo navegador via link / nova aba
-      const isBrowser = (req.headers.accept || '').includes('text/html') || !req.headers.accept;
-      if (isBrowser) {
-        return res.redirect(authUrl);
+      if (req.query.format === 'json') {
+        return res.status(401).json({
+          error: 'Conta Azul não autenticado ou sessão expirada.',
+          authUrl
+        });
       }
 
-      return res.status(401).json({
-        error: 'Conta Azul não autenticado ou sessão expirada.',
-        authUrl
-      });
+      // Redireciona diretamente para o fluxo de autorização do Conta Azul
+      return res.redirect(authUrl);
     }
 
     // 1. Obter detalhes da venda no Conta Azul
