@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { id, name, email, password, role } = req.body;
+  const { id, name, email, password, role, client_id } = req.body;
 
   if (!name || !email || !role) {
     return res.status(400).json({ error: 'Nome, E-mail e Perfil são obrigatórios.' });
@@ -23,6 +23,7 @@ export default async function handler(req, res) {
 
   try {
     const emailLower = email.toLowerCase().trim();
+    const cleanClientId = client_id ? Number(client_id) : null;
 
     // Check if email already exists for another user
     const checkUser = await client.query(
@@ -42,17 +43,17 @@ export default async function handler(req, res) {
         const passwordHash = sha256(password);
         result = await client.query(`
           UPDATE users
-          SET name = $1, email = $2, password_hash = $3, role = $4, updated_at = NOW()
-          WHERE id = $5
-          RETURNING id, name, email, role;
-        `, [name, emailLower, passwordHash, role, Number(id)]);
+          SET name = $1, email = $2, password_hash = $3, role = $4, client_id = $5, updated_at = NOW()
+          WHERE id = $6
+          RETURNING id, name, email, role, client_id;
+        `, [name, emailLower, passwordHash, role, cleanClientId, Number(id)]);
       } else {
         result = await client.query(`
           UPDATE users
-          SET name = $1, email = $2, role = $3, updated_at = NOW()
-          WHERE id = $4
-          RETURNING id, name, email, role;
-        `, [name, emailLower, role, Number(id)]);
+          SET name = $1, email = $2, role = $3, client_id = $4, updated_at = NOW()
+          WHERE id = $5
+          RETURNING id, name, email, role, client_id;
+        `, [name, emailLower, role, cleanClientId, Number(id)]);
       }
     } else {
       // Create new user
@@ -61,10 +62,10 @@ export default async function handler(req, res) {
       }
       const passwordHash = sha256(password);
       result = await client.query(`
-        INSERT INTO users (name, email, password_hash, role, created_at)
-        VALUES ($1, $2, $3, $4, NOW())
-        RETURNING id, name, email, role;
-      `, [name, emailLower, passwordHash, role]);
+        INSERT INTO users (name, email, password_hash, role, client_id, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+        RETURNING id, name, email, role, client_id;
+      `, [name, emailLower, passwordHash, role, cleanClientId]);
     }
 
     return res.status(200).json({ success: true, user: result.rows[0] });

@@ -444,26 +444,8 @@ export default function PortalCliente() {
     return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
-  const crmToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-[#007481] selection:text-white">
-
-      {/* Barra Informativa de Acesso Administrativo CRM */}
-      {crmToken && (
-        <div className="bg-slate-900 border-b border-slate-800 text-xs px-4 py-2 flex items-center justify-between text-slate-300">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Você está conectado ao <strong>CRM Clean Tech Pro</strong>. Visualizando o <strong>Portal do Cliente</strong> (/chamado).</span>
-          </div>
-          <a 
-            href="/gestao-chamados" 
-            className="inline-flex items-center gap-1 font-bold text-amber-400 hover:text-amber-300 hover:underline transition-colors"
-          >
-            Ir para Gestão Interna de Chamados (CRM) &rarr;
-          </a>
-        </div>
-      )}
 
       {/* ========================================================================= */}
       {/* 🔝 CABEÇALHO OFICIAL SUPERIOR (PADRÃO A-260 TEAL #007481)                  */}
@@ -625,24 +607,18 @@ export default function PortalCliente() {
                       {equipments.length}
                     </span>
                   </button>
-
-                  <button
-                    onClick={() => setActiveTab('usuarios')}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                      activeTab === 'usuarios'
-                        ? 'bg-[#007481] text-white shadow-lg shadow-[#007481]/30'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Users className="w-4 h-4" />
-                      <span>3. Usuários</span>
-                    </div>
-                    <span className="bg-slate-800 text-slate-300 text-xs px-2 py-0.5 rounded-full">
-                      {portalUsers.length}
-                    </span>
-                  </button>
                 </nav>
+
+                {/* Gestão de Contatos/Usuários da Empresa do Cliente (Ação Secundária) */}
+                <div className="pt-3 mt-3 border-t border-slate-800">
+                  <button
+                    onClick={() => setShowNewUserModal(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 transition-colors"
+                  >
+                    <Users className="w-3.5 h-3.5 text-teal-400" />
+                    <span>+ Adicionar Usuário da Empresa</span>
+                  </button>
+                </div>
 
                 {/* Box de Suporte Oficial Tennant */}
                 <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-[#007481]/20 to-slate-800/50 border border-[#007481]/30">

@@ -16,9 +16,10 @@ export default async function handler(req, res) {
 
   try {
     const result = await client.query(`
-      SELECT id, name, email, role, created_at 
-      FROM users 
-      ORDER BY name ASC;
+      SELECT u.id, u.name, u.email, u.role, u.client_id, u.created_at, c.name as client_name
+      FROM users u
+      LEFT JOIN clients c ON u.client_id = c.id
+      ORDER BY u.name ASC;
     `);
     
     return res.status(200).json({ success: true, users: result.rows });

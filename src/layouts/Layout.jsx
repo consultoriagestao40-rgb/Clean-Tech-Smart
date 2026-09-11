@@ -38,6 +38,19 @@ export default function Layout() {
     return <Navigate to="/login" replace />;
   }
 
+  const loggedInUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{"name": "Usuário"}');
+    } catch {
+      return { name: "Usuário" };
+    }
+  })();
+
+  // Se o usuário logado for um Cliente, direciona obrigatoriamente para o Portal do Cliente
+  if (loggedInUser.role?.toLowerCase() === 'cliente' || loggedInUser.role?.toLowerCase() === 'client') {
+    return <PortalCliente />;
+  }
+
   // Auto-redirect to technician panel on mobile if landing on root or dashboard
   if (isMobile && (location.pathname === '/' || location.pathname === '/dashboard')) {
     return <Navigate to="/tecnico" replace />;
@@ -53,14 +66,6 @@ export default function Layout() {
     window.addEventListener('sidebarCollapsedChanged', handleCollapseChange);
     return () => window.removeEventListener('sidebarCollapsedChanged', handleCollapseChange);
   }, []);
-
-  const loggedInUser = (() => {
-    try {
-      return JSON.parse(localStorage.getItem('user') || '{"name": "Usuário"}');
-    } catch {
-      return { name: "Usuário" };
-    }
-  })();
 
   const handleLogout = () => {
     localStorage.removeItem('token');

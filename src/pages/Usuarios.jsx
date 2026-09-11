@@ -19,13 +19,28 @@ export default function Usuarios() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Administrador');
+  const [clientId, setClientId] = useState('');
+  const [clients, setClients] = useState([]);
 
   // Currently logged in user to prevent self-deletion
   const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     fetchUsers();
+    fetchClients();
   }, []);
+
+  const fetchClients = async () => {
+    try {
+      const res = await fetch('/api/get-clients');
+      if (res.ok) {
+        const data = await res.json();
+        setClients(data.clients || []);
+      }
+    } catch (e) {
+      console.error('Erro ao carregar clientes:', e);
+    }
+  };
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -48,6 +63,7 @@ export default function Usuarios() {
     setEmail('');
     setPassword('');
     setRole('Administrador');
+    setClientId('');
     setIsModalOpen(true);
   };
 
@@ -57,6 +73,7 @@ export default function Usuarios() {
     setEmail(user.email);
     setPassword(''); // blank to keep unchanged
     setRole(user.role || 'Administrador');
+    setClientId(user.client_id ? String(user.client_id) : '');
     setIsModalOpen(true);
   };
 
@@ -82,7 +99,8 @@ export default function Usuarios() {
           name,
           email,
           password: password.trim() || null,
-          role
+          role,
+          client_id: role === 'Cliente' ? (clientId || null) : null
         })
       });
 
@@ -148,6 +166,8 @@ export default function Usuarios() {
         return 'bg-emerald-50 text-emerald-700 border-emerald-100';
       case 'Financeiro':
         return 'bg-amber-50 text-amber-700 border-amber-100';
+      case 'Cliente':
+        return 'bg-teal-50 text-teal-800 border-teal-200';
       default:
         return 'bg-gray-50 text-gray-700 border-gray-100';
     }
@@ -233,11 +253,17 @@ export default function Usuarios() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-500 font-semibold">{u.email}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${getRoleBadgeClass(u.role)}`}>
-                        {u.role || 'Administrador'}
-                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border w-fit ${getRoleBadgeClass(u.role)}`}>
+                          {u.role || 'Administrador'}
+                        </span>
+                        {u.role === 'Cliente' && u.client_name && (
+                          <span className="text-[11px] text-teal-700 font-bold truncate max-w-[180px]">
+                            🏢 {u.client_name}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-gray-500">
                       {new Date(u.created_at).toLocaleDateString('pt-BR')}
@@ -331,8 +357,34 @@ export default function Usuarios() {
                   <option value="Técnico">Técnico (Apenas Chamados Móveis)</option>
                   <option value="Comercial">Comercial (Propostas, CRM, Orçamentos)</option>
                   <option value="Financeiro">Financeiro (Faturas, Contratos)</option>
+                  <option value="Cliente">Cliente (Acesso ao Portal do Cliente)</option>
                 </select>
               </div>
+
+              {/* Se perfil for Cliente, selecionar a qual empresa ele pertence */}
+              {role === 'Cliente' && (
+                <div className="space-y-1 bg-teal-50/70 p-3 rounded-xl border border-teal-200">
+                  <label className="block text-[10px] font-black text-teal-900 uppercase tracking-wider">
+                    Vincular à Empresa / Cliente *
+                  </label>
+                  <select
+                    required
+                    value={clientId}
+                    onChange={e => setClientId(e.target.value)}
+                    className="w-full px-3 py-2 border border-teal-300 rounded-lg text-xs font-bold focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white text-slate-800"
+                  >
+                    <option value="">Selecione o Cliente / Empresa...</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.cnpj ? `(CNPJ: ${c.cnpj})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-teal-700 mt-1 font-medium">
+                    Esse usuário terá visão exclusiva dos chamados e equipamentos desta empresa no Portal do Cliente.
+                  </p>
+                </div>
+              )}
 
               {/* Password */}
               <div className="space-y-1">

@@ -66,6 +66,33 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* ========================================================================= */}
+        {/* 🌐 PORTAL DO CLIENTE (PÁGINAS PÚBLICAS & AUTÔNOMAS - FORA DO LAYOUT CRM)   */}
+        {/* ========================================================================= */}
+        <Route path="/chamado" element={<PortalCliente />} />
+        <Route path="/chamados" element={<PortalCliente />} />
+        <Route path="/portal-cliente" element={<PortalCliente />} />
+        <Route path="/portal" element={<PortalCliente />} />
+        <Route path="/abrir-chamado" element={<PortalCliente />} />
+
+        {/* Landing Pages Públicas de Alta Conversão */}
+        <Route path="/lp/tennant-a260" element={<LpTennantA260 />} />
+        <Route path="/tennant-a260" element={<LpTennantA260 />} />
+        <Route path="/lavadora-tennant-a260" element={<LpTennantA260 />} />
+        <Route path="/a260" element={<LpTennantA260 />} />
+        <Route path="/A260" element={<LpTennantA260 />} />
+        <Route path="/tennant" element={<LpTennantA260 />} />
+
+        <Route path="/login" element={<Login />} />
+        <Route path="/visualizar-proposta/:id" element={<VisualizarPropostaPublica />} />
+        <Route path="/visualizar-proposta-venda/:id" element={<VisualizarPropostaVendaPublica />} />
+        <Route path="/visualizar-proposta-servico/:id" element={<VisualizarPropostaServicoPublica />} />
+        <Route path="/visualizar-orcamento/:id" element={<VisualizarOrcamentoPublico />} />
+        <Route path="/tecnico" element={<TecnicoPainel />} />
+
+        {/* ========================================================================= */}
+        {/* 🏢 SISTEMA INTERNO DO GESTOR (CRM)                                        */}
+        {/* ========================================================================= */}
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="servicos" element={<NewBudget />} />
@@ -79,11 +106,8 @@ function App() {
           <Route path="crm" element={<Crm />} />
           <Route path="faturas" element={<Faturas />} />
           <Route path="estoque" element={<Estoque />} />
-          <Route path="chamados" element={<Chamados />} />
-          <Route path="chamado" element={<Chamados />} />
           <Route path="gestao-chamados" element={<Chamados />} />
           <Route path="chamados-crm" element={<Chamados />} />
-          <Route path="tecnico" element={<TecnicoPainel />} />
           <Route path="tecnicos" element={<Tecnicos />} />
           <Route path="configuracoes" element={<Configuracoes />} />
           <Route path="configurar-lp-a260" element={<ConfigurarLpTennantA260 />} />
@@ -103,27 +127,6 @@ function App() {
           <Route path="suporte" element={<Placeholder title="Suporte" />} />
           <Route path="usuarios" element={<Usuarios />} />
         </Route>
-        <Route path="/login" element={<Login />} />
-        <Route path="/visualizar-proposta/:id" element={<VisualizarPropostaPublica />} />
-        <Route path="/visualizar-proposta-venda/:id" element={<VisualizarPropostaVendaPublica />} />
-        <Route path="/visualizar-proposta-servico/:id" element={<VisualizarPropostaServicoPublica />} />
-        <Route path="/visualizar-orcamento/:id" element={<VisualizarOrcamentoPublico />} />
-        <Route path="/tecnico" element={<TecnicoPainel />} />
-        
-        {/* Portal do Cliente (Rotas Públicas e Amigáveis - Diretas) */}
-        <Route path="/chamado" element={<PortalCliente />} />
-        <Route path="/chamados" element={<PortalCliente />} />
-        <Route path="/portal-cliente" element={<PortalCliente />} />
-        <Route path="/portal" element={<PortalCliente />} />
-        <Route path="/abrir-chamado" element={<PortalCliente />} />
-
-        {/* Landing Pages Públicas de Alta Conversão */}
-        <Route path="/lp/tennant-a260" element={<LpTennantA260 />} />
-        <Route path="/tennant-a260" element={<LpTennantA260 />} />
-        <Route path="/lavadora-tennant-a260" element={<LpTennantA260 />} />
-        <Route path="/a260" element={<LpTennantA260 />} />
-        <Route path="/A260" element={<LpTennantA260 />} />
-        <Route path="/tennant" element={<LpTennantA260 />} />
 
         {/* Fallback de segurança para nunca exibir tela branca */}
         <Route path="*" element={<Navigate to="/" replace />} />
