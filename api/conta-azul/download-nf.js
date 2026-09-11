@@ -347,12 +347,16 @@ export default async function handler(req, res) {
     <!-- 2. CABEÇALHO DO EMITENTE & DANFE & CHAVE -->
     <div style="display: flex; gap: 4px; margin-bottom: 4px;">
       <!-- Emitente -->
-      <div class="border" style="flex: 1.1; padding: 4px; display: flex; flex-direction: column; justify-content: center; text-align: center;">
-        <div style="font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 2px;">${emitNome}</div>
-        <div style="font-size: 8px; color: #222; line-height: 1.3;">
-          ${emitLgr}, ${emitNro} ${emitCpl ? '- ' + emitCpl : ''}<br/>
-          ${emitBairro} - CEP: ${formatCep(emitCep)}<br/>
-          ${emitMun} - ${emitUf} - Fone: ${emitFone}
+      <div class="border" style="flex: 1.1; padding: 4px; display: flex; align-items: center; gap: 6px;">
+        <img src="/cleantechpro-official-logo.png" alt="Clean Tech Pro" style="height: 55px; width: 65px; object-fit: contain;" onerror="this.style.display='none'" />
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; text-align: center;">
+          <div style="font-size: 9.5px; font-weight: 900; text-transform: uppercase; margin-bottom: 2px; line-height: 1.15;">${emitNome}</div>
+          <div style="font-size: 8px; color: #111; line-height: 1.3;">
+            ${emitLgr}, ${emitNro}${emitCpl ? ', ' + emitCpl : ''}<br/>
+            ${emitBairro} - ${formatCep(emitCep)}<br/>
+            ${emitMun} - ${emitUf}<br/>
+            ${emitFone}
+          </div>
         </div>
       </div>
 
