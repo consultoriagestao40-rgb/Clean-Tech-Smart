@@ -322,7 +322,7 @@ export async function createContaAzulSale(salePayload) {
   return { success: true, data: json };
 }
 
-// Obtém os detalhes atualizados de uma venda e da respectiva NF no Conta Azul (por UUID ou por número de venda)
+// Obtém os detalhes atualizados de uma venda e da respectiva NF no Conta Azul (compatível com API v2)
 export async function getContaAzulSaleDetails(saleIdOrNumber) {
   const token = await getValidAccessToken();
   if (!token) return { success: false, error: 'Não autenticado no Conta Azul' };
@@ -331,58 +331,125 @@ export async function getContaAzulSaleDetails(saleIdOrNumber) {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
 
   try {
-    // 1. Se for formato UUID, tenta buscar direto pela rota /v1/sales/{id}
+    let saleData = null;
+    let saleUuid = null;
+
+    // 1. Se for formato UUID, tenta buscar direto pela rota /v1/venda/{id} (API v2)
     if (isUuid) {
-      const res = await fetch(`${SALES_API_URL}/v1/sales/${clean}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const saleData = await res.json();
-        return { success: true, sale: saleData };
-      }
-    }
-
-    // 2. Se for número ou falhou por UUID, tenta buscar por query ?number=...
-    const numRes = await fetch(`${SALES_API_URL}/v1/sales?number=${encodeURIComponent(clean)}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (numRes.ok) {
-      const numData = await numRes.json();
-      const numItems = Array.isArray(numData) ? numData : (numData.content || numData.items || []);
-      if (numItems.length > 0) {
-        const detailRes = await fetch(`${SALES_API_URL}/v1/sales/${numItems[0].id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+      try {
+        const res = await fetch(`${BASE_API_URL}/v1/venda/${clean}`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
         });
-        if (detailRes.ok) {
-          const fullSale = await detailRes.json();
-          return { success: true, sale: fullSale };
+        if (res.ok) {
+          saleData = await res.json();
+          saleUuid = clean;
         }
-        return { success: true, sale: numItems[0] };
+      } catch (e) {}
+    }
+
+    // 2. Se for número ou falhou por UUID, tenta varrer vendas recentes
+    if (!saleData) {
+      for (const page of [18, 17, 19, 1, 2]) {
+        try {
+          const listRes = await fetch(`${BASE_API_URL}/v1/venda/busca?tamanho_pagina=50&pagina=${page}`, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+          });
+          if (listRes.ok) {
+            const listJson = await listRes.json();
+            const items = listJson.itens || [];
+            const match = items.find(it => String(it.numero) === clean || String(it.id) === clean);
+            if (match) {
+              saleUuid = match.id;
+              const detailRes = await fetch(`${BASE_API_URL}/v1/venda/${saleUuid}`, {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+              });
+              if (detailRes.ok) {
+                saleData = await detailRes.json();
+              }
+              break;
+            }
+          }
+        } catch (e) {}
       }
     }
 
-    // 3. Fallback: varredura em lista de vendas recentes
-    const listRes = await fetch(`${SALES_API_URL}/v1/sales?page=1&size=50`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (listRes.ok) {
-      const listData = await listRes.json();
-      const items = Array.isArray(listData) ? listData : (listData.content || listData.items || []);
-      const found = items.find(s => String(s.number) === clean || String(s.id) === clean);
-      if (found) {
-        const detailRes = await fetch(`${SALES_API_URL}/v1/sales/${found.id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+    if (!saleData && !saleUuid) {
+      return { success: false, error: 'Venda não localizada no Conta Azul' };
+    }
+
+    const v = saleData?.venda || saleData || {};
+    const cliente = saleData?.cliente || {};
+    const valorTotal = v.composicao_valor?.valor_liquido || v.composicao_valor?.valor_bruto || v.total || 0;
+    const parcelas = v.condicao_pagamento?.parcelas || [];
+    const situacao = v.situacao?.nome || v.status || 'FATURADO';
+
+    // Buscar NF vinculada na API v2 (/v1/notas-fiscais)
+    let nfInfo = {
+      number: null,
+      status: 'Não emitida',
+      chave: null
+    };
+
+    if (saleUuid) {
+      try {
+        const saleDate = v.data_compromisso || new Date().toISOString().split('T')[0];
+        const d = new Date(saleDate);
+        const dStart = new Date(d.getTime() - 7 * 86400000).toISOString().split('T')[0];
+        const dEnd = new Date(d.getTime() + 7 * 86400000).toISOString().split('T')[0];
+
+        const nfRes = await fetch(`${BASE_API_URL}/v1/notas-fiscais?data_inicial=${dStart}&data_final=${dEnd}&id_venda=${saleUuid}`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
         });
-        if (detailRes.ok) {
-          const fullSale = await detailRes.json();
-          return { success: true, sale: fullSale };
+        if (nfRes.ok) {
+          const nfData = await nfRes.json();
+          if (nfData.itens && nfData.itens.length > 0) {
+            const firstNf = nfData.itens[0];
+            nfInfo.number = firstNf.numero_nota;
+            nfInfo.status = firstNf.status === 'EMITIDA' ? 'Emitida / Autorizada' : firstNf.status;
+            nfInfo.chave = firstNf.chave_acesso;
+          }
         }
-        return { success: true, sale: found };
+      } catch (nfErr) {
+        console.warn('Erro ao consultar NF da venda:', nfErr);
       }
     }
 
-    return { success: false, error: 'Venda não localizada no Conta Azul' };
+    const printPdfUrl = `${BASE_API_URL}/v1/venda/${saleUuid}/imprimir`;
+
+    const normalizedSale = {
+      id: saleUuid || v.id,
+      number: v.numero || clean,
+      status: situacao,
+      financial_status: situacao,
+      total: valorTotal,
+      due_date: parcelas.length > 0 ? parcelas[0].data_vencimento : null,
+      emission: v.data_compromisso,
+      pdf_url: printPdfUrl,
+      nfe: {
+        number: nfInfo.number,
+        status: nfInfo.status,
+        chave: nfInfo.chave,
+        pdf_url: printPdfUrl
+      },
+      client: {
+        name: cliente.nome,
+        document: cliente.documento
+      },
+      installments: parcelas.map(p => ({
+        id: p.id,
+        number: p.numero,
+        value: p.valor,
+        due_date: p.data_vencimento,
+        status: situacao === 'LIQUIDADO' || situacao === 'PAGO' ? 'PAID' : 'PENDING'
+      }))
+    };
+
+    return {
+      success: true,
+      sale: normalizedSale
+    };
   } catch (err) {
+    console.error('Erro em getContaAzulSaleDetails:', err);
     return { success: false, error: err.message };
   }
 }
