@@ -51,7 +51,36 @@ export default function Login() {
         // Save auth data
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        // Redirect to homepage/dashboard
+
+        const roleLower = (data.user.role || '').toLowerCase();
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirectParam = searchParams.get('redirect');
+
+        if (roleLower.includes('cliente') || roleLower.includes('client')) {
+          localStorage.setItem('client_token', data.token);
+          localStorage.setItem('client_user', JSON.stringify(data.user));
+          window.location.href = redirectParam || '/chamados';
+          return;
+        }
+
+        if (roleLower.includes('téc') || roleLower.includes('tec')) {
+          window.location.href = redirectParam || '/tecnico';
+          return;
+        }
+
+        // Admin / Super Admin
+        if (redirectParam) {
+          window.location.href = redirectParam;
+          return;
+        }
+
+        // If on mobile screen, default admin to mobile field view with all powers
+        if (window.innerWidth < 768) {
+          window.location.href = '/tecnico';
+          return;
+        }
+
+        // Desktop default
         window.location.href = '/';
       } else {
         const data = await res.json();

@@ -51,6 +51,11 @@ export default function Layout() {
     return <PortalCliente />;
   }
 
+  // Se o usuário logado for um Técnico, direciona para o Painel do Técnico
+  if (loggedInUser.role?.toLowerCase() === 'técnico' || loggedInUser.role?.toLowerCase() === 'tecnico') {
+    return <Navigate to="/tecnico" replace />;
+  }
+
   // Auto-redirect to technician panel on mobile if landing on root or dashboard
   if (isMobile && (location.pathname === '/' || location.pathname === '/dashboard')) {
     return <Navigate to="/tecnico" replace />;
@@ -140,15 +145,15 @@ export default function Layout() {
           <div className="w-[1px] h-8 bg-slate-200 mx-1" />
 
           <Link
-            to="/servicos"
+            to="/tecnico?tab=orcamentos"
             className={`flex flex-col items-center justify-center flex-1 py-1.5 px-2 rounded-xl transition-all ${
-              isOrcamentoActive
+              location.search.includes('tab=orcamentos')
                 ? 'bg-[#eb6420] text-white font-black shadow-md'
                 : 'text-slate-600 hover:bg-slate-100 font-bold'
             }`}
           >
-            <FileText className={`w-5 h-5 ${isOrcamentoActive ? 'text-white' : 'text-slate-500'}`} />
-            <span className="text-[11px] mt-0.5">Fazer Orçamento</span>
+            <FileText className={`w-5 h-5 ${location.search.includes('tab=orcamentos') ? 'text-white' : 'text-slate-500'}`} />
+            <span className="text-[11px] mt-0.5">Orçamentos</span>
           </Link>
         </nav>
       )}

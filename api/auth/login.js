@@ -38,27 +38,49 @@ export default async function handler(req, res) {
       [email.trim()]
     );
     
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'E-mail ou senha inválidos' });
+    let user = null;
+
+    if (result.rows.length > 0) {
+      const u = result.rows[0];
+      const computedHash = sha256(password);
+      if (u.password_hash === computedHash) {
+        user = {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          client_id: u.client_id
+        };
+      }
+    } else {
+      // Fallback: Check in clients table (if client registered directly)
+      const clientResult = await dbClient.query(
+        'SELECT * FROM clients WHERE LOWER(email) = LOWER($1) LIMIT 1',
+        [email.trim()]
+      );
+      if (clientResult.rows.length > 0) {
+        const c = clientResult.rows[0];
+        const computedHash = sha256(password);
+        if (c.password_hash && c.password_hash === computedHash) {
+          user = {
+            id: c.id,
+            name: c.name || c.razao_social,
+            email: c.email,
+            role: 'Cliente',
+            client_id: c.id
+          };
+        }
+      }
     }
 
-    const user = result.rows[0];
-    const computedHash = sha256(password);
-    
-    if (user.password_hash !== computedHash) {
+    if (!user) {
       return res.status(401).json({ error: 'E-mail ou senha inválidos' });
     }
 
     const token = signToken(user);
     return res.status(200).json({
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        client_id: user.client_id
-      }
+      user
     });
 
   } catch (error) {
