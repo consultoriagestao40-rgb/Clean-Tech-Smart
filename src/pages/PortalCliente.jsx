@@ -142,7 +142,7 @@ export default function PortalCliente() {
       console.warn('Erro disparo conversão Google Ads:', e);
     }
 
-    // 2. Meta Pixel (Lead & Contact)
+    // 2. Meta Pixel (Lead & Contact via Browser)
     try {
       if (typeof window.fbq === 'function' && metaPixelId) {
         window.fbq('track', 'Lead', {
@@ -153,6 +153,27 @@ export default function PortalCliente() {
       }
     } catch (e) {
       console.warn('Erro disparo conversão Meta Pixel:', e);
+    }
+
+    // 3. Meta Conversions API (CAPI Server-Side Blindado)
+    try {
+      fetch('/api/ads/meta-capi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventName: 'Lead',
+          sourceUrl: window.location.href,
+          name: clientData?.name,
+          email: clientData?.email,
+          phone: clientData?.phone,
+          customData: {
+            content_name: actionLabel,
+            content_category: 'Assistência Técnica Tennant'
+          }
+        })
+      }).catch(() => {});
+    } catch (e) {
+      // ignore
     }
   };
 

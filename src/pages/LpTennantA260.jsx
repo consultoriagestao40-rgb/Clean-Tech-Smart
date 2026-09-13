@@ -356,7 +356,7 @@ export default function LpTennantA260() {
       console.warn('Google Ads tag conversion error:', e);
     }
 
-    // 2. Disparo de Conversão Meta Pixel (Lead & Contact)
+    // 2. Disparo de Conversão Meta Pixel (Navegador)
     try {
       if (typeof window.fbq === 'function' && metaPixelId) {
         window.fbq('track', 'Lead', {
@@ -369,6 +369,26 @@ export default function LpTennantA260() {
       }
     } catch (e) {
       console.warn('Meta Pixel lead event error:', e);
+    }
+
+    // 3. Meta Conversions API (CAPI Server-Side Blindado)
+    try {
+      fetch('/api/ads/meta-capi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventName: 'Lead',
+          sourceUrl: window.location.href,
+          customData: {
+            content_name: 'Tennant A260',
+            content_category: 'Lavadora de Piso Industrial',
+            value: 3890.00,
+            currency: 'BRL'
+          }
+        })
+      }).catch(() => {});
+    } catch (e) {
+      // ignore
     }
 
     const text = customMsg || `Olá! Gostaria de informações e proposta para a Lavadora Tennant A260 em Curitiba e Região.`;
