@@ -445,7 +445,7 @@ export default function PortalCliente() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-[#007481] selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased selection:bg-[#007481] selection:text-white">
 
       {/* ========================================================================= */}
       {/* 🔝 CABEÇALHO OFICIAL SUPERIOR (PADRÃO A-260 TEAL #007481)                  */}
@@ -473,34 +473,27 @@ export default function PortalCliente() {
               />
             </div>
 
-            <div className="hidden xl:block h-8 w-[1px] bg-white/30" />
-
-            <div className="min-w-0 hidden lg:block">
-              <div className="flex items-center gap-2">
-                <span className="font-black text-sm sm:text-base tracking-wide uppercase text-white truncate">
-                  Portal do Cliente
-                </span>
-                <span className="inline-flex items-center gap-1 bg-white/15 px-2 py-0.5 rounded text-[11px] font-semibold text-teal-100 uppercase tracking-wider">
-                  <Award className="w-3 h-3 text-amber-300" /> Autorizada Oficial
-                </span>
-              </div>
-              <p className="text-[11px] sm:text-xs text-teal-100/90 truncate">
-                Representante & Assistência Técnica Autorizada Tennant • Curitiba & Região Metropolitana
-              </p>
+            <div className="hidden md:flex flex-col justify-center text-left pl-3.5 lg:pl-4 border-l-2 border-teal-300/40 leading-snug">
+              <span className="font-extrabold text-white text-xs sm:text-sm lg:text-base tracking-wide">
+                Representante & Assistência Técnica Autorizada Tennant
+              </span>
+              <span className="text-[11px] sm:text-xs text-teal-200 font-semibold tracking-normal">
+                Curitiba & Região Metropolitana • Paraná
+              </span>
             </div>
           </div>
 
           {/* WhatsApp CTA & Ações de Login/Cadastro */}
-          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {/* Botão de WhatsApp Oficial (Verde Vibrante) */}
             <a
               href={WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white px-3 sm:px-4 py-2 rounded-full font-bold text-xs sm:text-sm shadow-md hover:shadow-emerald-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+              className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all cursor-pointer"
               title="Fale direto com a assistência técnica"
             >
-              <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white animate-pulse" />
+              <WhatsAppIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               <span className="hidden sm:inline">{WHATSAPP_DISPLAY}</span>
               <span className="sm:hidden">WhatsApp</span>
             </a>
@@ -526,13 +519,13 @@ export default function PortalCliente() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => { setLoginError(''); setShowLoginModal(true); }}
-                  className="bg-white/15 hover:bg-white/25 text-white px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-colors border border-white/20"
+                  className="bg-white/15 hover:bg-white/25 text-white px-3 sm:px-4 py-2 rounded-full font-bold text-xs sm:text-sm transition-colors border border-white/20 cursor-pointer"
                 >
                   Login
                 </button>
                 <button
                   onClick={() => { setRegError(''); setShowRegisterModal(true); }}
-                  className="bg-amber-400 hover:bg-amber-300 text-slate-900 px-3 sm:px-4 py-2 rounded-lg font-black text-xs sm:text-sm shadow-md transition-all transform hover:-translate-y-0.5"
+                  className="bg-[#eb6420] hover:bg-[#d55515] text-white px-3.5 sm:px-5 py-2 rounded-full font-black text-xs sm:text-sm shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer"
                 >
                   Criar sua Conta
                 </button>
@@ -553,95 +546,95 @@ export default function PortalCliente() {
 
             {/* Menu Lateral do Cliente */}
             <div className="lg:col-span-1">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sticky top-24 shadow-xl">
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 sticky top-24 shadow-sm">
                 
                 {/* Selo Oficial Alfa Tennant na Sidebar */}
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
-                  <div className="bg-white px-2.5 py-1 rounded-lg shadow-xs flex items-center">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200">
+                  <div className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs flex items-center">
                     <img src="/alfa-tennant-logo-hd.png" alt="Alfa Tennant" className="h-5 w-auto object-contain" />
                   </div>
-                  <span className="text-[10px] font-black text-teal-400 uppercase bg-teal-950/60 px-2 py-0.5 rounded border border-teal-800/50">
+                  <span className="text-[10px] font-black text-[#007481] uppercase bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                     Autorizada
                   </span>
                 </div>
 
                 {/* Perfil Compacto */}
-                <div className="pb-4 mb-4 border-b border-slate-800">
-                  <div className="text-xs text-[#00a3b4] font-bold uppercase tracking-wider mb-1">Empresa Cadastrada</div>
-                  <h3 className="font-extrabold text-white text-base truncate">{clientData?.name || 'Cliente Clean Tech Pro'}</h3>
-                  <p className="text-xs text-slate-400 truncate">{clientData?.email || clientData?.phone}</p>
+                <div className="pb-4 mb-4 border-b border-slate-200">
+                  <div className="text-xs text-[#007481] font-bold uppercase tracking-wider mb-1">Empresa Cadastrada</div>
+                  <h3 className="font-extrabold text-slate-900 text-base truncate">{clientData?.name || 'Cliente Clean Tech Pro'}</h3>
+                  <p className="text-xs text-slate-500 truncate">{clientData?.email || clientData?.phone}</p>
                 </div>
 
                 {/* Navegação da Barra Lateral */}
                 <nav className="space-y-1.5">
                   <button
                     onClick={() => setActiveTab('chamados')}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
                       activeTab === 'chamados'
-                        ? 'bg-[#007481] text-white shadow-lg shadow-[#007481]/30'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        ? 'bg-[#007481] text-white shadow-md shadow-[#007481]/25'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <Wrench className="w-4 h-4" />
                       <span>1. Chamados</span>
                     </div>
-                    <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full font-extrabold">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-extrabold ${activeTab === 'chamados' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'}`}>
                       {metrics.open_tickets}
                     </span>
                   </button>
 
                   <button
                     onClick={() => setActiveTab('equipamentos')}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
                       activeTab === 'equipamentos'
-                        ? 'bg-[#007481] text-white shadow-lg shadow-[#007481]/30'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                        ? 'bg-[#007481] text-white shadow-md shadow-[#007481]/25'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <Cpu className="w-4 h-4" />
                       <span>2. Equipamentos</span>
                     </div>
-                    <span className="bg-slate-800 text-slate-300 text-xs px-2 py-0.5 rounded-full">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${activeTab === 'equipamentos' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'}`}>
                       {equipments.length}
                     </span>
                   </button>
                 </nav>
 
                 {/* Gestão de Contatos/Usuários da Empresa do Cliente (Ação Secundária) */}
-                <div className="pt-3 mt-3 border-t border-slate-800">
+                <div className="pt-3 mt-3 border-t border-slate-200">
                   <button
                     onClick={() => setShowNewUserModal(true)}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
                   >
-                    <Users className="w-3.5 h-3.5 text-teal-400" />
+                    <Users className="w-3.5 h-3.5 text-[#007481]" />
                     <span>+ Adicionar Usuário da Empresa</span>
                   </button>
                 </div>
 
                 {/* Box de Suporte Oficial Tennant */}
-                <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-[#007481]/20 to-slate-800/50 border border-[#007481]/30">
-                  <div className="flex items-center gap-2 text-[#00a3b4] font-bold text-xs mb-1">
+                <div className="mt-6 p-4 rounded-xl bg-teal-50 border border-teal-200">
+                  <div className="flex items-center gap-2 text-[#007481] font-bold text-xs mb-1">
                     <ShieldCheck className="w-4 h-4" /> Suporte Dedicado
                   </div>
-                  <p className="text-xs text-slate-300 mb-3">
+                  <p className="text-xs text-slate-600 mb-3">
                     Precisa de atendimento técnico de emergência ou agendamento?
                   </p>
                   <a
                     href={WHATSAPP_LINK}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold py-2 rounded-lg text-xs transition-colors"
+                    className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold py-2 rounded-lg text-xs shadow-sm transition-colors"
                   >
-                    <WhatsAppIcon className="w-4 h-4" /> Falar no WhatsApp
+                    <WhatsAppIcon className="w-4 h-4 text-white" /> Falar no WhatsApp
                   </a>
                 </div>
 
                 {/* Botão de Logout */}
                 <button
                   onClick={handleLogout}
-                  className="w-full mt-4 flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 rounded-lg transition-colors border border-slate-800"
+                  className="w-full mt-4 flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200 cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" /> Encerrar Sessão
                 </button>
@@ -661,52 +654,50 @@ export default function PortalCliente() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                     
                     {/* Card 1: Chamados Abertos */}
-                    <div className="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-4 relative overflow-hidden shadow-lg">
-                      <div className="absolute top-0 right-0 w-16 h-16 bg-amber-500/10 rounded-full blur-xl pointer-events-none" />
+                    <div className="bg-white border border-amber-200 rounded-2xl p-4 relative overflow-hidden shadow-xs">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Em Andamento</span>
-                        <Clock className="w-4 h-4 text-amber-400" />
+                        <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Em Andamento</span>
+                        <Clock className="w-4 h-4 text-amber-500" />
                       </div>
-                      <div className="text-2xl sm:text-3xl font-black text-white">{metrics.open_tickets}</div>
-                      <div className="text-[11px] text-slate-400 mt-1">Chamados aguardando conclusão</div>
+                      <div className="text-2xl sm:text-3xl font-black text-amber-600">{metrics.open_tickets}</div>
+                      <div className="text-[11px] text-slate-500 mt-1">Chamados aguardando conclusão</div>
                     </div>
 
                     {/* Card 2: Chamados Concluídos */}
-                    <div className="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 relative overflow-hidden shadow-lg">
-                      <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl pointer-events-none" />
+                    <div className="bg-white border border-emerald-200 rounded-2xl p-4 relative overflow-hidden shadow-xs">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Concluídos</span>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Concluídos</span>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                       </div>
-                      <div className="text-2xl sm:text-3xl font-black text-white">{metrics.completed_tickets}</div>
-                      <div className="text-[11px] text-slate-400 mt-1">Atendimentos finalizados</div>
+                      <div className="text-2xl sm:text-3xl font-black text-emerald-600">{metrics.completed_tickets}</div>
+                      <div className="text-[11px] text-slate-500 mt-1">Atendimentos finalizados</div>
                     </div>
 
                     {/* Card 3: Total Geral de Chamados */}
-                    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 relative overflow-hidden shadow-lg">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-4 relative overflow-hidden shadow-xs">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Total</span>
                         <Wrench className="w-4 h-4 text-slate-400" />
                       </div>
-                      <div className="text-2xl sm:text-3xl font-black text-white">{metrics.total_tickets}</div>
-                      <div className="text-[11px] text-slate-400 mt-1">Histórico completo registrado</div>
+                      <div className="text-2xl sm:text-3xl font-black text-slate-900">{metrics.total_tickets}</div>
+                      <div className="text-[11px] text-slate-500 mt-1">Histórico completo registrado</div>
                     </div>
 
                     {/* Card 4: Custos Totais Realizados em Manutenções */}
-                    <div className="bg-gradient-to-br from-slate-900 to-[#005d68]/40 border border-[#007481]/50 rounded-2xl p-4 relative overflow-hidden shadow-xl">
+                    <div className="bg-gradient-to-br from-teal-50 to-white border border-teal-200 rounded-2xl p-4 relative overflow-hidden shadow-xs">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-[#00a3b4] uppercase tracking-wider">Custos Realizados</span>
-                        <DollarSign className="w-4 h-4 text-[#00a3b4]" />
+                        <span className="text-xs font-bold text-[#007481] uppercase tracking-wider">Custos Realizados</span>
+                        <DollarSign className="w-4 h-4 text-[#007481]" />
                       </div>
-                      <div className="text-xl sm:text-2xl font-black text-emerald-400 truncate">
+                      <div className="text-xl sm:text-2xl font-black text-[#007481] truncate">
                         {formatCurrency(metrics.total_maintenance_cost)}
                       </div>
-                      <div className="text-[11px] text-teal-100/70 mt-1">Total investido no parque</div>
+                      <div className="text-[11px] text-slate-500 mt-1">Total investido no parque</div>
                     </div>
                   </div>
 
                   {/* Barra de Filtros & Abertura de Novo Chamado */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+                  <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                       <div className="relative flex-1 sm:w-64">
                         <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -715,13 +706,13 @@ export default function PortalCliente() {
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           placeholder="Buscar por protocolo, máquina..."
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#007481]"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007481]"
                         />
                       </div>
                       <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[#007481]"
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:bg-white focus:outline-none focus:border-[#007481]"
                       >
                         <option value="todos">Todos Status</option>
                         <option value="abertos">Abertos / Em Andamento</option>
@@ -731,7 +722,7 @@ export default function PortalCliente() {
 
                     <button
                       onClick={() => setShowNewTicketModal(true)}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-[#007481]/30 transition-all transform hover:-translate-y-0.5"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-[#007481]/25 transition-all transform hover:-translate-y-0.5 cursor-pointer"
                     >
                       <Plus className="w-4 h-4" /> Abrir Novo Chamado
                     </button>
@@ -739,20 +730,20 @@ export default function PortalCliente() {
 
                   {/* Listagem de Chamados */}
                   {loadingData ? (
-                    <div className="p-12 text-center text-slate-400">
+                    <div className="p-12 text-center text-slate-500">
                       <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin text-[#007481]" />
                       Carregando seus chamados...
                     </div>
                   ) : filteredTickets.length === 0 ? (
-                    <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-10 text-center">
-                      <Wrench className="w-12 h-12 mx-auto mb-3 text-slate-600" />
-                      <h4 className="text-lg font-bold text-white mb-1">Nenhum chamado encontrado</h4>
-                      <p className="text-sm text-slate-400 max-w-md mx-auto mb-6">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center shadow-xs">
+                      <Wrench className="w-12 h-12 mx-auto mb-3 text-slate-400" />
+                      <h4 className="text-lg font-bold text-slate-900 mb-1">Nenhum chamado encontrado</h4>
+                      <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
                         Você não possui chamados ativos neste filtro. Se sua máquina precisa de revisão ou reparo, abra um chamado imediato!
                       </p>
                       <button
                         onClick={() => setShowNewTicketModal(true)}
-                        className="bg-[#007481] hover:bg-[#005d68] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg transition-all"
+                        className="bg-[#007481] hover:bg-[#005d68] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md cursor-pointer"
                       >
                         + Abrir Primeiro Chamado
                       </button>
@@ -766,18 +757,18 @@ export default function PortalCliente() {
                         return (
                           <div 
                             key={ticket.id} 
-                            className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 shadow-lg transition-all"
+                            className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all"
                           >
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                               <div className="flex items-center gap-3">
-                                <span className="bg-[#007481]/20 border border-[#007481]/40 text-[#00a3b4] font-black px-2.5 py-1 rounded-lg text-xs">
+                                <span className="bg-teal-50 border border-teal-200 text-[#007481] font-black px-2.5 py-1 rounded-lg text-xs">
                                   #{ticket.id}
                                 </span>
                                 <div>
-                                  <h4 className="font-extrabold text-white text-base">
+                                  <h4 className="font-extrabold text-slate-900 text-base">
                                     {ticket.equipment_model || 'Equipamento Tennant'}
                                   </h4>
-                                  <div className="text-xs text-slate-400">
+                                  <div className="text-xs text-slate-500">
                                     Série: {ticket.equipment_serial_number || 'S/N'} • Aberto em {new Date(ticket.created_at).toLocaleDateString('pt-BR')}
                                   </div>
                                 </div>
@@ -785,16 +776,16 @@ export default function PortalCliente() {
 
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                                  isCompleted ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                                  'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                  isCompleted ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                  'bg-amber-50 text-amber-700 border border-amber-200'
                                 }`}>
                                   {ticket.status || 'Aberto'}
                                 </span>
-                                <span className="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full text-xs font-medium border border-slate-700">
+                                <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full text-xs font-medium border border-slate-200">
                                   Tipo: {ticket.ticket_type}
                                 </span>
                                 {isUrgent && (
-                                  <span className="bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded text-xs font-bold">
+                                  <span className="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-xs font-bold">
                                     {ticket.priority}
                                   </span>
                                 )}
@@ -802,21 +793,21 @@ export default function PortalCliente() {
                             </div>
 
                             {/* Descrição do Chamado */}
-                            <div className="py-3 text-sm text-slate-300 leading-relaxed">
+                            <div className="py-3 text-sm text-slate-700 leading-relaxed">
                               {ticket.description}
                             </div>
 
                             {/* Detalhes Técnicos (Técnico e Data Agendada) */}
                             {(ticket.assigned_technician || ticket.scheduled_date) && (
-                              <div className="bg-slate-950/70 rounded-xl p-3 mb-3 flex flex-wrap items-center gap-4 text-xs text-slate-400 border border-slate-800/80">
+                              <div className="bg-slate-50 rounded-xl p-3 mb-3 flex flex-wrap items-center gap-4 text-xs text-slate-600 border border-slate-200">
                                 {ticket.assigned_technician && (
-                                  <div className="flex items-center gap-1.5 text-teal-300 font-medium">
+                                  <div className="flex items-center gap-1.5 text-[#007481] font-medium">
                                     <User className="w-3.5 h-3.5" />
                                     <span>Técnico Responsável: <strong>{ticket.assigned_technician}</strong></span>
                                   </div>
                                 )}
                                 {ticket.scheduled_date && (
-                                  <div className="flex items-center gap-1.5 text-slate-300">
+                                  <div className="flex items-center gap-1.5 text-slate-600">
                                     <Calendar className="w-3.5 h-3.5" />
                                     <span>Agendado para: {new Date(ticket.scheduled_date).toLocaleDateString('pt-BR')}</span>
                                   </div>
@@ -826,18 +817,18 @@ export default function PortalCliente() {
 
                             {/* DESTAQUE DO ORÇAMENTO VINCULADO (quando houver orçamento, exibe o valor em destaque!) */}
                             {ticket.budget_grand_total ? (
-                              <div className="bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900 border border-emerald-500/40 rounded-xl p-4 my-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 my-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div>
-                                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 uppercase tracking-wider">
                                     <DollarSign className="w-4 h-4" /> Orçamento Vinculado a este Chamado
                                   </div>
-                                  <div className="text-xs text-slate-300 mt-0.5">
-                                    Status da Proposta: <span className="font-semibold text-white">{ticket.budget_status || 'Aprovado'}</span>
+                                  <div className="text-xs text-slate-600 mt-0.5">
+                                    Status da Proposta: <span className="font-semibold text-slate-900">{ticket.budget_status || 'Aprovado'}</span>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-xs text-slate-400">Valor Total do Atendimento</div>
-                                  <div className="text-xl sm:text-2xl font-black text-emerald-400">
+                                  <div className="text-xs text-slate-500">Valor Total do Atendimento</div>
+                                  <div className="text-xl sm:text-2xl font-black text-emerald-700">
                                     {formatCurrency(ticket.budget_grand_total)}
                                   </div>
                                 </div>
@@ -850,9 +841,9 @@ export default function PortalCliente() {
                                 href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Olá! Gostaria de informações sobre o meu chamado #${ticket.id} (${ticket.equipment_model || 'Tennant'}).`)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/30 hover:bg-emerald-950/50 border border-emerald-800/40 px-3 py-1.5 rounded-lg transition-colors"
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors"
                               >
-                                <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-400" /> Falar com Técnico sobre Chamado #{ticket.id}
+                                <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-600" /> Falar com Técnico sobre Chamado #{ticket.id}
                               </a>
                             </div>
                           </div>
@@ -870,16 +861,16 @@ export default function PortalCliente() {
                 <div className="space-y-6">
                   
                   {/* Topo da Aba */}
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
                     <div>
-                      <h3 className="text-lg font-black text-white">Parque de Máquinas Cadastradas</h3>
-                      <p className="text-xs text-slate-400">
+                      <h3 className="text-lg font-black text-slate-900">Parque de Máquinas Cadastradas</h3>
+                      <p className="text-xs text-slate-500">
                         Consulte o histórico de manutenções, custos acumulados e o momento ideal de substituição de cada máquina.
                       </p>
                     </div>
                     <button
                       onClick={() => setShowNewEquipmentModal(true)}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-[#007481]/30 transition-all"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-[#007481]/25 transition-all cursor-pointer"
                     >
                       <Plus className="w-4 h-4" /> Cadastrar Equipamento
                     </button>
@@ -887,15 +878,15 @@ export default function PortalCliente() {
 
                   {/* Cards de Equipamentos */}
                   {equipments.length === 0 ? (
-                    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-10 text-center">
-                      <Cpu className="w-12 h-12 mx-auto mb-3 text-slate-600" />
-                      <h4 className="text-lg font-bold text-white mb-1">Nenhum equipamento cadastrado ainda</h4>
-                      <p className="text-sm text-slate-400 max-w-md mx-auto mb-6">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center shadow-xs">
+                      <Cpu className="w-12 h-12 mx-auto mb-3 text-slate-400" />
+                      <h4 className="text-lg font-bold text-slate-900 mb-1">Nenhum equipamento cadastrado ainda</h4>
+                      <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
                         Cadastre suas lavadoras e varredeiras Tennant para acompanhar custos e histórico de serviços.
                       </p>
                       <button
                         onClick={() => setShowNewEquipmentModal(true)}
-                        className="bg-[#007481] hover:bg-[#005d68] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg"
+                        className="bg-[#007481] hover:bg-[#005d68] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md cursor-pointer"
                       >
                         + Cadastrar Minha Primeira Máquina
                       </button>
@@ -905,37 +896,37 @@ export default function PortalCliente() {
                       {equipments.map(eq => (
                         <div
                           key={eq.id}
-                          className="bg-slate-900 border border-slate-800 hover:border-[#007481]/60 rounded-2xl p-5 shadow-lg transition-all flex flex-col justify-between"
+                          className="bg-white border border-slate-200 hover:border-[#007481]/60 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                         >
                           <div>
                             <div className="flex items-center justify-between mb-3">
-                              <span className="bg-[#007481]/20 text-[#00a3b4] text-xs font-extrabold px-2.5 py-0.5 rounded uppercase border border-[#007481]/30">
+                              <span className="bg-teal-50 text-[#007481] text-xs font-extrabold px-2.5 py-0.5 rounded uppercase border border-teal-200">
                                 {eq.brand || 'Tennant'}
                               </span>
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs text-slate-500 font-medium">
                                 {eq.ownership_type || 'Próprio'}
                               </span>
                             </div>
 
-                            <h4 className="text-lg font-black text-white mb-1">{eq.model || eq.name}</h4>
-                            <div className="text-xs text-slate-400 space-y-1 mb-4">
-                              <div>Chassi / Série: <strong className="text-slate-200">{eq.serial_number || 'Não informado'}</strong></div>
-                              <div>Manutenções Realizadas: <strong className="text-slate-200">{eq.tickets_count || 0} chamados</strong></div>
+                            <h4 className="text-lg font-black text-slate-900 mb-1">{eq.model || eq.name}</h4>
+                            <div className="text-xs text-slate-600 space-y-1 mb-4">
+                              <div>Chassi / Série: <strong className="text-slate-800">{eq.serial_number || 'Não informado'}</strong></div>
+                              <div>Manutenções Realizadas: <strong className="text-slate-800">{eq.tickets_count || 0} chamados</strong></div>
                             </div>
                           </div>
 
                           {/* Custo Acumulado & Botão Ver Histórico */}
-                          <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
+                          <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                             <div>
-                              <div className="text-[10px] text-slate-400 uppercase font-bold">Custo Acumulado</div>
-                              <div className="text-base font-black text-emerald-400">
+                              <div className="text-[10px] text-slate-500 uppercase font-bold">Custo Acumulado</div>
+                              <div className="text-base font-black text-emerald-700">
                                 {formatCurrency(eq.total_maintenance_cost)}
                               </div>
                             </div>
 
                             <button
                               onClick={() => openEquipmentDetails(eq)}
-                              className="flex items-center gap-1.5 bg-slate-800 hover:bg-[#007481] text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all"
+                              className="flex items-center gap-1.5 bg-slate-100 hover:bg-[#007481] hover:text-white text-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
                             >
                               <span>Ver Histórico & Troca</span>
                               <ChevronRight className="w-4 h-4" />
@@ -953,23 +944,23 @@ export default function PortalCliente() {
               {/* =============================================================== */}
               {activeTab === 'usuarios' && (
                 <div className="space-y-6">
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
                     <div>
-                      <h3 className="text-lg font-black text-white">Usuários & Contatos Autorizados</h3>
-                      <p className="text-xs text-slate-400">
+                      <h3 className="text-lg font-black text-slate-900">Usuários & Contatos Autorizados</h3>
+                      <p className="text-xs text-slate-500">
                         Equipe da sua empresa autorizada a abrir e acompanhar chamados no portal.
                       </p>
                     </div>
                     <button
                       onClick={() => setShowNewUserModal(true)}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg transition-all"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all cursor-pointer"
                     >
                       <Plus className="w-4 h-4" /> Adicionar Usuário
                     </button>
                   </div>
 
                   {/* Usuário Principal (Titular do Acesso) */}
-                  <div className="bg-slate-900 border border-[#007481]/40 rounded-2xl p-5 shadow-lg">
+                  <div className="bg-white border border-teal-300/80 rounded-2xl p-5 shadow-xs">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-[#007481] text-white flex items-center justify-center font-black">
@@ -977,12 +968,12 @@ export default function PortalCliente() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h4 className="font-extrabold text-white text-base">{clientData?.name}</h4>
-                            <span className="bg-teal-500/20 text-teal-300 text-[10px] font-bold px-2 py-0.5 rounded border border-teal-500/30">
+                            <h4 className="font-extrabold text-slate-900 text-base">{clientData?.name}</h4>
+                            <span className="bg-teal-50 text-[#007481] text-[10px] font-bold px-2 py-0.5 rounded border border-teal-200">
                               Titular da Conta
                             </span>
                           </div>
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-slate-500">
                             {clientData?.email} • {clientData?.phone}
                           </div>
                         </div>
@@ -995,21 +986,21 @@ export default function PortalCliente() {
                     {portalUsers.map(u => (
                       <div 
                         key={u.id}
-                        className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-md"
+                        className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xs"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-sm">
+                          <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm">
                             {u.name.charAt(0)}
                           </div>
                           <div>
-                            <div className="font-bold text-white text-sm">{u.name}</div>
-                            <div className="text-xs text-slate-400">{u.role} {u.phone ? `• ${u.phone}` : ''} {u.email ? `• ${u.email}` : ''}</div>
+                            <div className="font-bold text-slate-900 text-sm">{u.name}</div>
+                            <div className="text-xs text-slate-500">{u.role} {u.phone ? `• ${u.phone}` : ''} {u.email ? `• ${u.email}` : ''}</div>
                           </div>
                         </div>
 
                         <button
                           onClick={() => handleDeleteUser(u.id)}
-                          className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 rounded-lg transition-colors"
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                           title="Remover usuário"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1029,177 +1020,211 @@ export default function PortalCliente() {
         /* ========================================================================= */
         /* 🌐 PÁGINA PÚBLICA / INFORMATIVA (QUANDO NÃO LOGADO)                       */
         /* ========================================================================= */
-        <div className="relative">
+        <div className="relative bg-slate-50">
 
-          {/* Hero Banner Oficial Tennant Clean Tech Pro */}
-          <section className="relative overflow-hidden pt-12 pb-16 lg:py-24 border-b border-slate-800 bg-gradient-to-b from-slate-950 via-[#0a192f] to-slate-950">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(0,116,129,0.18),transparent_50%)] pointer-events-none" />
-            
+          {/* Hero Banner Oficial Tennant Clean Tech Pro - Visual Clean LP */}
+          <section className="relative overflow-hidden pt-8 pb-12 sm:py-16 lg:py-20 bg-white border-b border-slate-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-              <div className="max-w-3xl">
+              
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
                 
-                {/* Selo Oficial com Logo Alfa Tennant */}
-                <div className="inline-flex items-center gap-3 bg-slate-900/90 border border-teal-500/40 p-2 pr-4 rounded-2xl shadow-xl mb-6">
-                  <div className="bg-white px-3 py-1.5 rounded-xl shadow-xs flex items-center">
-                    <img 
-                      src="/alfa-tennant-logo-hd.png" 
-                      alt="Alfa Tennant" 
-                      className="h-6 sm:h-7 w-auto object-contain" 
-                    />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-[10px] sm:text-xs font-black text-teal-300 uppercase tracking-wide flex items-center gap-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 inline" /> Representante & Assistência Técnica Autorizada Alfa Tennant
+                {/* COLUNA ESQUERDA: CARD LIMPO COM FOTO DA MÁQUINA TENNANT & SELOS */}
+                <div className="lg:col-span-6 order-2 lg:order-1">
+                  <div className="relative bg-white flex flex-col items-center justify-center p-6 sm:p-8 min-h-[340px] sm:min-h-[440px] rounded-3xl border border-slate-200 shadow-md hover:shadow-xl transition-all group overflow-hidden">
+                    
+                    {/* Badge Promoção / Assistência Oficial */}
+                    <div className="absolute top-4 left-4 z-20 pointer-events-none select-none">
+                      <div className="bg-gradient-to-r from-red-600 via-orange-600 to-[#eb6420] text-white font-black text-xs uppercase px-3.5 sm:px-4 py-1.5 rounded-full shadow-md flex items-center gap-1.5 border border-white tracking-wider">
+                        <span>🔥</span>
+                        <span>Assistência Técnica Oficial</span>
+                      </div>
                     </div>
-                    <div className="text-[10px] text-slate-400">Peças Originais, Manutenção Certificada e Entrega Técnica • Paraná</div>
+
+                    {/* Foto da Máquina Tennant (Alta Resolução da LP) */}
+                    <img 
+                      src="https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-main.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg" 
+                      alt="Lavadora de Piso Tennant A-260 e Equipamentos Industriais" 
+                      className="max-h-[260px] sm:max-h-[360px] w-auto object-contain transition-transform duration-500 group-hover:scale-105 mt-6 sm:mt-4"
+                    />
+
+                    {/* Selo Inferior de Confiabilidade com Logo Alfa Tennant Oficial */}
+                    <div className="mt-4 flex items-center gap-2 bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-full text-xs text-slate-700 font-semibold shadow-xs">
+                      <img src="/alfa-tennant-logo-hd.png" alt="Alfa Tennant" className="h-4 w-auto object-contain" />
+                      <span>Peças Originais • Manutenção Certificada • Paraná</span>
+                    </div>
                   </div>
                 </div>
 
-                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight mb-6">
-                  Suporte Especializado & <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00a3b4] via-teal-300 to-emerald-400">
-                    Portal de Chamados Tennant
-                  </span>
-                </h1>
+                {/* COLUNA DIREITA: HEADLINE COMERCIAL LIMPA, CORES LP & CTAs */}
+                <div className="lg:col-span-6 order-1 lg:order-2 space-y-4 sm:space-y-5">
+                  
+                  {/* Tag Superior Laranja Oficial da LP */}
+                  <div className="flex items-center gap-2 text-[#eb6420] text-xs font-black uppercase tracking-wider">
+                    <span>★ PORTAL OFICIAL DO CLIENTE TENNANT</span>
+                    <span>•</span>
+                    <span>LÍDER GLOBAL</span>
+                  </div>
 
-                <p className="text-base sm:text-lg text-slate-300 leading-relaxed mb-8">
-                  Abra chamados em menos de 1 minuto, acompanhe manutenções em tempo real, consulte orçamentos vinculados e monitore o histórico completo de custos do seu parque de máquinas.
-                </p>
+                  {/* Título Principal de Alto Impacto */}
+                  <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                    Suporte Especializado &amp; <br />
+                    <span className="text-[#007481]">Portal de Chamados</span>{' '}
+                    <span className="text-[#eb6420]">Tennant</span>
+                  </h1>
 
-                {/* CTAs Principais */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <button
-                    onClick={() => { setRegError(''); setShowRegisterModal(true); }}
-                    className="flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-7 py-4 rounded-xl font-black text-base shadow-xl shadow-[#007481]/30 transition-all transform hover:-translate-y-0.5"
-                  >
-                    <Plus className="w-5 h-5" /> Cadastrar & Abrir Chamado
-                  </button>
+                  {/* Descrição */}
+                  <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                    Abra chamados em menos de 1 minuto, acompanhe manutenções com <strong className="text-slate-900">técnicos autorizados</strong> em tempo real, aprove orçamentos de <strong className="text-[#007481]">peças originais</strong> e monitore o histórico completo de custos do seu parque de máquinas.
+                  </p>
 
-                  <button
-                    onClick={() => { setLoginError(''); setShowLoginModal(true); }}
-                    className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 px-6 py-4 rounded-xl font-bold text-base transition-colors"
-                  >
-                    <Lock className="w-4 h-4 text-teal-400" /> Já sou Cadastrado (Login)
-                  </button>
+                  {/* Caixa de Benefício Imediato */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-teal-100/70 text-[#007481] flex items-center justify-center flex-shrink-0 font-bold">
+                      <Wrench className="w-5 h-5" />
+                    </div>
+                    <div className="text-xs text-slate-700 leading-snug">
+                      <strong className="text-slate-900 font-bold block">Abertura Rápida com Chassi ou Modelo da Máquina</strong>
+                      Atendimento prioritário em Curitiba, Região Metropolitana e todo o Paraná.
+                    </div>
+                  </div>
+
+                  {/* Botões de Ação Principais (Estilo LP) */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+                    <button
+                      onClick={() => { setRegError(''); setShowRegisterModal(true); }}
+                      className="flex items-center justify-center gap-2 bg-[#eb6420] hover:bg-[#d55515] active:scale-95 text-white px-7 py-4 rounded-full font-black text-sm sm:text-base shadow-lg shadow-orange-500/25 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-5 h-5" /> Cadastrar &amp; Abrir Chamado
+                    </button>
+
+                    <button
+                      onClick={() => { setLoginError(''); setShowLoginModal(true); }}
+                      className="flex items-center justify-center gap-2 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 px-6 py-4 rounded-full font-bold text-sm sm:text-base shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Lock className="w-4 h-4 text-[#007481]" /> Já sou Cadastrado (Login)
+                    </button>
+                  </div>
+
+                  {/* LGPD Assurance Badge */}
+                  <div className="pt-2 flex items-center gap-2 text-xs text-slate-500 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>Cadastro rápido, 100% seguro e em total conformidade com a LGPD (Lei 13.709/2018).</span>
+                  </div>
                 </div>
 
-                {/* LGPD Assurance Badge */}
-                <div className="mt-6 flex items-center gap-2 text-xs text-slate-400">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>Cadastro rápido, 100% seguro e em total conformidade com a LGPD (Lei 13.709/2018).</span>
-                </div>
               </div>
+
             </div>
           </section>
 
           {/* ========================================================================= */}
-          {/* 🛠️ SEÇÕES INFORMATIVAS DOS NOSSOS SERVIÇOS (100% INFORMATIVO - SEM ECOMMERCE) */}
+          {/* 🛠️ SEÇÕES INFORMATIVAS DOS NOSSOS SERVIÇOS (VISUAL CLEAN)                */}
           {/* ========================================================================= */}
           <section className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <span className="text-xs font-bold text-[#00a3b4] uppercase tracking-wider">Excelência & Credibilidade</span>
-              <h2 className="text-2xl sm:text-4xl font-black text-white mt-2 mb-4">
+              <span className="text-xs font-bold text-[#007481] uppercase tracking-wider">Excelência & Credibilidade</span>
+              <h2 className="text-2xl sm:text-4xl font-black text-slate-900 mt-2 mb-4">
                 Serviços Oficiais de Assistência Técnica Tennant
               </h2>
-              <p className="text-sm sm:text-base text-slate-400 leading-relaxed">
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
                 A Clean Tech Pro é referência em atendimento técnico especializado, peças genuínas de fábrica e capacitação para garantir a máxima vida útil da sua máquina.
               </p>
             </div>
 
-            {/* Grid dos 4 Pilares de Serviços */}
+            {/* Grid dos 4 Pilares de Serviços em Cards Brancos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
               {/* Pilar 1: Assistência Técnica Autorizada */}
-              <div className="bg-slate-900 border border-slate-800 hover:border-[#007481] rounded-2xl p-6 transition-all duration-300 shadow-xl flex flex-col justify-between">
+              <div className="bg-white border border-slate-200 hover:border-[#007481] hover:shadow-xl rounded-2xl p-6 transition-all duration-300 shadow-sm flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-[#007481]/20 text-[#00a3b4] flex items-center justify-center mb-5 border border-[#007481]/30">
+                  <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#007481] flex items-center justify-center mb-5 border border-teal-100">
                     <Wrench className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-black text-white mb-2">Assistência Autorizada</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                  <h3 className="text-lg font-black text-slate-900 mb-2">Assistência Autorizada</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed mb-4">
                     Manutenções preventivas programadas e corretivas emergenciais. Diagnóstico eletrônico com ferramentas oficiais Tennant.
                   </p>
-                  <ul className="space-y-2 text-xs text-slate-300">
+                  <ul className="space-y-2 text-xs text-slate-700">
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Técnicos credenciados de fábrica
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Técnicos credenciados de fábrica
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Atendimento ágil em campo
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Atendimento ágil em campo
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Revisões completas periódicas
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Revisões completas periódicas
                     </li>
                   </ul>
                 </div>
               </div>
 
               {/* Pilar 2: Peças e Insumos 100% Genuínos */}
-              <div className="bg-slate-900 border border-slate-800 hover:border-[#007481] rounded-2xl p-6 transition-all duration-300 shadow-xl flex flex-col justify-between">
+              <div className="bg-white border border-slate-200 hover:border-[#007481] hover:shadow-xl rounded-2xl p-6 transition-all duration-300 shadow-sm flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-[#007481]/20 text-[#00a3b4] flex items-center justify-center mb-5 border border-[#007481]/30">
+                  <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#007481] flex items-center justify-center mb-5 border border-teal-100">
                     <ShieldCheck className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-black text-white mb-2">Peças 100% Originais</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                  <h3 className="text-lg font-black text-slate-900 mb-2">Peças 100% Originais</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed mb-4">
                     Aplicação exclusiva de peças e insumos originais Tennant, preservando a garantia e durabilidade do equipamento.
                   </p>
-                  <ul className="space-y-2 text-xs text-slate-300">
+                  <ul className="space-y-2 text-xs text-slate-700">
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Escovas e lâminas de rodo Linatex
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Escovas e lâminas de rodo Linatex
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Motores de aspiração e tração
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Motores de aspiração e tração
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Baterias tracionárias certificadas
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Baterias tracionárias certificadas
                     </li>
                   </ul>
                 </div>
               </div>
 
               {/* Pilar 3: Entrega Técnica & Treinamento */}
-              <div className="bg-slate-900 border border-slate-800 hover:border-[#007481] rounded-2xl p-6 transition-all duration-300 shadow-xl flex flex-col justify-between">
+              <div className="bg-white border border-slate-200 hover:border-[#007481] hover:shadow-xl rounded-2xl p-6 transition-all duration-300 shadow-sm flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-[#007481]/20 text-[#00a3b4] flex items-center justify-center mb-5 border border-[#007481]/30">
+                  <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#007481] flex items-center justify-center mb-5 border border-teal-100">
                     <Award className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-black text-white mb-2">Entrega Técnica</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                  <h3 className="text-lg font-black text-slate-900 mb-2">Entrega Técnica</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed mb-4">
                     Treinamento presencial de operadores para o uso correto das máquinas, com checklist de entrega e normas de segurança.
                   </p>
-                  <ul className="space-y-2 text-xs text-slate-300">
+                  <ul className="space-y-2 text-xs text-slate-700">
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Capacitação prática de equipe
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Capacitação prática de equipe
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Instruções de higienização diária
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Instruções de higienização diária
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Checklist operacional detalhado
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Checklist operacional detalhado
                     </li>
                   </ul>
                 </div>
               </div>
 
               {/* Pilar 4: Gestão e Momento Ideal de Troca */}
-              <div className="bg-slate-900 border border-slate-800 hover:border-[#007481] rounded-2xl p-6 transition-all duration-300 shadow-xl flex flex-col justify-between">
+              <div className="bg-white border border-slate-200 hover:border-[#007481] hover:shadow-xl rounded-2xl p-6 transition-all duration-300 shadow-sm flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-[#007481]/20 text-[#00a3b4] flex items-center justify-center mb-5 border border-[#007481]/30">
+                  <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#007481] flex items-center justify-center mb-5 border border-teal-100">
                     <TrendingUp className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-black text-white mb-2">Gestão de Custos & Troca</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                  <h3 className="text-lg font-black text-slate-900 mb-2">Gestão de Custos & Troca</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed mb-4">
                     Tenha visibilidade total de quanto cada máquina gasta em reparos e saiba o momento exato em que compensa renovar o ativo.
                   </p>
-                  <ul className="space-y-2 text-xs text-slate-300">
+                  <ul className="space-y-2 text-xs text-slate-700">
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Histórico por número de série
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Histórico por número de série
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Valores de orçamentos vinculados
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Valores de orçamentos vinculados
                     </li>
                     <li className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" /> Alerta de viabilidade econômica
+                      <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> Alerta de viabilidade econômica
                     </li>
                   </ul>
                 </div>
@@ -1208,7 +1233,7 @@ export default function PortalCliente() {
             </div>
 
             {/* Banner Call-to-Action Inferior */}
-            <div className="mt-16 bg-gradient-to-r from-[#005d68] to-[#007481] rounded-3xl p-8 sm:p-12 text-center text-white shadow-2xl relative overflow-hidden">
+            <div className="mt-16 bg-gradient-to-r from-[#005d68] to-[#007481] rounded-3xl p-8 sm:p-12 text-center text-white shadow-xl relative overflow-hidden">
               <div className="max-w-2xl mx-auto relative z-10">
                 <h3 className="text-2xl sm:text-3xl font-black mb-3">
                   Pronto para gerenciar seus chamados com agilidade?
@@ -1219,7 +1244,7 @@ export default function PortalCliente() {
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
                     onClick={() => { setRegError(''); setShowRegisterModal(true); }}
-                    className="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 text-slate-900 font-black px-8 py-3.5 rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5"
+                    className="w-full sm:w-auto bg-[#eb6420] hover:bg-[#d55515] text-white font-black px-8 py-3.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 cursor-pointer"
                   >
                     Criar Minha Conta no Portal
                   </button>
@@ -1227,7 +1252,7 @@ export default function PortalCliente() {
                     href={WHATSAPP_LINK}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto bg-white/15 hover:bg-white/25 text-white font-bold px-6 py-3.5 rounded-xl border border-white/30 transition-colors flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto bg-white/15 hover:bg-white/25 text-white font-bold px-6 py-3.5 rounded-full border border-white/30 transition-colors flex items-center justify-center gap-2"
                   >
                     <WhatsAppIcon className="w-4 h-4" /> Dúvidas via WhatsApp
                   </a>
@@ -1237,18 +1262,18 @@ export default function PortalCliente() {
           </section>
 
           {/* Rodapé da Página Pública com Link LGPD e Logos */}
-          <footer className="border-t border-slate-900 bg-slate-950 py-10 text-center text-xs text-slate-500">
+          <footer className="border-t border-slate-200 bg-white py-10 text-center text-xs text-slate-500">
             <div className="max-w-7xl mx-auto px-4 space-y-4">
               
               {/* Logos no Rodapé */}
               <div className="flex items-center justify-center gap-4 flex-wrap">
                 <img 
-                  src="/cleantechpro-official-white.png" 
+                  src="/cleantechpro-official-logo.png" 
                   alt="Clean Tech Pro" 
-                  className="h-8 w-auto object-contain opacity-80" 
+                  className="h-8 w-auto object-contain" 
                 />
-                <span className="text-slate-700">|</span>
-                <div className="bg-white px-2.5 py-1 rounded-lg opacity-90 flex items-center shadow-xs">
+                <span className="text-slate-300">|</span>
+                <div className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 flex items-center shadow-xs">
                   <img 
                     src="/alfa-tennant-logo-hd.png" 
                     alt="Alfa Tennant" 
@@ -1257,16 +1282,16 @@ export default function PortalCliente() {
                 </div>
               </div>
 
-              <p>© {new Date().getFullYear()} Clean Tech Pro • Representante & Assistência Técnica Autorizada Tennant. Todos os direitos reservados.</p>
-              <div className="flex items-center justify-center gap-4 text-slate-400">
+              <p>© {new Date().getFullYear()} Clean Tech Pro • Representante &amp; Assistência Técnica Autorizada Tennant. Todos os direitos reservados.</p>
+              <div className="flex items-center justify-center gap-4 text-slate-500">
                 <button 
                   onClick={() => setShowLgpdModal(true)}
-                  className="hover:text-[#00a3b4] underline transition-colors"
+                  className="hover:text-[#007481] underline transition-colors"
                 >
                   Termos de Uso e Política de Privacidade (LGPD)
                 </button>
                 <span>•</span>
-                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">
+                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 transition-colors">
                   Suporte: {WHATSAPP_DISPLAY}
                 </a>
               </div>
@@ -1280,33 +1305,33 @@ export default function PortalCliente() {
       {/* 📝 MODAL DE AUTOCADASTRO COM CONFORMIDADE LGPD OBRIGATÓRIA                 */}
       {/* ========================================================================= */}
       {showRegisterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-8 text-slate-900">
             <button
               onClick={() => setShowRegisterModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg"
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="bg-white px-2.5 py-1 rounded-lg shadow-xs flex items-center">
+                <div className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs flex items-center">
                   <img src="/alfa-tennant-logo-hd.png" alt="Alfa Tennant" className="h-5 w-auto object-contain" />
                 </div>
-                <span className="text-[11px] font-bold text-teal-400 uppercase tracking-wider">
+                <span className="text-[11px] font-bold text-[#007481] uppercase tracking-wider">
                   Assistência Técnica Autorizada
                 </span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-white mt-1">Criar Conta no Portal do Cliente</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">Criar Conta no Portal do Cliente</h3>
+              <p className="text-xs text-slate-500 mt-1">
                 Cadastre sua empresa para abrir chamados, acompanhar serviços e gerenciar seus equipamentos.
               </p>
             </div>
 
             {regError && (
-              <div className="mb-5 p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-xs text-rose-300 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+              <div className="mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-600" />
                 <span>{regError}</span>
               </div>
             )}
@@ -1316,97 +1341,97 @@ export default function PortalCliente() {
               {/* Dados Principais */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Nome / Razão Social *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Nome / Razão Social *</label>
                   <input
                     type="text"
                     required
                     value={regForm.name}
                     onChange={(e) => setRegForm({ ...regForm, name: e.target.value })}
                     placeholder="Ex: Empresa ou Seu Nome"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#007481]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007481] focus:ring-1 focus:ring-[#007481]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">CNPJ ou CPF</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">CNPJ ou CPF</label>
                   <input
                     type="text"
                     value={regForm.document}
                     onChange={(e) => setRegForm({ ...regForm, document: e.target.value })}
                     placeholder="00.000.000/0001-00"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#007481]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007481] focus:ring-1 focus:ring-[#007481]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">WhatsApp / Telefone *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">WhatsApp / Telefone *</label>
                   <input
                     type="text"
                     required
                     value={regForm.phone}
                     onChange={(e) => setRegForm({ ...regForm, phone: e.target.value })}
                     placeholder="(41) 99999-9999"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#007481]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007481] focus:ring-1 focus:ring-[#007481]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Pessoa de Contato</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Pessoa de Contato</label>
                   <input
                     type="text"
                     value={regForm.contact_person}
                     onChange={(e) => setRegForm({ ...regForm, contact_person: e.target.value })}
                     placeholder="Nome do responsável"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#007481]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007481] focus:ring-1 focus:ring-[#007481]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">E-mail de Acesso *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">E-mail de Acesso *</label>
                   <input
                     type="email"
                     required
                     value={regForm.email}
                     onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
                     placeholder="seuemail@empresa.com.br"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#007481]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007481] focus:ring-1 focus:ring-[#007481]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Senha de Acesso *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Senha de Acesso *</label>
                   <input
                     type="password"
                     required
                     value={regForm.password}
                     onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
                     placeholder="Mínimo 6 caracteres"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#007481]"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007481] focus:ring-1 focus:ring-[#007481]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Endereço / Cidade / Estado</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Endereço / Cidade / Estado</label>
                 <input
                   type="text"
                   value={regForm.address}
                   onChange={(e) => setRegForm({ ...regForm, address: e.target.value })}
                   placeholder="Endereço onde as máquinas operam"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#007481]"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007481] focus:ring-1 focus:ring-[#007481]"
                 />
               </div>
 
               {/* Opção Rápida: Cadastrar Equipamento e Abrir Chamado Imediato */}
               <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-teal-500/40 transition-colors">
+                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-xl bg-teal-50/60 border border-teal-200 hover:border-teal-400 transition-colors">
                   <input
                     type="checkbox"
                     checked={regForm.has_equipment}
                     onChange={(e) => setRegForm({ ...regForm, has_equipment: e.target.checked })}
-                    className="rounded text-[#007481] focus:ring-[#007481] w-4 h-4"
+                    className="rounded text-[#007481] focus:ring-[#007481] w-4 h-4 cursor-pointer"
                   />
-                  <span className="text-xs font-bold text-white">
+                  <span className="text-xs font-bold text-slate-800">
                     Desejo cadastrar meu equipamento e abrir um chamado imediato agora
                   </span>
                 </label>
@@ -1414,94 +1439,92 @@ export default function PortalCliente() {
 
               {/* Seção Condicional de Equipamento e Chamado */}
               {regForm.has_equipment && (
-                <div className="p-4 rounded-2xl bg-slate-950 border border-[#007481]/40 space-y-3">
-                  <div className="text-xs font-bold text-teal-400 uppercase tracking-wider">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-teal-300/60 space-y-3">
+                  <div className="text-xs font-bold text-[#007481] uppercase tracking-wider">
                     Dados do Equipamento & Chamado Inicial
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">Modelo da Máquina *</label>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Modelo da Máquina *</label>
                       <input
                         type="text"
                         placeholder="Ex: Lavadora Tennant A-260"
                         value={regForm.equipment_model}
                         onChange={(e) => setRegForm({ ...regForm, equipment_model: e.target.value })}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white"
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">Número de Série / Chassi</label>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Número de Série / Chassi</label>
                       <input
                         type="text"
                         placeholder="Ex: TN-2026-X49"
                         value={regForm.equipment_serial}
                         onChange={(e) => setRegForm({ ...regForm, equipment_serial: e.target.value })}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white"
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">Tipo de Serviço</label>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tipo de Serviço</label>
                       <select
                         value={regForm.ticket_type}
                         onChange={(e) => setRegForm({ ...regForm, ticket_type: e.target.value })}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white"
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900"
                       >
-                        <option value="Corretiva">Manutenção Corretiva (Reparo)</option>
-                        <option value="Preventiva">Manutenção Preventiva / Revisão</option>
-                        <option value="Entrega Técnica">Entrega Técnica / Treinamento</option>
-                        <option value="Peças">Cotação / Solicitação de Peças</option>
+                        <option value="Corretiva">Corretiva (Máquina com defeito/parada)</option>
+                        <option value="Preventiva">Preventiva (Revisão periódica programada)</option>
+                        <option value="Entrega Técnica">Entrega Técnica & Treinamento</option>
+                        <option value="Peças">Cotação de Peças e Insumos</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-300 mb-1">Prioridade</label>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Prioridade</label>
                       <select
-                        value={regForm.ticket_priority}
-                        onChange={(e) => setRegForm({ ...regForm, ticket_priority: e.target.value })}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white"
+                        value={regForm.priority}
+                        onChange={(e) => setRegForm({ ...regForm, priority: e.target.value })}
+                        className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900"
                       >
-                        <option value="Baixa">Baixa</option>
-                        <option value="Média">Média</option>
-                        <option value="Alta">Alta</option>
-                        <option value="Urgente">Urgente (Máquina Parada)</option>
+                        <option value="Média">Média (Atendimento Padrão)</option>
+                        <option value="Alta">Alta (Máquina apresentando falhas)</option>
+                        <option value="Urgente">Urgente (Operação parada - Prioridade Máxima)</option>
+                        <option value="Baixa">Baixa (Dúvida ou solicitação simples)</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">Descrição do Problema / Solicitação</label>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Descrição do Problema ou Solicitação</label>
                     <textarea
                       rows={2}
-                      placeholder="Descreva o que está acontecendo com a máquina..."
-                      value={regForm.ticket_description}
-                      onChange={(e) => setRegForm({ ...regForm, ticket_description: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white"
+                      placeholder="Descreva o que ocorreu com a máquina ou o serviço desejado..."
+                      value={regForm.description}
+                      onChange={(e) => setRegForm({ ...regForm, description: e.target.value })}
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900"
                     />
                   </div>
                 </div>
               )}
 
-              {/* =============================================================== */}
-              {/* ⚖️ ACEITE FORMAL LGPD (LEI 13.709/2018)                          */}
-              {/* =============================================================== */}
-              <div className="pt-2 p-3.5 rounded-2xl bg-teal-950/30 border border-teal-500/30">
+              {/* Consentimento LGPD Obrigatório */}
+              <div className="pt-2 border-t border-slate-200">
                 <label className="flex items-start gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"
                     required
-                    checked={regForm.lgpd_accepted}
-                    onChange={(e) => setRegForm({ ...regForm, lgpd_accepted: e.target.checked })}
-                    className="mt-0.5 rounded text-[#007481] focus:ring-[#007481] w-4 h-4 flex-shrink-0"
+                    checked={regForm.lgpd_consent}
+                    onChange={(e) => setRegForm({ ...regForm, lgpd_consent: e.target.checked })}
+                    className="mt-1 rounded text-[#007481] focus:ring-[#007481] w-4 h-4 cursor-pointer"
                   />
-                  <span className="text-xs text-slate-300 leading-relaxed">
+                  <span className="text-[11px] text-slate-600 leading-relaxed">
                     Declaro que li e concordo expressamente com os{' '}
                     <button
                       type="button"
                       onClick={() => setShowLgpdModal(true)}
-                      className="text-teal-300 underline font-bold hover:text-teal-200"
+                      className="text-[#007481] underline font-bold hover:text-[#005d68]"
                     >
                       Termos de Uso e a Política de Privacidade e Tratamento de Dados (LGPD)
                     </button>{' '}
@@ -1513,7 +1536,7 @@ export default function PortalCliente() {
               <button
                 type="submit"
                 disabled={regSubmitting}
-                className="w-full bg-[#007481] hover:bg-[#005d68] disabled:opacity-50 text-white font-black py-3.5 rounded-xl shadow-lg transition-all text-sm mt-4"
+                className="w-full bg-[#eb6420] hover:bg-[#d55515] disabled:opacity-50 text-white font-black py-3.5 rounded-full shadow-lg transition-all text-sm mt-4 cursor-pointer"
               >
                 {regSubmitting ? 'Processando Cadastro...' : 'Concluir Cadastro & Acessar Portal'}
               </button>
@@ -1522,9 +1545,9 @@ export default function PortalCliente() {
                 <button
                   type="button"
                   onClick={() => { setShowRegisterModal(false); setShowLoginModal(true); }}
-                  className="text-xs text-slate-400 hover:text-white"
+                  className="text-xs text-slate-500 hover:text-slate-800 cursor-pointer"
                 >
-                  Já possui conta? <strong className="text-teal-400">Clique aqui para entrar</strong>
+                  Já possui conta? <strong className="text-[#007481]">Clique aqui para entrar</strong>
                 </button>
               </div>
             </form>
@@ -1536,61 +1559,61 @@ export default function PortalCliente() {
       {/* 🔑 MODAL DE LOGIN                                                         */}
       {/* ========================================================================= */}
       {showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-slate-900">
             <button
               onClick={() => setShowLoginModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg"
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="mb-6 text-center">
               <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="bg-white px-3 py-1.5 rounded-xl shadow-md flex items-center">
+                <div className="bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs flex items-center">
                   <img src="/alfa-tennant-logo-hd.png" alt="Alfa Tennant" className="h-6 w-auto object-contain" />
                 </div>
               </div>
-              <h3 className="text-2xl font-black text-white">Login do Cliente</h3>
-              <p className="text-xs text-slate-400 mt-1">Acesse seus chamados e equipamentos cadastrados</p>
+              <h3 className="text-2xl font-black text-slate-900">Login do Cliente</h3>
+              <p className="text-xs text-slate-500 mt-1">Acesse seus chamados e equipamentos cadastrados</p>
             </div>
 
             {loginError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-xs text-rose-300 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400" />
+              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-600" />
                 <span>{loginError}</span>
               </div>
             )}
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">E-mail ou CNPJ/CPF</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">E-mail ou CNPJ/CPF</label>
                 <input
                   type="text"
                   required
                   value={loginForm.login}
                   onChange={(e) => setLoginForm({ ...loginForm, login: e.target.value })}
                   placeholder="Seu e-mail ou documento"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-[#007481]"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007481] focus:ring-1 focus:ring-[#007481]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Senha de Acesso</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Senha de Acesso</label>
                 <input
                   type="password"
                   required
                   value={loginForm.password}
                   onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                   placeholder="Sua senha cadastrada"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-[#007481]"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007481] focus:ring-1 focus:ring-[#007481]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loginSubmitting}
-                className="w-full bg-[#007481] hover:bg-[#005d68] disabled:opacity-50 text-white font-black py-3 rounded-xl shadow-lg transition-all text-sm mt-2"
+                className="w-full bg-[#007481] hover:bg-[#005d68] disabled:opacity-50 text-white font-black py-3 rounded-full shadow-lg transition-all text-sm mt-2 cursor-pointer"
               >
                 {loginSubmitting ? 'Verificando...' : 'Acessar Meu Painel'}
               </button>
@@ -1599,9 +1622,9 @@ export default function PortalCliente() {
                 <button
                   type="button"
                   onClick={() => { setShowLoginModal(false); setShowRegisterModal(true); }}
-                  className="text-xs text-slate-400 hover:text-white"
+                  className="text-xs text-slate-500 hover:text-slate-800 cursor-pointer"
                 >
-                  Não tem conta ainda? <strong className="text-teal-400">Cadastre-se gratuitamente</strong>
+                  Não tem conta ainda? <strong className="text-[#007481]">Cadastre-se gratuitamente</strong>
                 </button>
               </div>
             </form>
@@ -1613,35 +1636,35 @@ export default function PortalCliente() {
       {/* 📄 MODAL COMPLETO DE TERMOS E POLÍTICAS DE PRIVACIDADE LGPD               */}
       {/* ========================================================================= */}
       {showLgpdModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-6 h-6 text-emerald-400" />
-                <h3 className="text-lg font-black text-white">Termos de Uso & Política de Privacidade (LGPD)</h3>
+                <ShieldCheck className="w-6 h-6 text-[#007481]" />
+                <h3 className="text-lg font-black text-slate-900">Termos de Uso & Política de Privacidade (LGPD)</h3>
               </div>
               <button
                 onClick={() => setShowLgpdModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="overflow-y-auto py-4 text-xs text-slate-300 space-y-4 pr-2 leading-relaxed">
-              <p className="font-semibold text-teal-300">
+            <div className="overflow-y-auto py-4 text-xs text-slate-600 space-y-4 pr-2 leading-relaxed">
+              <p className="font-semibold text-[#007481]">
                 Em conformidade com a Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 - LGPD).
               </p>
 
               <div>
-                <h4 className="font-bold text-white mb-1">1. Identificação do Controlador</h4>
+                <h4 className="font-bold text-slate-900 mb-1">1. Identificação do Controlador</h4>
                 <p>
                   A <strong>CLEAN TECH PRO</strong>, como representante e assistência técnica autorizada Tennant Company no Paraná, atua como controladora dos dados cadastrais inseridos neste portal.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-white mb-1">2. Finalidade do Tratamento de Dados</h4>
+                <h4 className="font-bold text-slate-900 mb-1">2. Finalidade do Tratamento de Dados</h4>
                 <p>Os dados coletados (Razão Social, CNPJ/CPF, Telefone, E-mail, Endereço e identificação dos equipamentos) destinam-se exclusivamente para:</p>
                 <ul className="list-disc pl-5 mt-1 space-y-1">
                   <li>Abertura, triagem, agendamento e execução de chamados técnicos de manutenção;</li>
@@ -1653,31 +1676,31 @@ export default function PortalCliente() {
               </div>
 
               <div>
-                <h4 className="font-bold text-white mb-1">3. Segurança e Sigilo dos Dados</h4>
+                <h4 className="font-bold text-slate-900 mb-1">3. Segurança e Sigilo dos Dados</h4>
                 <p>
                   Implementamos rígidas medidas técnicas de criptografia (senhas criptografadas em SHA-256 e tokens de sessão seguros), impedindo acessos não autorizados. Seus dados nunca serão comercializados ou cedidos para fins publicitários de terceiros.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-white mb-1">4. Direitos do Titular</h4>
+                <h4 className="font-bold text-slate-900 mb-1">4. Direitos do Titular</h4>
                 <p>
                   Conforme o Artigo 18 da Lei nº 13.709/2018, você possui o direito de confirmar a existência de tratamento, acessar seus dados, solicitar a correção de dados incompletos ou a exclusão de dados não obrigatórios para fins fiscais e legais, mediante solicitação formal pelo canal oficial de suporte.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-white mb-1">5. Registro do Consentimento</h4>
+                <h4 className="font-bold text-slate-900 mb-1">5. Registro do Consentimento</h4>
                 <p>
                   Ao assinalar o campo de aceite no cadastro, o usuário confirma seu consentimento livre, informado e inequívoco. Registramos a data, horário e endereço IP para fins de auditoria e conformidade legal.
                 </p>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800 flex justify-end">
+            <div className="pt-4 border-t border-slate-200 flex justify-end">
               <button
                 onClick={() => setShowLgpdModal(false)}
-                className="bg-[#007481] hover:bg-[#005d68] text-white px-6 py-2.5 rounded-xl font-bold text-xs"
+                className="bg-[#007481] hover:bg-[#005d68] text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-sm cursor-pointer"
               >
                 Entendido e Fechar
               </button>
@@ -1690,30 +1713,30 @@ export default function PortalCliente() {
       {/* ➕ MODAL DE NOVO CHAMADO (PARA CLIENTE LOGADO)                            */}
       {/* ========================================================================= */}
       {showNewTicketModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative my-8">
             <button
               onClick={() => setShowNewTicketModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg"
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="mb-5">
-              <div className="flex items-center gap-2 text-[#00a3b4] font-bold text-xs uppercase mb-1">
+              <div className="flex items-center gap-2 text-[#007481] font-bold text-xs uppercase mb-1">
                 <Wrench className="w-4 h-4" /> Abertura Rápida
               </div>
-              <h3 className="text-xl font-black text-white">Abrir Novo Chamado</h3>
-              <p className="text-xs text-slate-400">Nossa equipe técnica será notificada imediatamente</p>
+              <h3 className="text-xl font-black text-slate-900">Abrir Novo Chamado</h3>
+              <p className="text-xs text-slate-500">Nossa equipe técnica será notificada imediatamente</p>
             </div>
 
             <form onSubmit={handleCreateTicket} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Selecione o Equipamento</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Selecione o Equipamento</label>
                 <select
                   value={ticketForm.equipment_id}
                   onChange={(e) => setTicketForm({ ...ticketForm, equipment_id: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#007481]"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#007481] focus:ring-1 focus:ring-[#007481]"
                 >
                   <option value="">+ Cadastrar Novo Equipamento Neste Chamado</option>
                   {equipments.map(eq => (
@@ -1725,32 +1748,32 @@ export default function PortalCliente() {
               </div>
 
               {!ticketForm.equipment_id && (
-                <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-                  <div className="text-[11px] font-bold text-teal-400 uppercase">Novo Equipamento</div>
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                  <div className="text-[11px] font-bold text-[#007481] uppercase">Novo Equipamento</div>
                   <input
                     type="text"
                     placeholder="Modelo da Máquina (Ex: Tennant T300 / A-260)"
                     value={ticketForm.new_equipment_model}
                     onChange={(e) => setTicketForm({ ...ticketForm, new_equipment_model: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                   />
                   <input
                     type="text"
                     placeholder="Número de Série / Chassi"
                     value={ticketForm.new_equipment_serial}
                     onChange={(e) => setTicketForm({ ...ticketForm, new_equipment_serial: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                   />
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Tipo de Chamado</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Tipo de Chamado</label>
                   <select
                     value={ticketForm.ticket_type}
                     onChange={(e) => setTicketForm({ ...ticketForm, ticket_type: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                   >
                     <option value="Corretiva">Corretiva (Reparo)</option>
                     <option value="Preventiva">Preventiva (Revisão)</option>
@@ -1759,11 +1782,11 @@ export default function PortalCliente() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Prioridade</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Prioridade</label>
                   <select
                     value={ticketForm.priority}
                     onChange={(e) => setTicketForm({ ...ticketForm, priority: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                   >
                     <option value="Baixa">Baixa</option>
                     <option value="Média">Média</option>
@@ -1774,32 +1797,32 @@ export default function PortalCliente() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Horímetro Atual (Opcional)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Horímetro Atual (Opcional)</label>
                 <input
                   type="number"
                   placeholder="Horas de uso marcadas no painel"
                   value={ticketForm.hour_meter}
                   onChange={(e) => setTicketForm({ ...ticketForm, hour_meter: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Descrição do Problema *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Descrição do Problema *</label>
                 <textarea
                   required
                   rows={3}
                   placeholder="Explique o que ocorreu com a máquina ou o que precisa ser verificado..."
                   value={ticketForm.description}
                   onChange={(e) => setTicketForm({ ...ticketForm, description: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#007481]"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={ticketSubmitting}
-                className="w-full bg-[#007481] hover:bg-[#005d68] disabled:opacity-50 text-white font-black py-3 rounded-xl shadow-lg transition-all text-sm mt-3"
+                className="w-full bg-[#eb6420] hover:bg-[#d55515] disabled:opacity-50 text-white font-black py-3 rounded-xl shadow-md hover:shadow-lg transition-all text-sm mt-3 cursor-pointer"
               >
                 {ticketSubmitting ? 'Enviando Chamado...' : 'Abrir Chamado Imediato'}
               </button>
@@ -1812,57 +1835,57 @@ export default function PortalCliente() {
       {/* ➕ MODAL DE NOVO EQUIPAMENTO                                              */}
       {/* ========================================================================= */}
       {showNewEquipmentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-slate-900">
             <button
               onClick={() => setShowNewEquipmentModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg"
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-black text-white mb-1">Cadastrar Equipamento</h3>
-            <p className="text-xs text-slate-400 mb-5">Adicione sua máquina Tennant ao seu parque</p>
+            <h3 className="text-xl font-black text-slate-900 mb-1">Cadastrar Equipamento</h3>
+            <p className="text-xs text-slate-500 mb-5">Adicione sua máquina Tennant ao seu parque</p>
 
             <form onSubmit={handleCreateEquipment} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Marca</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Marca</label>
                 <input
                   type="text"
                   value={eqForm.brand}
                   onChange={(e) => setEqForm({ ...eqForm, brand: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Modelo da Máquina *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Modelo da Máquina *</label>
                 <input
                   type="text"
                   required
                   placeholder="Ex: Lavadora A-260, T300, S10..."
                   value={eqForm.model}
                   onChange={(e) => setEqForm({ ...eqForm, model: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Número de Série / Chassi *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Número de Série / Chassi *</label>
                 <input
                   type="text"
                   required
                   placeholder="Gravado na placa de identificação"
                   value={eqForm.serial_number}
                   onChange={(e) => setEqForm({ ...eqForm, serial_number: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={eqSubmitting}
-                className="w-full bg-[#007481] hover:bg-[#005d68] text-white font-bold py-2.5 rounded-xl text-xs mt-3 shadow-lg"
+                className="w-full bg-[#007481] hover:bg-[#005d68] text-white font-bold py-2.5 rounded-xl text-xs mt-3 shadow-md cursor-pointer"
               >
                 {eqSubmitting ? 'Salvando...' : 'Salvar Equipamento'}
               </button>
@@ -1875,68 +1898,68 @@ export default function PortalCliente() {
       {/* 👥 MODAL DE NOVO USUÁRIO AUTORIZADO                                       */}
       {/* ========================================================================= */}
       {showNewUserModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-slate-900">
             <button
               onClick={() => setShowNewUserModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg"
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-xl font-black text-white mb-1">Adicionar Usuário Autorizado</h3>
-            <p className="text-xs text-slate-400 mb-5">Permita que mais pessoas da sua empresa abram chamados</p>
+            <h3 className="text-xl font-black text-slate-900 mb-1">Adicionar Usuário Autorizado</h3>
+            <p className="text-xs text-slate-500 mb-5">Permita que mais pessoas da sua empresa abram chamados</p>
 
             <form onSubmit={handleCreateUser} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Nome Completo *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nome Completo *</label>
                 <input
                   type="text"
                   required
                   placeholder="Nome do colaborador"
                   value={userForm.name}
                   onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Função / Cargo</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Função / Cargo</label>
                 <input
                   type="text"
                   placeholder="Ex: Operador, Encarregado de Limpeza, Comprador"
                   value={userForm.role}
                   onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">WhatsApp / Telefone</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">WhatsApp / Telefone</label>
                 <input
                   type="text"
                   placeholder="(41) 99999-9999"
                   value={userForm.phone}
                   onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">E-mail</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">E-mail</label>
                 <input
                   type="email"
                   placeholder="email@empresa.com.br"
                   value={userForm.email}
                   onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#007481]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={userSubmitting}
-                className="w-full bg-[#007481] hover:bg-[#005d68] text-white font-bold py-2.5 rounded-xl text-xs mt-3 shadow-lg"
+                className="w-full bg-[#007481] hover:bg-[#005d68] text-white font-bold py-2.5 rounded-xl text-xs mt-3 shadow-md cursor-pointer"
               >
                 {userSubmitting ? 'Adicionando...' : 'Adicionar Usuário'}
               </button>
@@ -1949,21 +1972,21 @@ export default function PortalCliente() {
       {/* 📊 MODAL DE HISTÓRICO COMPLETO & INDICADOR DE TROCA DE EQUIPAMENTO         */}
       {/* ========================================================================= */}
       {selectedEquipmentDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] flex flex-col text-slate-900">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
               <div>
-                <span className="text-[10px] font-bold text-[#00a3b4] uppercase tracking-wider">Ficha Técnica & Ciclo de Vida</span>
-                <h3 className="text-xl font-black text-white">
+                <span className="text-[10px] font-bold text-[#007481] uppercase tracking-wider">Ficha Técnica & Ciclo de Vida</span>
+                <h3 className="text-xl font-black text-slate-900">
                   {selectedEquipmentDetail.model || selectedEquipmentDetail.name}
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   Chassi/Série: {selectedEquipmentDetail.serial_number || 'S/N'}
                 </p>
               </div>
               <button
                 onClick={() => { setSelectedEquipmentDetail(null); setEquipmentHistoryData(null); }}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1972,7 +1995,7 @@ export default function PortalCliente() {
             <div className="overflow-y-auto py-5 space-y-6 pr-2">
               
               {loadingHistory ? (
-                <div className="py-12 text-center text-slate-400">
+                <div className="py-12 text-center text-slate-500">
                   <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin text-[#007481]" />
                   Calculando histórico de manutenções e diagnóstico de viabilidade...
                 </div>
@@ -1983,46 +2006,46 @@ export default function PortalCliente() {
                   {/* =========================================================== */}
                   <div className={`p-5 rounded-2xl border ${
                     equipmentHistoryData.metrics.recommendation.level === 'replace'
-                      ? 'bg-rose-950/30 border-rose-500/50'
+                      ? 'bg-rose-50 border-rose-200'
                       : equipmentHistoryData.metrics.recommendation.level === 'warning'
-                      ? 'bg-amber-950/30 border-amber-500/50'
-                      : 'bg-emerald-950/30 border-emerald-500/50'
+                      ? 'bg-amber-50 border-amber-200'
+                      : 'bg-emerald-50 border-emerald-200'
                   }`}>
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
                         <TrendingUp className={`w-5 h-5 ${
-                          equipmentHistoryData.metrics.recommendation.level === 'replace' ? 'text-rose-400' :
-                          equipmentHistoryData.metrics.recommendation.level === 'warning' ? 'text-amber-400' :
-                          'text-emerald-400'
+                          equipmentHistoryData.metrics.recommendation.level === 'replace' ? 'text-rose-600' :
+                          equipmentHistoryData.metrics.recommendation.level === 'warning' ? 'text-amber-600' :
+                          'text-emerald-600'
                         }`} />
-                        <h4 className="text-sm font-black text-white">
+                        <h4 className="text-sm font-black text-slate-900">
                           {equipmentHistoryData.metrics.recommendation.title}
                         </h4>
                       </div>
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase ${
-                        equipmentHistoryData.metrics.recommendation.level === 'replace' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' :
-                        equipmentHistoryData.metrics.recommendation.level === 'warning' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
-                        'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        equipmentHistoryData.metrics.recommendation.level === 'replace' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                        equipmentHistoryData.metrics.recommendation.level === 'warning' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                        'bg-emerald-100 text-emerald-800 border border-emerald-200'
                       }`}>
                         {equipmentHistoryData.metrics.recommendation.badge}
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-300 leading-relaxed mb-4">
+                    <p className="text-xs text-slate-700 leading-relaxed mb-4">
                       {equipmentHistoryData.metrics.recommendation.description}
                     </p>
 
                     {/* Barra de Progresso de Custo Acumulado vs Ativo */}
                     <div className="space-y-1.5 mb-4">
                       <div className="flex justify-between text-[11px] font-bold">
-                        <span className="text-slate-400">Custo Acumulado em Manutenções:</span>
-                        <span className="text-white">{formatCurrency(equipmentHistoryData.metrics.total_cost)} ({equipmentHistoryData.metrics.maintenance_ratio}% do valor de referência)</span>
+                        <span className="text-slate-600">Custo Acumulado em Manutenções:</span>
+                        <span className="text-slate-900 font-extrabold">{formatCurrency(equipmentHistoryData.metrics.total_cost)} ({equipmentHistoryData.metrics.maintenance_ratio}% do valor de referência)</span>
                       </div>
-                      <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden p-0.5 border border-slate-800">
+                      <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden p-0.5 border border-slate-300">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
                             equipmentHistoryData.metrics.maintenance_ratio >= 65 ? 'bg-rose-500' :
-                            equipmentHistoryData.metrics.maintenance_ratio >= 45 ? 'bg-amber-400' :
+                            equipmentHistoryData.metrics.maintenance_ratio >= 45 ? 'bg-amber-500' :
                             'bg-emerald-500'
                           }`}
                           style={{ width: `${Math.min(100, equipmentHistoryData.metrics.maintenance_ratio || 5)}%` }}
@@ -2036,7 +2059,7 @@ export default function PortalCliente() {
                         href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Olá! Gostaria de consultar sobre a substituição/locação para o equipamento ${selectedEquipmentDetail.model} (S/N: ${selectedEquipmentDetail.serial_number}).`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black text-white shadow-md transition-colors ${
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black text-white shadow-md transition-colors cursor-pointer ${
                           equipmentHistoryData.metrics.recommendation.level === 'replace'
                             ? 'bg-rose-600 hover:bg-rose-500'
                             : 'bg-[#007481] hover:bg-[#005d68]'
@@ -2050,12 +2073,12 @@ export default function PortalCliente() {
 
                   {/* Histórico Cronológico de Manutenções */}
                   <div>
-                    <h4 className="text-sm font-black text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-teal-400" /> Histórico Completo de Ordens de Serviço
+                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[#007481]" /> Histórico Completo de Ordens de Serviço
                     </h4>
 
                     {equipmentHistoryData.history.length === 0 ? (
-                      <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
+                      <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500">
                         Nenhum chamado de manutenção registrado para este chassi.
                       </div>
                     ) : (
@@ -2063,22 +2086,22 @@ export default function PortalCliente() {
                         {equipmentHistoryData.history.map(hist => (
                           <div
                             key={hist.id}
-                            className="bg-slate-950 border border-slate-800/80 rounded-xl p-4 space-y-2"
+                            className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2"
                           >
                             <div className="flex items-center justify-between gap-2">
-                              <span className="font-bold text-white text-xs">
+                              <span className="font-bold text-slate-900 text-xs">
                                 Chamado #{hist.id} • {hist.ticket_type}
                               </span>
-                              <span className="text-[11px] text-slate-400">
+                              <span className="text-[11px] text-slate-500">
                                 {new Date(hist.created_at).toLocaleDateString('pt-BR')}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-300">{hist.description}</p>
+                            <p className="text-xs text-slate-600">{hist.description}</p>
 
                             {hist.budget_grand_total && (
-                              <div className="pt-2 border-t border-slate-900 flex justify-between text-xs">
-                                <span className="text-slate-400">Custo do Serviço/Peças:</span>
-                                <strong className="text-emerald-400">{formatCurrency(hist.budget_grand_total)}</strong>
+                              <div className="pt-2 border-t border-slate-200 flex justify-between text-xs">
+                                <span className="text-slate-500">Custo do Serviço/Peças:</span>
+                                <strong className="text-emerald-700">{formatCurrency(hist.budget_grand_total)}</strong>
                               </div>
                             )}
                           </div>
