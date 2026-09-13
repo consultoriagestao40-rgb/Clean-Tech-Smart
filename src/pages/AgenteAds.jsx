@@ -517,6 +517,30 @@ export default function AgenteAds() {
     setManagedCampaigns(updated);
   };
 
+  // Atualizar Gasto Mês da campanha
+  const updateCampaignSpent = (campId, newSpent) => {
+    const updated = managedCampaigns.map(c => {
+      if (c.id === campId) {
+        const spent = parseFloat(newSpent) || 0;
+        const cpa = c.leadsMonth > 0 ? spent / c.leadsMonth : 0;
+        return { ...c, spentMonth: spent, currentCpa: cpa };
+      }
+      return c;
+    });
+    setManagedCampaigns(updated);
+  };
+
+  // Atualizar Cliques da campanha
+  const updateCampaignClicks = (campId, newClicks) => {
+    const updated = managedCampaigns.map(c => {
+      if (c.id === campId) {
+        return { ...c, clicksMonth: parseInt(newClicks, 10) || 0 };
+      }
+      return c;
+    });
+    setManagedCampaigns(updated);
+  };
+
   // Salvar alterações de campanhas
   const handleSaveCampaigns = async () => {
     setIsSavingCampaigns(true);
@@ -2177,6 +2201,14 @@ export default function AgenteAds() {
               </div>
             </div>
 
+            {/* Banner de Ajuda de Sincronização Google Ads */}
+            <div className="p-3.5 bg-sky-50 border border-sky-200 rounded-xl flex items-start gap-3 text-xs text-sky-900">
+              <Sparkles className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+              <div className="leading-relaxed">
+                <strong>Conexão Google Ads:</strong> O sistema sincroniza cliques e gastos automaticamente via API. Se os números estiverem zerados após clicar em sincronizar, renove a autorização na aba <strong>Configurações &gt; Fazer Login e Conectar Conta Google Ads (OAuth)</strong>, ou informe os cliques e gastos atuais do mês diretamente nos campos abaixo e clique em <strong>Salvar Alterações</strong> para o painel calcular CTR e CPC imediatamente.
+              </div>
+            </div>
+
             {/* Modal de Adicionar Campanha Manual / Lista Suspensa */}
             {newCampaignModal && (
               <div className="bg-slate-50 border border-slate-300 rounded-xl p-5 space-y-4 animate-fadeIn">
@@ -2295,11 +2327,31 @@ export default function AgenteAds() {
                         )}
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-600 font-mono">
-                        <span>Gasto Mês: <strong>R$ {camp.spentMonth.toFixed(2)}</strong></span>
-                        <span>Cliques: <strong>{camp.clicksMonth}</strong></span>
-                        <span>Leads Gerados: <strong className="text-emerald-700">{camp.leadsMonth}</strong></span>
-                        <span>CPA Atual: <strong>{camp.currentCpa > 0 ? `R$ ${camp.currentCpa.toFixed(2)}` : '-'}</strong></span>
+                      <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-700">
+                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg shadow-2xs">
+                          <span className="text-[11px] font-bold text-gray-500">Gasto Mês (R$):</span>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={camp.spentMonth}
+                            onChange={(e) => updateCampaignSpent(camp.id, e.target.value)}
+                            className="w-20 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-xs font-bold text-gray-900 font-mono focus:ring-1 focus:ring-[#007481] focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg shadow-2xs">
+                          <span className="text-[11px] font-bold text-gray-500">Cliques:</span>
+                          <input
+                            type="number"
+                            step="1"
+                            value={camp.clicksMonth}
+                            onChange={(e) => updateCampaignClicks(camp.id, e.target.value)}
+                            className="w-16 px-1.5 py-0.5 bg-white border border-slate-300 rounded text-xs font-bold text-gray-900 font-mono focus:ring-1 focus:ring-[#007481] focus:outline-none"
+                          />
+                        </div>
+
+                        <span className="text-[11px] text-gray-600 font-mono">Leads: <strong className="text-emerald-700">{camp.leadsMonth}</strong></span>
+                        <span className="text-[11px] text-gray-600 font-mono">CPA Atual: <strong>{camp.currentCpa > 0 ? `R$ ${camp.currentCpa.toFixed(2)}` : '-'}</strong></span>
                       </div>
                     </div>
                   </div>
