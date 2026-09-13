@@ -49,9 +49,10 @@ export default function PortalCliente() {
   const WHATSAPP_ASSISTENCIA = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Preciso de assistência técnica para meu equipamento Tennant no Paraná.")}`;
   const WHATSAPP_PECAS = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Gostaria de cotar peças genuínas de fábrica para minha máquina Tennant.")}`;
 
-  // Google Tag & Rastreamento de Conversões (Google Ads)
+  // Google Tag & Rastreamento de Conversões (Google Ads & Meta Pixel)
   const [googleTagId, setGoogleTagId] = useState(() => localStorage.getItem('ads_google_tag_id') || 'AW-16501080633');
   const [googleConversionLabel, setGoogleConversionLabel] = useState(() => localStorage.getItem('ads_google_conversion_label') || 'mh2cCOX7-c8cELmEqrw9');
+  const [metaPixelId, setMetaPixelId] = useState(() => localStorage.getItem('ads_meta_pixel_id') || '1085367677533423');
 
   // Sincroniza credenciais de rastreamento com o backend
   useEffect(() => {
@@ -68,6 +69,10 @@ export default function PortalCliente() {
             if (data.settings.ads_google_conversion_label) {
               setGoogleConversionLabel(data.settings.ads_google_conversion_label);
               localStorage.setItem('ads_google_conversion_label', data.settings.ads_google_conversion_label);
+            }
+            if (data.settings.ads_meta_pixel_id) {
+              setMetaPixelId(data.settings.ads_meta_pixel_id);
+              localStorage.setItem('ads_meta_pixel_id', data.settings.ads_meta_pixel_id);
             }
           }
         }
@@ -100,8 +105,30 @@ export default function PortalCliente() {
     }
   }, [googleTagId]);
 
-  // Disparo de Conversão Google Ads para cliques no WhatsApp e Abertura de Chamados
+  // Injeção do Meta Pixel (fbq) no <head>
+  useEffect(() => {
+    if (metaPixelId && !document.getElementById('meta-pixel-script-portal')) {
+      const s = document.createElement('script');
+      s.id = 'meta-pixel-script-portal';
+      s.innerHTML = `
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '${metaPixelId}');
+        fbq('track', 'PageView');
+      `;
+      document.head.appendChild(s);
+    }
+  }, [metaPixelId]);
+
+  // Disparo de Conversão Oficial (Google Ads + Meta Pixel)
   const triggerGoogleConversion = (actionLabel = 'Assistência Técnica Tennant') => {
+    // 1. Google Ads
     try {
       if (typeof window.gtag === 'function' && googleTagId) {
         const sendTo = googleConversionLabel ? `${googleTagId}/${googleConversionLabel}` : googleTagId;
@@ -113,6 +140,19 @@ export default function PortalCliente() {
       }
     } catch (e) {
       console.warn('Erro disparo conversão Google Ads:', e);
+    }
+
+    // 2. Meta Pixel (Lead & Contact)
+    try {
+      if (typeof window.fbq === 'function' && metaPixelId) {
+        window.fbq('track', 'Lead', {
+          content_name: actionLabel,
+          content_category: 'Assistência Técnica Tennant'
+        });
+        window.fbq('track', 'Contact');
+      }
+    } catch (e) {
+      console.warn('Erro disparo conversão Meta Pixel:', e);
     }
   };
 
