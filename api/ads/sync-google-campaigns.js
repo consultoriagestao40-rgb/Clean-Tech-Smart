@@ -73,20 +73,28 @@ export default async function handler(req, res) {
               AND segments.date DURING LAST_30_DAYS
           `;
 
-          const headers = {
+          // Try direct headers first (without login-customer-id) as customer 240-669-5395 is accessed directly
+          let headers = {
             'Authorization': `Bearer ${accessToken}`,
             'developer-token': developerToken,
             'Content-Type': 'application/json'
           };
-          if (settings.ads_google_mcc_id) {
-            headers['login-customer-id'] = settings.ads_google_mcc_id.replace(/-/g, '');
-          }
 
-          const gAdsRes = await fetch(`https://googleads.googleapis.com/v22/customers/${customerId}/googleAds:searchStream`, {
+          let gAdsRes = await fetch(`https://googleads.googleapis.com/v22/customers/${customerId}/googleAds:searchStream`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ query })
           });
+
+          // Fallback with login-customer-id if direct returned 403
+          if (gAdsRes.status === 403 && settings.ads_google_mcc_id) {
+            headers['login-customer-id'] = settings.ads_google_mcc_id.replace(/-/g, '');
+            gAdsRes = await fetch(`https://googleads.googleapis.com/v22/customers/${customerId}/googleAds:searchStream`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ query })
+            });
+          }
 
           if (gAdsRes.ok) {
             const streamData = await gAdsRes.json();
@@ -108,6 +116,7 @@ export default async function handler(req, res) {
                       name: c.name,
                       platform: 'Google Ads',
                       type: 'Rede de Pesquisa',
+                      status: c.status === 'ENABLED' ? 'active' : 'paused',
                       isMonitored: true,
                       spentMonth: Number(cost.toFixed(2)),
                       clicksMonth: clicks,
@@ -217,7 +226,16 @@ export default async function handler(req, res) {
       currentManaged.forEach(c => mergedMap.set(c.name.toLowerCase().trim(), c));
       syncedCampaigns.forEach(c => {
         const key = c.name.toLowerCase().trim();
-        if (!mergedMap.has(key)) {
+        if (mergedMap.has(key)) {
+          // Update live metrics from Google Ads while preserving user settings
+          const existing = mergedMap.get(key);
+          mergedMap.set(key, {
+            ...existing,
+            ...c,
+            targetCpa: existing.targetCpa || c.targetCpa || 45.00,
+            isMonitored: existing.isMonitored !== undefined ? existing.isMonitored : true
+          });
+        } else {
           mergedMap.set(key, c);
         }
       });
