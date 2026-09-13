@@ -473,12 +473,17 @@ export default function PortalCliente() {
               />
             </div>
 
-            <div className="hidden md:flex flex-col justify-center text-left pl-3.5 lg:pl-4 border-l-2 border-teal-300/40 leading-snug">
-              <span className="font-extrabold text-white text-xs sm:text-sm lg:text-base tracking-wide">
-                Representante & Assistência Técnica Autorizada Tennant
-              </span>
-              <span className="text-[11px] sm:text-xs text-teal-200 font-semibold tracking-normal">
-                Curitiba & Região Metropolitana • Paraná
+            <div className="hidden md:flex flex-col justify-center text-left pl-3.5 lg:pl-4 border-l border-white/25 leading-snug">
+              <div className="flex items-center gap-2">
+                <span className="font-black text-white text-xs sm:text-sm lg:text-base tracking-wide uppercase">
+                  PORTAL DO CLIENTE
+                </span>
+                <span className="bg-white/15 text-amber-300 border border-amber-300/40 text-[10px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                  🏅 AUTORIZADA OFICIAL
+                </span>
+              </div>
+              <span className="text-[11px] sm:text-xs text-teal-100 font-medium tracking-normal">
+                Representante & Assistência Técnica Autorizada Tennant • Curitiba & Região Metropolitana
               </span>
             </div>
           </div>
@@ -1022,98 +1027,64 @@ export default function PortalCliente() {
         /* ========================================================================= */
         <div className="relative bg-slate-50">
 
-          {/* Hero Banner Oficial Tennant Clean Tech Pro - Visual Clean LP */}
-          <section className="relative overflow-hidden pt-8 pb-12 sm:py-16 lg:py-20 bg-white border-b border-slate-200">
+          {/* Hero Banner Oficial Tennant Clean Tech Pro - Visual Clean */}
+          <section className="relative overflow-hidden pt-12 pb-16 lg:py-24 border-b border-slate-200 bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-              
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+              <div className="max-w-3xl">
                 
-                {/* COLUNA ESQUERDA: CARD LIMPO COM FOTO DA MÁQUINA TENNANT & SELOS */}
-                <div className="lg:col-span-6 order-2 lg:order-1">
-                  <div className="relative bg-white flex flex-col items-center justify-center p-6 sm:p-8 min-h-[340px] sm:min-h-[440px] rounded-3xl border border-slate-200 shadow-md hover:shadow-xl transition-all group overflow-hidden">
-                    
-                    {/* Badge Promoção / Assistência Oficial */}
-                    <div className="absolute top-4 left-4 z-20 pointer-events-none select-none">
-                      <div className="bg-gradient-to-r from-red-600 via-orange-600 to-[#eb6420] text-white font-black text-xs uppercase px-3.5 sm:px-4 py-1.5 rounded-full shadow-md flex items-center gap-1.5 border border-white tracking-wider">
-                        <span>🔥</span>
-                        <span>Assistência Técnica Oficial</span>
-                      </div>
-                    </div>
-
-                    {/* Foto da Máquina Tennant (Alta Resolução da LP) */}
+                {/* Selo Oficial com Logo Alfa Tennant */}
+                <div className="inline-flex items-center gap-3 bg-white border border-slate-200 p-2 pr-4 rounded-2xl shadow-xs mb-6">
+                  <div className="bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs flex items-center">
                     <img 
-                      src="https://www.tennantco.com/content/dam/alfa/Products/Machines/scrubber-walk-behinds/a260/images/a260-main.jpg/jcr:content/renditions/cq5dam.web.1280.1280.jpeg" 
-                      alt="Lavadora de Piso Tennant A-260 e Equipamentos Industriais" 
-                      className="max-h-[260px] sm:max-h-[360px] w-auto object-contain transition-transform duration-500 group-hover:scale-105 mt-6 sm:mt-4"
+                      src="/alfa-tennant-logo-hd.png" 
+                      alt="Alfa Tennant" 
+                      className="h-6 sm:h-7 w-auto object-contain" 
                     />
-
-                    {/* Selo Inferior de Confiabilidade com Logo Alfa Tennant Oficial */}
-                    <div className="mt-4 flex items-center gap-2 bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-full text-xs text-slate-700 font-semibold shadow-xs">
-                      <img src="/alfa-tennant-logo-hd.png" alt="Alfa Tennant" className="h-4 w-auto object-contain" />
-                      <span>Peças Originais • Manutenção Certificada • Paraná</span>
+                  </div>
+                  <div className="text-left">
+                    <div className="text-[10px] sm:text-xs font-black text-[#007481] uppercase tracking-wide flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#007481] inline" /> REPRESENTANTE &amp; ASSISTÊNCIA TÉCNICA AUTORIZADA ALFA TENNANT
                     </div>
+                    <div className="text-[10px] text-slate-500">Peças Originais, Manutenção Certificada e Entrega Técnica • Paraná</div>
                   </div>
                 </div>
 
-                {/* COLUNA DIREITA: HEADLINE COMERCIAL LIMPA, CORES LP & CTAs */}
-                <div className="lg:col-span-6 order-1 lg:order-2 space-y-4 sm:space-y-5">
-                  
-                  {/* Tag Superior Laranja Oficial da LP */}
-                  <div className="flex items-center gap-2 text-[#eb6420] text-xs font-black uppercase tracking-wider">
-                    <span>★ PORTAL OFICIAL DO CLIENTE TENNANT</span>
-                    <span>•</span>
-                    <span>LÍDER GLOBAL</span>
-                  </div>
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight mb-6">
+                  Suporte Especializado &amp; <br />
+                  <span className="text-[#007481]">
+                    Portal de Chamados <br />
+                    Tennant
+                  </span>
+                </h1>
 
-                  {/* Título Principal de Alto Impacto */}
-                  <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-                    Suporte Especializado &amp; <br />
-                    <span className="text-[#007481]">Portal de Chamados</span>{' '}
-                    <span className="text-[#eb6420]">Tennant</span>
-                  </h1>
+                <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8">
+                  Abra chamados em menos de 1 minuto, acompanhe manutenções em tempo real, consulte orçamentos vinculados e monitore o histórico completo de custos do seu parque de máquinas.
+                </p>
 
-                  {/* Descrição */}
-                  <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                    Abra chamados em menos de 1 minuto, acompanhe manutenções com <strong className="text-slate-900">técnicos autorizados</strong> em tempo real, aprove orçamentos de <strong className="text-[#007481]">peças originais</strong> e monitore o histórico completo de custos do seu parque de máquinas.
-                  </p>
+                {/* CTAs Principais */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <button
+                    onClick={() => { setRegError(''); setShowRegisterModal(true); }}
+                    className="flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-7 py-4 rounded-xl font-black text-base shadow-md shadow-[#007481]/25 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+                  >
+                    <Plus className="w-5 h-5" /> Cadastrar &amp; Abrir Chamado
+                  </button>
 
-                  {/* Caixa de Benefício Imediato */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-teal-100/70 text-[#007481] flex items-center justify-center flex-shrink-0 font-bold">
-                      <Wrench className="w-5 h-5" />
-                    </div>
-                    <div className="text-xs text-slate-700 leading-snug">
-                      <strong className="text-slate-900 font-bold block">Abertura Rápida com Chassi ou Modelo da Máquina</strong>
-                      Atendimento prioritário em Curitiba, Região Metropolitana e todo o Paraná.
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => { setLoginError(''); setShowLoginModal(true); }}
+                    className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 px-6 py-4 rounded-xl font-bold text-base transition-colors shadow-xs cursor-pointer"
+                  >
+                    <Lock className="w-4 h-4 text-[#007481]" /> Já sou Cadastrado (Login)
+                  </button>
+                </div>
 
-                  {/* Botões de Ação Principais (Estilo LP) */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-                    <button
-                      onClick={() => { setRegError(''); setShowRegisterModal(true); }}
-                      className="flex items-center justify-center gap-2 bg-[#eb6420] hover:bg-[#d55515] active:scale-95 text-white px-7 py-4 rounded-full font-black text-sm sm:text-base shadow-lg shadow-orange-500/25 transition-all cursor-pointer"
-                    >
-                      <Plus className="w-5 h-5" /> Cadastrar &amp; Abrir Chamado
-                    </button>
-
-                    <button
-                      onClick={() => { setLoginError(''); setShowLoginModal(true); }}
-                      className="flex items-center justify-center gap-2 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 px-6 py-4 rounded-full font-bold text-sm sm:text-base shadow-xs transition-colors cursor-pointer"
-                    >
-                      <Lock className="w-4 h-4 text-[#007481]" /> Já sou Cadastrado (Login)
-                    </button>
-                  </div>
-
-                  {/* LGPD Assurance Badge */}
-                  <div className="pt-2 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>Cadastro rápido, 100% seguro e em total conformidade com a LGPD (Lei 13.709/2018).</span>
-                  </div>
+                {/* LGPD Assurance Badge */}
+                <div className="mt-6 flex items-center gap-2 text-xs text-slate-500 font-medium">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Cadastro rápido, 100% seguro e em total conformidade com a LGPD (Lei 13.709/2018).</span>
                 </div>
 
               </div>
-
             </div>
           </section>
 
