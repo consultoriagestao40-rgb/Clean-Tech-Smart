@@ -19,6 +19,19 @@
       ]
     }
   ],
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "clean-tech-smart.vercel.app"
+        }
+      ],
+      "destination": "https://cleantechsmart.cleantechpro.com.br/$1",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",

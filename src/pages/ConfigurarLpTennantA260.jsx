@@ -142,15 +142,24 @@ export default function ConfigurarLpTennantA260() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <a
-            href="/lp/tennant-a260"
+            href="https://cleantechsmart.cleantechpro.com.br/lp/tennant-a260"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-[#007481] hover:bg-[#005f6b] text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition-all"
+            className="inline-flex items-center gap-2 bg-[#007481] hover:bg-[#005f6b] text-white text-xs font-bold px-3.5 py-2.5 rounded-lg shadow-sm transition-all"
           >
             <ExternalLink className="w-4 h-4" />
-            Ver Landing Page Pública
+            Ver LP Tennant A-260
+          </a>
+          <a
+            href="https://cleantechsmart.cleantechpro.com.br/assistencia"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-[#eb6420] hover:bg-[#d55515] text-white text-xs font-bold px-3.5 py-2.5 rounded-lg shadow-sm transition-all"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Ver LP Assistência &amp; Peças
           </a>
         </div>
       </div>

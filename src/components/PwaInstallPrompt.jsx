@@ -67,8 +67,21 @@ export default function PwaInstallPrompt() {
     sessionStorage.setItem('pwa_prompt_dismissed', 'true');
   };
 
-  // Não exibe se já estiver instalado, se não for instalável ou se foi dispensado
-  if (isInstalled || !isInstallable || isDismissed) {
+  // Não exibe em Landing Pages públicas, portais de clientes ou propostas
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+  const isPublicPage = 
+    pathname.startsWith('/lp') ||
+    pathname.startsWith('/tennant') ||
+    pathname.startsWith('/a260') ||
+    pathname.startsWith('/lavadora') ||
+    pathname.startsWith('/assistencia') ||
+    pathname.startsWith('/pecas') ||
+    pathname.startsWith('/manutencao') ||
+    pathname.startsWith('/chamado') ||
+    pathname.startsWith('/visualizar-');
+
+  // Não exibe se for página pública, se já estiver instalado, se não for instalável ou se foi dispensado
+  if (isPublicPage || isInstalled || !isInstallable || isDismissed) {
     return null;
   }
 

@@ -76,6 +76,7 @@ export default function Sidebar() {
     { name: 'Tabela Locação', path: '/tabela-locacao', icon: <Coins size={20} /> },
     { name: 'Catálogo Máquinas', path: '/modelos-maquinas', icon: <Layout size={20} /> },
     { name: 'Landing Pages (LPs)', path: '/configurar-lp-a260', icon: <Globe size={20} /> },
+    { name: 'Agente de Ads (IA)', path: '/agente-ads', icon: <Bot size={20} className="text-[#eb6420]" />, badge: 'IA' },
     { name: 'Chamados', path: '/gestao-chamados', icon: <ClipboardList size={20} /> },
     { name: 'Painel do Técnico (OS)', path: '/tecnico', icon: <Wrench size={20} /> },
     { name: 'Modalidades', path: '/modalidades', icon: <Tags size={20} /> },
