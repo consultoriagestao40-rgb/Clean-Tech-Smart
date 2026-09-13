@@ -88,12 +88,12 @@ export default async function handler(req, res) {
         isMonitored: true,
         targetCpa: 45.00,
         dailyBudget: 50.00,
-        spentMonth: 570.00,
-        clicksMonth: 114,
-        leadsMonth: 12,
-        currentCpa: 47.50,
-        ctr: 4.80,
-        qualityScore: 8,
+        spentMonth: 0.00,
+        clicksMonth: 0,
+        leadsMonth: 0,
+        currentCpa: 0.00,
+        ctr: 0.00,
+        qualityScore: 0,
         healthStatus: "no_alvo"
       },
       {
@@ -105,12 +105,12 @@ export default async function handler(req, res) {
         isMonitored: true,
         targetCpa: 45.00,
         dailyBudget: 50.00,
-        spentMonth: 740.00,
-        clicksMonth: 154,
-        leadsMonth: 18,
-        currentCpa: 41.11,
-        ctr: 5.10,
-        qualityScore: 9,
+        spentMonth: 0.00,
+        clicksMonth: 0,
+        leadsMonth: 0,
+        currentCpa: 0.00,
+        ctr: 0.00,
+        qualityScore: 0,
         healthStatus: "no_alvo"
       }
     ];
@@ -119,15 +119,7 @@ export default async function handler(req, res) {
       try {
         const parsed = JSON.parse(settings.ads_managed_campaigns);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          managedCampaigns = parsed.map(c => {
-            if (c.name.includes('ALTURA')) {
-              return { ...c, spentMonth: 570.00, clicksMonth: 114, leadsMonth: 12, currentCpa: 47.50, ctr: 4.80, qualityScore: 8 };
-            }
-            if (c.name.includes('LIMPEZA')) {
-              return { ...c, spentMonth: 740.00, clicksMonth: 154, leadsMonth: 18, currentCpa: 41.11, ctr: 5.10, qualityScore: 9 };
-            }
-            return c;
-          });
+          managedCampaigns = parsed;
         }
       } catch (e) {
         // use default
@@ -162,364 +154,27 @@ export default async function handler(req, res) {
       }
     }
 
-    // Default base monitored keywords
-    searchTermsAnalysis.push(
-      // -------------------------------------------------------------
-      // CAMPANHA [SEARCH [LIMPEZA] (Termos Reais da Conta Google Ads)
-      // -------------------------------------------------------------
-      {
-        id: "st-limpeza-real-1",
-        term: "empresa de limpeza curitiba",
-        campaign: "[SEARCH [LIMPEZA]",
-        matchType: "Exata",
-        searchVolume: "2.400 /mês",
-        impressions: 269,
-        clicks: 29,
-        cost: 145.00,
-        conversions: 4,
-        cpa: 36.25,
-        ctr: 10.78,
-        status: "excelente",
-        recommendation: "scale_budget",
-        reason: "Grupo: LIMPEZA TERCERIZADA GERAL E CURITIBA - PVS EXATAS. Alta taxa de conversão comercial!"
-      },
-      {
-        id: "st-limpeza-real-2",
-        term: "empresas terceirizadas de limpeza em curitiba",
-        campaign: "[SEARCH [LIMPEZA]",
-        matchType: "Exata",
-        searchVolume: "1.300 /mês",
-        impressions: 59,
-        clicks: 7,
-        cost: 35.00,
-        conversions: 1,
-        cpa: 35.00,
-        ctr: 11.86,
-        status: "excelente",
-        recommendation: "scale_budget",
-        reason: "Grupo: LIMPEZA TERCERIZADA GERAL E CURITIBA - PVS EXATAS. Lead qualificado de facilities B2B."
-      },
-      {
-        id: "st-limpeza-real-3",
-        term: "empresa de limpeza em curitiba",
-        campaign: "[SEARCH [LIMPEZA]",
-        matchType: "Exata",
-        searchVolume: "1.900 /mês",
-        impressions: 73,
-        clicks: 6,
-        cost: 30.00,
-        conversions: 1,
-        cpa: 30.00,
-        ctr: 8.22,
-        status: "excelente",
-        recommendation: "keep_active",
-        reason: "Grupo: LIMPEZA TERCERIZADA GERAL E CURITIBA - PVS EXATAS. CPA 33% abaixo da meta."
-      },
-      {
-        id: "st-limpeza-real-4",
-        term: "empresa terceirizada de limpeza em curitiba",
-        campaign: "[SEARCH [LIMPEZA]",
-        matchType: "Exata",
-        searchVolume: "1.000 /mês",
-        impressions: 37,
-        clicks: 5,
-        cost: 25.00,
-        conversions: 1,
-        cpa: 25.00,
-        ctr: 13.51,
-        status: "excelente",
-        recommendation: "scale_budget",
-        reason: "Grupo: LIMPEZA TERCERIZADA GERAL E CURITIBA - PVS EXATAS. CTR excepcional de 13,51%."
-      },
-      {
-        id: "st-limpeza-real-5",
-        term: "empresa terceirizada em curitiba",
-        campaign: "[SEARCH [LIMPEZA]",
-        matchType: "Variante Aprox.",
-        searchVolume: "880 /mês",
-        impressions: 23,
-        clicks: 5,
-        cost: 25.00,
-        conversions: 1,
-        cpa: 25.00,
-        ctr: 21.74,
-        status: "excelente",
-        recommendation: "add_exact_keyword",
-        reason: "Variante aproximada com CTR de 21,74%. Sugerido adicionar como palavra-chave oficial."
-      },
-      {
-        id: "st-limpeza-real-6",
-        term: "limpeza pos obra",
-        campaign: "[SEARCH [LIMPEZA]",
-        matchType: "Variante Aprox.",
-        searchVolume: "3.600 /mês",
-        impressions: 35,
-        clicks: 4,
-        cost: 20.00,
-        conversions: 1,
-        cpa: 20.00,
-        ctr: 11.43,
-        status: "excelente",
-        recommendation: "scale_budget",
-        reason: "Grupo: LIMPEZA PÓS OBRA - PVS EXATAS. Serviço de alto valor com demanda em expansão."
-      },
-      {
-        id: "st-limpeza-real-7",
-        term: "empresa terceirizada de limpeza curitiba",
-        campaign: "[SEARCH [LIMPEZA]",
-        matchType: "Exata",
-        searchVolume: "720 /mês",
-        impressions: 32,
-        clicks: 4,
-        cost: 20.00,
-        conversions: 1,
-        cpa: 20.00,
-        ctr: 12.50,
-        status: "excelente",
-        recommendation: "keep_active",
-        reason: "Grupo: LIMPEZA TERCERIZADA GERAL E CURITIBA - PVS EXATAS."
-      },
-      {
-        id: "st-limpeza-real-8",
-        term: "empresas de limpeza em curitiba",
-        campaign: "[SEARCH [LIMPEZA]",
-        matchType: "Variante Aprox.",
-        searchVolume: "1.600 /mês",
-        impressions: 38,
-        clicks: 3,
-        cost: 15.00,
-        conversions: 0,
-        cpa: 0.00,
-        ctr: 7.89,
-        status: "bom",
-        recommendation: "keep_active",
-        reason: "Grupo: LIMPEZA E CONSERVAÇÃO - PVS EXATAS."
-      },
-      {
-        id: "st-limpeza-real-9",
-        term: "liderança serviços limpeza",
-        campaign: "[SEARCH [LIMPEZA]",
-        matchType: "Variante Aprox.",
-        searchVolume: "480 /mês",
-        impressions: 5,
-        clicks: 3,
-        cost: 15.00,
-        conversions: 0,
-        cpa: 0.00,
-        ctr: 60.00,
-        status: "negativar_urgente",
-        recommendation: "add_negative_keyword",
-        reason: "Termo de concorrente comercial ('Liderança Serviços') consumindo verba de clique."
-      },
-      {
-        id: "st-limpeza-real-10",
-        term: "vagas emprego auxiliar de limpeza curitiba",
-        campaign: "[SEARCH [LIMPEZA]",
-        matchType: "Ampla",
-        searchVolume: "5.400 /mês",
-        impressions: 210,
-        clicks: 14,
-        cost: 68.40,
-        conversions: 0,
-        cpa: 0.00,
-        ctr: 6.66,
-        status: "negativar_urgente",
-        recommendation: "add_negative_keyword",
-        reason: "Termo de RH/Emprego sem intenção comercial de contratação."
-      },
-
-      // -------------------------------------------------------------
-      // CAMPANHA [SEARCH [ALTURA] (Palavras Reais da Conta Google Ads)
-      // -------------------------------------------------------------
-      {
-        id: "st-altura-real-1",
-        term: "limpeza de vidros em altura",
-        campaign: "[SEARCH [ALTURA]",
-        matchType: "Exata",
-        searchVolume: "1.000 /mês",
-        impressions: 420,
-        clicks: 26,
-        cost: 130.00,
-        conversions: 3,
-        cpa: 43.33,
-        ctr: 6.19,
-        status: "excelente",
-        recommendation: "scale_budget",
-        reason: "Palavra Qualificada no Google Ads com alto volume de cotações comerciais."
-      },
-      {
-        id: "st-altura-real-2",
-        term: "limpeza de vidros curitiba",
-        campaign: "[SEARCH [ALTURA]",
-        matchType: "Exata",
-        searchVolume: "880 /mês",
-        impressions: 380,
-        clicks: 22,
-        cost: 110.00,
-        conversions: 3,
-        cpa: 36.66,
-        ctr: 5.78,
-        status: "excelente",
-        recommendation: "scale_budget",
-        reason: "Palavra Qualificada local com excelente taxa de conversão no WhatsApp."
-      },
-      {
-        id: "st-altura-real-3",
-        term: "limpeza em altura",
-        campaign: "[SEARCH [ALTURA]",
-        matchType: "Exata",
-        searchVolume: "1.600 /mês",
-        impressions: 290,
-        clicks: 18,
-        cost: 90.00,
-        conversions: 2,
-        cpa: 45.00,
-        ctr: 6.20,
-        status: "bom",
-        recommendation: "keep_active",
-        reason: "Palavra Qualificada e ativa gerando leads dentro da meta estipulada."
-      },
-      {
-        id: "st-altura-real-4",
-        term: "limpeza de telhado",
-        campaign: "[SEARCH [ALTURA]",
-        matchType: "Exata",
-        searchVolume: "2.900 /mês",
-        impressions: 210,
-        clicks: 14,
-        cost: 70.00,
-        conversions: 1,
-        cpa: 70.00,
-        ctr: 6.66,
-        status: "atencao",
-        recommendation: "adjust_bid",
-        reason: "Palavra Qualificada no Google com CPA acima da meta. Sugerido ajustar lance."
-      },
-      {
-        id: "st-altura-real-5",
-        term: "limpeza de vidro em altura",
-        campaign: "[SEARCH [ALTURA]",
-        matchType: "Exata",
-        searchVolume: "590 /mês",
-        impressions: 180,
-        clicks: 11,
-        cost: 55.00,
-        conversions: 1,
-        cpa: 55.00,
-        ctr: 6.11,
-        status: "bom",
-        recommendation: "keep_active",
-        reason: "Palavra Qualificada com bom CTR no grupo PVS EXATAS."
-      },
-      {
-        id: "st-altura-real-6",
-        term: "limpeza de vidraças em altura",
-        campaign: "[SEARCH [ALTURA]",
-        matchType: "Exata",
-        searchVolume: "480 /mês",
-        impressions: 140,
-        clicks: 9,
-        cost: 45.00,
-        conversions: 1,
-        cpa: 45.00,
-        ctr: 6.42,
-        status: "bom",
-        recommendation: "keep_active",
-        reason: "Palavra Qualificada no Google Ads."
-      },
-      {
-        id: "st-altura-real-7",
-        term: "limpeza de vidros balneario camboriu",
-        campaign: "[SEARCH [ALTURA]",
-        matchType: "Exata",
-        searchVolume: "390 /mês",
-        impressions: 110,
-        clicks: 8,
-        cost: 40.00,
-        conversions: 1,
-        cpa: 40.00,
-        ctr: 7.27,
-        status: "excelente",
-        recommendation: "keep_active",
-        reason: "Demanda qualificada no litoral de SC para edifícios e condomínios."
-      },
-      {
-        id: "st-altura-real-8",
-        term: "limpeza fachada predios em altura",
-        campaign: "[SEARCH [ALTURA]",
-        matchType: "Exata",
-        searchVolume: "30 /mês",
-        impressions: 0,
-        clicks: 0,
-        cost: 0.00,
-        conversions: 0,
-        cpa: 0.00,
-        ctr: 0.00,
-        status: "baixo_volume",
-        recommendation: "change_to_phrase",
-        reason: "⚠️ Alerta Google Ads: Baixo Volume de Pesquisas na correspondência Exata. Sugerido mudar para Correspondência de Frase para liberar impressões!"
-      },
-      {
-        id: "st-altura-real-9",
-        term: "limpeza fachada predios",
-        campaign: "[SEARCH [ALTURA]",
-        matchType: "Exata",
-        searchVolume: "40 /mês",
-        impressions: 0,
-        clicks: 0,
-        cost: 0.00,
-        conversions: 0,
-        cpa: 0.00,
-        ctr: 0.00,
-        status: "baixo_volume",
-        recommendation: "change_to_phrase",
-        reason: "⚠️ Alerta Google Ads: Baixo Volume de Pesquisas na correspondência Exata. Sugerido mudar para Correspondência de Frase para liberar impressões!"
-      },
-      {
-        id: "st-altura-real-10",
-        term: "curso nr35 trabalho em altura gratis pdf",
-        campaign: "[SEARCH [ALTURA]",
-        matchType: "Ampla",
-        searchVolume: "4.400 /mês",
-        impressions: 160,
-        clicks: 9,
-        cost: 45.00,
-        conversions: 0,
-        cpa: 0.00,
-        ctr: 5.62,
-        status: "negativar_urgente",
-        recommendation: "add_negative_keyword",
-        reason: "Busca informativa de estudante sem intenção comercial de contratação."
-      }
-    );
-
     // Meta Ads Creatives & Campaign Performance
-    const metaCreativesAnalysis = [
-      {
-        id: "meta-c1",
-        name: "Vídeo Demonstração Rodo Linatex - A260 em Galpão",
-        adSet: "Diretores de Facilities & Operações PR/SC",
-        spend: 420.00,
-        leads: 11,
-        cpl: 38.18,
-        frequency: 1.8,
-        ctr: 2.94,
-        status: "excelente",
-        aiInsight: "Criativo com maior taxa de retenção. Sugerido aumentar orçamento diário em 20%."
-      }
-    ];
+    let metaCreativesAnalysis = [];
+    if (settings.ads_meta_creatives) {
+      try {
+        const parsed = JSON.parse(settings.ads_meta_creatives);
+        if (Array.isArray(parsed)) metaCreativesAnalysis = parsed;
+      } catch(e) {}
+    }
 
     // Aggregated real performance across active campaigns (0 contratos fechados no CRM)
-    const totalSpentGoogle = 1310.00; // 570 + 740
-    const totalSpentMeta = 0.00;
+    const totalSpentGoogle = managedCampaigns.filter(c => c.platform === 'Google Ads').reduce((acc, c) => acc + (Number(c.spentMonth) || 0), 0);
+    const totalSpentMeta = managedCampaigns.filter(c => c.platform === 'Meta Ads').reduce((acc, c) => acc + (Number(c.spentMonth) || 0), 0);
     const totalSpent = totalSpentGoogle + totalSpentMeta;
-    const leadsGoogle = 6; // Contatos/mensagens que chegaram
+    const totalClicks = managedCampaigns.reduce((acc, c) => acc + (Number(c.clicksMonth) || 0), 0);
+    const leadsGoogle = totalLeadsFromAds;
     const leadsMeta = 0;
     const totalLeads = leadsGoogle + leadsMeta;
     const realCpa = totalLeads > 0 ? (totalSpent / totalLeads) : 0;
-    const realCtr = 4.95; // %
-    const realConvRate = 2.20; // %
-    const totalNewContracts = 0; // Nenhum contrato fechado ainda
+    const realCtr = totalClicks > 0 ? (managedCampaigns[0]?.ctr || 0) : 0.0;
+    const realConvRate = totalClicks > 0 ? ((totalLeads / totalClicks) * 100) : 0.0;
+    const totalNewContracts = 0; // Nenhum contrato fechado no CRM
     const totalCac = 0.00; // Sem fechamento
     const averageTicket = 3890.00;
     const averageLtv = 0.00;
@@ -528,7 +183,7 @@ export default async function handler(req, res) {
     const realRoas = 0.0;
 
     // Health Score calculation (0 to 100)
-    let healthScore = 45; // Em alerta crítico por não fechar contratos
+    let healthScore = 50; // Aguardando primeiros dados de conversão real no CRM não fechar contratos
     if (totalNewContracts === 0) healthScore = 48;
 
     // Calculate actual savings from database optimization logs

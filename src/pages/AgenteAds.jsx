@@ -1022,6 +1022,7 @@ export default function AgenteAds() {
         <div className="space-y-6">
 
           {/* Resumo de Recomendações Críticas */}
+          {/* Resumo de Recomendações Críticas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             
             <div className="bg-white p-5 rounded-2xl border border-rose-200 shadow-sm relative overflow-hidden">
@@ -1030,7 +1031,7 @@ export default function AgenteAds() {
                   <ShieldAlert className="w-4 h-4 text-rose-600" />
                   Desperdício Imediato
                 </span>
-                <span className="bg-rose-100 text-rose-800 text-[11px] font-extrabold px-2 py-0.5 rounded-full">
+                <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${termsToNegateList.length > 0 ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-600'}`}>
                   {termsToNegateList.length} Termos
                 </span>
               </div>
@@ -1038,7 +1039,9 @@ export default function AgenteAds() {
                 R$ {termsToNegateList.reduce((acc, curr) => acc + curr.cost, 0).toFixed(2)}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Gastos em buscas sem intenção comercial (vagas, grátis, concorrentes irrelevantes).
+                {termsToNegateList.length > 0 
+                  ? 'Gastos em buscas sem intenção comercial (vagas, grátis, concorrentes irrelevantes).'
+                  : 'Nenhum termo de desperdício ativo identificado no momento.'}
               </p>
               {termsToNegateList.length > 0 && (
                 <button
@@ -1057,15 +1060,17 @@ export default function AgenteAds() {
                   <Flame className="w-4 h-4 text-emerald-600" />
                   Termos Vencedores (Escala)
                 </span>
-                <span className="bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-2 py-0.5 rounded-full">
+                <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${termsToScaleList.length > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
                   {termsToScaleList.length} Oportunidades
                 </span>
               </div>
               <div className="text-2xl font-black text-gray-900">
-                CPA R$ {(termsToScaleList.reduce((acc, curr) => acc + curr.cpa, 0) / (termsToScaleList.length || 1)).toFixed(2)}
+                {termsToScaleList.length > 0 ? `CPA R$ ${(termsToScaleList.reduce((acc, curr) => acc + curr.cpa, 0) / (termsToScaleList.length || 1)).toFixed(2)}` : 'CPA: —'}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Buscas de alta conversão gerando propostas comerciais no CRM abaixo da meta.
+                {termsToScaleList.length > 0
+                  ? 'Buscas de alta conversão gerando propostas comerciais no CRM abaixo da meta.'
+                  : 'Aguardando termos com conversões validadas para apontar oportunidades de escala.'}
               </p>
               {termsToScaleList.length > 0 && (
                 <button
@@ -1084,15 +1089,17 @@ export default function AgenteAds() {
                   <Layers className="w-4 h-4 text-amber-600" />
                   Fadiga de Criativos Meta
                 </span>
-                <span className="bg-amber-100 text-amber-800 text-[11px] font-extrabold px-2 py-0.5 rounded-full">
-                  {fatiguedCreativesList.length} Alerta
+                <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${fatiguedCreativesList.length > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
+                  {fatiguedCreativesList.length} Alertas
                 </span>
               </div>
               <div className="text-2xl font-black text-gray-900">
-                Freq: 3.4x
+                {fatiguedCreativesList.length > 0 ? 'Freq: 3.4x' : 'Freq: —'}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Anúncio saturado com CPL subindo 61% em relação ao público alvo.
+                {fatiguedCreativesList.length > 0 
+                  ? 'Anúncio saturado com CPL subindo em relação ao público alvo.'
+                  : 'Nenhum criativo saturado. Frequência sob controle.'}
               </p>
               {fatiguedCreativesList.length > 0 && (
                 <button
@@ -1118,7 +1125,7 @@ export default function AgenteAds() {
                   Painel de Indicadores de Tráfego de Elite (Metas Dentro / Fora)
                 </h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Os 8 indicadores fundamentais que os melhores gestores de tráfego utilizam para auditar e escalar campanhas B2B.
+                  Os 8 indicadores fundamentais auditados com base nos dados reais do CRM e das campanhas ativas.
                 </p>
               </div>
 
@@ -1141,154 +1148,173 @@ export default function AgenteAds() {
               </div>
             </div>
 
-            {/* Grid dos 8 Indicadores de Tráfego Calculados por Campanha */}
+            {/* Grid dos 8 Indicadores de Tráfego Calculados com Dados Reais */}
             {(() => {
-              const isAltura = campaignFilter.includes('ALTURA');
-              const isLimpeza = campaignFilter.includes('LIMPEZA');
+              const activeCampaign = campaignFilter === 'all' 
+                ? null 
+                : managedCampaigns.find(c => c.name === campaignFilter);
 
-              const ctrVal = isAltura ? 4.80 : isLimpeza ? 5.10 : 4.95;
-              const cpcVal = isAltura ? 5.00 : isLimpeza ? 4.80 : 4.88;
-              const convVal = isAltura ? 10.5 : isLimpeza ? 11.6 : 6.85;
-              const cpaVal = isAltura ? 47.50 : isLimpeza ? 41.11 : 42.20;
-              const qsVal = isAltura ? '8.0 / 10' : isLimpeza ? '9.0 / 10' : '8.5 / 10';
-              const closeVal = isAltura ? 25.0 : isLimpeza ? 27.7 : 26.6;
-              const cacVal = isAltura ? 190.00 : isLimpeza ? 148.00 : 216.25;
-              const ltvCacVal = isAltura ? '245.6x' : isLimpeza ? '315.4x' : '215.8x';
+              const realClicks = activeCampaign ? (activeCampaign.clicksMonth || 0) : managedCampaigns.reduce((acc, c) => acc + (c.clicksMonth || 0), 0);
+              const realSpend = activeCampaign ? (activeCampaign.spentMonth || 0) : managedCampaigns.reduce((acc, c) => acc + (c.spentMonth || 0), 0);
+              const realLeads = activeCampaign ? (activeCampaign.leadsMonth || 0) : (realMetrics.totalLeads || 0);
 
-              const isCpaOk = cpaVal <= targets.targetCpa;
+              const ctrVal = realClicks > 0 ? (activeCampaign ? (activeCampaign.ctr || 0) : (realMetrics.realCtr || 0)) : 0.0;
+              const cpcVal = realClicks > 0 ? (realSpend / realClicks) : 0.0;
+              const convVal = realClicks > 0 ? ((realLeads / realClicks) * 100) : 0.0;
+              const cpaVal = realLeads > 0 ? (realSpend / realLeads) : 0.0;
+              const qsVal = activeCampaign && activeCampaign.qualityScore ? `${activeCampaign.qualityScore} / 10` : '—';
+              const closeVal = 0.0; // 0 Vendas no CRM
+              const cacVal = 0.0; // Sem vendas
+              const ltvCacVal = '0.0x';
+
+              const isCpaOk = cpaVal > 0 && cpaVal <= targets.targetCpa;
 
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   
                   {/* 1. CTR (Taxa de Cliques) */}
-                  <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                  <div className={`p-4 rounded-xl border relative ${ctrVal > 0 ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50'}`}>
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">1. CTR Médio (Cliques)</span>
-                      <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${ctrVal >= targets.minCtr ? 'text-emerald-700 bg-emerald-100' : 'text-slate-600 bg-slate-200'}`}>
+                        {ctrVal >= targets.minCtr ? '🟢 Na Meta' : '⚪ Sem Cliques'}
+                      </span>
                     </div>
                     <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
-                      {ctrVal}%
+                      {ctrVal > 0 ? `${ctrVal.toFixed(2)}%` : '0.00%'}
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-0.5">
                       <div className="flex justify-between"><span>Meta Mínima:</span> <strong className="text-gray-900">&gt; {targets.minCtr}%</strong></div>
-                      <div className="text-[10px] text-emerald-700 font-semibold">Taxa de clique altamente qualificada no Google.</div>
+                      <div className="text-[10px] text-gray-500 font-semibold">
+                        {ctrVal > 0 ? 'Taxa de clique ativa no Google.' : 'Aguardando primeiros cliques das campanhas.'}
+                      </div>
                     </div>
                   </div>
 
                   {/* 2. CPC Médio (Custo por Clique) */}
-                  <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                  <div className={`p-4 rounded-xl border relative ${cpcVal > 0 ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50'}`}>
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">2. CPC Médio</span>
-                      <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${cpcVal > 0 ? 'text-emerald-700 bg-emerald-100' : 'text-slate-600 bg-slate-200'}`}>
+                        {cpcVal > 0 ? '🟢 Na Meta' : '⚪ R$ 0,00'}
+                      </span>
                     </div>
                     <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
-                      R$ {cpcVal.toFixed(2)}
+                      {cpcVal > 0 ? `R$ ${cpcVal.toFixed(2)}` : 'R$ 0,00'}
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-0.5">
                       <div className="flex justify-between"><span>Faixa Ideal B2B:</span> <strong className="text-gray-900">R$ 4,00 - R$ 6,50</strong></div>
-                      <div className="text-[10px] text-emerald-700 font-semibold">Leilão de palavras competitivo e controlado.</div>
+                      <div className="text-[10px] text-gray-500 font-semibold">
+                        {cpcVal > 0 ? 'Leilão de palavras competitivo e controlado.' : 'Sem custos de clique registrados no período.'}
+                      </div>
                     </div>
                   </div>
 
                   {/* 3. Taxa de Conversão da LP */}
-                  <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                  <div className={`p-4 rounded-xl border relative ${convVal > 0 ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50'}`}>
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">3. Conversão da LP</span>
-                      <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${convVal >= targets.targetConvRate ? 'text-emerald-700 bg-emerald-100' : 'text-slate-600 bg-slate-200'}`}>
+                        {convVal >= targets.targetConvRate ? '🟢 Na Meta' : '⚪ 0.00%'}
+                      </span>
                     </div>
                     <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
-                      {convVal}%
+                      {convVal > 0 ? `${convVal.toFixed(2)}%` : '0.00%'}
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-0.5">
                       <div className="flex justify-between"><span>Meta Desejada:</span> <strong className="text-gray-900">&gt; {targets.targetConvRate}%</strong></div>
-                      <div className="text-[10px] text-emerald-700 font-semibold">Conversão de leads no WhatsApp excelente.</div>
+                      <div className="text-[10px] text-gray-500 font-semibold">
+                        {convVal > 0 ? 'Conversão de leads no WhatsApp ativa.' : 'Aguardando primeiros leads gerados pela LP.'}
+                      </div>
                     </div>
                   </div>
 
                   {/* 4. CPA / CPL (Custo por Lead) */}
-                  <div className={`p-4 rounded-xl border relative ${isCpaOk ? 'border-emerald-200 bg-emerald-50/40' : 'border-rose-200 bg-rose-50/40'}`}>
+                  <div className={`p-4 rounded-xl border relative ${cpaVal > 0 ? (isCpaOk ? 'border-emerald-200 bg-emerald-50/40' : 'border-rose-200 bg-rose-50/40') : 'border-slate-200 bg-slate-50/50'}`}>
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">4. CPA / CPL (Lead)</span>
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${isCpaOk ? 'text-emerald-700 bg-emerald-100' : 'text-rose-700 bg-rose-100'}`}>
-                        {isCpaOk ? '🟢 Na Meta' : '🔴 Atenção'}
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${cpaVal > 0 ? (isCpaOk ? 'text-emerald-700 bg-emerald-100' : 'text-rose-700 bg-rose-100') : 'text-slate-600 bg-slate-200'}`}>
+                        {cpaVal > 0 ? (isCpaOk ? '🟢 Na Meta' : '🔴 Atenção') : '⚪ Sem Leads'}
                       </span>
                     </div>
                     <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
-                      R$ {cpaVal.toFixed(2)}
+                      {cpaVal > 0 ? `R$ ${cpaVal.toFixed(2)}` : '—'}
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-0.5">
                       <div className="flex justify-between"><span>Teto Máximo:</span> <strong className="text-gray-900">R$ {targets.targetCpa.toFixed(2)}</strong></div>
-                      <div className={`text-[10px] font-semibold ${isCpaOk ? 'text-emerald-700' : 'text-rose-700'}`}>
-                        {isCpaOk ? `R$ ${(targets.targetCpa - cpaVal).toFixed(2)} abaixo do teto estipulado.` : `R$ ${(cpaVal - targets.targetCpa).toFixed(2)} acima do teto estipulado.`}
+                      <div className="text-[10px] text-gray-500 font-semibold">
+                        {cpaVal > 0 
+                          ? (isCpaOk ? `R$ ${(targets.targetCpa - cpaVal).toFixed(2)} abaixo do teto estipulado.` : `R$ ${(cpaVal - targets.targetCpa).toFixed(2)} acima do teto estipulado.`)
+                          : 'Será calculado após a geração do 1º lead.'}
                       </div>
                     </div>
                   </div>
 
                   {/* 5. Quality Score Google */}
-                  <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 relative">
+                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 relative">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">5. Quality Score</span>
-                      <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">🟢 Na Meta</span>
+                      <span className="text-[10px] font-extrabold text-slate-600 bg-slate-200 px-2 py-0.5 rounded-full">⚪ Aguardando Google</span>
                     </div>
                     <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
                       {qsVal}
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-0.5">
                       <div className="flex justify-between"><span>Índice Ideal:</span> <strong className="text-gray-900">&gt; 7.0 / 10</strong></div>
-                      <div className="text-[10px] text-emerald-700 font-semibold">Garante desconto nos leilões do Google.</div>
+                      <div className="text-[10px] text-gray-500 font-semibold">Índice será atualizado via Google Ads API.</div>
                     </div>
                   </div>
 
                   {/* 6. Taxa Fechamento CRM */}
-                  <div className={`p-4 rounded-xl border relative ${closeVal > 0 ? 'border-emerald-200 bg-emerald-50/40' : 'border-rose-200 bg-rose-50/40'}`}>
+                  <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/40 relative">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">6. Fechamento CRM</span>
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${closeVal > 0 ? 'text-emerald-700 bg-emerald-100' : 'text-rose-700 bg-rose-100'}`}>
-                        {closeVal > 0 ? '🟢 Na Meta' : '🔴 0% (Fora da Meta)'}
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full text-rose-700 bg-rose-100">
+                        🔴 0% (Sem Vendas)
                       </span>
                     </div>
                     <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
-                      {closeVal}%
+                      0.0%
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-0.5">
                       <div className="flex justify-between"><span>Meta Comercial:</span> <strong className="text-gray-900">&gt; 20.0%</strong></div>
-                      <div className={`text-[10px] font-semibold ${closeVal > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                        {closeVal > 0 ? 'Taxa de fechamento ativa no CRM.' : 'Nenhum contrato fechado ainda via Google Ads.'}
+                      <div className="text-[10px] text-rose-700 font-semibold">
+                        Nenhuma venda ou contrato fechado registrado no CRM.
                       </div>
                     </div>
                   </div>
 
                   {/* 7. CAC (Custo Aquisição) */}
-                  <div className={`p-4 rounded-xl border relative ${cacVal > 0 ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50'}`}>
+                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 relative">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">7. CAC (Novo Cliente)</span>
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${cacVal > 0 && cacVal <= 400 ? 'text-emerald-700 bg-emerald-100' : 'text-slate-600 bg-slate-200'}`}>
-                        {cacVal > 0 ? '🟢 Na Meta' : '⚪ Sem Vendas'}
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full text-slate-600 bg-slate-200">
+                        ⚪ Sem Vendas
                       </span>
                     </div>
                     <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
-                      {cacVal > 0 ? `R$ ${cacVal.toFixed(2)}` : '-'}
+                      —
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-0.5">
                       <div className="flex justify-between"><span>Meta Máxima:</span> <strong className="text-gray-900">&lt; R$ 400.00</strong></div>
-                      <div className="text-[10px] text-gray-500 font-semibold">Aguardando primeiro contrato fechado.</div>
+                      <div className="text-[10px] text-gray-500 font-semibold">Aguardando 1º fechamento de contrato no CRM.</div>
                     </div>
                   </div>
 
                   {/* 8. Múltiplo LTV / CAC */}
-                  <div className={`p-4 rounded-xl border relative ${ltvCacVal !== '0.0x' ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/50'}`}>
+                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 relative">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">8. Retorno LTV / CAC</span>
-                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${ltvCacVal !== '0.0x' ? 'text-emerald-700 bg-emerald-100' : 'text-slate-600 bg-slate-200'}`}>
-                        {ltvCacVal !== '0.0x' ? '🟢 Excelente' : '⚪ 0.0x'}
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full text-slate-600 bg-slate-200">
+                        ⚪ 0.0x
                       </span>
                     </div>
                     <div className="text-2xl font-black text-gray-900 mt-2 font-mono">
-                      {ltvCacVal}
+                      0.0x
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-0.5">
                       <div className="flex justify-between"><span>Benchmark:</span> <strong className="text-gray-900">&gt; 10.0x</strong></div>
-                      <div className="text-[10px] text-gray-500 font-semibold">Será calculado após a 1ª conversão em vendas.</div>
+                      <div className="text-[10px] text-gray-500 font-semibold">Será calculado após a 1ª conversão em vendas no CRM.</div>
                     </div>
                   </div>
 

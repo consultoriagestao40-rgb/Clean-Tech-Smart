@@ -49,6 +49,73 @@ export default function PortalCliente() {
   const WHATSAPP_ASSISTENCIA = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Preciso de assistência técnica para meu equipamento Tennant no Paraná.")}`;
   const WHATSAPP_PECAS = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Gostaria de cotar peças genuínas de fábrica para minha máquina Tennant.")}`;
 
+  // Google Tag & Rastreamento de Conversões (Google Ads)
+  const [googleTagId, setGoogleTagId] = useState(() => localStorage.getItem('ads_google_tag_id') || 'AW-16501080633');
+  const [googleConversionLabel, setGoogleConversionLabel] = useState(() => localStorage.getItem('ads_google_conversion_label') || 'mh2cCOX7-c8cELmEqrw9');
+
+  // Sincroniza credenciais de rastreamento com o backend
+  useEffect(() => {
+    async function loadAdsSettings() {
+      try {
+        const res = await fetch('/api/get-settings');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.settings) {
+            if (data.settings.ads_google_tag_id) {
+              setGoogleTagId(data.settings.ads_google_tag_id);
+              localStorage.setItem('ads_google_tag_id', data.settings.ads_google_tag_id);
+            }
+            if (data.settings.ads_google_conversion_label) {
+              setGoogleConversionLabel(data.settings.ads_google_conversion_label);
+              localStorage.setItem('ads_google_conversion_label', data.settings.ads_google_conversion_label);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar configurações de Ads na LP Assistência:', err);
+      }
+    }
+    loadAdsSettings();
+  }, []);
+
+  // Injeção da Tag Oficial do Google (gtag.js) no <head>
+  useEffect(() => {
+    if (googleTagId && !document.getElementById('google-tag-script')) {
+      const s = document.createElement('script');
+      s.id = 'google-tag-script';
+      s.async = true;
+      s.src = `https://www.googletagmanager.com/gtag/js?id=${googleTagId}`;
+      document.head.appendChild(s);
+
+      const inline = document.createElement('script');
+      inline.id = 'google-tag-inline';
+      inline.innerHTML = `
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', '${googleTagId}');
+      `;
+      document.head.appendChild(inline);
+    }
+  }, [googleTagId]);
+
+  // Disparo de Conversão Google Ads para cliques no WhatsApp e Abertura de Chamados
+  const triggerGoogleConversion = (actionLabel = 'Assistência Técnica Tennant') => {
+    try {
+      if (typeof window.gtag === 'function' && googleTagId) {
+        const sendTo = googleConversionLabel ? `${googleTagId}/${googleConversionLabel}` : googleTagId;
+        window.gtag('event', 'conversion', {
+          'send_to': sendTo,
+          'event_category': 'WhatsApp / Chamado',
+          'event_label': actionLabel
+        });
+      }
+    } catch (e) {
+      console.warn('Erro disparo conversão Google Ads:', e);
+    }
+  };
+
   // Session State
   const [clientToken, setClientToken] = useState(() => localStorage.getItem('client_token') || '');
   const [clientData, setClientData] = useState(() => {
@@ -308,6 +375,9 @@ export default function PortalCliente() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao abrir chamado.');
 
+      // Dispara conversão oficial no Google Ads
+      triggerGoogleConversion('Abertura de Chamado Técnico Tennant');
+
       alert(`Chamado aberto com sucesso! Protocolo #${data.ticket.id}. Nossa equipe técnica foi notificada.`);
       setShowNewTicketModal(false);
       setTicketForm({
@@ -497,6 +567,7 @@ export default function PortalCliente() {
               href={WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => triggerGoogleConversion('Header WhatsApp Assistência')}
               className="flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all cursor-pointer"
               title="Fale direto com a assistência técnica"
             >
@@ -632,6 +703,7 @@ export default function PortalCliente() {
                     href={WHATSAPP_LINK}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => triggerGoogleConversion('Painel Lateral WhatsApp Assistência')}
                     className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold py-2 rounded-lg text-xs shadow-sm transition-colors"
                   >
                     <WhatsAppIcon className="w-4 h-4 text-white" /> Falar no WhatsApp
@@ -1076,6 +1148,7 @@ export default function PortalCliente() {
                     href={WHATSAPP_ASSISTENCIA}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => triggerGoogleConversion('Hero WhatsApp Assistência')}
                     className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-6 py-4 rounded-xl font-black text-base shadow-md shadow-emerald-500/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
                   >
                     <WhatsAppIcon className="w-5 h-5 text-white" /> Falar no WhatsApp
@@ -1251,6 +1324,7 @@ export default function PortalCliente() {
                     href={WHATSAPP_PECAS}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => triggerGoogleConversion('Cotação Peça Genuína Tennant - Lâminas')}
                     className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#007481] hover:underline"
                   >
                     Cotar Lâminas de Rodo &rarr;
@@ -1269,6 +1343,7 @@ export default function PortalCliente() {
                     href={WHATSAPP_PECAS}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => triggerGoogleConversion('Cotação Peça Genuína Tennant - Escovas')}
                     className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#007481] hover:underline"
                   >
                     Cotar Escovas &amp; Discos &rarr;
@@ -1287,6 +1362,7 @@ export default function PortalCliente() {
                     href={WHATSAPP_PECAS}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => triggerGoogleConversion('Cotação Peça Genuína Tennant - Motores')}
                     className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#007481] hover:underline"
                   >
                     Cotar Motores Originais &rarr;
@@ -1305,6 +1381,7 @@ export default function PortalCliente() {
                     href={WHATSAPP_PECAS}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => triggerGoogleConversion('Cotação Peça Genuína Tennant - Baterias')}
                     className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#007481] hover:underline"
                   >
                     Cotar Baterias &amp; Filtros &rarr;
@@ -1356,6 +1433,7 @@ export default function PortalCliente() {
                     href={WHATSAPP_ASSISTENCIA}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => triggerGoogleConversion('Banner Final WhatsApp Assistência')}
                     className="w-full sm:w-auto bg-[#25D366] hover:bg-[#20ba59] text-white font-bold px-6 py-3.5 rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <WhatsAppIcon className="w-5 h-5 text-white" /> Chamar Técnico no WhatsApp
@@ -1395,7 +1473,13 @@ export default function PortalCliente() {
                   Termos de Uso e Política de Privacidade (LGPD)
                 </button>
                 <span>•</span>
-                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 transition-colors">
+                <a 
+                  href={WHATSAPP_LINK} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  onClick={() => triggerGoogleConversion('Footer WhatsApp Suporte')}
+                  className="hover:text-emerald-600 transition-colors"
+                >
                   Suporte: {WHATSAPP_DISPLAY}
                 </a>
               </div>
@@ -2227,6 +2311,7 @@ export default function PortalCliente() {
         href={WHATSAPP_ASSISTENCIA}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => triggerGoogleConversion('Botão Flutuante WhatsApp Assistência')}
         className="fixed bottom-5 right-5 z-40 bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white p-3.5 sm:px-5 sm:py-3.5 rounded-full shadow-2xl hover:shadow-emerald-500/50 flex items-center gap-2.5 transition-all transform hover:-translate-y-1 group border-2 border-white cursor-pointer"
         title="Falar com Assistência Técnica Tennant no WhatsApp"
       >
