@@ -1180,9 +1180,9 @@ export default function AgenteAds() {
 
               const realClicks = activeCampaign ? (activeCampaign.clicksMonth || 0) : managedCampaigns.reduce((acc, c) => acc + (c.clicksMonth || 0), 0);
               const realSpend = activeCampaign ? (activeCampaign.spentMonth || 0) : managedCampaigns.reduce((acc, c) => acc + (c.spentMonth || 0), 0);
-              const realLeads = activeCampaign ? (activeCampaign.leadsMonth || 0) : (realMetrics.totalLeads || 0);
+              const realLeads = activeCampaign ? (activeCampaign.leadsMonth || 0) : managedCampaigns.reduce((acc, c) => acc + (c.leadsMonth || 0), 0);
 
-              const ctrVal = realClicks > 0 ? (activeCampaign ? (activeCampaign.ctr || 0) : (realMetrics.realCtr || 0)) : 0.0;
+              const ctrVal = realClicks > 0 ? (activeCampaign ? (activeCampaign.ctr || 0) : (managedCampaigns[0]?.ctr || 0)) : 0.0;
               const cpcVal = realClicks > 0 ? (realSpend / realClicks) : 0.0;
               const convVal = realClicks > 0 ? ((realLeads / realClicks) * 100) : 0.0;
               const cpaVal = realLeads > 0 ? (realSpend / realLeads) : 0.0;
