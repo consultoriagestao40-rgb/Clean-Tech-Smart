@@ -46,6 +46,8 @@ export default function PortalCliente() {
   const WHATSAPP_NUMBER = "5541985083658";
   const WHATSAPP_DISPLAY = "(41) 98508-3658";
   const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Estou no Portal do Cliente Clean Tech Pro e gostaria de atendimento técnico Tennant.")}`;
+  const WHATSAPP_ASSISTENCIA = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Preciso de assistência técnica para meu equipamento Tennant no Paraná.")}`;
+  const WHATSAPP_PECAS = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Gostaria de cotar peças genuínas de fábrica para minha máquina Tennant.")}`;
 
   // Session State
   const [clientToken, setClientToken] = useState(() => localStorage.getItem('client_token') || '');
@@ -1045,23 +1047,23 @@ export default function PortalCliente() {
                     <div className="text-[10px] sm:text-xs font-black text-[#007481] uppercase tracking-wide flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-[#007481] inline" /> REPRESENTANTE &amp; ASSISTÊNCIA TÉCNICA AUTORIZADA ALFA TENNANT
                     </div>
-                    <div className="text-[10px] text-slate-500">Peças Originais, Manutenção Certificada e Entrega Técnica • Paraná</div>
+                    <div className="text-[10px] text-slate-500">Peças Originais, Manutenção Certificada e Oficina Móvel • Paraná</div>
                   </div>
                 </div>
 
                 <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight mb-6">
-                  Suporte Especializado &amp; <br />
+                  Assistência Técnica &amp; <br />
                   <span className="text-[#007481]">
-                    Portal de Chamados <br />
+                    Peças Genuínas <br />
                     Tennant
                   </span>
                 </h1>
 
                 <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8">
-                  Abra chamados em menos de 1 minuto, acompanhe manutenções em tempo real, consulte orçamentos vinculados e monitore o histórico completo de custos do seu parque de máquinas.
+                  Atendimento técnico autorizado, manutenção corretiva e preventiva no seu galpão com peças 100% originais a pronta entrega. Atendemos Curitiba, Região Metropolitana e todo o Paraná para que sua operação de limpeza nunca pare.
                 </p>
 
-                {/* CTAs Principais */}
+                {/* CTAs Principais de Alta Conversão */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <button
                     onClick={() => { setRegError(''); setShowRegisterModal(true); }}
@@ -1070,18 +1072,37 @@ export default function PortalCliente() {
                     <Plus className="w-5 h-5" /> Cadastrar &amp; Abrir Chamado
                   </button>
 
+                  <a
+                    href={WHATSAPP_ASSISTENCIA}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-6 py-4 rounded-xl font-black text-base shadow-md shadow-emerald-500/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+                  >
+                    <WhatsAppIcon className="w-5 h-5 text-white" /> Falar no WhatsApp
+                  </a>
+
                   <button
                     onClick={() => { setLoginError(''); setShowLoginModal(true); }}
-                    className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 px-6 py-4 rounded-xl font-bold text-base transition-colors shadow-xs cursor-pointer"
+                    className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-5 py-4 rounded-xl font-bold text-base transition-colors shadow-xs cursor-pointer"
                   >
-                    <Lock className="w-4 h-4 text-[#007481]" /> Já sou Cadastrado (Login)
+                    <Lock className="w-4 h-4 text-[#007481]" /> Login
                   </button>
                 </div>
 
-                {/* LGPD Assurance Badge */}
-                <div className="mt-6 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Cadastro rápido, 100% seguro e em total conformidade com a LGPD (Lei 13.709/2018).</span>
+                {/* Badges de Confiança Imediatos */}
+                <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-600 font-medium">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>Oficina móvel com atendimento presencial no Paraná</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>Peças 100% originais com garantia de fábrica</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>Técnicos credenciados pela fabricante</span>
+                  </div>
                 </div>
 
               </div>
@@ -1093,7 +1114,7 @@ export default function PortalCliente() {
           {/* ========================================================================= */}
           <section className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <span className="text-xs font-bold text-[#007481] uppercase tracking-wider">Excelência & Credibilidade</span>
+              <span className="text-xs font-bold text-[#007481] uppercase tracking-wider">Excelência &amp; Credibilidade</span>
               <h2 className="text-2xl sm:text-4xl font-black text-slate-900 mt-2 mb-4">
                 Serviços Oficiais de Assistência Técnica Tennant
               </h2>
@@ -1183,7 +1204,7 @@ export default function PortalCliente() {
                   <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#007481] flex items-center justify-center mb-5 border border-teal-100">
                     <TrendingUp className="w-6 h-6" />
                   </div>
-                  <h3 className="text-lg font-black text-slate-900 mb-2">Gestão de Custos & Troca</h3>
+                  <h3 className="text-lg font-black text-slate-900 mb-2">Gestão de Custos &amp; Troca</h3>
                   <p className="text-xs text-slate-600 leading-relaxed mb-4">
                     Tenha visibilidade total de quanto cada máquina gasta em reparos e saiba o momento exato em que compensa renovar o ativo.
                   </p>
@@ -1203,29 +1224,141 @@ export default function PortalCliente() {
 
             </div>
 
+            {/* ===================================================================== */}
+            {/* 📦 SEÇÃO DE PEÇAS GENUÍNAS ALFA TENNANT COM PRONTA ENTREGA             */}
+            {/* ===================================================================== */}
+            <div className="mt-20 pt-16 border-t border-slate-200">
+              <div className="text-center max-w-3xl mx-auto mb-12">
+                <span className="text-xs font-bold text-[#eb6420] uppercase tracking-wider">Peças Originais de Fábrica</span>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2 mb-3">
+                  Peças Genuínas Alfa Tennant a Pronta Entrega
+                </h3>
+                <p className="text-sm text-slate-600">
+                  Evite quebras precoces utilizando insumos homologados de fábrica com garantia oficial e despacho imediato no Paraná.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#007481] uppercase mb-1">Secagem Perfeita</div>
+                    <h4 className="text-base font-extrabold text-slate-900 mb-2">Lâminas de Rodo Linatex®</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Lâminas dianteiras e traseiras em Linatex legítimo e poliuretano resistente a óleo, garantindo secagem uniforme sem manchas.
+                    </p>
+                  </div>
+                  <a 
+                    href={WHATSAPP_PECAS}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#007481] hover:underline"
+                  >
+                    Cotar Lâminas de Rodo &rarr;
+                  </a>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#007481] uppercase mb-1">Limpeza Profunda</div>
+                    <h4 className="text-base font-extrabold text-slate-900 mb-2">Escovas de Lavagem &amp; Discos</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Escovas de disco e cilíndricas em nylon, polipropileno e grana abrasiva, calibradas para remover sujeiras severas sem agredir o piso.
+                    </p>
+                  </div>
+                  <a 
+                    href={WHATSAPP_PECAS}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#007481] hover:underline"
+                  >
+                    Cotar Escovas &amp; Discos &rarr;
+                  </a>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#007481] uppercase mb-1">Potência de Aspiração</div>
+                    <h4 className="text-base font-extrabold text-slate-900 mb-2">Motores de Aspiração &amp; Tração</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Turbinas e motores originais de alta durabilidade, projetados para suportar regimes industriais contínuos de operação.
+                    </p>
+                  </div>
+                  <a 
+                    href={WHATSAPP_PECAS}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#007481] hover:underline"
+                  >
+                    Cotar Motores Originais &rarr;
+                  </a>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#007481] uppercase mb-1">Autonomia &amp; Força</div>
+                    <h4 className="text-base font-extrabold text-slate-900 mb-2">Baterias Tracionárias &amp; Filtros</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Baterias tracionárias de ciclo profundo, carregadores de alto rendimento, filtros de solução e mangueiras resistentes.
+                    </p>
+                  </div>
+                  <a 
+                    href={WHATSAPP_PECAS}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#007481] hover:underline"
+                  >
+                    Cotar Baterias &amp; Filtros &rarr;
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* ===================================================================== */}
+            {/* 🚜 MODELOS TENNANT ATENDIDOS PELA NOSSA ASSISTÊNCIA                   */}
+            {/* ===================================================================== */}
+            <div className="mt-16 p-6 sm:p-8 rounded-3xl bg-slate-100 border border-slate-200 text-center">
+              <span className="text-[11px] font-bold text-[#007481] uppercase tracking-wider">Parque de Máquinas Suportado</span>
+              <h4 className="text-lg sm:text-xl font-black text-slate-900 mt-1 mb-2">
+                Equipamentos Tennant Atendidos no Paraná
+              </h4>
+              <p className="text-xs text-slate-600 max-w-2xl mx-auto mb-6">
+                Contamos com ferramental e manuais oficiais de fábrica para diagnosticar e reparar os principais modelos do mercado:
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2 max-w-4xl mx-auto">
+                {['Tennant A-260', 'Tennant T2', 'Tennant T300', 'Tennant T500', 'Tennant T7', 'Tennant T12', 'Tennant T16', 'Tennant T20', 'Tennant S10', 'Tennant S20', 'Tennant S30', 'Tennant M20', 'Tennant 6100'].map((model) => (
+                  <span key={model} className="bg-white border border-slate-300 text-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs">
+                    {model}
+                  </span>
+                ))}
+                <span className="bg-[#007481] text-white text-xs font-bold px-3 py-1.5 rounded-lg">
+                  + Toda a Linha Tennant
+                </span>
+              </div>
+            </div>
+
             {/* Banner Call-to-Action Inferior */}
             <div className="mt-16 bg-gradient-to-r from-[#005d68] to-[#007481] rounded-3xl p-8 sm:p-12 text-center text-white shadow-xl relative overflow-hidden">
               <div className="max-w-2xl mx-auto relative z-10">
                 <h3 className="text-2xl sm:text-3xl font-black mb-3">
-                  Pronto para gerenciar seus chamados com agilidade?
+                  Sua Máquina Tennant Precisa de Atendimento ou Peças?
                 </h3>
                 <p className="text-teal-100 text-sm sm:text-base mb-6">
-                  Crie seu cadastro agora mesmo, informe seu equipamento e tenha todo o histórico de manutenções na ponta dos dedos.
+                  Fale diretamente com nossos técnicos autorizados no WhatsApp ou abra seu chamado técnico online agora mesmo.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
                     onClick={() => { setRegError(''); setShowRegisterModal(true); }}
                     className="w-full sm:w-auto bg-[#eb6420] hover:bg-[#d55515] text-white font-black px-8 py-3.5 rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 cursor-pointer"
                   >
-                    Criar Minha Conta no Portal
+                    Abrir Chamado Técnico Online
                   </button>
                   <a
-                    href={WHATSAPP_LINK}
+                    href={WHATSAPP_ASSISTENCIA}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto bg-white/15 hover:bg-white/25 text-white font-bold px-6 py-3.5 rounded-full border border-white/30 transition-colors flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto bg-[#25D366] hover:bg-[#20ba59] text-white font-bold px-6 py-3.5 rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <WhatsAppIcon className="w-4 h-4" /> Dúvidas via WhatsApp
+                    <WhatsAppIcon className="w-5 h-5 text-white" /> Chamar Técnico no WhatsApp
                   </a>
                 </div>
               </div>
@@ -2086,6 +2219,24 @@ export default function PortalCliente() {
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* 🟢 BOTÃO FLUTUANTE DE WHATSAPP OFICIAL PARA ATENDIMENTO RÁPIDO            */}
+      {/* ========================================================================= */}
+      <a
+        href={WHATSAPP_ASSISTENCIA}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-5 right-5 z-40 bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-white p-3.5 sm:px-5 sm:py-3.5 rounded-full shadow-2xl hover:shadow-emerald-500/50 flex items-center gap-2.5 transition-all transform hover:-translate-y-1 group border-2 border-white cursor-pointer"
+        title="Falar com Assistência Técnica Tennant no WhatsApp"
+      >
+        <WhatsAppIcon className="w-6 h-6 text-white" />
+        <div className="hidden sm:flex flex-col text-left leading-tight">
+          <span className="text-[10px] uppercase font-bold text-emerald-100">Atendimento Imediato</span>
+          <span className="text-xs font-black text-white">WhatsApp Técnico</span>
+        </div>
+        <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping ml-0.5" />
+      </a>
 
     </div>
   );

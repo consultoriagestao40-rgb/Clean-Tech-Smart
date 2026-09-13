@@ -67,13 +67,16 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* ========================================================================= */}
-        {/* 🌐 PORTAL DO CLIENTE (PÁGINAS PÚBLICAS & AUTÔNOMAS - FORA DO LAYOUT CRM)   */}
-        {/* ========================================================================= */}
+        {/* 🌐 PORTAL DO CLIENTE & ASSISTÊNCIA TÉCNICA TENNANT (PÁGINAS PÚBLICAS) */}
         <Route path="/chamado" element={<PortalCliente />} />
         <Route path="/chamados" element={<PortalCliente />} />
         <Route path="/portal-cliente" element={<PortalCliente />} />
         <Route path="/portal" element={<PortalCliente />} />
         <Route path="/abrir-chamado" element={<PortalCliente />} />
+        <Route path="/assistencia" element={<PortalCliente />} />
+        <Route path="/assistencia-tecnica" element={<PortalCliente />} />
+        <Route path="/pecas-tennant" element={<PortalCliente />} />
+        <Route path="/manutencao-tennant" element={<PortalCliente />} />
 
         {/* Landing Pages Públicas de Alta Conversão */}
         <Route path="/lp/tennant-a260" element={<LpTennantA260 />} />
