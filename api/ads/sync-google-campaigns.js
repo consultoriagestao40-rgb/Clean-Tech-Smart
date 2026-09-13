@@ -55,25 +55,36 @@ export default async function handler(req, res) {
         const accessToken = tokenData.access_token;
 
         if (accessToken) {
-          // Query Google Ads API for enabled campaigns
+          // Query Google Ads API for enabled campaigns with live metrics
           const query = `
             SELECT 
               campaign.id, 
               campaign.name, 
               campaign.status, 
               campaign.advertising_channel_type,
-              campaign_budget.amount_micros
+              campaign_budget.amount_micros,
+              metrics.clicks,
+              metrics.impressions,
+              metrics.cost_micros,
+              metrics.conversions,
+              metrics.ctr
             FROM campaign 
             WHERE campaign.status = 'ENABLED'
+              AND segments.date DURING LAST_30_DAYS
           `;
+
+          const headers = {
+            'Authorization': `Bearer ${accessToken}`,
+            'developer-token': developerToken,
+            'Content-Type': 'application/json'
+          };
+          if (settings.ads_google_mcc_id) {
+            headers['login-customer-id'] = settings.ads_google_mcc_id.replace(/-/g, '');
+          }
 
           const gAdsRes = await fetch(`https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:searchStream`, {
             method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'developer-token': developerToken,
-              'Content-Type': 'application/json'
-            },
+            headers,
             body: JSON.stringify({ query })
           });
 
@@ -84,17 +95,25 @@ export default async function handler(req, res) {
                 if (batch.results) {
                   batch.results.forEach(row => {
                     const c = row.campaign;
+                    const m = row.metrics || {};
                     const budgetMicros = row.campaignBudget?.amountMicros || 50000000;
+                    const clicks = Number(m.clicks || 0);
+                    const cost = (Number(m.costMicros || 0)) / 1000000;
+                    const convs = Number(m.conversions || 0);
+                    const ctr = Number(m.ctr || 0) * 100;
+                    const currentCpa = convs > 0 ? (cost / convs) : 0;
+
                     syncedCampaigns.push({
                       id: `gads-${c.id}`,
                       name: c.name,
                       platform: 'Google Ads',
                       type: 'Rede de Pesquisa',
                       isMonitored: true,
-                      spentMonth: 0.00,
-                      clicksMonth: 0,
-                      leadsMonth: 0,
-                      currentCpa: 0.00,
+                      spentMonth: Number(cost.toFixed(2)),
+                      clicksMonth: clicks,
+                      leadsMonth: convs,
+                      currentCpa: Number(currentCpa.toFixed(2)),
+                      ctr: Number(ctr.toFixed(2)),
                       targetCpa: 45.00,
                       dailyBudget: budgetMicros / 1000000
                     });
@@ -117,15 +136,12 @@ export default async function handler(req, res) {
                 metrics.conversions
               FROM keyword_view 
               WHERE campaign.status = 'ENABLED'
+                AND segments.date DURING LAST_30_DAYS
             `;
 
             const kwRes = await fetch(`https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:searchStream`, {
               method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'developer-token': developerToken,
-                'Content-Type': 'application/json'
-              },
+              headers,
               body: JSON.stringify({ query: kwQuery })
             });
 
@@ -179,6 +195,10 @@ export default async function handler(req, res) {
           } catch (kwErr) {
             console.warn('Erro ao consultar keyword_view:', kwErr.message);
           }
+        }
+      } catch (apiErr) {
+        console.warn('Erro na comunicação com Google Ads API:', apiErr.message);
+      }
     }
 
     // 2. Fetch existing campaigns from database so we don't lose custom added ones
