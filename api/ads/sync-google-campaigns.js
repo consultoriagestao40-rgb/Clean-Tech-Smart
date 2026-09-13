@@ -82,7 +82,7 @@ export default async function handler(req, res) {
             headers['login-customer-id'] = settings.ads_google_mcc_id.replace(/-/g, '');
           }
 
-          const gAdsRes = await fetch(`https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:searchStream`, {
+          const gAdsRes = await fetch(`https://googleads.googleapis.com/v22/customers/${customerId}/googleAds:searchStream`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ query })
@@ -139,7 +139,7 @@ export default async function handler(req, res) {
                 AND segments.date DURING LAST_30_DAYS
             `;
 
-            const kwRes = await fetch(`https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:searchStream`, {
+            const kwRes = await fetch(`https://googleads.googleapis.com/v22/customers/${customerId}/googleAds:searchStream`, {
               method: 'POST',
               headers,
               body: JSON.stringify({ query: kwQuery })
