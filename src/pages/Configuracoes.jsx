@@ -203,13 +203,15 @@ export default function Configuracoes() {
   };
 
   const handleTestWhatsapp = async () => {
+    const targetRecipients = financialRecipients || newRecipientInput || '5541984042835';
     setTestStatus({ loading: true, msg: 'Enviando mensagem de teste via Z-API...', error: false });
     try {
       const res = await fetch('/api/test-whatsapp-notification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customRecipient: financialRecipients
+          recipient: targetRecipients,
+          customRecipient: targetRecipients
         })
       });
       const data = await res.json();
