@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import { getContaAzulSaleDetails, getValidAccessToken, SALES_API_URL } from './conta-azul.js';
+import { sendInvoiceBilledWhatsappNotification } from '../_utils/notifications.js';
 
 const API_URL = SALES_API_URL || 'https://api.contaazul.com';
 
@@ -200,13 +201,28 @@ export default async function handler(req, res) {
         if (caDueDate) caDueDate = caDueDate.split('T')[0];
       }
 
+      const situacaoNome = (caSale?.situacao?.nome || caSale?.situacao || '').toUpperCase();
+      const nfeStatus = String(caSale?.nfe?.status || '').toLowerCase();
+      const hasNfeEmitida = !!caSale?.nfe?.number || (nfeStatus.includes('emitida') && !nfeStatus.includes('não')) || nfeStatus.includes('autorizada');
+      const isCaFaturada = situacaoNome === 'FATURADO' ||
+                           (caSale?.status || '').toUpperCase() === 'FATURADO' ||
+                           (caSale?.financial_status || '').toUpperCase() === 'FATURADO' ||
+                           hasNfeEmitida;
+
       if (isCaPaid) {
         updateQuery += `, status = $${params.length + 1}, payment_date = COALESCE(payment_date, $${params.length + 2})`;
         params.push('Paga', caPaymentDate);
-      } else {
-        // Se foi vinculada ao Conta Azul mas ainda não paga, passa a ser Faturada
+      } else if (isCaFaturada) {
         updateQuery += `, status = $${params.length + 1}`;
         params.push('Faturada');
+
+        // Notificar financeiro via WhatsApp
+        sendInvoiceBilledWhatsappNotification(client, { id: invoiceId, ...caSale }, caSale).catch(err => {
+          console.warn('[WhatsApp] Erro ao notificar venda faturada no link-sale:', err.message);
+        });
+      } else {
+        updateQuery += `, status = $${params.length + 1}`;
+        params.push('Pendente');
       }
 
       if (caDueDate) {

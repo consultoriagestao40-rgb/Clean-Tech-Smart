@@ -25,7 +25,13 @@ export default async function handler(req, res) {
       LEFT JOIN clients c ON st.client_id::text = c.id::text
       LEFT JOIN equipments e ON st.equipment_id = e.id
       LEFT JOIN technicians t ON st.technician_id = t.id
-      LEFT JOIN budgets b ON (st.budget_id = b.id OR (b.equipment_id = st.equipment_id AND b.equipment_id IS NOT NULL AND b.client_id::text = st.client_id::text))
+      LEFT JOIN LATERAL (
+        SELECT id, grand_total, status 
+        FROM budgets 
+        WHERE id = st.budget_id OR ticket_id = st.id
+        ORDER BY id DESC
+        LIMIT 1
+      ) b ON true
       ORDER BY st.created_at DESC
     `);
     

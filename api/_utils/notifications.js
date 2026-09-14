@@ -318,3 +318,130 @@ function getServiceTypeLabel(type) {
   if (str.includes('instalacao')) return '🛠️ Instalação';
   return '📋 Manutenção / Serviço Geral';
 }
+
+// WhatsApp notification for Billed Sales / Invoices (Financeiro)
+export async function sendInvoiceBilledWhatsappNotification(dbClient, invoice, saleDetails = {}) {
+  try {
+    const settings = await getSystemSettings(dbClient);
+    const instanceId = settings.app_zapi_instance_id;
+    const token = settings.app_zapi_token;
+    const clientToken = settings.app_zapi_client_token;
+
+    if (!instanceId || !token) {
+      console.warn('[Z-API] Instância ou Token não configurados. Notificação de venda faturada não enviada.');
+      return { success: false, error: 'Instância ou Token Z-API não configurados' };
+    }
+
+    const enabled = settings.app_notification_invoice_billed_enabled !== 'false';
+    if (!enabled) {
+      console.log('[Z-API] Notificação de venda faturada desativada nas configurações.');
+      return { success: false, skipped: true, reason: 'Desativada nas configurações' };
+    }
+
+    // Obter destinatários configurados para o Financeiro
+    let rawRecipients = settings.app_notification_financial_recipients || settings.app_zapi_ticket_group_id || '';
+    
+    let recipients = [];
+    try {
+      if (rawRecipients.startsWith('[')) {
+        recipients = JSON.parse(rawRecipients);
+      } else {
+        recipients = rawRecipients.split(/[,;\n]/).map(r => r.trim()).filter(Boolean);
+      }
+    } catch {
+      recipients = rawRecipients.split(/[,;\n]/).map(r => r.trim()).filter(Boolean);
+    }
+
+    if (recipients.length === 0) {
+      console.warn('[Z-API] Nenhum destinatário configurado para receber notificações do financeiro.');
+      return { success: false, error: 'Nenhum destinatário configurado' };
+    }
+
+    const zapiHeaders = { 'Content-Type': 'application/json' };
+    if (clientToken) {
+      zapiHeaders['Client-Token'] = clientToken;
+    }
+
+    // Buscar dados complementares do cliente se necessário
+    let clientName = invoice.client_name;
+    let clientDoc = invoice.client_document;
+    if ((!clientName || !clientDoc) && invoice.client_id) {
+      try {
+        const cRes = await dbClient.query('SELECT name, document FROM clients WHERE id::text = $1', [String(invoice.client_id)]);
+        if (cRes.rows.length > 0) {
+          clientName = clientName || cRes.rows[0].name;
+          clientDoc = clientDoc || cRes.rows[0].document;
+        }
+      } catch (cErr) {}
+    }
+
+    const dateFormatted = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    const formattedAmount = Number(invoice.amount || saleDetails.total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const formattedDueDate = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'A combinar';
+
+    let typeLabel = 'Serviço / Manutenção';
+    if (invoice.invoice_type === 'pecas' || (invoice.contract_code || '').includes('PECA')) {
+      typeLabel = 'Venda de Peças / Produtos';
+    } else if (invoice.invoice_type === 'locacao' || (invoice.contract_code || '').includes('LOC')) {
+      typeLabel = 'Locação de Equipamento';
+    }
+
+    const saleNumber = saleDetails.number || saleDetails.numero || (invoice.conta_azul_sale_id && !invoice.conta_azul_sale_id.includes('-') ? invoice.conta_azul_sale_id : null);
+    const nfNumber = saleDetails.nfe?.number || saleDetails.invoice_number || null;
+
+    const message = `*🔔 NOVA VENDA FATURADA NO CONTA AZUL* 💰🧾
+*Data/Hora:* ${dateFormatted}
+*Código da Fatura:* ${invoice.contract_code || `#${invoice.id}`}
+${saleNumber ? `*Venda Conta Azul:* #${saleNumber}\n` : ''}*Cliente:* ${clientName || 'Cliente não identificado'}
+${clientDoc ? `*CPF/CNPJ:* ${clientDoc}\n` : ''}*Tipo:* ${typeLabel}
+*Valor:* ${formattedAmount}
+*Vencimento:* ${formattedDueDate}
+${nfNumber ? `*Nota Fiscal:* Nº ${nfNumber}\n` : ''}*Status:* Faturada (Aguardando tratativas financeiras)
+
+ℹ️ *Notificação automática para o Financeiro dar tratativas e acompanhar o faturamento/recebimento.*
+
+_Mensagem automática gerada pelo sistema Clean Tech Smart._`;
+
+    const sendResults = [];
+    for (const rawRecipient of recipients) {
+      let recipientPhone = String(rawRecipient).trim();
+      if (!recipientPhone) continue;
+
+      if (!recipientPhone.includes('-group') && !recipientPhone.includes('@')) {
+        recipientPhone = recipientPhone.replace(/\D/g, '');
+        if (recipientPhone.length === 10 || recipientPhone.length === 11) {
+          recipientPhone = '55' + recipientPhone;
+        }
+      }
+
+      console.log(`[Z-API] Enviando notificação de venda faturada para ${recipientPhone}...`);
+      try {
+        const sendRes = await fetch(`https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`, {
+          method: 'POST',
+          headers: zapiHeaders,
+          body: JSON.stringify({
+            phone: recipientPhone,
+            message: message
+          })
+        });
+
+        if (!sendRes.ok) {
+          const errTxt = await sendRes.text();
+          console.error(`[Z-API] Falha ao enviar para ${recipientPhone}:`, errTxt);
+          sendResults.push({ recipient: recipientPhone, success: false, error: errTxt });
+        } else {
+          console.log(`[Z-API] Notificação de venda faturada enviada com sucesso para ${recipientPhone}!`);
+          sendResults.push({ recipient: recipientPhone, success: true });
+        }
+      } catch (sendErr) {
+        console.error(`[Z-API] Erro ao enviar para ${recipientPhone}:`, sendErr.message);
+        sendResults.push({ recipient: recipientPhone, success: false, error: sendErr.message });
+      }
+    }
+
+    return { success: true, results: sendResults };
+  } catch (error) {
+    console.error('[Z-API] Erro ao processar notificação de venda faturada:', error);
+    return { success: false, error: error.message };
+  }
+}

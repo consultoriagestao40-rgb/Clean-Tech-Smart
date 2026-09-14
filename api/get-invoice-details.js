@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import { getContaAzulSaleDetails } from './conta-azul/conta-azul.js';
+import { sendInvoiceBilledWhatsappNotification } from './_utils/notifications.js';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || "postgresql://neondb_owner:npg_DtfA7VXHw8ym@ep-winter-cloud-apstwhit-pooler.c-7.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require",
@@ -47,10 +48,6 @@ export default async function handler(req, res) {
     }
 
     const invoice = invRes.rows[0];
-    if (invoice.conta_azul_sale_id && invoice.status === 'Pendente') {
-      invoice.status = 'Faturada';
-      await client.query("UPDATE invoices SET status = 'Faturada' WHERE id = $1 AND status = 'Pendente'", [invoice.id]);
-    }
 
     // 2. Buscar dados do orçamento caso a fatura tenha vindo de um orçamento
     let budget = null;
@@ -182,6 +179,13 @@ export default async function handler(req, res) {
             }
           }
 
+          const situacaoNome = (s.situacao?.nome || s.situacao || '').toUpperCase();
+          const nfeStatusLower = String(nfStatus).toLowerCase();
+          const isCaFaturada = situacaoNome === 'FATURADO' ||
+                               rawStatus === 'FATURADO' ||
+                               rawFinStatus === 'FATURADO' ||
+                               !!(nfNumber || (nfeStatusLower.includes('emitida') && !nfeStatusLower.includes('não')));
+
           if (isCaPaid && invoice.status !== 'Paga') {
             await client.query(`
               UPDATE invoices 
@@ -190,13 +194,28 @@ export default async function handler(req, res) {
             `, [caPaymentDate, invoice.id]);
             invoice.status = 'Paga';
             invoice.payment_date = caPaymentDate;
-          } else if (!isCaPaid && invoice.status === 'Pendente') {
-            await client.query(`
-              UPDATE invoices 
-              SET status = 'Faturada' 
-              WHERE id = $1
-            `, [invoice.id]);
-            invoice.status = 'Faturada';
+          } else if (isCaFaturada) {
+            if (invoice.status !== 'Faturada') {
+              await client.query(`
+                UPDATE invoices 
+                SET status = 'Faturada' 
+                WHERE id = $1
+              `, [invoice.id]);
+              invoice.status = 'Faturada';
+
+              sendInvoiceBilledWhatsappNotification(client, invoice, s).catch(err => {
+                console.warn('[WhatsApp] Erro ao notificar venda faturada:', err.message);
+              });
+            }
+          } else {
+            if (invoice.status !== 'Pendente') {
+              await client.query(`
+                UPDATE invoices 
+                SET status = 'Pendente' 
+                WHERE id = $1
+              `, [invoice.id]);
+              invoice.status = 'Pendente';
+            }
           }
 
           contaAzulInfo = {

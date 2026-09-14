@@ -151,8 +151,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // 4. Inserir fatura na tabela invoices
-    const initialStatus = caSaleId ? 'Faturada' : 'Pendente';
+    // 4. Inserir fatura na tabela invoices (inicia como 'Pendente' até faturamento no Conta Azul)
+    const initialStatus = 'Pendente';
     const invRes = await client.query(`
       INSERT INTO invoices (
         contract_code, client_id, description, amount, due_date, status, invoice_type, rental_proposal_id, conta_azul_sale_id

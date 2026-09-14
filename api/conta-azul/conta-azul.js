@@ -242,6 +242,86 @@ export async function findOrCreateContaAzulCustomer(clientData) {
   throw new Error(`Falha no cadastro do cliente no Conta Azul: ${errText}`);
 }
 
+// Resolve um produto do catálogo do Conta Azul para uma venda de peças/produtos
+export async function resolveContaAzulProduct(item, token) {
+  const FALLBACK_PRODUCT_ID = 'b28d8eba-085a-49ba-8b06-1242e346fe00'; // "PECAS DIVERSAS"
+  const rawName = (item.description || item.partName || item.part_name || item.name || '').trim();
+  const quantity = Number(item.quantity || 1);
+
+  if (!rawName) {
+    return FALLBACK_PRODUCT_ID;
+  }
+
+  const cleanName = rawName.replace(/\s+/g, ' ');
+
+  // Helper para verificar se um produto do catálogo tem saldo de estoque suficiente
+  function hasStock(prod) {
+    if (!prod) return false;
+    const saldo = prod.saldo ?? prod.estoque?.quantidade_disponivel ?? prod.estoque?.quantidade_total;
+    if (saldo === undefined || saldo === null) return true;
+    return Number(saldo) >= quantity;
+  }
+
+  try {
+    // 1. Busca por nome no catálogo de produtos
+    const res1 = await fetch(`${BASE_API_URL}/v1/produtos?busca=${encodeURIComponent(cleanName)}&tamanho_pagina=10`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+    });
+
+    if (res1.ok) {
+      const data1 = await res1.json();
+      const items1 = data1.items || data1.itens || [];
+      if (items1.length > 0) {
+        const normalize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normSearch = normalize(cleanName);
+
+        const exact = items1.find(p => normalize(p.nome || p.name) === normSearch);
+        if (exact && hasStock(exact)) {
+          return exact.id;
+        }
+
+        const partial = items1.find(p => {
+          const normP = normalize(p.nome || p.name);
+          return normP.includes(normSearch) || normSearch.includes(normP);
+        });
+        if (partial && hasStock(partial)) {
+          return partial.id;
+        }
+
+        // Se o produto existe mas está sem estoque disponível, usa PECAS DIVERSAS para não travar a criação da venda
+        if (exact || partial) {
+          console.warn(`Produto "${cleanName}" encontrado no Conta Azul mas sem estoque suficiente (${quantity}). Usando produto coringa PEÇAS DIVERSAS.`);
+          return FALLBACK_PRODUCT_ID;
+        }
+      }
+    }
+
+    // 2. Busca por prefixo (primeiras 2 ou 3 palavras)
+    const words = cleanName.split(' ');
+    if (words.length > 1) {
+      const prefix = words.slice(0, Math.min(3, words.length)).join(' ');
+      const res2 = await fetch(`${BASE_API_URL}/v1/produtos?busca=${encodeURIComponent(prefix)}&tamanho_pagina=10`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+      });
+      if (res2.ok) {
+        const data2 = await res2.json();
+        const items2 = data2.items || data2.itens || [];
+        if (items2.length > 0) {
+          const matched = items2.find(p => (p.nome || '').toLowerCase().includes(words[0].toLowerCase())) || items2[0];
+          if (matched && hasStock(matched)) {
+            return matched.id;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`Erro ao resolver produto "${cleanName}" no Conta Azul:`, err.message);
+  }
+
+  // 3. Fallback para "PECAS DIVERSAS"
+  return FALLBACK_PRODUCT_ID;
+}
+
 // Cria uma venda no Conta Azul (compatível com API v2 /v1/venda)
 export async function createContaAzulSale(salePayload) {
   const token = await getValidAccessToken();
@@ -267,36 +347,58 @@ export async function createContaAzulSale(salePayload) {
     // 2. Se a chamada enviou formato legado (customer_id, services/products), converter para formato API v2
     let v2Body = salePayload;
     if (salePayload.customer_id || !salePayload.id_cliente) {
-      // Obter serviço padrão do catálogo da Conta Azul
-      let serviceId = null;
-      try {
-        const sRes = await fetch(`${BASE_API_URL}/v1/servicos`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (sRes.ok) {
-          const sData = await sRes.json();
-          const items = Array.isArray(sData) ? sData : (sData.itens || sData.items || []);
-          const isLocacao = (salePayload.services?.[0]?.description || '').toLowerCase().includes('loca');
-          const matched = isLocacao
-            ? (items.find(s => (s.descricao || '').toLowerCase().includes('loca')) || items[0])
-            : (items.find(s => (s.descricao || '').toLowerCase().includes('manuten') || (s.descricao || '').toLowerCase().includes('assist')) || items[0]);
-          if (matched?.id) serviceId = matched.id;
-        }
-      } catch (sErr) {
-        console.warn('Erro ao buscar servicos no Conta Azul:', sErr);
-      }
-
-      // Montar itens no formato da API v2
       const servicesList = salePayload.services || [];
       const productsList = salePayload.products || [];
-      const rawItems = [...servicesList, ...productsList];
+      const isProductSale = productsList.length > 0 && servicesList.length === 0;
 
-      const v2Itens = rawItems.map(item => ({
-        id: serviceId || '888d2fdd-4ea6-4151-8f4c-5ff4589de44e', // fallback para serviço de Locação existente
-        descricao: item.description || 'Locação de Equipamento',
-        valor: Number(item.value || 0),
-        quantidade: Number(item.quantity || 1)
-      }));
+      // Natureza de Operação:
+      // '964c2074-870b-11ef-9afb-efdae9b5ccd4' -> "Venda de Mercadorias / Produtos" (VENDA_MERCADORIAS)
+      // '964cdf46-870b-11ef-9b08-bfaf370d955a' -> "Prestação de Serviços" (PRESTACAO_SERVICO)
+      const idNaturezaOperacao = isProductSale
+        ? '964c2074-870b-11ef-9afb-efdae9b5ccd4'
+        : '964cdf46-870b-11ef-9b08-bfaf370d955a';
+
+      let v2Itens = [];
+
+      if (isProductSale) {
+        // Montar itens de produtos resolvendo pelo catálogo de produtos do Conta Azul
+        for (const item of productsList) {
+          const prodId = await resolveContaAzulProduct(item, token);
+          v2Itens.push({
+            id: prodId,
+            descricao: item.description || item.partName || item.nome || 'Peça / Mercadoria',
+            valor: Number(item.value || item.unitPrice || 0),
+            quantidade: Number(item.quantity || 1)
+          });
+        }
+      } else {
+        // Obter serviço padrão do catálogo da Conta Azul
+        let serviceId = null;
+        try {
+          const sRes = await fetch(`${BASE_API_URL}/v1/servicos`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (sRes.ok) {
+            const sData = await sRes.json();
+            const items = Array.isArray(sData) ? sData : (sData.itens || sData.items || []);
+            const isLocacao = (servicesList[0]?.description || '').toLowerCase().includes('loca');
+            const matched = isLocacao
+              ? (items.find(s => (s.descricao || '').toLowerCase().includes('loca')) || items[0])
+              : (items.find(s => (s.descricao || '').toLowerCase().includes('manuten') || (s.descricao || '').toLowerCase().includes('assist')) || items[0]);
+            if (matched?.id) serviceId = matched.id;
+          }
+        } catch (sErr) {
+          console.warn('Erro ao buscar servicos no Conta Azul:', sErr);
+        }
+
+        const rawItems = [...servicesList, ...productsList];
+        v2Itens = rawItems.map(item => ({
+          id: serviceId || '888d2fdd-4ea6-4151-8f4c-5ff4589de44e',
+          descricao: item.description || 'Serviço de Manutenção / Locação',
+          valor: Number(item.value || 0),
+          quantidade: Number(item.quantity || 1)
+        }));
+      }
 
       // Calcular valor total e montar parcelas
       const installments = salePayload.payment?.installments || [];
@@ -317,6 +419,7 @@ export async function createContaAzulSale(salePayload) {
       v2Body = {
         id_cliente: salePayload.customer_id,
         numero: saleNumber || 10000,
+        id_natureza_operacao: idNaturezaOperacao,
         situacao: 'EM_ANDAMENTO',
         data_venda: salePayload.emission || new Date().toISOString().split('T')[0],
         observacoes: salePayload.notes || '',
@@ -417,7 +520,7 @@ export async function getContaAzulSaleDetails(saleIdOrNumber) {
     const cliente = saleData?.cliente || {};
     const valorTotal = v.composicao_valor?.valor_liquido || v.composicao_valor?.valor_bruto || v.total || 0;
     const parcelas = v.condicao_pagamento?.parcelas || [];
-    const situacao = v.situacao?.nome || v.status || 'FATURADO';
+    const situacao = v.situacao?.nome || (v.status !== 'VENDA' ? v.status : null) || 'EM_ANDAMENTO';
 
     // Buscar NF vinculada na API v2 (/v1/notas-fiscais)
     let nfInfo = {
@@ -456,6 +559,7 @@ export async function getContaAzulSaleDetails(saleIdOrNumber) {
       id: saleUuid || v.id,
       number: v.numero || clean,
       status: situacao,
+      situacao: v.situacao?.nome || situacao,
       financial_status: situacao,
       total: valorTotal,
       due_date: parcelas.length > 0 ? parcelas[0].data_vencimento : null,

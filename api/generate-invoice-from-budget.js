@@ -126,8 +126,8 @@ export default async function handler(req, res) {
         }
       }
 
-      // Salvar na tabela invoices
-      const initialStatus = caSaleId ? 'Faturada' : 'Pendente';
+      // Salvar na tabela invoices (inicia sempre como 'Pendente' aguardando faturamento no Conta Azul)
+      const initialStatus = 'Pendente';
       const invRes = await client.query(`
         INSERT INTO invoices (
           contract_code, client_id, description, amount, due_date, status, budget_id, invoice_type, conta_azul_sale_id
@@ -194,8 +194,8 @@ export default async function handler(req, res) {
         }
       }
 
-      // Salvar na tabela invoices
-      const initialStatusParts = caSaleId ? 'Faturada' : 'Pendente';
+      // Salvar na tabela invoices (inicia sempre como 'Pendente' aguardando faturamento no Conta Azul)
+      const initialStatusParts = 'Pendente';
       const invRes = await client.query(`
         INSERT INTO invoices (
           contract_code, client_id, description, amount, due_date, status, budget_id, invoice_type, conta_azul_sale_id, ncm_info

@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import { getContaAzulSaleDetails } from './conta-azul.js';
+import { sendInvoiceBilledWhatsappNotification } from '../_utils/notifications.js';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || "postgresql://neondb_owner:npg_DtfA7VXHw8ym@ep-winter-cloud-apstwhit-pooler.c-7.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require",
@@ -36,6 +37,7 @@ export default async function handler(req, res) {
     const invoicesToCheck = pendingRes.rows;
     let paidCount = 0;
     let faturadaCount = 0;
+    let pendenteCount = 0;
     let dueDateUpdatedCount = 0;
 
     for (const inv of invoicesToCheck) {
@@ -47,6 +49,7 @@ export default async function handler(req, res) {
           const rawStatus = (s.status || '').toUpperCase();
           const rawFinStatus = (s.financial_status || '').toUpperCase();
           const rawPayStatus = (s.payment_status || '').toUpperCase();
+          const situacaoNome = (s.situacao?.nome || s.situacao || '').toUpperCase();
 
           const installments = Array.isArray(s.installments) ? s.installments : (Array.isArray(s.payment?.installments) ? s.payment.installments : []);
           const allInstallmentsPaid = installments.length > 0 && installments.every(inst => {
@@ -54,10 +57,19 @@ export default async function handler(req, res) {
             return st === 'ACQUITTED' || st === 'PAID' || st === 'LIQUIDATED' || st === 'BAIXADO';
           });
 
-          const isPaid = rawStatus === 'PAID' || rawStatus === 'ACQUITTED' ||
-                        rawFinStatus === 'PAID' || rawFinStatus === 'ACQUITTED' ||
-                        rawPayStatus === 'PAID' || rawPayStatus === 'ACQUITTED' ||
+          const isPaid = rawStatus === 'PAID' || rawStatus === 'ACQUITTED' || rawStatus === 'LIQUIDADO' ||
+                        rawFinStatus === 'PAID' || rawFinStatus === 'ACQUITTED' || rawFinStatus === 'LIQUIDADO' ||
+                        rawPayStatus === 'PAID' || rawPayStatus === 'ACQUITTED' || rawPayStatus === 'LIQUIDADO' ||
+                        situacaoNome === 'LIQUIDADO' || situacaoNome === 'PAGO' ||
                         allInstallmentsPaid;
+
+          const nfeStatus = (s.nfe?.status || '').toLowerCase();
+          const hasNfeEmitida = !!s.nfe?.number || (nfeStatus.includes('emitida') && !nfeStatus.includes('não')) || nfeStatus.includes('autorizada');
+
+          const isFaturada = situacaoNome === 'FATURADO' ||
+                            rawStatus === 'FATURADO' ||
+                            rawFinStatus === 'FATURADO' ||
+                            hasNfeEmitida;
 
           // Sincronizar data de vencimento se cadastrada/alterada no Conta Azul
           let caDueDate = s.due_date || (installments.length > 0 ? (installments[0].due_date || installments[0].date) : null);
@@ -78,22 +90,38 @@ export default async function handler(req, res) {
               caPaymentDate = new Date().toISOString().split('T')[0];
             }
 
-            await client.query(`
-              UPDATE invoices 
-              SET status = 'Paga', payment_date = $1 
-              WHERE id = $2
-            `, [caPaymentDate, inv.id]);
+            if (inv.status !== 'Paga') {
+              await client.query(`
+                UPDATE invoices 
+                SET status = 'Paga', payment_date = $1 
+                WHERE id = $2
+              `, [caPaymentDate, inv.id]);
+              paidCount++;
+            }
+          } else if (isFaturada) {
+            if (inv.status !== 'Faturada') {
+              await client.query(`
+                UPDATE invoices 
+                SET status = 'Faturada' 
+                WHERE id = $1
+              `, [inv.id]);
+              faturadaCount++;
 
-            paidCount++;
-          } else if (inv.status === 'Pendente') {
-            // Se já tem venda vinculada no Conta Azul mas ainda não foi paga, o status é "Faturada"
-            await client.query(`
-              UPDATE invoices 
-              SET status = 'Faturada' 
-              WHERE id = $1
-            `, [inv.id]);
-
-            faturadaCount++;
+              // Notificar financeiro via WhatsApp
+              sendInvoiceBilledWhatsappNotification(client, inv, s).catch(err => {
+                console.warn('[WhatsApp] Erro ao notificar venda faturada:', err.message);
+              });
+            }
+          } else {
+            // A venda ainda está em andamento/aberta no Conta Azul (ex: EM_ANDAMENTO ou APROVADO)
+            if (inv.status !== 'Pendente') {
+              await client.query(`
+                UPDATE invoices 
+                SET status = 'Pendente' 
+                WHERE id = $1
+              `, [inv.id]);
+              pendenteCount++;
+            }
           }
         }
       } catch (err) {
@@ -103,11 +131,12 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      totalChecked: invoicesToCheck.length,
+      updatedCount: paidCount + faturadaCount + pendenteCount + dueDateUpdatedCount,
       paidCount,
       faturadaCount,
+      pendenteCount,
       dueDateUpdatedCount,
-      updatedCount: paidCount + faturadaCount
+      totalChecked: invoicesToCheck.length
     });
   } catch (error) {
     console.error('Erro na sincronização em lote com o Conta Azul:', error);

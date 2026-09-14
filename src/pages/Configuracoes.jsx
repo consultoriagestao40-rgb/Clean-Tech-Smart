@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Upload, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, Save, Bell, Plus, X, Users, Phone, Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Configuracoes() {
@@ -25,6 +25,16 @@ export default function Configuracoes() {
   const [zapiToken, setZapiToken] = useState(localStorage.getItem('app_zapi_token') || 'D4F38DEC6BD1906C37E044B4');
   const [zapiClientToken, setZapiClientToken] = useState(localStorage.getItem('app_zapi_client_token') || '');
 
+  // WhatsApp Notification Center for Invoiced Sales
+  const [financialRecipients, setFinancialRecipients] = useState(
+    localStorage.getItem('app_notification_financial_recipients') || '5541984042835'
+  );
+  const [financialNotificationEnabled, setFinancialNotificationEnabled] = useState(
+    localStorage.getItem('app_notification_invoice_billed_enabled') !== 'false'
+  );
+  const [newRecipientInput, setNewRecipientInput] = useState('');
+  const [testStatus, setTestStatus] = useState({ loading: false, msg: '', error: false });
+
   // SMTP Settings States
   const [smtpHost, setSmtpHost] = useState(localStorage.getItem('smtp_host') || '');
   const [smtpPort, setSmtpPort] = useState(localStorage.getItem('smtp_port') || '587');
@@ -46,6 +56,15 @@ export default function Configuracoes() {
           if (s.app_zapi_instance_id) setZapiInstanceId(s.app_zapi_instance_id);
           if (s.app_zapi_token) setZapiToken(s.app_zapi_token);
           if (s.app_zapi_client_token) setZapiClientToken(s.app_zapi_client_token);
+          if (s.app_notification_financial_recipients !== undefined) {
+            setFinancialRecipients(s.app_notification_financial_recipients);
+            localStorage.setItem('app_notification_financial_recipients', s.app_notification_financial_recipients);
+          }
+          if (s.app_notification_invoice_billed_enabled !== undefined) {
+            const isEnabled = s.app_notification_invoice_billed_enabled === 'true' || s.app_notification_invoice_billed_enabled === true;
+            setFinancialNotificationEnabled(isEnabled);
+            localStorage.setItem('app_notification_invoice_billed_enabled', String(isEnabled));
+          }
           if (s.smtp_host) setSmtpHost(s.smtp_host);
           if (s.smtp_port) setSmtpPort(s.smtp_port);
           if (s.smtp_user) setSmtpUser(s.smtp_user);
@@ -157,6 +176,69 @@ export default function Configuracoes() {
     window.dispatchEvent(new Event('logoChanged'));
   };
 
+  const recipientList = (financialRecipients || '')
+    .split(',')
+    .map(r => r.trim())
+    .filter(Boolean);
+
+  const handleAddRecipient = () => {
+    let clean = newRecipientInput.trim().replace(/[\s\-\(\)]/g, '');
+    if (!clean) return;
+    // Se for numero brasileiro sem DDI 55 (ex: 41984042835), adicionar 55
+    if (/^\d{10,11}$/.test(clean)) {
+      clean = '55' + clean;
+    }
+    if (!recipientList.includes(clean)) {
+      const updated = [...recipientList, clean].join(', ');
+      setFinancialRecipients(updated);
+      localStorage.setItem('app_notification_financial_recipients', updated);
+    }
+    setNewRecipientInput('');
+  };
+
+  const handleRemoveRecipient = (target) => {
+    const updated = recipientList.filter(item => item !== target).join(', ');
+    setFinancialRecipients(updated);
+    localStorage.setItem('app_notification_financial_recipients', updated);
+  };
+
+  const handleTestWhatsapp = async () => {
+    setTestStatus({ loading: true, msg: 'Enviando mensagem de teste via Z-API...', error: false });
+    try {
+      const res = await fetch('/api/test-whatsapp-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customRecipient: financialRecipients
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const count = data.results ? data.results.filter(r => r.success).length : 0;
+        setTestStatus({
+          loading: false,
+          msg: `✅ Notificação de teste enviada com sucesso para ${count} destinatário(s)!`,
+          error: false
+        });
+      } else {
+        setTestStatus({
+          loading: false,
+          msg: `❌ Falha ao enviar: ${data.error || 'Erro desconhecido'}`,
+          error: true
+        });
+      }
+    } catch (err) {
+      setTestStatus({
+        loading: false,
+        msg: `❌ Erro de conexão: ${err.message}`,
+        error: true
+      });
+    }
+    setTimeout(() => {
+      setTestStatus(prev => ({ ...prev, msg: '' }));
+    }, 8000);
+  };
+
   const handleSaveDetails = (e) => {
     e.preventDefault();
     localStorage.setItem('app_company_name', companyName);
@@ -172,6 +254,10 @@ export default function Configuracoes() {
     localStorage.setItem('app_zapi_instance_id', zapiInstanceId);
     localStorage.setItem('app_zapi_token', zapiToken);
     localStorage.setItem('app_zapi_client_token', zapiClientToken);
+
+    // Notification Center settings
+    localStorage.setItem('app_notification_financial_recipients', financialRecipients);
+    localStorage.setItem('app_notification_invoice_billed_enabled', String(financialNotificationEnabled));
 
     // SMTP Settings
     localStorage.setItem('smtp_host', smtpHost);
@@ -192,6 +278,8 @@ export default function Configuracoes() {
         app_zapi_instance_id: zapiInstanceId,
         app_zapi_token: zapiToken,
         app_zapi_client_token: zapiClientToken,
+        app_notification_financial_recipients: financialRecipients,
+        app_notification_invoice_billed_enabled: String(financialNotificationEnabled),
         smtp_host: smtpHost,
         smtp_port: smtpPort,
         smtp_user: smtpUser,
@@ -550,6 +638,150 @@ export default function Configuracoes() {
                   />
                   <span className="text-[10px] text-blue-500 font-bold shrink-0">Copiar e colar</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Central de Notificações WhatsApp Section */}
+            <div className="pt-6 border-t border-gray-100 space-y-4 text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                    <Bell className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-gray-900 block">Central de Notificações WhatsApp (Vendas Faturadas / Financeiro)</span>
+                    <span className="text-xs text-gray-500 block">Notifique instantaneamente o time financeiro ou grupos do WhatsApp quando uma venda for faturada no Conta Azul.</span>
+                  </div>
+                </div>
+
+                {/* Toggle Ativo */}
+                <label className="inline-flex items-center cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={financialNotificationEnabled}
+                    onChange={(e) => setFinancialNotificationEnabled(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  <span className="ml-2 text-xs font-semibold text-gray-700">
+                    {financialNotificationEnabled ? 'Alertas Ativos' : 'Alertas Desativados'}
+                  </span>
+                </label>
+              </div>
+
+              {/* Lista de Destinatários Cadastrados */}
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wide flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-emerald-600" />
+                    Destinatários Cadastrados (Celulares e Grupos WhatsApp)
+                  </label>
+                  <span className="text-[11px] text-gray-500 font-medium">
+                    {recipientList.length} cadastrado(s)
+                  </span>
+                </div>
+
+                {recipientList.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic py-1">
+                    Nenhum número ou grupo cadastrado. Adicione um abaixo para receber as notificações.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {recipientList.map((recip, idx) => {
+                      const isGroup = recip.includes('-group') || recip.includes('@g.us');
+                      return (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm"
+                        >
+                          {isGroup ? (
+                            <Users className="w-3 h-3 mr-1.5 text-emerald-600 shrink-0" />
+                          ) : (
+                            <Phone className="w-3 h-3 mr-1.5 text-emerald-600 shrink-0" />
+                          )}
+                          <span className="font-mono">{recip}</span>
+                          {isGroup && <span className="ml-1 text-[10px] text-emerald-600 font-semibold">(Grupo)</span>}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRecipient(recip)}
+                            className="ml-1.5 text-emerald-600 hover:text-red-600 focus:outline-none transition-colors"
+                            title="Remover destinatário"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Input para adicionar novo destinatário */}
+                <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200/70">
+                  <div className="relative flex-grow">
+                    <input
+                      type="text"
+                      value={newRecipientInput}
+                      onChange={(e) => setNewRecipientInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddRecipient();
+                        }
+                      }}
+                      placeholder="Ex: 41984042835 ou 12036304...-group"
+                      className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddRecipient}
+                    className="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    Adicionar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleTestWhatsapp}
+                    disabled={testStatus.loading || recipientList.length === 0}
+                    className="inline-flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm shrink-0"
+                    title="Dispara uma notificação de demonstração para os destinatários cadastrados"
+                  >
+                    {testStatus.loading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        Testando...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
+                        Testar Notificação Agora
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Test Feedback Message */}
+                {testStatus.msg && (
+                  <div
+                    className={`p-3 rounded-lg text-xs flex items-center space-x-2 ${
+                      testStatus.error
+                        ? 'bg-red-50 text-red-700 border border-red-200'
+                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    }`}
+                  >
+                    {testStatus.error ? (
+                      <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    )}
+                    <span>{testStatus.msg}</span>
+                  </div>
+                )}
+
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                  💡 <strong>Dica de configuração:</strong> Digite o telefone com DDD (ex: <code>41984042835</code>) ou o ID de Grupo do WhatsApp (ex: <code>12036304...-group</code>). Assim que a venda for faturada no Conta Azul, o sistema montará uma mensagem com o Número da Venda, Cliente, Valor e link direto.
+                </p>
               </div>
             </div>
 
