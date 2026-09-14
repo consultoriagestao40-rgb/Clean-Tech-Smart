@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Upload, Trash2, Save, Bell, Plus, X, Users, Phone, Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, Save, Bell, Plus, X, Users, Phone, Send, CheckCircle2, AlertCircle, Loader2, RotateCw, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Configuracoes() {
@@ -25,13 +25,18 @@ export default function Configuracoes() {
   const [zapiToken, setZapiToken] = useState(localStorage.getItem('app_zapi_token') || 'D4F38DEC6BD1906C37E044B4');
   const [zapiClientToken, setZapiClientToken] = useState(localStorage.getItem('app_zapi_client_token') || '');
 
-  // WhatsApp Notification Center for Invoiced Sales
+  // WhatsApp Notification Center for Invoiced Sales & Tickets
   const [financialRecipients, setFinancialRecipients] = useState(
     localStorage.getItem('app_notification_financial_recipients') || '5541984042835'
   );
   const [financialNotificationEnabled, setFinancialNotificationEnabled] = useState(
     localStorage.getItem('app_notification_invoice_billed_enabled') !== 'false'
   );
+  const [ticketGroupId, setTicketGroupId] = useState(
+    localStorage.getItem('app_zapi_ticket_group_id') || '120363419495845420-group'
+  );
+  const [availableGroups, setAvailableGroups] = useState([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const [newRecipientInput, setNewRecipientInput] = useState('');
   const [testStatus, setTestStatus] = useState({ loading: false, msg: '', error: false });
 
@@ -56,6 +61,10 @@ export default function Configuracoes() {
           if (s.app_zapi_instance_id) setZapiInstanceId(s.app_zapi_instance_id);
           if (s.app_zapi_token) setZapiToken(s.app_zapi_token);
           if (s.app_zapi_client_token) setZapiClientToken(s.app_zapi_client_token);
+          if (s.app_zapi_ticket_group_id) {
+            setTicketGroupId(s.app_zapi_ticket_group_id);
+            localStorage.setItem('app_zapi_ticket_group_id', s.app_zapi_ticket_group_id);
+          }
           if (s.app_notification_financial_recipients !== undefined) {
             setFinancialRecipients(s.app_notification_financial_recipients);
             localStorage.setItem('app_notification_financial_recipients', s.app_notification_financial_recipients);
@@ -202,8 +211,25 @@ export default function Configuracoes() {
     localStorage.setItem('app_notification_financial_recipients', updated);
   };
 
-  const handleTestWhatsapp = async () => {
-    const targetRecipients = financialRecipients || newRecipientInput || '5541984042835';
+  const handleFetchGroups = async () => {
+    setLoadingGroups(true);
+    try {
+      const res = await fetch('/api/zapi/get-groups');
+      const data = await res.json();
+      if (data.success && data.groups) {
+        setAvailableGroups(data.groups);
+      } else {
+        alert('Não foi possível carregar os grupos: ' + (data.error || 'Erro desconhecido'));
+      }
+    } catch (e) {
+      alert('Erro de conexão ao buscar grupos: ' + e.message);
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  const handleTestWhatsapp = async (overrideRecipient = null) => {
+    const targetRecipients = overrideRecipient || financialRecipients || newRecipientInput || '5541984042835';
     setTestStatus({ loading: true, msg: 'Enviando mensagem de teste via Z-API...', error: false });
     try {
       const res = await fetch('/api/test-whatsapp-notification', {
@@ -256,6 +282,7 @@ export default function Configuracoes() {
     localStorage.setItem('app_zapi_instance_id', zapiInstanceId);
     localStorage.setItem('app_zapi_token', zapiToken);
     localStorage.setItem('app_zapi_client_token', zapiClientToken);
+    localStorage.setItem('app_zapi_ticket_group_id', ticketGroupId);
 
     // Notification Center settings
     localStorage.setItem('app_notification_financial_recipients', financialRecipients);
@@ -280,6 +307,7 @@ export default function Configuracoes() {
         app_zapi_instance_id: zapiInstanceId,
         app_zapi_token: zapiToken,
         app_zapi_client_token: zapiClientToken,
+        app_zapi_ticket_group_id: ticketGroupId,
         app_notification_financial_recipients: financialRecipients,
         app_notification_invoice_billed_enabled: String(financialNotificationEnabled),
         smtp_host: smtpHost,
@@ -645,81 +673,189 @@ export default function Configuracoes() {
 
             {/* Central de Notificações WhatsApp Section */}
             <div className="pt-6 border-t border-gray-100 space-y-4 text-left">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
                     <Bell className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-sm font-semibold text-gray-900 block">Central de Notificações WhatsApp (Vendas Faturadas / Financeiro)</span>
-                    <span className="text-xs text-gray-500 block">Notifique instantaneamente o time financeiro ou grupos do WhatsApp quando uma venda for faturada no Conta Azul.</span>
+                    <span className="text-sm font-semibold text-gray-900 block">Central de Notificações WhatsApp (Vendas e Chamados)</span>
+                    <span className="text-xs text-gray-500 block">Notifique o time financeiro e grupos operacionais automaticamente sobre vendas faturadas e chamados.</span>
                   </div>
                 </div>
 
-                {/* Toggle Ativo */}
-                <label className="inline-flex items-center cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={financialNotificationEnabled}
-                    onChange={(e) => setFinancialNotificationEnabled(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                  <span className="ml-2 text-xs font-semibold text-gray-700">
-                    {financialNotificationEnabled ? 'Alertas Ativos' : 'Alertas Desativados'}
-                  </span>
-                </label>
+                <div className="flex items-center space-x-3">
+                  {/* Botão Carregar Grupos */}
+                  <button
+                    type="button"
+                    onClick={handleFetchGroups}
+                    disabled={loadingGroups}
+                    className="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg shadow-sm transition-all cursor-pointer"
+                    title="Buscar todos os grupos ativos no WhatsApp conectado"
+                  >
+                    {loadingGroups ? (
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-emerald-600" />
+                    ) : (
+                      <RotateCw className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
+                    )}
+                    Carregar Grupos do WhatsApp
+                  </button>
+
+                  {/* Toggle Ativo */}
+                  <label className="inline-flex items-center cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={financialNotificationEnabled}
+                      onChange={(e) => setFinancialNotificationEnabled(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                    <span className="ml-2 text-xs font-semibold text-gray-700">
+                      {financialNotificationEnabled ? 'Alertas Ativos' : 'Desativados'}
+                    </span>
+                  </label>
+                </div>
               </div>
 
-              {/* Lista de Destinatários Cadastrados */}
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wide flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-emerald-600" />
-                    Destinatários Cadastrados (Celulares e Grupos WhatsApp)
-                  </label>
-                  <span className="text-[11px] text-gray-500 font-medium">
-                    {recipientList.length} cadastrado(s)
-                  </span>
-                </div>
+              {/* Grupos Detectados do WhatsApp (Estilo Workforce Hub) */}
+              {availableGroups.length > 0 && (
+                <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-xl space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-amber-700" />
+                      Grupos detectados no WhatsApp da empresa ({availableGroups.length}):
+                    </span>
+                    <span className="text-[11px] text-amber-700">
+                      Clique para vincular rapidamente ao Financeiro ou aos Chamados
+                    </span>
+                  </div>
 
-                {recipientList.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic py-1">
-                    Nenhum número ou grupo cadastrado. Adicione um abaixo para receber as notificações.
-                  </p>
-                ) : (
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {recipientList.map((recip, idx) => {
-                      const isGroup = recip.includes('-group') || recip.includes('@g.us');
-                      return (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-sm"
-                        >
-                          {isGroup ? (
-                            <Users className="w-3 h-3 mr-1.5 text-emerald-600 shrink-0" />
-                          ) : (
-                            <Phone className="w-3 h-3 mr-1.5 text-emerald-600 shrink-0" />
-                          )}
-                          <span className="font-mono">{recip}</span>
-                          {isGroup && <span className="ml-1 text-[10px] text-emerald-600 font-semibold">(Grupo)</span>}
+                    {availableGroups.map((grp, idx) => (
+                      <div
+                        key={idx}
+                        className="inline-flex items-center bg-white border border-amber-300 rounded-full pl-2.5 pr-1 py-0.5 text-xs shadow-sm hover:border-amber-500 transition-colors"
+                      >
+                        <span className="font-medium text-gray-800 mr-2 text-xs truncate max-w-[200px]" title={grp.name}>
+                          👥 {grp.name}
+                        </span>
+                        <div className="flex items-center space-x-1">
                           <button
                             type="button"
-                            onClick={() => handleRemoveRecipient(recip)}
-                            className="ml-1.5 text-emerald-600 hover:text-red-600 focus:outline-none transition-colors"
-                            title="Remover destinatário"
+                            onClick={() => {
+                              if (!recipientList.includes(grp.phone)) {
+                                const updated = [...recipientList, grp.phone].join(', ');
+                                setFinancialRecipients(updated);
+                                localStorage.setItem('app_notification_financial_recipients', updated);
+                              }
+                            }}
+                            className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-full transition-colors cursor-pointer"
+                            title="Adicionar aos avisos de Vendas Faturadas (Financeiro)"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            + Financeiro
                           </button>
-                        </span>
-                      );
-                    })}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTicketGroupId(grp.phone);
+                              localStorage.setItem('app_zapi_ticket_group_id', grp.phone);
+                            }}
+                            className={`px-2 py-0.5 text-[10px] font-bold rounded-full transition-colors cursor-pointer ${
+                              ticketGroupId === grp.phone
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-blue-100 hover:bg-blue-200 text-blue-800'
+                            }`}
+                            title="Definir como grupo de alertas de Chamados de Manutenção"
+                          >
+                            {ticketGroupId === grp.phone ? '✓ Chamados' : '+ Chamados'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Input para adicionar novo destinatário */}
-                <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200/70">
-                  <div className="relative flex-grow">
+              {/* Grid com Grupo de Chamados e Destinatários do Financeiro */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Card 1: Grupo dos Chamados Técnicos */}
+                <div className="p-4 bg-white rounded-xl border border-blue-200 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-blue-900 uppercase tracking-wide flex items-center gap-1.5">
+                      <Wrench className="w-3.5 h-3.5 text-blue-600" />
+                      Grupo de Chamados (Notificações Técnicas)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleTestWhatsapp(ticketGroupId)}
+                      className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                      title="Dispara teste diretamente para este grupo"
+                    >
+                      Testar Envio
+                    </button>
+                  </div>
+
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      value={ticketGroupId}
+                      onChange={(e) => setTicketGroupId(e.target.value)}
+                      placeholder="Ex: 120363419495845420-group"
+                      className="w-full px-3 py-2 border border-blue-200 rounded-lg text-xs font-mono text-gray-800 focus:ring-2 focus:ring-blue-500 bg-blue-50/20"
+                    />
+                    <p className="text-[11px] text-gray-500 leading-relaxed">
+                      📢 Este grupo recebe alertas em tempo real quando um chamado for aberto, técnico entrar em rota, atendimento iniciado ou concluído.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Card 2: Resumo Rápido Destinatários Financeiro */}
+                <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-emerald-600" />
+                      Destinatários Financeiro (Vendas Faturadas)
+                    </label>
+                    <span className="text-[11px] text-gray-500 font-medium">
+                      {recipientList.length} cadastrado(s)
+                    </span>
+                  </div>
+
+                  {recipientList.length === 0 ? (
+                    <p className="text-xs text-gray-400 italic py-1">
+                      Nenhum número ou grupo cadastrado para o financeiro.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                      {recipientList.map((recip, idx) => {
+                        const isGroup = recip.includes('-group') || recip.includes('@g.us');
+                        return (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200"
+                          >
+                            {isGroup ? (
+                              <Users className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />
+                            ) : (
+                              <Phone className="w-3 h-3 mr-1 text-emerald-600 shrink-0" />
+                            )}
+                            <span className="font-mono text-[11px]">{recip}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveRecipient(recip)}
+                              className="ml-1 text-emerald-600 hover:text-red-600 focus:outline-none transition-colors"
+                              title="Remover"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Input para adicionar destinatário */}
+                  <div className="flex gap-1.5 pt-1">
                     <input
                       type="text"
                       value={newRecipientInput}
@@ -730,61 +866,50 @@ export default function Configuracoes() {
                           handleAddRecipient();
                         }
                       }}
-                      placeholder="Ex: 41984042835 ou 12036304...-group"
-                      className="w-full pl-3 pr-4 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      placeholder="Telefone ou ID de Grupo..."
+                      className="w-full pl-2.5 pr-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                     />
+                    <button
+                      type="button"
+                      onClick={handleAddRecipient}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shrink-0 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTestWhatsapp()}
+                      disabled={testStatus.loading || recipientList.length === 0}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors shrink-0 cursor-pointer"
+                      title="Testar envio para todos os destinatários do financeiro"
+                    >
+                      {testStatus.loading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Send className="w-3.5 h-3.5 text-emerald-400" />
+                      )}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAddRecipient}
-                    className="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm shrink-0"
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1" />
-                    Adicionar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleTestWhatsapp}
-                    disabled={testStatus.loading || recipientList.length === 0}
-                    className="inline-flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm shrink-0"
-                    title="Dispara uma notificação de demonstração para os destinatários cadastrados"
-                  >
-                    {testStatus.loading ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                        Testando...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-                        Testar Notificação Agora
-                      </>
-                    )}
-                  </button>
                 </div>
-
-                {/* Test Feedback Message */}
-                {testStatus.msg && (
-                  <div
-                    className={`p-3 rounded-lg text-xs flex items-center space-x-2 ${
-                      testStatus.error
-                        ? 'bg-red-50 text-red-700 border border-red-200'
-                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    }`}
-                  >
-                    {testStatus.error ? (
-                      <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-                    ) : (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    )}
-                    <span>{testStatus.msg}</span>
-                  </div>
-                )}
-
-                <p className="text-[11px] text-gray-500 leading-relaxed">
-                  💡 <strong>Dica de configuração:</strong> Digite o telefone com DDD (ex: <code>41984042835</code>) ou o ID de Grupo do WhatsApp (ex: <code>12036304...-group</code>). Assim que a venda for faturada no Conta Azul, o sistema montará uma mensagem com o Número da Venda, Cliente, Valor e link direto.
-                </p>
               </div>
+
+              {/* Test Feedback Message */}
+              {testStatus.msg && (
+                <div
+                  className={`p-3 rounded-lg text-xs flex items-center space-x-2 ${
+                    testStatus.error
+                      ? 'bg-red-50 text-red-700 border border-red-200'
+                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  }`}
+                >
+                  {testStatus.error ? (
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  )}
+                  <span>{testStatus.msg}</span>
+                </div>
+              )}
             </div>
 
             {/* SMTP E-mail Settings Section */}
