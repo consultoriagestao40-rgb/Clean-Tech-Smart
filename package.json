@@ -12,7 +12,9 @@
   "dependencies": {
     "html2pdf.js": "^0.14.0",
     "lucide-react": "^1.16.0",
+    "mammoth": "^1.12.3",
     "nodemailer": "^6.9.16",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.21.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

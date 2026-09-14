@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Loader2, ArrowLeft, Star, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, ArrowLeft, Star, FileText, FileUp, UploadCloud, X, Copy, Check, Sparkles, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+const AVAILABLE_VARIABLES = [
+  { tag: '{{CLIENT_NAME}}', label: 'Nome / Razão Social' },
+  { tag: '{{CONTRACT_CODE}}', label: 'Código do Contrato' },
+  { tag: '{{START_DATE}}', label: 'Data de Início' },
+  { tag: '{{TOTAL_VALUE}}', label: 'Valor Total (R$)' },
+  { tag: '{{CLIENT_DOCUMENT}}', label: 'CPF / CNPJ' },
+  { tag: '{{COMPANY_NAME}}', label: 'Nome da Locadora' }
+];
 
 export default function Templates() {
   const [templates, setTemplates] = useState([]);
@@ -9,6 +18,13 @@ export default function Templates() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Upload Modal state
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isParsingFile, setIsParsingFile] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+  const [copiedVar, setCopiedVar] = useState('');
   
   const [formData, setFormData] = useState({
     id: null,
@@ -34,6 +50,63 @@ export default function Templates() {
       setIsLoading(false);
     }
   }
+
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+    
+    if (file.size > 15 * 1024 * 1024) {
+      setUploadError('O arquivo excede o limite máximo permitido de 15MB.');
+      return;
+    }
+
+    setIsParsingFile(true);
+    setUploadError('');
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64Data = e.target.result;
+        try {
+          const res = await fetch('/api/parse-contract-document', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileBase64: base64Data,
+              fileName: file.name,
+              mimeType: file.type
+            })
+          });
+
+          const data = await res.json();
+          if (data.success && data.clauses && data.clauses.length > 0) {
+            setFormData({
+              id: null,
+              name: data.templateName || file.name.replace(/\.[^/.]+$/, ''),
+              clauses: data.clauses
+            });
+            setIsUploadModalOpen(false);
+            setIsModalOpen(true);
+          } else {
+            setUploadError(data.error || 'Não foi possível extrair o texto do arquivo.');
+          }
+        } catch (apiErr) {
+          setUploadError('Erro de conexão ao processar documento: ' + apiErr.message);
+        } finally {
+          setIsParsingFile(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setUploadError('Erro ao abrir o arquivo: ' + err.message);
+      setIsParsingFile(false);
+    }
+  };
+
+  const handleCopyVar = (tag) => {
+    navigator.clipboard.writeText(tag);
+    setCopiedVar(tag);
+    setTimeout(() => setCopiedVar(''), 2000);
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -137,10 +210,20 @@ export default function Templates() {
             <p className="text-sm text-gray-500 mt-1">Gerencie os templates de impressão de contratos</p>
           </div>
         </div>
-        <div className="flex space-x-3 mt-4 md:mt-0">
+        <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0">
           <button 
+            type="button"
+            onClick={() => { setUploadError(''); setIsUploadModalOpen(true); }}
+            className="flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors shadow-sm cursor-pointer"
+            title="Importar contrato existente em PDF ou Word (.docx)"
+          >
+            <FileUp className="w-4 h-4 mr-2" />
+            Importar PDF ou Word
+          </button>
+          <button 
+            type="button"
             onClick={openNewTemplate}
-            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4 mr-2" />
             Novo Template
@@ -206,8 +289,15 @@ export default function Templates() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex justify-center p-4 z-50 overflow-y-auto pt-10 pb-10">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl flex flex-col animate-in fade-in zoom-in-95 duration-200 my-auto max-h-full">
-            <div className="p-6 border-b border-gray-100 shrink-0">
-              <h2 className="text-xl font-bold text-gray-900">{formData.id ? 'Editar Template' : 'Novo Template'}</h2>
+            <div className="p-6 border-b border-gray-100 shrink-0 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">{formData.id ? 'Editar Template' : 'Novo Template de Contrato'}</h2>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
             
             <div className="p-6 overflow-y-auto flex-1 space-y-6">
@@ -223,13 +313,45 @@ export default function Templates() {
                 />
               </div>
 
+              {/* Barra de Variáveis Rápidas */}
+              <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    Variáveis Dinâmicas do Contrato (Clique no botão para copiar a tag):
+                  </span>
+                  <span className="text-[11px] text-amber-700 font-medium">
+                    O sistema substitui automaticamente nos contratos
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {AVAILABLE_VARIABLES.map((v, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleCopyVar(v.tag)}
+                      className="inline-flex items-center px-2.5 py-1 bg-white border border-amber-300 hover:border-amber-500 rounded-lg text-xs text-gray-800 font-mono transition-all cursor-pointer shadow-xs active:scale-95"
+                      title={`Copiar variável ${v.tag}`}
+                    >
+                      {copiedVar === v.tag ? (
+                        <Check className="w-3.5 h-3.5 text-green-600 mr-1.5" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-amber-600 mr-1.5" />
+                      )}
+                      <span className="font-bold text-amber-900">{v.tag}</span>
+                      <span className="text-[10px] text-gray-500 ml-1.5">({v.label})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-gray-800">Cláusulas do Contrato</h3>
+                  <h3 className="font-bold text-gray-800">Cláusulas do Contrato ({formData.clauses.length})</h3>
                   <button 
                     type="button" 
                     onClick={addClause}
-                    className="flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
                   >
                     <Plus className="w-4 h-4 mr-1" /> Adicionar Cláusula
                   </button>
@@ -243,7 +365,7 @@ export default function Templates() {
                         <button 
                           type="button" 
                           onClick={() => removeClause(index)}
-                          className="text-red-400 hover:text-red-600 p-1 transition-colors"
+                          className="text-red-400 hover:text-red-600 p-1 transition-colors cursor-pointer"
                           title="Remover Cláusula"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -270,7 +392,7 @@ export default function Templates() {
                   
                   {formData.clauses.length === 0 && (
                     <div className="text-center p-8 border-2 border-dashed border-gray-200 rounded-lg text-gray-500">
-                      Nenhuma cláusula adicionada. Clique no botão acima para adicionar.
+                      Nenhuma cláusula adicionada. Clique no botão acima para adicionar ou use o botão <strong>Importar PDF ou Word</strong>.
                     </div>
                   )}
                 </div>
@@ -278,12 +400,114 @@ export default function Templates() {
             </div>
 
             <div className="p-6 border-t border-gray-100 shrink-0 flex justify-end space-x-3 bg-white rounded-b-xl">
-              <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors cursor-pointer">
                 Cancelar
               </button>
-              <button type="button" onClick={handleSave} disabled={isSaving || !formData.name} className="px-6 py-2.5 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors flex items-center">
+              <button type="button" onClick={handleSave} disabled={isSaving || !formData.name} className="px-6 py-2.5 text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-lg font-medium transition-colors flex items-center cursor-pointer">
                 {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                 {isSaving ? 'Salvando...' : 'Salvar Template'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Importação de Arquivo (PDF / Word) */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-5">
+            <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                  <FileUp className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Importar Contrato</h2>
+                  <p className="text-xs text-gray-500">Crie o template a partir de um arquivo PDF ou Word existente</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsUploadModalOpen(false); setUploadError(''); }}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drag & Drop Area */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragActive(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) handleFileUpload(file);
+              }}
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+                dragActive
+                  ? 'border-emerald-500 bg-emerald-50/50'
+                  : 'border-gray-300 hover:border-emerald-500 hover:bg-gray-50/60'
+              }`}
+              onClick={() => document.getElementById('contract-file-input')?.click()}
+            >
+              <input
+                id="contract-file-input"
+                type="file"
+                accept=".pdf,.docx,.doc,.txt"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file);
+                }}
+              />
+
+              {isParsingFile ? (
+                <div className="space-y-3 py-4">
+                  <Loader2 className="w-10 h-10 animate-spin text-emerald-600 mx-auto" />
+                  <p className="text-sm font-semibold text-gray-800">Lendo e estruturando o contrato...</p>
+                  <p className="text-xs text-gray-500">Extraindo parágrafos e identificando as cláusulas automaticamente</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2">
+                    <UploadCloud className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-800">
+                    Arraste seu arquivo aqui ou <span className="text-emerald-600 underline">clique para selecionar</span>
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Formatos suportados: <strong>.docx (Word)</strong> ou <strong>.pdf</strong> (máx. 15MB)
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {uploadError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                <span>{uploadError}</span>
+              </div>
+            )}
+
+            <div className="p-3.5 bg-blue-50/60 border border-blue-100 rounded-xl space-y-1 text-xs text-blue-800 leading-relaxed">
+              <span className="font-bold flex items-center gap-1 text-blue-900">
+                💡 Como funciona a extração:
+              </span>
+              <p>
+                O sistema lê o documento e identifica automaticamente os títulos de cláusula (ex: <em>CLÁUSULA PRIMEIRA</em>, <em>DO OBJETO</em>, <em>DO PRAZO</em>, etc.), já abrindo o formulário pronto com cada cláusula separada para você revisar antes de salvar.
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => { setIsUploadModalOpen(false); setUploadError(''); }}
+                disabled={isParsingFile}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+              >
+                Cancelar
               </button>
             </div>
           </div>
