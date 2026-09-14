@@ -3454,16 +3454,65 @@ export default function AgenteAds() {
 
                 <div className="grid grid-cols-3 gap-2 my-4 pt-3 border-t border-gray-200/60 text-center">
                   <div>
-                    <div className="text-[10px] text-gray-500 uppercase">Gasto</div>
-                    <div className="text-xs font-bold text-gray-900 font-mono">R$ {creative.spend.toFixed(2)}</div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold">Gasto (R$)</div>
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      value={creative.spend || ''} 
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        const updated = metaCreatives.map(mc => mc.id === creative.id ? { 
+                          ...mc, 
+                          spend: val, 
+                          cpl: mc.leads > 0 ? (val / mc.leads) : 0 
+                        } : mc);
+                        setMetaCreatives(updated);
+                      }}
+                      onBlur={() => {
+                        fetch('/api/ads/save-targets', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ ads_meta_creatives: metaCreatives })
+                        });
+                        showSuccessBanner(`Métricas de "${creative.name}" salvas!`);
+                      }}
+                      placeholder="0.00"
+                      className="w-full text-center text-xs font-bold text-gray-900 font-mono bg-white border border-gray-300 rounded-lg px-1 py-1 focus:ring-1 focus:ring-indigo-500 mt-1 shadow-xs"
+                      title="Clique para editar o valor gasto"
+                    />
                   </div>
                   <div>
-                    <div className="text-[10px] text-gray-500 uppercase">Leads</div>
-                    <div className="text-xs font-bold text-emerald-700 font-mono">{creative.leads}</div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold">Leads</div>
+                    <input 
+                      type="number" 
+                      value={creative.leads || ''} 
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10) || 0;
+                        const updated = metaCreatives.map(mc => mc.id === creative.id ? { 
+                          ...mc, 
+                          leads: val, 
+                          cpl: val > 0 ? (mc.spend / val) : 0 
+                        } : mc);
+                        setMetaCreatives(updated);
+                      }}
+                      onBlur={() => {
+                        fetch('/api/ads/save-targets', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ ads_meta_creatives: metaCreatives })
+                        });
+                        showSuccessBanner(`Leads de "${creative.name}" salvos!`);
+                      }}
+                      placeholder="0"
+                      className="w-full text-center text-xs font-bold text-emerald-700 font-mono bg-white border border-gray-300 rounded-lg px-1 py-1 focus:ring-1 focus:ring-emerald-500 mt-1 shadow-xs"
+                      title="Clique para editar o número de leads"
+                    />
                   </div>
                   <div>
-                    <div className="text-[10px] text-gray-500 uppercase">CPL</div>
-                    <div className="text-xs font-bold text-gray-900 font-mono">R$ {creative.cpl.toFixed(2)}</div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold">CPL Calculado</div>
+                    <div className="text-xs font-black text-gray-900 font-mono mt-2">
+                      {creative.leads > 0 ? `R$ ${(creative.spend / creative.leads).toFixed(2)}` : '—'}
+                    </div>
                   </div>
                 </div>
 
