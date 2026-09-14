@@ -203,7 +203,7 @@ export default async function handler(req, res) {
           equipment_serial_number: eqInfo.serial_number || 'S/N'
         };
 
-        sendTicketWhatsappGroupNotification(dbClient, notificationPayload, clientInfo.name, null, 'novo', []).catch(console.error);
+        await sendTicketWhatsappGroupNotification(dbClient, notificationPayload, clientInfo.name, null, 'novo', []);
         sendTicketEmailNotification(dbClient, notificationPayload, clientInfo.name, null, 'novo').catch(console.error);
       } catch (e) {
         console.warn('Erro ao enviar notificação de chamado aberto pelo portal:', e);

@@ -1,13 +1,41 @@
 import { Pool } from 'pg';
 
+const defaultPool = new Pool({
+  connectionString: process.env.DATABASE_URL || "postgresql://neondb_owner:npg_DtfA7VXHw8ym@ep-winter-cloud-apstwhit-pooler.c-7.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require",
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
 // Helper to fetch all configurations from database
 async function getSystemSettings(dbClient) {
-  const result = await dbClient.query('SELECT key, value FROM system_settings');
-  const settings = {};
-  for (const row of result.rows) {
-    settings[row.key] = row.value;
+  let runner = defaultPool;
+  if (dbClient && typeof dbClient.query === 'function') {
+    try {
+      // Verificar se o client não foi liberado
+      runner = dbClient;
+    } catch {
+      runner = defaultPool;
+    }
   }
-  return settings;
+  try {
+    const result = await runner.query('SELECT key, value FROM system_settings');
+    const settings = {};
+    for (const row of result.rows) {
+      settings[row.key] = row.value;
+    }
+    return settings;
+  } catch (err) {
+    if (runner !== defaultPool) {
+      const result = await defaultPool.query('SELECT key, value FROM system_settings');
+      const settings = {};
+      for (const row of result.rows) {
+        settings[row.key] = row.value;
+      }
+      return settings;
+    }
+    throw err;
+  }
 }
 
 // WhatsApp Group notification for Ticket updates

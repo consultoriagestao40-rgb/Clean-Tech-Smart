@@ -182,14 +182,14 @@ export default async function handler(req, res) {
       }
     }
 
-    // Trigger Async WhatsApp & Email Notifications in background
+    // Trigger WhatsApp & Email Notifications
     try {
       const ticketWithDetails = {
         ...savedTicket,
         address: clientAddress,
         equipment_info: eqInfo
       };
-      sendTicketWhatsappGroupNotification(client, ticketWithDetails, clientName, techName, isUpdate ? 'update' : 'create', changesList).catch(e => console.error('Erro async notificacao zapi:', e));
+      await sendTicketWhatsappGroupNotification(client, ticketWithDetails, clientName, techName, isUpdate ? 'update' : 'create', changesList);
       sendTicketEmailNotification(client, ticketWithDetails, clientName, techName, isUpdate ? 'update' : 'create').catch(e => console.error('Erro async notificacao email:', e));
     } catch (notifErr) {
       console.error('Erro ao acionar notificações:', notifErr);
