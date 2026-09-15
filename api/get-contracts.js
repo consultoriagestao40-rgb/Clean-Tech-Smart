@@ -15,6 +15,14 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
+    await client.query(`
+      ALTER TABLE contracts ADD COLUMN IF NOT EXISTS billing_day INT;
+      ALTER TABLE contracts ADD COLUMN IF NOT EXISTS due_day INT;
+      ALTER TABLE contracts ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50);
+      ALTER TABLE contracts ADD COLUMN IF NOT EXISTS total_installments INT;
+      ALTER TABLE contracts ADD COLUMN IF NOT EXISTS current_installment INT;
+    `);
+
     const result = await client.query(`
       SELECT 
         c.*,

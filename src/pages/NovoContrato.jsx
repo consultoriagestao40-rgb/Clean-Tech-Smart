@@ -418,7 +418,12 @@ export default function NovoContrato() {
         expiry_date: updatedContract.expiry_date,
         readjustment_date: updatedContract.readjustment_date,
         cost_value: updatedContract.cost_value,
-        tax_cost_percent: updatedContract.tax_cost_percent
+        tax_cost_percent: updatedContract.tax_cost_percent,
+        billing_day: updatedContract.billing_day,
+        due_day: updatedContract.due_day,
+        payment_method: updatedContract.payment_method,
+        total_installments: updatedContract.total_installments,
+        current_installment: updatedContract.current_installment
       };
       
       const res = await fetch('/api/save-contract', {
@@ -528,7 +533,12 @@ export default function NovoContrato() {
       expiry_date: generalForm.expiry_date || displayContract.expiry_date,
       readjustment_date: generalForm.readjustment_date || displayContract.readjustment_date,
       cost_value: parseFloat(generalForm.cost_value || 0),
-      tax_cost_percent: parseFloat(generalForm.tax_cost_percent || 0)
+      tax_cost_percent: parseFloat(generalForm.tax_cost_percent || 0),
+      billing_day: generalForm.billing_day ? parseInt(generalForm.billing_day) : (displayContract.billing_day || 5),
+      due_day: generalForm.due_day ? parseInt(generalForm.due_day) : (displayContract.due_day || 15),
+      payment_method: generalForm.payment_method || displayContract.payment_method || 'Boleto',
+      total_installments: generalForm.total_installments ? parseInt(generalForm.total_installments) : (displayContract.total_installments || 12),
+      current_installment: generalForm.current_installment ? parseInt(generalForm.current_installment) : (displayContract.current_installment || 1)
     };
     setContract(updatedContract);
     handleSaveContract(updatedContract);
@@ -698,7 +708,12 @@ export default function NovoContrato() {
               expiry_date: displayContract.expiry_date ? new Date(displayContract.expiry_date).toISOString().split('T')[0] : '',
               readjustment_date: displayContract.readjustment_date ? new Date(displayContract.readjustment_date).toISOString().split('T')[0] : '',
               cost_value: displayContract.cost_value || 0,
-              tax_cost_percent: displayContract.tax_cost_percent || 0
+              tax_cost_percent: displayContract.tax_cost_percent || 0,
+              billing_day: displayContract.billing_day || 5,
+              due_day: displayContract.due_day || 15,
+              payment_method: displayContract.payment_method || 'Boleto',
+              total_installments: displayContract.total_installments || 12,
+              current_installment: displayContract.current_installment || 1
             });
             setIsGeneralModalOpen(true);
           }} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors">
@@ -1085,6 +1100,60 @@ export default function NovoContrato() {
                     type="number" step="0.1"
                     value={generalForm.tax_cost_percent} 
                     onChange={e => setGeneralForm({...generalForm, tax_cost_percent: e.target.value})} 
+                    className="w-full px-3 py-2 border rounded-lg" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Forma de Pagamento</label>
+                  <select
+                    value={generalForm.payment_method || 'Boleto'}
+                    onChange={e => setGeneralForm({...generalForm, payment_method: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg bg-white"
+                  >
+                    <option value="Boleto">Boleto</option>
+                    <option value="Pix">Pix</option>
+                    <option value="Transferência">Transferência</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Parcelas (Atual / Total)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="number" min="1" placeholder="Atual"
+                      value={generalForm.current_installment || 1} 
+                      onChange={e => setGeneralForm({...generalForm, current_installment: e.target.value})} 
+                      className="w-1/2 px-3 py-2 border rounded-lg" 
+                    />
+                    <span className="self-center text-gray-400">/</span>
+                    <input 
+                      type="number" min="1" placeholder="Total"
+                      value={generalForm.total_installments || 12} 
+                      onChange={e => setGeneralForm({...generalForm, total_installments: e.target.value})} 
+                      className="w-1/2 px-3 py-2 border rounded-lg" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Quando Fatura (Dia)</label>
+                  <input 
+                    type="number" min="1" max="31"
+                    value={generalForm.billing_day || 5} 
+                    onChange={e => setGeneralForm({...generalForm, billing_day: e.target.value})} 
+                    className="w-full px-3 py-2 border rounded-lg" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1">Quando Vence (Dia)</label>
+                  <input 
+                    type="number" min="1" max="31"
+                    value={generalForm.due_day || 15} 
+                    onChange={e => setGeneralForm({...generalForm, due_day: e.target.value})} 
                     className="w-full px-3 py-2 border rounded-lg" 
                   />
                 </div>
