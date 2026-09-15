@@ -15,6 +15,7 @@ export default function Contratos() {
   const [isLoading, setIsLoading] = useState(true);
   const [expandedRows, setExpandedRows] = useState({});
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(null);
+  const [isSendingWhatsapp, setIsSendingWhatsapp] = useState(false);
   
   // Filtros
   const [statusFilter, setStatusFilter] = useState('Todos');
@@ -66,6 +67,8 @@ export default function Contratos() {
 
   useEffect(() => {
     fetchAllData();
+    // Disparo diário automático para o financeiro no WhatsApp (se ainda não enviado hoje)
+    triggerDailyWhatsappCheck();
   }, []);
 
   async function fetchAllData() {
@@ -98,6 +101,36 @@ export default function Contratos() {
       console.error('Erro ao buscar dados:', error);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function triggerDailyWhatsappCheck() {
+    try {
+      await fetch('/api/contracts/send-billing-whatsapp');
+    } catch (e) {
+      console.error('Erro ao verificar alerta diário:', e);
+    }
+  }
+
+  async function handleManualSendWhatsappAlert() {
+    setIsSendingWhatsapp(true);
+    try {
+      const res = await fetch('/api/contracts/send-billing-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: true })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Alerta de faturamento enviado com sucesso no WhatsApp do Financeiro!\n${data.count} contrato(s) sinalizados.`);
+      } else {
+        alert('Erro ao enviar alerta: ' + (data.error || 'Erro desconhecido'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao conectar com o serviço de WhatsApp.');
+    } finally {
+      setIsSendingWhatsapp(false);
     }
   }
 
@@ -358,27 +391,22 @@ export default function Contratos() {
     return new Date(dateStr).toLocaleDateString('pt-BR');
   };
 
-  // ----------------------------------------------------
-  // LÓGICA DE ALERTA MENSAL DE FATURAMENTO
-  // ----------------------------------------------------
+  // Mês e Ano corrente
   const today = new Date();
   const currentMonth = today.getMonth() + 1; // 1 a 12
   const currentYear = today.getFullYear();
-  const currentDay = today.getDate();
-  const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  const currentMonthLabel = `${monthNames[today.getMonth()]}/${currentYear}`;
   const currentCompetenceCode = `${String(currentMonth).padStart(2, '0')}/${currentYear}`;
 
-  // Verifica faturas emitidas por contrato
+  // Faturas do contrato
   const getContractInvoices = (contractCode) => {
     if (!contractCode) return [];
     return invoices.filter(inv => inv.contract_code === contractCode);
   };
 
-  // Verifica se o contrato já teve fatura gerada para a competência atual
-  const checkContractInvoicedThisMonth = (ctr) => {
+  // Encontra a fatura da competência atual deste contrato (se existir)
+  const getMonthInvoice = (ctr) => {
     const ctrInvoices = getContractInvoices(ctr.code);
-    return ctrInvoices.some(inv => {
+    return ctrInvoices.find(inv => {
       if (inv.description && inv.description.includes(currentCompetenceCode)) return true;
       if (inv.due_date) {
         const d = new Date(inv.due_date);
@@ -387,13 +415,6 @@ export default function Contratos() {
       return false;
     });
   };
-
-  // Contratos Ativos que necessitam de emissão neste mês
-  const pendingBillingContracts = contracts.filter(c => {
-    if (c.status !== 'Ativo') return false;
-    const isAlreadyInvoiced = checkContractInvoicedThisMonth(c);
-    return !isAlreadyInvoiced;
-  });
 
   // ----------------------------------------------------
   // CADASTRO DIRETO DE CONTRATO EM ANDAMENTO
@@ -422,7 +443,6 @@ export default function Contratos() {
       const totalInst = parseInt(directForm.total_installments || 12);
       const currInst = parseInt(directForm.current_installment || 1);
 
-      // Calcular término se não informado (Início + total de meses)
       let calculatedExpiry = directForm.expiry_date;
       if (!calculatedExpiry && directForm.start_date) {
         const dtEnd = new Date(directForm.start_date);
@@ -430,11 +450,9 @@ export default function Contratos() {
         calculatedExpiry = dtEnd.toISOString().split('T')[0];
       }
 
-      // Reajuste anual
       const dtReadjust = new Date(directForm.start_date || new Date());
       dtReadjust.setFullYear(dtReadjust.getFullYear() + 1);
 
-      // Equipamento vinculado
       let selectedEqName = directForm.equipment_name;
       if (directForm.equipment_id) {
         const found = dbEquipments.find(eq => String(eq.id) === String(directForm.equipment_id));
@@ -605,97 +623,49 @@ export default function Contratos() {
   return (
     <div className="font-sans text-gray-800 max-w-7xl mx-auto space-y-6 pb-20">
       
-      {/* Header */}
+      {/* Header Limpo e Moderno */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             Gestão de Contratos e Minutas
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Gerencie faturamento recorrente, histórico de faturas e contratos em andamento
+            Gerencie contratos de locação ativos, faturamento recorrente, parcelas e minutas
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={handleManualSendWhatsappAlert}
+            disabled={isSendingWhatsapp}
+            className="flex items-center px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold rounded-xl transition-all shadow-sm active:scale-95 text-xs disabled:opacity-50"
+            title="Dispara alerta diário dos contratos pendentes para o celular do time financeiro"
+          >
+            {isSendingWhatsapp ? (
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin text-emerald-600" />
+            ) : (
+              <Send className="w-4 h-4 mr-1.5 text-emerald-600" />
+            )}
+            Avisar Financeiro WhatsApp
+          </button>
+
           <button 
             onClick={() => setIsDirectModalOpen(true)}
-            className="flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all shadow-sm hover:shadow active:scale-95 text-sm"
+            className="flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all shadow-sm hover:shadow active:scale-95 text-xs"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 mr-1.5" />
             Cadastrar Contrato em Andamento
           </button>
+
           <button 
             onClick={() => navigate('/contratos/novo')}
-            className="flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all shadow-sm hover:shadow text-sm"
+            className="flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all shadow-sm hover:shadow text-xs"
           >
-            <Sparkles className="w-4 h-4 mr-2" />
+            <Sparkles className="w-4 h-4 mr-1.5" />
             Novo por Proposta
           </button>
         </div>
       </div>
-
-      {/* BANNER INTELIGENTE DE ALERTA MENSAL DE FATURAMENTO */}
-      {pendingBillingContracts.length > 0 && (
-        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 rounded-2xl p-5 text-white shadow-md">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-            <div className="flex items-start gap-3.5">
-              <div className="p-3 bg-white/20 backdrop-blur-md rounded-xl shadow-inner">
-                <Bell className="w-6 h-6 text-white animate-bounce" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-lg text-white">
-                    Alerta de Faturamento Mensal — Competência {currentMonthLabel}
-                  </h3>
-                  <span className="px-2.5 py-0.5 bg-white/25 text-white text-xs font-bold rounded-full">
-                    {pendingBillingContracts.length} {pendingBillingContracts.length === 1 ? 'Contrato Pendente' : 'Contratos Pendentes'}
-                  </span>
-                </div>
-                <p className="text-xs text-orange-100 mt-1 max-w-2xl">
-                  Estes contratos ativos ainda não possuem faturas emitidas para este mês. Fature nas datas programadas para garantir seu fluxo de caixa recorrente:
-                </p>
-              </div>
-            </div>
-
-            <div className="text-right flex items-center gap-4">
-              <div className="text-right hidden sm:block">
-                <p className="text-[11px] uppercase tracking-wider text-orange-200 font-semibold">Total a Faturar</p>
-                <p className="text-xl font-black text-white">
-                  {formatCurrency(pendingBillingContracts.reduce((acc, c) => acc + parseFloat(c.total_rental_value || 0), 0))}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Lista rápida com 1-clique para faturar */}
-          <div className="mt-4 pt-3 border-t border-white/20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            {pendingBillingContracts.slice(0, 6).map(c => {
-              const billingDay = c.billing_day || 1;
-              const isToday = currentDay === billingDay;
-              const isLate = currentDay > billingDay;
-
-              return (
-                <div key={c.id} className="bg-white/15 backdrop-blur-md rounded-xl p-3 flex items-center justify-between hover:bg-white/25 transition-all border border-white/10">
-                  <div className="truncate pr-2">
-                    <p className="font-bold text-xs text-white truncate flex items-center gap-1.5">
-                      <span>{c.code}</span>
-                      <span className="text-[11px] font-normal text-orange-100 truncate">• {c.client_name}</span>
-                    </p>
-                    <p className="text-[11px] text-orange-200 mt-0.5">
-                      Fatura dia {billingDay} ({isToday ? 'Hoje' : isLate ? 'Atrasada' : `em ${billingDay - currentDay} dias`}) • {formatCurrency(c.total_rental_value)}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleOpenEmitModal(c)}
-                    className="px-3 py-1.5 bg-white text-orange-700 hover:bg-orange-50 font-bold text-xs rounded-lg shadow transition-transform active:scale-95 whitespace-nowrap"
-                  >
-                    Emitir Fatura
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Cards de Métricas Consolidadas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -742,7 +712,7 @@ export default function Contratos() {
         </div>
       </div>
 
-      {/* Main Card com Tabela */}
+      {/* Main Card com Tabela Organizada */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-6">
         
         {/* Filtros */}
@@ -792,33 +762,37 @@ export default function Contratos() {
           </div>
         </div>
 
-        {/* Tabela de Contratos */}
+        {/* Tabela com Colunas Separadas e Vencimento Dedicado */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-white border-b border-gray-200">
+            <thead className="bg-gray-50/80 border-b border-gray-200 text-gray-500 text-[11px] uppercase tracking-wider font-bold">
               <tr>
-                <th className="px-4 py-3 w-10 text-center" title="Clique para ver faturas emitidas">Faturas</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider">Código</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider">Cliente</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider">Início</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider">Status & Cobrança</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider text-right">Valor Locação</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider text-right">Margem Bruta</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider text-right">Vencimento</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 text-xs tracking-wider text-center">Ações</th>
+                <th className="px-3 py-3 w-8 text-center" title="Clique para ver faturas">Faturas</th>
+                <th className="px-3 py-3">Código</th>
+                <th className="px-4 py-3">Cliente</th>
+                <th className="px-3 py-3">Início</th>
+                <th className="px-3 py-3">Status</th>
+                <th className="px-3 py-3">Parcela</th>
+                <th className="px-3 py-3">Pagamento</th>
+                <th className="px-3 py-3">Quando Fatura</th>
+                <th className="px-4 py-3 bg-red-50/40 text-red-800 border-x border-red-100">Vencimento Fatura</th>
+                <th className="px-3 py-3 text-right">Valor Locação</th>
+                <th className="px-3 py-3 text-right">Margem Bruta</th>
+                <th className="px-3 py-3 text-right">Término Contrato</th>
+                <th className="px-3 py-3 text-center">Ações</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan="9" className="px-4 py-12 text-center text-gray-400">
+                  <td colSpan="13" className="px-4 py-12 text-center text-gray-400">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-500 mb-2" />
                     Carregando contratos...
                   </td>
                 </tr>
               ) : filteredContracts.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="px-4 py-12 text-center text-gray-400">
+                  <td colSpan="13" className="px-4 py-12 text-center text-gray-400">
                     Nenhum contrato encontrado.
                   </td>
                 </tr>
@@ -831,14 +805,15 @@ export default function Contratos() {
                   const margPct = rVal > 0 ? (margVal / rVal) * 100 : 0;
 
                   const ctrInvoices = getContractInvoices(ctr.code);
-                  const isInvoicedThisMonth = checkContractInvoicedThisMonth(ctr);
-                  const isPendingAlert = ctr.status === 'Ativo' && !isInvoicedThisMonth;
+                  const monthInvoice = getMonthInvoice(ctr);
+                  const isPendingInvoice = ctr.status === 'Ativo' && !monthInvoice;
 
                   return (
                     <React.Fragment key={ctr.id}>
-                      <tr className="border-b border-gray-50 hover:bg-gray-50/80 transition-colors bg-white">
-                        {/* Setinha para abrir Faturas Emitidas */}
-                        <td className="px-4 py-4 text-center">
+                      <tr className="hover:bg-gray-50/80 transition-colors bg-white text-xs">
+                        
+                        {/* 1. Setinha Faturas */}
+                        <td className="px-3 py-3.5 text-center">
                           <button 
                             onClick={() => toggleRow(ctr.id)} 
                             className={`p-1.5 rounded-lg transition-all ${
@@ -852,86 +827,107 @@ export default function Contratos() {
                           </button>
                         </td>
 
-                        {/* Código (Abre modal de detalhes ao clicar) */}
-                        <td className="px-4 py-4 font-bold">
+                        {/* 2. Código */}
+                        <td className="px-3 py-3.5 font-bold">
                           <button
                             onClick={() => {
                               setSelectedContractForDetails(ctr);
                               setIsDetailsModalOpen(true);
                             }}
-                            className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 group font-bold"
+                            className="text-blue-600 hover:text-blue-800 hover:underline font-bold"
                             title="Clique para ver dados do contrato"
                           >
-                            <span>{ctr.code}</span>
+                            {ctr.code}
                           </button>
                         </td>
 
-                        {/* Cliente */}
-                        <td className="px-4 py-4 font-semibold text-gray-800 uppercase text-xs">
+                        {/* 3. Cliente */}
+                        <td className="px-4 py-3.5 font-semibold text-gray-900 uppercase">
                           {ctr.client_name}
                         </td>
 
-                        {/* Data de Início */}
-                        <td className="px-4 py-4 text-gray-500 text-xs">
+                        {/* 4. Início */}
+                        <td className="px-3 py-3.5 text-gray-500 whitespace-nowrap">
                           {formatDate(ctr.start_date)}
                         </td>
 
-                        {/* Status & Cobrança */}
-                        <td className="px-4 py-4">
-                          <div className="flex flex-col gap-1 items-start">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
-                                ctr.status === 'Ativo' ? 'bg-green-100 text-green-800' :
-                                ctr.status === 'Reserva' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-gray-100 text-gray-700'
-                              }`}>
-                                {ctr.status}
-                              </span>
-
-                              {ctr.payment_method && (
-                                <span className="px-2 py-0.5 text-[11px] font-medium bg-slate-100 text-slate-700 rounded-md">
-                                  {ctr.payment_method}
-                                </span>
-                              )}
-
-                              {ctr.total_installments && (
-                                <span className="px-2 py-0.5 text-[11px] font-bold bg-blue-50 text-blue-700 rounded-md border border-blue-200">
-                                  {ctr.current_installment || 1}/{ctr.total_installments}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Badge de Alerta de Faturamento deste mês */}
-                            {isPendingAlert && (
-                              <button
-                                onClick={() => handleOpenEmitModal(ctr)}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 transition-colors cursor-pointer mt-0.5"
-                                title="Fatura do mês ainda não emitida. Clique para emitir."
-                              >
-                                <Bell className="w-2.5 h-2.5 text-amber-600" />
-                                Faturar (Dia {ctr.billing_day || '-'})
-                              </button>
-                            )}
-                          </div>
+                        {/* 5. Status Limpo */}
+                        <td className="px-3 py-3.5">
+                          <span className={`px-2.5 py-1 text-[11px] font-semibold rounded-full ${
+                            ctr.status === 'Ativo' ? 'bg-green-100 text-green-800' :
+                            ctr.status === 'Reserva' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {ctr.status}
+                          </span>
                         </td>
 
-                        {/* Valor Mensal */}
-                        <td className="px-4 py-4 text-right text-blue-600 font-bold">
+                        {/* 6. Parcela */}
+                        <td className="px-3 py-3.5 font-bold text-gray-700 whitespace-nowrap">
+                          {ctr.current_installment || 1} / {ctr.total_installments || 12}
+                        </td>
+
+                        {/* 7. Forma de Pagamento */}
+                        <td className="px-3 py-3.5 text-gray-600 whitespace-nowrap">
+                          <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-[11px] font-medium">
+                            {ctr.payment_method || 'Boleto'}
+                          </span>
+                        </td>
+
+                        {/* 8. Quando Fatura */}
+                        <td className="px-3 py-3.5 text-gray-700 whitespace-nowrap font-medium">
+                          Todo dia {ctr.billing_day || '-'}
+                        </td>
+
+                        {/* 9. VENCIMENTO DA FATURA (COLUNA SEPARADA COM ALERTA EM VERMELHO!) */}
+                        <td className="px-4 py-3.5 bg-red-50/20 border-x border-red-100 whitespace-nowrap">
+                          {isPendingInvoice ? (
+                            <div className="flex flex-col items-start gap-1">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-red-100 text-red-700 border border-red-300 shadow-sm animate-pulse">
+                                <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                                Pendente (Vence dia {ctr.due_day || 15})
+                              </span>
+                              <button
+                                onClick={() => handleOpenEmitModal(ctr)}
+                                className="text-[10px] font-bold text-red-600 hover:text-red-800 underline ml-1"
+                              >
+                                + Emitir Fatura
+                              </button>
+                            </div>
+                          ) : monthInvoice ? (
+                            <div className="flex flex-col items-start gap-0.5">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold ${
+                                monthInvoice.status === 'Paga' 
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                                  : 'bg-blue-100 text-blue-800 border border-blue-200'
+                              }`}>
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                {formatDate(monthInvoice.due_date)} ({monthInvoice.status})
+                              </span>
+                              <span className="text-[10px] text-gray-400 ml-1">#FAT-{monthInvoice.id}</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 font-medium">Dia {ctr.due_day || '-'}</span>
+                          )}
+                        </td>
+
+                        {/* 10. Valor Locação */}
+                        <td className="px-3 py-3.5 text-right text-blue-600 font-bold whitespace-nowrap">
                           {formatCurrency(ctr.total_rental_value)}
                         </td>
 
-                        {/* Margem Bruta */}
-                        <td className={`px-4 py-4 text-right font-bold ${margVal >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                          {formatCurrency(margVal)} <span className="text-xs font-semibold">({margPct.toFixed(0)}%)</span>
+                        {/* 11. Margem Bruta */}
+                        <td className={`px-3 py-3.5 text-right font-bold whitespace-nowrap ${margVal >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                          {formatCurrency(margVal)} <span className="text-[10px] font-semibold">({margPct.toFixed(0)}%)</span>
                         </td>
 
-                        {/* Vencimento do Contrato */}
-                        <td className="px-4 py-4 text-right font-medium text-gray-700 text-xs">
+                        {/* 12. Término Contrato */}
+                        <td className="px-3 py-3.5 text-right font-medium text-gray-700 whitespace-nowrap">
                           {formatDate(ctr.expiry_date)}
                         </td>
 
-                        {/* Ações */}
-                        <td className="px-4 py-4 text-center">
+                        {/* 13. Ações */}
+                        <td className="px-3 py-3.5 text-center">
                           <div className="flex justify-center items-center space-x-1">
                             {/* Ver Dados do Contrato (Modal) */}
                             <button
@@ -959,7 +955,7 @@ export default function Contratos() {
                               )}
                             </button>
 
-                            {/* Status actions */}
+                            {/* Ativar / Encerrar */}
                             {ctr.status === 'Reserva' && (
                               <button 
                                 onClick={() => handleUpdateStatus(ctr.id, 'Ativo')}
@@ -1000,10 +996,10 @@ export default function Contratos() {
                         </td>
                       </tr>
                       
-                      {/* LINHA EXPANDIDA: FATURAS EMITIDAS (Substituindo o antigo bloco de equipamentos) */}
+                      {/* LINHA EXPANDIDA: FATURAS EMITIDAS */}
                       {expandedRows[ctr.id] && (
                         <tr className="bg-slate-50/70 border-b border-gray-200">
-                          <td colSpan="9" className="px-6 py-5">
+                          <td colSpan="13" className="px-6 py-5">
                             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                               
                               {/* Header da Expansão */}
@@ -1050,12 +1046,12 @@ export default function Contratos() {
                               {/* Tabela de Faturas Emitidas */}
                               <div className="overflow-x-auto">
                                 {ctrInvoices.length === 0 ? (
-                                  <div className="py-10 text-center px-4">
+                                  <div className="py-8 text-center px-4">
                                     <p className="text-sm font-medium text-gray-600">Nenhuma fatura emitida ainda para este contrato.</p>
                                     <p className="text-xs text-gray-400 mt-1">Gere a primeira fatura mensal para iniciar o controle de cobranças e faturamento.</p>
                                     <button
                                       onClick={() => handleOpenEmitModal(ctr)}
-                                      className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95"
+                                      className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95"
                                     >
                                       <Plus className="w-4 h-4" />
                                       Emitir Primeira Fatura
