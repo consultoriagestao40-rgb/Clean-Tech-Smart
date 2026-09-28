@@ -48,6 +48,9 @@ export default async function handler(req, res) {
           st.technician_name,
           st.resolution_notes,
           st.evidence_photos,
+          st.client_signature,
+          st.signed_by_name,
+          st.signed_by_document,
           st.closed_at,
           st.created_at,
           st.updated_at,
@@ -59,6 +62,7 @@ export default async function handler(req, res) {
           e.model as equipment_model,
           e.serial_number as equipment_serial_number,
           COALESCE(t.name, st.technician_name) as assigned_technician,
+          t.phone as technician_phone,
           b.grand_total as budget_grand_total,
           b.total_parts as budget_total_parts,
           b.total_labor as budget_total_labor,
@@ -160,7 +164,14 @@ export default async function handler(req, res) {
       const tPriority = priority || 'Média';
       const tDesc = description?.trim() || '';
       const hMeter = hour_meter ? parseInt(hour_meter, 10) : null;
-      const photos = evidence_photos ? JSON.stringify(evidence_photos) : null;
+      let photos = null;
+      if (evidence_photos) {
+        if (Array.isArray(evidence_photos)) {
+          photos = evidence_photos.filter(Boolean).join('\n');
+        } else if (typeof evidence_photos === 'string') {
+          photos = evidence_photos.trim();
+        }
+      }
 
       const insertTicketRes = await dbClient.query(`
         INSERT INTO service_tickets (

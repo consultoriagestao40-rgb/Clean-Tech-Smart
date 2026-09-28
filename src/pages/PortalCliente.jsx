@@ -30,7 +30,12 @@ import {
   Camera,
   Trash2,
   Lock,
-  ArrowRight
+  ArrowRight,
+  Printer,
+  Play,
+  Video,
+  Download,
+  Image as ImageIcon
 } from 'lucide-react';
 
 // WhatsApp SVG Icon
@@ -202,6 +207,12 @@ export default function PortalCliente() {
   const [equipmentHistoryData, setEquipmentHistoryData] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState('');
+
+  // Ticket Detail View & Media Lightbox
+  const [selectedTicketDetail, setSelectedTicketDetail] = useState(null);
+  const [activeMediaLightbox, setActiveMediaLightbox] = useState(null);
+  const [ticketMediaFiles, setTicketMediaFiles] = useState([]);
+  const [compressingMedia, setCompressingMedia] = useState(false);
 
   // Tickets & Data
   const [tickets, setTickets] = useState([]);
@@ -432,7 +443,10 @@ export default function PortalCliente() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${clientToken}`
         },
-        body: JSON.stringify(ticketForm)
+        body: JSON.stringify({
+          ...ticketForm,
+          evidence_photos: ticketMediaFiles
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao abrir chamado.');
@@ -442,6 +456,7 @@ export default function PortalCliente() {
 
       alert(`Chamado aberto com sucesso! Protocolo #${data.ticket.id}. Nossa equipe técnica foi notificada.`);
       setShowNewTicketModal(false);
+      setTicketMediaFiles([]);
       setTicketForm({
         equipment_id: '',
         new_equipment_model: '',
@@ -452,6 +467,7 @@ export default function PortalCliente() {
         description: '',
         hour_meter: ''
       });
+      setActiveTab('chamados');
       fetchTicketsAndMetrics();
       fetchEquipments();
     } catch (err) {
@@ -459,6 +475,252 @@ export default function PortalCliente() {
     } finally {
       setTicketSubmitting(false);
     }
+  };
+
+  const handleMediaUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setCompressingMedia(true);
+    let processedCount = 0;
+
+    files.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const MAX_DIM = 1200;
+
+            if (width > height) {
+              if (width > MAX_DIM) {
+                height = Math.round((height * MAX_DIM) / width);
+                width = MAX_DIM;
+              }
+            } else {
+              if (height > MAX_DIM) {
+                width = Math.round((width * MAX_DIM) / height);
+                height = MAX_DIM;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            setTicketMediaFiles(prev => [...prev, compressedBase64]);
+            processedCount++;
+            if (processedCount === files.length) setCompressingMedia(false);
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type.startsWith('video/')) {
+        if (file.size > 4.5 * 1024 * 1024) {
+          alert(`O vídeo "${file.name}" ultrapassa 4MB. Por favor, grave um vídeo mais curto ou envie pelo WhatsApp.`);
+          processedCount++;
+          if (processedCount === files.length) setCompressingMedia(false);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setTicketMediaFiles(prev => [...prev, event.target.result]);
+          processedCount++;
+          if (processedCount === files.length) setCompressingMedia(false);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        processedCount++;
+        if (processedCount === files.length) setCompressingMedia(false);
+      }
+    });
+  };
+
+  const handleRemoveMedia = (idx) => {
+    setTicketMediaFiles(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const parseTicketMedia = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.filter(Boolean);
+    if (typeof raw !== 'string') return [];
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      } catch (e) {}
+    }
+    return trimmed.split('\n').map(s => s.trim()).filter(Boolean);
+  };
+
+  const isVideoMedia = (url) => {
+    if (!url) return false;
+    if (typeof url !== 'string') return false;
+    if (url.startsWith('data:video/')) return true;
+    return /\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i.test(url);
+  };
+
+  const handlePrintTicketReport = (ticket) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Por favor, autorize pop-ups no navegador para emitir o relatório de impressão.');
+      return;
+    }
+    const mediaList = parseTicketMedia(ticket.evidence_photos);
+    const mediaImages = mediaList.filter(m => !isVideoMedia(m));
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Ordem de Serviço #${ticket.id} - Clean Tech Pro</title>
+          <style>
+            @page { size: A4; margin: 12mm; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1e293b; margin: 0; padding: 20px; font-size: 13px; line-height: 1.5; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #007481; padding-bottom: 15px; margin-bottom: 20px; }
+            .header h1 { font-size: 20px; margin: 0; color: #007481; }
+            .header p { margin: 2px 0; color: #64748b; font-size: 11px; }
+            .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: bold; background: #e0f2fe; color: #0369a1; text-transform: uppercase; }
+            .section { margin-bottom: 16px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; }
+            .section-title { font-size: 12px; font-weight: bold; text-transform: uppercase; color: #007481; margin-bottom: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; }
+            .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .field-label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+            .field-value { font-size: 13px; color: #0f172a; font-weight: 500; }
+            .notes-box { background: #f8fafc; border-left: 3px solid #007481; padding: 10px; border-radius: 4px; margin-top: 5px; font-size: 12px; white-space: pre-line; }
+            .photos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+            .photo-thumb { width: 100%; height: 150px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; }
+            .signature-box { margin-top: 25px; display: flex; justify-content: space-between; align-items: flex-end; }
+            .signature-line { width: 45%; text-align: center; border-top: 1px solid #94a3b8; padding-top: 5px; font-size: 11px; color: #475569; }
+            .signature-img { max-height: 60px; max-width: 180px; display: block; margin: 0 auto 5px auto; }
+            @media print {
+              body { padding: 0; }
+              button { display: none !important; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <h1>CLEAN TECH PRO • AUTORIZADA TENNANT</h1>
+              <p>Relatório Técnico & Histórico de Atendimento • Chamado #${ticket.id}</p>
+              <p>Representante & Assistência Técnica Autorizada Tennant - Curitiba & Região</p>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge">${ticket.status || 'Aberto'}</span>
+              <p style="margin-top: 6px;">Emissão: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Dados do Cliente</div>
+            <div class="grid">
+              <div>
+                <div class="field-label">Empresa / Razão Social:</div>
+                <div class="field-value">${clientData?.razao_social || clientData?.name || 'Cliente Cadastrado'}</div>
+              </div>
+              <div>
+                <div class="field-label">Contato / Telefone:</div>
+                <div class="field-value">${clientData?.phone || '-'} • ${clientData?.email || '-'}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Equipamento Objeto do Chamado</div>
+            <div class="grid">
+              <div>
+                <div class="field-label">Modelo do Equipamento:</div>
+                <div class="field-value">${ticket.equipment_brand || 'Tennant'} ${ticket.equipment_model || 'Não especificado'}</div>
+              </div>
+              <div>
+                <div class="field-label">Chassi / Número de Série:</div>
+                <div class="field-value">${ticket.equipment_serial_number || 'S/N'}</div>
+              </div>
+              <div>
+                <div class="field-label">Horímetro Informado:</div>
+                <div class="field-value">${ticket.hour_meter ? `${ticket.hour_meter} h` : 'Não registrado'}</div>
+              </div>
+              <div>
+                <div class="field-label">Tipo de Atendimento:</div>
+                <div class="field-value">${ticket.ticket_type} (Prioridade: ${ticket.priority})</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Relato do Cliente na Abertura</div>
+            <div class="notes-box">${ticket.description || 'Sem descrição.'}</div>
+            <p style="font-size: 11px; color: #64748b; margin-top: 4px;">Data de Abertura: ${new Date(ticket.created_at).toLocaleString('pt-BR')}</p>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Parecer Técnico & Resolução</div>
+            <div class="grid" style="margin-bottom: 8px;">
+              <div>
+                <div class="field-label">Técnico Responsável:</div>
+                <div class="field-value">${ticket.assigned_technician || 'Técnico Especialista Clean Tech Pro'}</div>
+              </div>
+              <div>
+                <div class="field-label">Data de Conclusão:</div>
+                <div class="field-value">${ticket.closed_at ? new Date(ticket.closed_at).toLocaleString('pt-BR') : (ticket.scheduled_date ? `Agendado para ${new Date(ticket.scheduled_date).toLocaleDateString('pt-BR')}` : 'Em atendimento')}</div>
+              </div>
+            </div>
+            <div class="field-label">Laudo Técnico Executado:</div>
+            <div class="notes-box">
+              ${ticket.resolution_notes || (ticket.status?.toLowerCase().includes('conclu') ? 'Atendimento finalizado com testes operacionais de funcionamento.' : 'Atendimento em processo pela assistência técnica autorizada.')}
+            </div>
+
+            ${ticket.budget_grand_total ? `
+              <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; font-size: 12px;">
+                <span>Peças: <strong>${formatCurrency(ticket.budget_total_parts || 0)}</strong></span>
+                <span>Mão de Obra: <strong>${formatCurrency(ticket.budget_total_labor || 0)}</strong></span>
+                <span style="font-size: 14px; color: #007481;">Total Geral: <strong>${formatCurrency(ticket.budget_grand_total)}</strong></span>
+              </div>
+            ` : ''}
+          </div>
+
+          ${mediaImages.length > 0 ? `
+            <div class="section" style="page-break-inside: avoid;">
+              <div class="section-title">Evidências Fotográficas do Atendimento (${mediaImages.length} fotos)</div>
+              <div class="photos-grid">
+                ${mediaImages.slice(0, 6).map(img => `<img src="${img}" class="photo-thumb" />`).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <div class="signature-box" style="page-break-inside: avoid;">
+            <div class="signature-line">
+              <div style="height: 40px; display: flex; align-items: flex-end; justify-content: center; font-weight: bold; color: #007481;">
+                ${ticket.assigned_technician || 'Técnico Autorizado'}
+              </div>
+              Assinatura do Técnico
+            </div>
+            <div class="signature-line">
+              ${ticket.client_signature ? `<img src="${ticket.client_signature}" class="signature-img" />` : '<div style="height: 40px;"></div>'}
+              ${ticket.signed_by_name || 'Responsável pelo Recebimento'} ${ticket.signed_by_document ? `(Doc: ${ticket.signed_by_document})` : ''}
+              <br>Assinatura do Recebedor
+            </div>
+          </div>
+
+          <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+            Clean Tech Pro • Assistência Técnica Autorizada Tennant • WhatsApp: (41) 98508-3658
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const handleCreateEquipment = async (e) => {
@@ -899,19 +1161,21 @@ export default function PortalCliente() {
                       {filteredTickets.map(ticket => {
                         const isCompleted = (ticket.status || '').toLowerCase().includes('conclu');
                         const isUrgent = (ticket.priority || '').toLowerCase() === 'urgente' || (ticket.priority || '').toLowerCase() === 'alta';
+                        const mediaCount = parseTicketMedia(ticket.evidence_photos).length;
                         
                         return (
                           <div 
                             key={ticket.id} 
-                            className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all"
+                            onClick={() => setSelectedTicketDetail(ticket)}
+                            className="bg-white border border-slate-200 hover:border-[#007481] rounded-2xl p-5 shadow-xs hover:shadow-lg transition-all cursor-pointer group relative"
                           >
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                               <div className="flex items-center gap-3">
-                                <span className="bg-teal-50 border border-teal-200 text-[#007481] font-black px-2.5 py-1 rounded-lg text-xs">
+                                <span className="bg-teal-50 border border-teal-200 text-[#007481] font-black px-2.5 py-1 rounded-lg text-xs group-hover:bg-[#007481] group-hover:text-white transition-colors">
                                   #{ticket.id}
                                 </span>
                                 <div>
-                                  <h4 className="font-extrabold text-slate-900 text-base">
+                                  <h4 className="font-extrabold text-slate-900 text-base group-hover:text-[#007481] transition-colors">
                                     {ticket.equipment_model || 'Equipamento Tennant'}
                                   </h4>
                                   <div className="text-xs text-slate-500">
@@ -941,6 +1205,25 @@ export default function PortalCliente() {
                             {/* Descrição do Chamado */}
                             <div className="py-3 text-sm text-slate-700 leading-relaxed">
                               {ticket.description}
+                            </div>
+
+                            {/* Badges de Evidências (Fotos/Vídeos) e Parecer Técnico */}
+                            <div className="flex items-center gap-2 flex-wrap mb-3">
+                              {mediaCount > 0 && (
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-lg">
+                                  <Camera className="w-3.5 h-3.5 text-sky-600" /> {mediaCount} Foto(s)/Vídeo(s)
+                                </span>
+                              )}
+                              {ticket.resolution_notes && (
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Laudo Técnico Disponível
+                                </span>
+                              )}
+                              {ticket.hour_meter && (
+                                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-lg">
+                                  <Clock className="w-3.5 h-3.5 text-slate-500" /> Horímetro: {ticket.hour_meter} h
+                                </span>
+                              )}
                             </div>
 
                             {/* Detalhes Técnicos (Técnico e Data Agendada) */}
@@ -981,15 +1264,27 @@ export default function PortalCliente() {
                               </div>
                             ) : null}
 
-                            {/* Botão de Ação Rápida WhatsApp */}
-                            <div className="pt-2 flex justify-end">
+                            {/* Rodapé do Card com Ações */}
+                            <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedTicketDetail(ticket);
+                                }}
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs font-bold text-white bg-[#007481] hover:bg-[#005d68] px-4 py-2 rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5" /> Ver Detalhes & Histórico do Chamado
+                              </button>
+
                               <a
                                 href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Olá! Gostaria de informações sobre o meu chamado #${ticket.id} (${ticket.equipment_model || 'Tennant'}).`)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-xl transition-colors cursor-pointer"
                               >
-                                <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-600" /> Falar com Técnico sobre Chamado #{ticket.id}
+                                <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-600" /> Falar com Suporte Técnico
                               </a>
                             </div>
                           </div>
@@ -2074,6 +2369,63 @@ export default function PortalCliente() {
                 />
               </div>
 
+              {/* Anexos de Fotos e Vídeos (Galeria / Câmera) */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Fotos e Vídeos da Máquina (Opcional)
+                </label>
+                <label className="flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 hover:border-[#007481] bg-slate-50 hover:bg-slate-100 rounded-xl py-2.5 px-4 text-xs font-bold text-slate-600 hover:text-[#007481] cursor-pointer transition-all">
+                  <Camera className="w-4 h-4 text-[#007481]" />
+                  <span>Anexar da Galeria ou Câmera / Vídeo</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={handleMediaUpload}
+                    className="hidden"
+                  />
+                </label>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Aceita fotos e vídeos curtos (até 4MB) para auxiliar no diagnóstico prévio da assistência técnica.
+                </p>
+
+                {compressingMedia && (
+                  <div className="flex items-center gap-2 text-xs text-[#007481] mt-1.5 font-medium animate-pulse">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Otimizando mídias para envio...
+                  </div>
+                )}
+
+                {ticketMediaFiles.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 mt-2">
+                    {ticketMediaFiles.map((media, idx) => {
+                      const isVid = isVideoMedia(media);
+                      return (
+                        <div key={idx} className="relative group rounded-lg overflow-hidden border border-slate-200 aspect-square bg-slate-900">
+                          {isVid ? (
+                            <video src={media} className="w-full h-full object-cover" />
+                          ) : (
+                            <img src={media} alt={`Anexo ${idx + 1}`} className="w-full h-full object-cover" />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMedia(idx)}
+                            className="absolute top-1 right-1 bg-black/70 hover:bg-rose-600 text-white p-1 rounded-full text-[10px] transition-colors cursor-pointer"
+                            title="Remover anexo"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          {isVid && (
+                            <span className="absolute bottom-1 left-1 bg-black/80 text-white text-[8px] font-black px-1 rounded flex items-center gap-0.5">
+                              <Video className="w-2.5 h-2.5" /> VÍDEO
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               <button
                 type="submit"
                 disabled={ticketSubmitting}
@@ -2388,6 +2740,366 @@ export default function PortalCliente() {
                 </>
               ) : null}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 📋 MODAL DE DETALHES COMPLETOS DO CHAMADO & HISTÓRICO / RELATÓRIO          */}
+      {/* ========================================================================= */}
+      {selectedTicketDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full p-5 sm:p-8 shadow-2xl relative my-6 max-h-[92vh] flex flex-col text-slate-900">
+            
+            {/* Cabeçalho do Modal */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="bg-[#007481] text-white font-black text-xs px-2.5 py-0.5 rounded-md">
+                    Chamado #{selectedTicketDetail.id}
+                  </span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                    (selectedTicketDetail.status || '').toLowerCase().includes('conclu')
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      : 'bg-amber-100 text-amber-800 border border-amber-200'
+                  }`}>
+                    {selectedTicketDetail.status || 'Aberto'}
+                  </span>
+                  <span className="bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full text-xs font-medium border border-slate-200">
+                    {selectedTicketDetail.ticket_type}
+                  </span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900">
+                  {selectedTicketDetail.equipment_brand || 'Tennant'} {selectedTicketDetail.equipment_model || 'Equipamento'}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Chassi/Série: <strong className="text-slate-800">{selectedTicketDetail.equipment_serial_number || 'S/N'}</strong> • Aberto em {new Date(selectedTicketDetail.created_at).toLocaleString('pt-BR')}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 self-end sm:self-center">
+                <button
+                  type="button"
+                  onClick={() => handlePrintTicketReport(selectedTicketDetail)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  title="Imprimir ou Salvar Relatório Técnico em PDF"
+                >
+                  <Printer className="w-4 h-4 text-[#007481]" /> Imprimir Relatório / OS
+                </button>
+                <button
+                  onClick={() => setSelectedTicketDetail(null)}
+                  className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Conteúdo com Scroll */}
+            <div className="overflow-y-auto py-5 space-y-6 pr-1 text-slate-800">
+              
+              {/* =============================================================== */}
+              {/* 🕒 LINHA DO TEMPO COMPLETA DE TUDO QUE ACONTECEU NO CHAMADO      */}
+              {/* =============================================================== */}
+              <div>
+                <h4 className="text-xs font-black uppercase text-[#007481] tracking-wider mb-4 flex items-center gap-2">
+                  <Clock className="w-4 h-4" /> Linha do Tempo & Histórico do Atendimento
+                </h4>
+
+                <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                  
+                  {/* Etapa 1: Abertura do Chamado */}
+                  <div className="relative">
+                    <div className="absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full bg-teal-100 border-2 border-[#007481] flex items-center justify-center text-[#007481]">
+                      <Check className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                        <span className="font-extrabold text-sm text-slate-900">1. Chamado Aberto pelo Cliente</span>
+                        <span className="text-[11px] text-slate-500 font-medium">
+                          {new Date(selectedTicketDetail.created_at).toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+                        <div>
+                          <span className="text-slate-500 font-semibold">Relato / Descrição da Solicitação:</span>
+                          <p className="text-slate-800 mt-0.5 font-medium leading-relaxed">
+                            {selectedTicketDetail.description || 'Sem descrição informada.'}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-4 pt-1 text-[11px] text-slate-600 border-t border-slate-200">
+                          <span>Prioridade: <strong className="text-slate-900">{selectedTicketDetail.priority}</strong></span>
+                          <span>Horímetro: <strong className="text-slate-900">{selectedTicketDetail.hour_meter ? `${selectedTicketDetail.hour_meter} h` : 'Não informado'}</strong></span>
+                          <span>Origem: <strong className="text-slate-900">Portal do Cliente</strong></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Etapa 2: Atribuição Técnica & Agendamento */}
+                  <div className="relative">
+                    <div className={`absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      selectedTicketDetail.assigned_technician
+                        ? 'bg-teal-100 border-[#007481] text-[#007481]'
+                        : 'bg-slate-100 border-slate-300 text-slate-400'
+                    }`}>
+                      <User className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                        <span className="font-extrabold text-sm text-slate-900">2. Triagem & Agendamento Técnico</span>
+                        {selectedTicketDetail.scheduled_date && (
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            Agendado para: {new Date(selectedTicketDetail.scheduled_date).toLocaleDateString('pt-BR')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <span className="text-slate-500">Técnico Especialista Designado:</span>
+                            <div className="text-sm font-bold text-slate-900 mt-0.5">
+                              {selectedTicketDetail.assigned_technician || 'Em definição pela central de assistência'}
+                            </div>
+                          </div>
+                          {selectedTicketDetail.assigned_technician && (
+                            <a
+                              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Olá! Gostaria de falar sobre o atendimento do técnico ${selectedTicketDetail.assigned_technician} no chamado #${selectedTicketDetail.id}.`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-lg border border-emerald-200 transition-colors w-fit"
+                            >
+                              <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-600" /> Contato Direto
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Etapa 3: Orçamento e Peças (se houver proposta vinculada) */}
+                  {selectedTicketDetail.budget_grand_total ? (
+                    <div className="relative">
+                      <div className="absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full bg-emerald-100 border-2 border-emerald-600 flex items-center justify-center text-emerald-600">
+                        <DollarSign className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                          <span className="font-extrabold text-sm text-slate-900">3. Proposta & Peças Vinculadas</span>
+                          <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            Status: {selectedTicketDetail.budget_status || 'Aprovado'}
+                          </span>
+                        </div>
+                        <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 text-xs space-y-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
+                            <div className="bg-white p-2 rounded-lg border border-emerald-100">
+                              <span className="text-slate-500 text-[10px] uppercase font-bold block">Peças / Insumos</span>
+                              <span className="font-extrabold text-slate-900">{formatCurrency(selectedTicketDetail.budget_total_parts || 0)}</span>
+                            </div>
+                            <div className="bg-white p-2 rounded-lg border border-emerald-100">
+                              <span className="text-slate-500 text-[10px] uppercase font-bold block">Mão de Obra Técnica</span>
+                              <span className="font-extrabold text-slate-900">{formatCurrency(selectedTicketDetail.budget_total_labor || 0)}</span>
+                            </div>
+                            <div className="bg-white p-2 rounded-lg border border-emerald-200">
+                              <span className="text-emerald-700 text-[10px] uppercase font-black block">Investimento Total</span>
+                              <span className="font-black text-emerald-700 text-sm">{formatCurrency(selectedTicketDetail.budget_grand_total)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Etapa 4: Conclusão & Laudo Técnico */}
+                  <div className="relative">
+                    <div className={`absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      (selectedTicketDetail.status || '').toLowerCase().includes('conclu')
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                        : 'bg-slate-100 border-slate-300 text-slate-400'
+                    }`}>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+                        <span className="font-extrabold text-sm text-slate-900">
+                          {(selectedTicketDetail.status || '').toLowerCase().includes('conclu')
+                            ? '4. Atendimento Concluído & Laudo Técnico'
+                            : '4. Execução Técnica & Fechamento'}
+                        </span>
+                        {selectedTicketDetail.closed_at && (
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            Concluído em: {new Date(selectedTicketDetail.closed_at).toLocaleString('pt-BR')}
+                          </span>
+                        )}
+                      </div>
+
+                      {(selectedTicketDetail.status || '').toLowerCase().includes('conclu') ? (
+                        <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 text-xs space-y-3">
+                          <div>
+                            <span className="text-emerald-900 font-bold uppercase text-[10px] tracking-wider block mb-1">
+                              Laudo Técnico de Execução / Resolução:
+                            </span>
+                            <div className="bg-white p-3 rounded-lg border border-emerald-200 text-slate-800 font-medium leading-relaxed whitespace-pre-line">
+                              {selectedTicketDetail.resolution_notes || 'Atendimento técnico finalizado com testes operacionais de funcionamento do equipamento.'}
+                            </div>
+                          </div>
+
+                          {(selectedTicketDetail.signed_by_name || selectedTicketDetail.client_signature) && (
+                            <div className="pt-2 border-t border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <div>
+                                <span className="text-[10px] uppercase font-bold text-slate-500 block">Comprovante de Recebimento no Local:</span>
+                                <div className="font-bold text-slate-800">
+                                  {selectedTicketDetail.signed_by_name || 'Responsável'} {selectedTicketDetail.signed_by_document ? `(Doc: ${selectedTicketDetail.signed_by_document})` : ''}
+                                </div>
+                              </div>
+                              {selectedTicketDetail.client_signature && (
+                                <div className="text-right">
+                                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">Assinatura Digital Coletada:</span>
+                                  <img 
+                                    src={selectedTicketDetail.client_signature} 
+                                    alt="Assinatura do Recebedor" 
+                                    className="h-12 border border-slate-200 rounded-lg p-1 bg-white inline-block shadow-2xs"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-500 italic">
+                          O atendimento ainda está em andamento. O laudo técnico com o parecer completo do especialista e o comprovante de assinatura serão publicados aqui assim que o serviço for concluído.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* =============================================================== */}
+              {/* 📸 GALERIA DE FOTOS E VÍDEOS (DO CLIENTE E DOS TÉCNICOS)        */}
+              {/* =============================================================== */}
+              <div className="pt-4 border-t border-slate-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-black uppercase text-[#007481] tracking-wider flex items-center gap-2">
+                    <Camera className="w-4 h-4" /> Fotos e Vídeos do Atendimento ({parseTicketMedia(selectedTicketDetail.evidence_photos).length})
+                  </h4>
+                  <span className="text-[11px] text-slate-500">
+                    Clique na mídia para visualizar em tela cheia
+                  </span>
+                </div>
+
+                {parseTicketMedia(selectedTicketDetail.evidence_photos).length === 0 ? (
+                  <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-500">
+                    <Camera className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                    Nenhuma foto ou vídeo anexado a este chamado.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {parseTicketMedia(selectedTicketDetail.evidence_photos).map((media, idx) => {
+                      const isVid = isVideoMedia(media);
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => setActiveMediaLightbox(media)}
+                          className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square bg-slate-900 cursor-pointer shadow-xs hover:shadow-md transition-all hover:scale-[1.02]"
+                        >
+                          {isVid ? (
+                            <div className="w-full h-full relative flex items-center justify-center bg-slate-950">
+                              <video src={media} className="w-full h-full object-cover opacity-80" />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-colors">
+                                <div className="w-10 h-10 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                  <Play className="w-5 h-5 ml-0.5 fill-current" />
+                                </div>
+                              </div>
+                              <span className="absolute bottom-1.5 left-1.5 bg-black/80 text-white text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <Video className="w-3 h-3" /> VÍDEO
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="w-full h-full relative">
+                              <img src={media} alt={`Evidência ${idx + 1}`} className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <Eye className="w-6 h-6 text-white drop-shadow" />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Rodapé do Modal */}
+            <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => handlePrintTicketReport(selectedTicketDetail)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer"
+              >
+                <Printer className="w-4 h-4" /> Imprimir Relatório Oficial
+              </button>
+
+              <div className="w-full sm:w-auto flex items-center gap-2">
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Olá! Gostaria de falar sobre o meu chamado #${selectedTicketDetail.id} (${selectedTicketDetail.equipment_model || 'Tennant'}).`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer"
+                >
+                  <WhatsAppIcon className="w-4 h-4 text-white" /> WhatsApp Suporte
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTicketDetail(null)}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 🔍 LIGHTBOX PARA FOTOS E VÍDEOS EM TELA CHEIA                             */}
+      {/* ========================================================================= */}
+      {activeMediaLightbox && (
+        <div 
+          onClick={() => setActiveMediaLightbox(null)}
+          className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            className="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center"
+          >
+            <button
+              onClick={() => setActiveMediaLightbox(null)}
+              className="absolute -top-10 right-0 text-white/80 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+              title="Fechar tela cheia"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {isVideoMedia(activeMediaLightbox) ? (
+              <video 
+                src={activeMediaLightbox} 
+                controls 
+                autoPlay 
+                className="max-h-[85vh] max-w-[90vw] rounded-2xl shadow-2xl bg-black"
+              />
+            ) : (
+              <img 
+                src={activeMediaLightbox} 
+                alt="Evidência ampliada" 
+                className="max-h-[85vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl"
+              />
+            )}
           </div>
         </div>
       )}
