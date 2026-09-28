@@ -35,7 +35,11 @@ import {
   Play,
   Video,
   Download,
-  Image as ImageIcon
+  Image as ImageIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ChevronLeft,
+  BarChart3
 } from 'lucide-react';
 
 // WhatsApp SVG Icon
@@ -195,6 +199,17 @@ export default function PortalCliente() {
 
   // Navigation State inside authenticated portal
   const [activeTab, setActiveTab] = useState('chamados'); // 'chamados' | 'equipamentos' | 'usuarios'
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('portal_sidebar_collapsed') === 'true';
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('portal_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   // Modals
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -227,6 +242,8 @@ export default function PortalCliente() {
   const [loadingData, setLoadingData] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [equipmentSearchQuery, setEquipmentSearchQuery] = useState('');
+  const [equipmentOwnershipFilter, setEquipmentOwnershipFilter] = useState('todos');
 
   // Form States - Login
   const [loginForm, setLoginForm] = useState({ login: '', password: '' });
@@ -874,6 +891,37 @@ export default function PortalCliente() {
     });
   }, [tickets, searchQuery, statusFilter]);
 
+  const filteredEquipments = useMemo(() => {
+    return equipments.filter(eq => {
+      const q = equipmentSearchQuery.toLowerCase().trim();
+      const matchSearch = !q ||
+        (eq.model || eq.name || '').toLowerCase().includes(q) ||
+        (eq.serial_number || '').toLowerCase().includes(q) ||
+        (eq.brand || '').toLowerCase().includes(q) ||
+        (eq.ownership_type || '').toLowerCase().includes(q);
+
+      if (!matchSearch) return false;
+
+      if (equipmentOwnershipFilter !== 'todos') {
+        const own = (eq.ownership_type || '').toLowerCase();
+        return own.includes(equipmentOwnershipFilter.toLowerCase());
+      }
+      return true;
+    });
+  }, [equipments, equipmentSearchQuery, equipmentOwnershipFilter]);
+
+  const handleOpenTicketForEquipment = (eq, e) => {
+    if (e) e.stopPropagation();
+    setTicketForm(prev => ({
+      ...prev,
+      equipment_id: String(eq.id),
+      new_equipment_model: eq.model || eq.name || '',
+      new_equipment_brand: eq.brand || 'Tennant',
+      new_equipment_serial: eq.serial_number || ''
+    }));
+    setShowNewTicketModal(true);
+  };
+
   const formatCurrency = (val) => {
     return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
@@ -885,7 +933,7 @@ export default function PortalCliente() {
       {/* 🔝 CABEÇALHO OFICIAL SUPERIOR (PADRÃO A-260 TEAL #007481)                  */}
       {/* ========================================================================= */}
       <header className="sticky top-0 z-50 bg-[#007481] text-white shadow-lg border-b border-[#005d68]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
+        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
           
           {/* Logos Oficiais Clean Tech Pro + Alfa Tennant */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
@@ -976,114 +1024,214 @@ export default function PortalCliente() {
       </header>
 
       {/* ========================================================================= */}
-      {/* 👤 ÁREA DO CLIENTE AUTENTICADO (COM MENU LATERAL & DASHBOARD)             */}
+      {/* 👤 ÁREA DO CLIENTE AUTENTICADO (COM MENU LATERAL RETRÁTIL & DASHBOARD)    */}
       {/* ========================================================================= */}
       {clientToken ? (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="w-full max-w-[1920px] mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6">
           
-          {/* Layout com Sidebar e Conteúdo Principal */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Layout com Sidebar Retrátil e Conteúdo Principal Flexível */}
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start w-full">
 
-            {/* Menu Lateral do Cliente */}
-            <div className="lg:col-span-1">
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 sticky top-24 shadow-sm">
-                
-                {/* Selo Oficial Alfa Tennant na Sidebar */}
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200">
-                  <div className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs flex items-center">
-                    <img src="/alfa-tennant-logo-hd.png" alt="Alfa Tennant" className="h-5 w-auto object-contain" />
+            {/* Menu Lateral do Cliente (Expandido vs Retraído) */}
+            {!isSidebarCollapsed ? (
+              <aside className="w-full lg:w-72 xl:w-80 shrink-0 transition-all duration-300">
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 sticky top-24 shadow-sm">
+                  
+                  {/* Topo da Sidebar com Selo Alfa Tennant e Botão de Retrair */}
+                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs flex items-center">
+                        <img src="/alfa-tennant-logo-hd.png" alt="Alfa Tennant" className="h-5 w-auto object-contain" />
+                      </div>
+                      <span className="text-[10px] font-black text-[#007481] uppercase bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                        Autorizada
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={toggleSidebar}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-[#007481] hover:bg-teal-50 transition-colors cursor-pointer flex items-center gap-1"
+                      title="Retrair menu lateral (mais espaço para as tabelas)"
+                    >
+                      <PanelLeftClose className="w-5 h-5 text-slate-500 hover:text-[#007481]" />
+                    </button>
                   </div>
-                  <span className="text-[10px] font-black text-[#007481] uppercase bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
-                    Autorizada
-                  </span>
-                </div>
 
-                {/* Perfil Compacto */}
-                <div className="pb-4 mb-4 border-b border-slate-200">
-                  <div className="text-xs text-[#007481] font-bold uppercase tracking-wider mb-1">Empresa Cadastrada</div>
-                  <h3 className="font-extrabold text-slate-900 text-base truncate">{clientData?.name || 'Cliente Clean Tech Pro'}</h3>
-                  <p className="text-xs text-slate-500 truncate">{clientData?.email || clientData?.phone}</p>
-                </div>
+                  {/* Perfil Compacto */}
+                  <div className="pb-4 mb-4 border-b border-slate-200">
+                    <div className="text-xs text-[#007481] font-bold uppercase tracking-wider mb-1">Empresa Cadastrada</div>
+                    <h3 className="font-extrabold text-slate-900 text-base truncate">{clientData?.name || 'Cliente Clean Tech Pro'}</h3>
+                    <p className="text-xs text-slate-500 truncate">{clientData?.email || clientData?.phone}</p>
+                  </div>
 
-                {/* Navegação da Barra Lateral */}
-                <nav className="space-y-1.5">
+                  {/* Navegação da Barra Lateral */}
+                  <nav className="space-y-1.5">
+                    <button
+                      onClick={() => setActiveTab('chamados')}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                        activeTab === 'chamados'
+                          ? 'bg-[#007481] text-white shadow-md shadow-[#007481]/25'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Wrench className="w-4 h-4" />
+                        <span>1. Chamados</span>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-extrabold ${activeTab === 'chamados' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                        {metrics.open_tickets}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('equipamentos')}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                        activeTab === 'equipamentos'
+                          ? 'bg-[#007481] text-white shadow-md shadow-[#007481]/25'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Cpu className="w-4 h-4" />
+                        <span>2. Equipamentos</span>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${activeTab === 'equipamentos' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                        {equipments.length}
+                      </span>
+                    </button>
+                  </nav>
+
+                  {/* Gestão de Contatos/Usuários da Empresa do Cliente */}
+                  <div className="pt-3 mt-3 border-t border-slate-200">
+                    <button
+                      onClick={() => setShowNewUserModal(true)}
+                      className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
+                    >
+                      <Users className="w-3.5 h-3.5 text-[#007481]" />
+                      <span>+ Adicionar Usuário da Empresa</span>
+                    </button>
+                  </div>
+
+                  {/* Box de Suporte Oficial Tennant */}
+                  <div className="mt-5 p-3.5 rounded-xl bg-teal-50 border border-teal-200">
+                    <div className="flex items-center gap-2 text-[#007481] font-bold text-xs mb-1">
+                      <ShieldCheck className="w-4 h-4" /> Suporte Dedicado
+                    </div>
+                    <p className="text-[11px] text-slate-600 mb-2.5">
+                      Precisa de atendimento técnico de emergência ou agendamento?
+                    </p>
+                    <a
+                      href={WHATSAPP_LINK}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => triggerGoogleConversion('Painel Lateral WhatsApp Assistência')}
+                      className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold py-2 rounded-lg text-xs shadow-sm transition-colors"
+                    >
+                      <WhatsAppIcon className="w-4 h-4 text-white" /> Falar no WhatsApp
+                    </a>
+                  </div>
+
+                  {/* Botão de Logout */}
+                  <button
+                    onClick={handleLogout}
+                    className="w-full mt-3 flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200 cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" /> Encerrar Sessão
+                  </button>
+                </div>
+              </aside>
+            ) : (
+              /* Menu Lateral em Modo Retraído (Ícones Compactos) */
+              <aside className="w-full lg:w-16 shrink-0 transition-all duration-300">
+                <div className="bg-white border border-slate-200 rounded-2xl p-2 sticky top-24 shadow-sm flex flex-row lg:flex-col items-center justify-between lg:justify-start gap-2">
+                  
+                  {/* Botão de Expandir no topo */}
+                  <button
+                    type="button"
+                    onClick={toggleSidebar}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-teal-50 hover:bg-teal-100 text-[#007481] border border-teal-200 transition-colors cursor-pointer group"
+                    title="Expandir Menu Lateral"
+                  >
+                    <PanelLeftOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  </button>
+
+                  <div className="hidden lg:block w-8 h-[1px] bg-slate-200 my-1" />
+
+                  {/* 1. Chamados Icon Button */}
                   <button
                     onClick={() => setActiveTab('chamados')}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                    className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
                       activeTab === 'chamados'
-                        ? 'bg-[#007481] text-white shadow-md shadow-[#007481]/25'
+                        ? 'bg-[#007481] text-white shadow-md'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
+                    title={`1. Chamados (${metrics.open_tickets} ativos)`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Wrench className="w-4 h-4" />
-                      <span>1. Chamados</span>
-                    </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-extrabold ${activeTab === 'chamados' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                      {metrics.open_tickets}
-                    </span>
+                    <Wrench className="w-5 h-5" />
+                    {metrics.open_tickets > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                        {metrics.open_tickets}
+                      </span>
+                    )}
                   </button>
 
+                  {/* 2. Equipamentos Icon Button */}
                   <button
                     onClick={() => setActiveTab('equipamentos')}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                    className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
                       activeTab === 'equipamentos'
-                        ? 'bg-[#007481] text-white shadow-md shadow-[#007481]/25'
+                        ? 'bg-[#007481] text-white shadow-md'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
+                    title={`2. Equipamentos (${equipments.length} máquinas)`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Cpu className="w-4 h-4" />
-                      <span>2. Equipamentos</span>
-                    </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${activeTab === 'equipamentos' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                      {equipments.length}
-                    </span>
+                    <Cpu className="w-5 h-5" />
+                    {equipments.length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-slate-700 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                        {equipments.length}
+                      </span>
+                    )}
                   </button>
-                </nav>
 
-                {/* Gestão de Contatos/Usuários da Empresa do Cliente (Ação Secundária) */}
-                <div className="pt-3 mt-3 border-t border-slate-200">
+                  {/* Add User Icon */}
                   <button
                     onClick={() => setShowNewUserModal(true)}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
+                    className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-600 hover:text-[#007481] hover:bg-teal-50 transition-colors cursor-pointer"
+                    title="Adicionar Usuário da Empresa"
                   >
-                    <Users className="w-3.5 h-3.5 text-[#007481]" />
-                    <span>+ Adicionar Usuário da Empresa</span>
+                    <Users className="w-5 h-5" />
                   </button>
-                </div>
 
-                {/* Box de Suporte Oficial Tennant */}
-                <div className="mt-6 p-4 rounded-xl bg-teal-50 border border-teal-200">
-                  <div className="flex items-center gap-2 text-[#007481] font-bold text-xs mb-1">
-                    <ShieldCheck className="w-4 h-4" /> Suporte Dedicado
-                  </div>
-                  <p className="text-xs text-slate-600 mb-3">
-                    Precisa de atendimento técnico de emergência ou agendamento?
-                  </p>
+                  <div className="hidden lg:block w-8 h-[1px] bg-slate-200 my-1" />
+
+                  {/* WhatsApp Support Icon */}
                   <a
                     href={WHATSAPP_LINK}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => triggerGoogleConversion('Painel Lateral WhatsApp Assistência')}
-                    className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold py-2 rounded-lg text-xs shadow-sm transition-colors"
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white shadow-xs transition-colors cursor-pointer"
+                    title="Suporte Técnico WhatsApp"
                   >
-                    <WhatsAppIcon className="w-4 h-4 text-white" /> Falar no WhatsApp
+                    <WhatsAppIcon className="w-5 h-5" />
                   </a>
+
+                  {/* Logout Icon */}
+                  <button
+                    onClick={handleLogout}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    title="Encerrar Sessão"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+
                 </div>
+              </aside>
+            )}
 
-                {/* Botão de Logout */}
-                <button
-                  onClick={handleLogout}
-                  className="w-full mt-4 flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-slate-200 cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" /> Encerrar Sessão
-                </button>
-              </div>
-            </div>
-
-            {/* Conteúdo Central Principal */}
-            <div className="lg:col-span-3">
+            {/* Conteúdo Central Principal (Flexível para ocupar todo o espaço restante) */}
+            <main className="flex-1 min-w-0 w-full transition-all duration-300">
 
               {/* =============================================================== */}
               {/* ABA 1: CHAMADOS (PRIMEIRO MENU) + DASHBOARD DE CUSTOS           */}
@@ -1140,6 +1288,14 @@ export default function PortalCliente() {
                   {/* Barra de Filtros & Abertura de Novo Chamado */}
                   <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
                     <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={toggleSidebar}
+                        className="hidden lg:flex items-center justify-center p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-teal-50 hover:text-[#007481] text-slate-500 transition-colors cursor-pointer shrink-0"
+                        title={isSidebarCollapsed ? "Expandir Menu Lateral" : "Retrair Menu Lateral"}
+                      >
+                        {isSidebarCollapsed ? <PanelLeftOpen className="w-5 h-5 text-[#007481]" /> : <PanelLeftClose className="w-5 h-5" />}
+                      </button>
                       <div className="relative flex-1 sm:w-64">
                         <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                         <input
@@ -1361,12 +1517,13 @@ export default function PortalCliente() {
               )}
 
               {/* =============================================================== */}
+              {/* =============================================================== */}
               {/* ABA 2: EQUIPAMENTOS (SEGUNDO MENU) + HISTÓRICO & TROCA          */}
               {/* =============================================================== */}
               {activeTab === 'equipamentos' && (
                 <div className="space-y-6">
                   
-                  {/* Topo da Aba */}
+                  {/* Topo da Aba de Equipamentos */}
                   <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
                     <div>
                       <h3 className="text-lg font-black text-slate-900">Parque de Máquinas Cadastradas</h3>
@@ -1376,70 +1533,215 @@ export default function PortalCliente() {
                     </div>
                     <button
                       onClick={() => setShowNewEquipmentModal(true)}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-[#007481]/25 transition-all cursor-pointer"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-[#007481]/25 transition-all cursor-pointer shrink-0"
                     >
                       <Plus className="w-4 h-4" /> Cadastrar Equipamento
                     </button>
                   </div>
 
-                  {/* Cards de Equipamentos */}
-                  {equipments.length === 0 ? (
+                  {/* Barra de Filtros & Busca de Equipamentos */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={toggleSidebar}
+                        className="hidden lg:flex items-center justify-center p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-teal-50 hover:text-[#007481] text-slate-500 transition-colors cursor-pointer shrink-0"
+                        title={isSidebarCollapsed ? "Expandir Menu Lateral" : "Retrair Menu Lateral"}
+                      >
+                        {isSidebarCollapsed ? <PanelLeftOpen className="w-5 h-5 text-[#007481]" /> : <PanelLeftClose className="w-5 h-5" />}
+                      </button>
+                      <div className="relative flex-1 sm:w-72">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                        <input
+                          type="text"
+                          value={equipmentSearchQuery}
+                          onChange={(e) => setEquipmentSearchQuery(e.target.value)}
+                          placeholder="Buscar por modelo, chassi/série..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-[#007481]"
+                        />
+                      </div>
+                      <select
+                        value={equipmentOwnershipFilter}
+                        onChange={(e) => setEquipmentOwnershipFilter(e.target.value)}
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:bg-white focus:outline-none focus:border-[#007481]"
+                      >
+                        <option value="todos">Todos os Tipos de Posse</option>
+                        <option value="cliente">Cliente / Próprio</option>
+                        <option value="sublocado">Sublocado</option>
+                        <option value="locado">Locado</option>
+                      </select>
+                    </div>
+
+                    <div className="text-xs text-slate-500 flex items-center gap-2 self-end sm:self-center">
+                      <Cpu className="w-4 h-4 text-[#007481]" />
+                      <span className="font-semibold text-slate-700">{filteredEquipments.length}</span> máquina(s) encontrada(s)
+                    </div>
+                  </div>
+
+                  {/* Listagem de Equipamentos em Tabela Padrão */}
+                  {loadingData ? (
+                    <div className="p-12 text-center text-slate-500">
+                      <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin text-[#007481]" />
+                      Carregando equipamentos do parque...
+                    </div>
+                  ) : filteredEquipments.length === 0 ? (
                     <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center shadow-xs">
                       <Cpu className="w-12 h-12 mx-auto mb-3 text-slate-400" />
-                      <h4 className="text-lg font-bold text-slate-900 mb-1">Nenhum equipamento cadastrado ainda</h4>
+                      <h4 className="text-lg font-bold text-slate-900 mb-1">
+                        {equipments.length === 0 ? 'Nenhum equipamento cadastrado ainda' : 'Nenhuma máquina corresponde aos filtros'}
+                      </h4>
                       <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
-                        Cadastre suas lavadoras e varredeiras Tennant para acompanhar custos e histórico de serviços.
+                        {equipments.length === 0 
+                          ? 'Cadastre suas lavadoras e varredeiras Tennant para acompanhar custos e histórico de serviços.'
+                          : 'Tente alterar os termos da busca ou limpe o filtro de posse.'}
                       </p>
-                      <button
-                        onClick={() => setShowNewEquipmentModal(true)}
-                        className="bg-[#007481] hover:bg-[#005d68] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md cursor-pointer"
-                      >
-                        + Cadastrar Minha Primeira Máquina
-                      </button>
+                      {equipments.length === 0 ? (
+                        <button
+                          onClick={() => setShowNewEquipmentModal(true)}
+                          className="bg-[#007481] hover:bg-[#005d68] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md cursor-pointer"
+                        >
+                          + Cadastrar Minha Primeira Máquina
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { setEquipmentSearchQuery(''); setEquipmentOwnershipFilter('todos'); }}
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2 rounded-xl font-bold text-xs cursor-pointer"
+                        >
+                          Limpar Filtros
+                        </button>
+                      )}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {equipments.map(eq => (
-                        <div
-                          key={eq.id}
-                          className="bg-white border border-slate-200 hover:border-[#007481]/60 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="bg-teal-50 text-[#007481] text-xs font-extrabold px-2.5 py-0.5 rounded uppercase border border-teal-200">
-                                {eq.brand || 'Tennant'}
-                              </span>
-                              <span className="text-xs text-slate-500 font-medium">
-                                {eq.ownership_type || 'Próprio'}
-                              </span>
-                            </div>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-slate-600 min-w-[900px]">
+                          <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider">
+                            <tr>
+                              <th className="px-5 py-3.5 w-28">Marca</th>
+                              <th className="px-5 py-3.5">Modelo / Equipamento</th>
+                              <th className="px-5 py-3.5 w-44">Chassi / Série</th>
+                              <th className="px-5 py-3.5 w-36">Tipo de Posse</th>
+                              <th className="px-5 py-3.5 w-36 text-center">Manutenções</th>
+                              <th className="px-5 py-3.5 w-44">Custo Acumulado</th>
+                              <th className="px-5 py-3.5 w-56 text-right">Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 bg-white">
+                            {filteredEquipments.map(eq => {
+                              const ticketsCount = Number(eq.tickets_count || 0);
+                              const totalCost = Number(eq.total_maintenance_cost || 0);
 
-                            <h4 className="text-lg font-black text-slate-900 mb-1">{eq.model || eq.name}</h4>
-                            <div className="text-xs text-slate-600 space-y-1 mb-4">
-                              <div>Chassi / Série: <strong className="text-slate-800">{eq.serial_number || 'Não informado'}</strong></div>
-                              <div>Manutenções Realizadas: <strong className="text-slate-800">{eq.tickets_count || 0} chamados</strong></div>
-                            </div>
-                          </div>
+                              return (
+                                <tr
+                                  key={eq.id}
+                                  onClick={() => openEquipmentDetails(eq)}
+                                  className="hover:bg-teal-50/50 cursor-pointer transition-colors group"
+                                >
+                                  {/* Marca */}
+                                  <td className="px-5 py-4 whitespace-nowrap">
+                                    <span className="bg-teal-50 text-[#007481] text-xs font-extrabold px-2.5 py-1 rounded-md uppercase border border-teal-200 group-hover:bg-[#007481] group-hover:text-white transition-colors">
+                                      {eq.brand || 'Tennant'}
+                                    </span>
+                                  </td>
 
-                          {/* Custo Acumulado & Botão Ver Histórico */}
-                          <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                            <div>
-                              <div className="text-[10px] text-slate-500 uppercase font-bold">Custo Acumulado</div>
-                              <div className="text-base font-black text-emerald-700">
-                                {formatCurrency(eq.total_maintenance_cost)}
-                              </div>
-                            </div>
+                                  {/* Modelo / Equipamento */}
+                                  <td className="px-5 py-4">
+                                    <div className="font-extrabold text-slate-900 group-hover:text-[#007481] transition-colors text-sm">
+                                      {eq.model || eq.name || 'Equipamento Tennant'}
+                                    </div>
+                                    <div className="text-[11px] text-slate-400 mt-0.5">
+                                      ID Sistema: #{eq.id}
+                                    </div>
+                                  </td>
 
-                            <button
-                              onClick={() => openEquipmentDetails(eq)}
-                              className="flex items-center gap-1.5 bg-slate-100 hover:bg-[#007481] hover:text-white text-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                            >
-                              <span>Ver Histórico & Troca</span>
-                              <ChevronRight className="w-4 h-4" />
-                            </button>
-                          </div>
+                                  {/* Chassi / Série */}
+                                  <td className="px-5 py-4 whitespace-nowrap">
+                                    <span className="font-mono font-bold text-slate-800 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-md text-xs inline-block">
+                                      {eq.serial_number || 'Não informado'}
+                                    </span>
+                                  </td>
+
+                                  {/* Tipo de Posse */}
+                                  <td className="px-5 py-4 whitespace-nowrap">
+                                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-slate-50 border-slate-200 text-slate-700 capitalize">
+                                      {eq.ownership_type || 'Próprio'}
+                                    </span>
+                                  </td>
+
+                                  {/* Manutenções Realizadas */}
+                                  <td className="px-5 py-4 whitespace-nowrap text-center">
+                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${
+                                      ticketsCount > 0 
+                                        ? 'bg-amber-50 text-amber-800 border-amber-200' 
+                                        : 'bg-slate-100 text-slate-500 border-slate-200'
+                                    }`}>
+                                      <Wrench className="w-3.5 h-3.5 text-amber-600" />
+                                      {ticketsCount} {ticketsCount === 1 ? 'chamado' : 'chamados'}
+                                    </span>
+                                  </td>
+
+                                  {/* Custo Acumulado */}
+                                  <td className="px-5 py-4 whitespace-nowrap">
+                                    <div className="text-sm font-extrabold text-emerald-700">
+                                      {formatCurrency(totalCost)}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 uppercase tracking-tight">
+                                      Total investido
+                                    </div>
+                                  </td>
+
+                                  {/* Ações */}
+                                  <td className="px-5 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      {/* Histórico & Troca */}
+                                      <button
+                                        type="button"
+                                        onClick={() => openEquipmentDetails(eq)}
+                                        className="flex items-center gap-1 bg-[#007481] hover:bg-[#005d68] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                                        title="Ver Histórico Completo e Momento Ideal de Substituição (TCO)"
+                                      >
+                                        <BarChart3 className="w-3.5 h-3.5" />
+                                        <span>Histórico & Troca</span>
+                                      </button>
+
+                                      {/* Abrir Chamado Rápido */}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => handleOpenTicketForEquipment(eq, e)}
+                                        className="flex items-center gap-1 bg-teal-50 hover:bg-[#007481] text-[#007481] hover:text-white border border-teal-200 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                        title="Abrir chamado para esta máquina"
+                                      >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        <span>Chamado</span>
+                                      </button>
+
+                                      {/* WhatsApp Oficial Tennant */}
+                                      <a
+                                        href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Olá! Gostaria de suporte técnico para o equipamento Tennant ${eq.model || ''} (Chassi: ${eq.serial_number || 'S/N'}).`)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all border border-emerald-200 cursor-pointer"
+                                        title="Falar com Assistência no WhatsApp"
+                                      >
+                                        <WhatsAppIcon className="w-4 h-4 text-emerald-600" />
+                                      </a>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Rodapé da Tabela de Equipamentos */}
+                      <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <BarChart3 className="w-3.5 h-3.5 text-[#007481]" />
+                          <span>Clique em qualquer linha da tabela para analisar o histórico de serviços e o momento ideal de substituição (TCO).</span>
                         </div>
-                      ))}
+                        <span className="font-bold text-slate-700">Total: {filteredEquipments.length} equipamento(s) cadastrado(s)</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1517,7 +1819,7 @@ export default function PortalCliente() {
                 </div>
               )}
 
-            </div>
+            </main>
           </div>
 
         </div>
