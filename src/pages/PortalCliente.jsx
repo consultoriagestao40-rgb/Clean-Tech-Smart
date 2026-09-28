@@ -566,6 +566,39 @@ export default function PortalCliente() {
     return /\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i.test(url);
   };
 
+  const getTicketStatusBadge = (status) => {
+    const s = (status || '').toLowerCase();
+    if (s.includes('conclu')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (s.includes('atend') || s.includes('andamento')) return 'bg-blue-50 text-blue-700 border-blue-200';
+    if (s.includes('cancel')) return 'bg-rose-50 text-rose-700 border-rose-200';
+    return 'bg-amber-50 text-amber-700 border-amber-200';
+  };
+
+  const getTicketPriorityBadge = (priority) => {
+    const p = (priority || '').toLowerCase();
+    if (p === 'urgente' || p === 'alta') return 'font-bold text-rose-700 bg-rose-50 border border-rose-200';
+    if (p === 'média' || p === 'media') return 'font-semibold text-amber-700 bg-amber-50 border border-amber-200';
+    return 'font-medium text-slate-600 bg-slate-100 border border-slate-200';
+  };
+
+  const getTicketTypeLabel = (type) => {
+    const t = (type || '').toLowerCase();
+    if (t.includes('corr')) return 'M. Corretiva';
+    if (t.includes('prev')) return 'M. Preventiva';
+    if (t.includes('garan')) return 'Garantia';
+    if (t.includes('entrega')) return 'Entrega Técnica';
+    if (t.includes('treina')) return 'Treinamento';
+    return type || 'Chamado Técnico';
+  };
+
+  const getTicketTypeBadge = (type) => {
+    const t = (type || '').toLowerCase();
+    if (t.includes('prev')) return 'bg-purple-50 text-purple-700 border-purple-200';
+    if (t.includes('corr')) return 'bg-orange-50 text-orange-700 border-orange-200';
+    if (t.includes('garan')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    return 'bg-sky-50 text-sky-700 border-sky-200';
+  };
+
   const handlePrintTicketReport = (ticket) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -1157,139 +1190,171 @@ export default function PortalCliente() {
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {filteredTickets.map(ticket => {
-                        const isCompleted = (ticket.status || '').toLowerCase().includes('conclu');
-                        const isUrgent = (ticket.priority || '').toLowerCase() === 'urgente' || (ticket.priority || '').toLowerCase() === 'alta';
-                        const mediaCount = parseTicketMedia(ticket.evidence_photos).length;
-                        
-                        return (
-                          <div 
-                            key={ticket.id} 
-                            onClick={() => setSelectedTicketDetail(ticket)}
-                            className="bg-white border border-slate-200 hover:border-[#007481] rounded-2xl p-5 shadow-xs hover:shadow-lg transition-all cursor-pointer group relative"
-                          >
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-                              <div className="flex items-center gap-3">
-                                <span className="bg-teal-50 border border-teal-200 text-[#007481] font-black px-2.5 py-1 rounded-lg text-xs group-hover:bg-[#007481] group-hover:text-white transition-colors">
-                                  #{ticket.id}
-                                </span>
-                                <div>
-                                  <h4 className="font-extrabold text-slate-900 text-base group-hover:text-[#007481] transition-colors">
-                                    {ticket.equipment_model || 'Equipamento Tennant'}
-                                  </h4>
-                                  <div className="text-xs text-slate-500">
-                                    Série: {ticket.equipment_serial_number || 'S/N'} • Aberto em {new Date(ticket.created_at).toLocaleDateString('pt-BR')}
-                                  </div>
-                                </div>
-                              </div>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-slate-600 min-w-[900px]">
+                          <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider">
+                            <tr>
+                              <th className="px-5 py-3.5 w-28">Chamado</th>
+                              <th className="px-5 py-3.5">Equipamento</th>
+                              <th className="px-5 py-3.5">Defeito / Solicitação</th>
+                              <th className="px-5 py-3.5 w-32">Tipo</th>
+                              <th className="px-5 py-3.5 w-32">Status</th>
+                              <th className="px-5 py-3.5 w-24 text-center">Prioridade</th>
+                              <th className="px-5 py-3.5 w-40">Técnico</th>
+                              <th className="px-5 py-3.5 w-32">Agendamento</th>
+                              <th className="px-5 py-3.5 w-28 text-center">Evidências</th>
+                              <th className="px-5 py-3.5 w-36 text-right">Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 bg-white">
+                            {filteredTickets.map(ticket => {
+                              const isCompleted = (ticket.status || '').toLowerCase().includes('conclu');
+                              const mediaList = parseTicketMedia(ticket.evidence_photos);
+                              const mediaCount = mediaList.length;
 
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                                  isCompleted ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                                  'bg-amber-50 text-amber-700 border border-amber-200'
-                                }`}>
-                                  {ticket.status || 'Aberto'}
-                                </span>
-                                <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full text-xs font-medium border border-slate-200">
-                                  Tipo: {ticket.ticket_type}
-                                </span>
-                                {isUrgent && (
-                                  <span className="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-xs font-bold">
-                                    {ticket.priority}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                              return (
+                                <tr
+                                  key={ticket.id}
+                                  onClick={() => setSelectedTicketDetail(ticket)}
+                                  className={`hover:bg-teal-50/50 cursor-pointer transition-colors group ${
+                                    isCompleted ? '' : 'hover:border-l-4 hover:border-l-[#007481]'
+                                  }`}
+                                >
+                                  <td className="px-5 py-4 font-mono font-black text-[#007481] whitespace-nowrap">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="bg-teal-50 border border-teal-200 text-[#007481] px-2 py-0.5 rounded-md text-xs font-black group-hover:bg-[#007481] group-hover:text-white transition-colors">
+                                        #{ticket.id}
+                                      </span>
+                                    </div>
+                                    <span className="block font-sans text-[11px] text-slate-400 font-normal mt-1">
+                                      {new Date(ticket.created_at).toLocaleDateString('pt-BR')}
+                                    </span>
+                                  </td>
 
-                            {/* Descrição do Chamado */}
-                            <div className="py-3 text-sm text-slate-700 leading-relaxed">
-                              {ticket.description}
-                            </div>
+                                  <td className="px-5 py-4">
+                                    <div className="font-extrabold text-slate-900 group-hover:text-[#007481] transition-colors">
+                                      {ticket.equipment_model || ticket.equipment_name || 'Equipamento Tennant'}
+                                    </div>
+                                    <div className="text-xs text-slate-500 font-mono mt-0.5">
+                                      Série: {ticket.equipment_serial_number || 'S/N'}
+                                    </div>
+                                  </td>
 
-                            {/* Badges de Evidências (Fotos/Vídeos) e Parecer Técnico */}
-                            <div className="flex items-center gap-2 flex-wrap mb-3">
-                              {mediaCount > 0 && (
-                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-lg">
-                                  <Camera className="w-3.5 h-3.5 text-sky-600" /> {mediaCount} Foto(s)/Vídeo(s)
-                                </span>
-                              )}
-                              {ticket.resolution_notes && (
-                                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Laudo Técnico Disponível
-                                </span>
-                              )}
-                              {ticket.hour_meter && (
-                                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-lg">
-                                  <Clock className="w-3.5 h-3.5 text-slate-500" /> Horímetro: {ticket.hour_meter} h
-                                </span>
-                              )}
-                            </div>
+                                  <td className="px-5 py-4">
+                                    <p className="text-xs text-slate-700 max-w-[260px] truncate font-medium" title={ticket.description}>
+                                      {ticket.description || '—'}
+                                    </p>
+                                    {ticket.budget_grand_total ? (
+                                      <div className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded mt-1">
+                                        <DollarSign className="w-3 h-3" /> Orçamento: {formatCurrency(ticket.budget_grand_total)}
+                                      </div>
+                                    ) : null}
+                                  </td>
 
-                            {/* Detalhes Técnicos (Técnico e Data Agendada) */}
-                            {(ticket.assigned_technician || ticket.scheduled_date) && (
-                              <div className="bg-slate-50 rounded-xl p-3 mb-3 flex flex-wrap items-center gap-4 text-xs text-slate-600 border border-slate-200">
-                                {ticket.assigned_technician && (
-                                  <div className="flex items-center gap-1.5 text-[#007481] font-medium">
-                                    <User className="w-3.5 h-3.5" />
-                                    <span>Técnico Responsável: <strong>{ticket.assigned_technician}</strong></span>
-                                  </div>
-                                )}
-                                {ticket.scheduled_date && (
-                                  <div className="flex items-center gap-1.5 text-slate-600">
-                                    <Calendar className="w-3.5 h-3.5" />
-                                    <span>Agendado para: {new Date(ticket.scheduled_date).toLocaleDateString('pt-BR')}</span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                                  <td className="px-5 py-4 whitespace-nowrap">
+                                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getTicketTypeBadge(ticket.ticket_type)}`}>
+                                      {getTicketTypeLabel(ticket.ticket_type)}
+                                    </span>
+                                  </td>
 
-                            {/* DESTAQUE DO ORÇAMENTO VINCULADO (quando houver orçamento, exibe o valor em destaque!) */}
-                            {ticket.budget_grand_total ? (
-                              <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 my-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div>
-                                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 uppercase tracking-wider">
-                                    <DollarSign className="w-4 h-4" /> Orçamento Vinculado a este Chamado
-                                  </div>
-                                  <div className="text-xs text-slate-600 mt-0.5">
-                                    Status da Proposta: <span className="font-semibold text-slate-900">{ticket.budget_status || 'Aprovado'}</span>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-xs text-slate-500">Valor Total do Atendimento</div>
-                                  <div className="text-xl sm:text-2xl font-black text-emerald-700">
-                                    {formatCurrency(ticket.budget_grand_total)}
-                                  </div>
-                                </div>
-                              </div>
-                            ) : null}
+                                  <td className="px-5 py-4 whitespace-nowrap">
+                                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getTicketStatusBadge(ticket.status)}`}>
+                                      {ticket.status || 'Aberto'}
+                                    </span>
+                                  </td>
 
-                            {/* Rodapé do Card com Ações */}
-                            <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedTicketDetail(ticket);
-                                }}
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs font-bold text-white bg-[#007481] hover:bg-[#005d68] px-4 py-2 rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer"
-                              >
-                                <Eye className="w-3.5 h-3.5" /> Ver Detalhes & Histórico do Chamado
-                              </button>
+                                  <td className="px-5 py-4 text-center whitespace-nowrap">
+                                    <span className={`px-2 py-0.5 rounded text-xs ${getTicketPriorityBadge(ticket.priority)}`}>
+                                      {ticket.priority || 'Média'}
+                                    </span>
+                                  </td>
 
-                              <a
-                                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Olá! Gostaria de informações sobre o meu chamado #${ticket.id} (${ticket.equipment_model || 'Tennant'}).`)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-xl transition-colors cursor-pointer"
-                              >
-                                <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-600" /> Falar com Suporte Técnico
-                              </a>
-                            </div>
-                          </div>
-                        );
-                      })}
+                                  <td className="px-5 py-4 whitespace-nowrap">
+                                    {ticket.assigned_technician ? (
+                                      <div className="flex items-center gap-1.5 font-semibold text-slate-800 text-xs">
+                                        <User className="w-3.5 h-3.5 text-[#007481] shrink-0" />
+                                        <span className="truncate max-w-[130px]">{ticket.assigned_technician}</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-xs text-slate-400 italic">Não designado</span>
+                                    )}
+                                  </td>
+
+                                  <td className="px-5 py-4 whitespace-nowrap text-xs font-medium text-slate-600">
+                                    {ticket.scheduled_date ? (
+                                      <div className="flex items-center gap-1">
+                                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <span>{new Date(ticket.scheduled_date).toLocaleDateString('pt-BR')}</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-400 italic">A definir</span>
+                                    )}
+                                  </td>
+
+                                  <td className="px-5 py-4 text-center whitespace-nowrap">
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      {mediaCount > 0 ? (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-md" title={`${mediaCount} fotos/vídeos anexados`}>
+                                          <Camera className="w-3.5 h-3.5 text-sky-600" />
+                                          {mediaCount}
+                                        </span>
+                                      ) : (
+                                        <span className="text-slate-300 text-xs">-</span>
+                                      )}
+                                      {ticket.resolution_notes && (
+                                        <span className="inline-flex items-center text-emerald-600" title="Laudo Técnico Concluído">
+                                          <CheckCircle2 className="w-4 h-4" />
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                  <td className="px-5 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => setSelectedTicketDetail(ticket)}
+                                        className="p-1.5 text-white bg-[#007481] hover:bg-[#005d68] rounded-lg transition-all shadow-xs cursor-pointer"
+                                        title="Abrir Todos os Detalhes do Chamado"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => handlePrintTicketReport(ticket)}
+                                        className="p-1.5 text-slate-600 hover:text-[#007481] hover:bg-slate-100 rounded-lg transition-all border border-slate-200 cursor-pointer"
+                                        title="Imprimir Relatório OS / PDF"
+                                      >
+                                        <FileText className="w-4 h-4" />
+                                      </button>
+
+                                      <a
+                                        href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Olá! Gostaria de informações sobre o meu chamado #${ticket.id} (${ticket.equipment_model || 'Tennant'}).`)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all border border-emerald-200 cursor-pointer"
+                                        title="Falar no WhatsApp"
+                                      >
+                                        <WhatsAppIcon className="w-4 h-4 text-emerald-600" />
+                                      </a>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <Eye className="w-3.5 h-3.5 text-[#007481]" />
+                          <span>Clique em qualquer linha da tabela para abrir a ficha completa do chamado com laudos, mídias e assinaturas.</span>
+                        </div>
+                        <span className="font-bold text-slate-700">Total: {filteredTickets.length} chamado(s)</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2749,31 +2814,30 @@ export default function PortalCliente() {
       {/* ========================================================================= */}
       {selectedTicketDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full p-5 sm:p-8 shadow-2xl relative my-6 max-h-[92vh] flex flex-col text-slate-900">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full shadow-2xl relative my-6 max-h-[92vh] flex flex-col text-slate-900 overflow-hidden">
             
-            {/* Cabeçalho do Modal */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+            {/* Cabeçalho do Modal (Estilo OS Interna) */}
+            <div className="bg-slate-900 text-white p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="bg-[#007481] text-white font-black text-xs px-2.5 py-0.5 rounded-md">
-                    Chamado #{selectedTicketDetail.id}
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  <span className="bg-[#007481] text-white font-mono font-black text-xs px-2.5 py-1 rounded-md shadow-xs">
+                    OS #{String(selectedTicketDetail.id).padStart(4, '0')}
                   </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                    (selectedTicketDetail.status || '').toLowerCase().includes('conclu')
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                      : 'bg-amber-100 text-amber-800 border border-amber-200'
-                  }`}>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${getTicketStatusBadge(selectedTicketDetail.status)}`}>
                     {selectedTicketDetail.status || 'Aberto'}
                   </span>
-                  <span className="bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full text-xs font-medium border border-slate-200">
-                    {selectedTicketDetail.ticket_type}
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getTicketTypeBadge(selectedTicketDetail.ticket_type)}`}>
+                    {getTicketTypeLabel(selectedTicketDetail.ticket_type)}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-xs ${getTicketPriorityBadge(selectedTicketDetail.priority)}`}>
+                    Prioridade: {selectedTicketDetail.priority || 'Média'}
                   </span>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900">
+                <h3 className="text-xl sm:text-2xl font-black text-white">
                   {selectedTicketDetail.equipment_brand || 'Tennant'} {selectedTicketDetail.equipment_model || 'Equipamento'}
                 </h3>
-                <p className="text-xs text-slate-500">
-                  Chassi/Série: <strong className="text-slate-800">{selectedTicketDetail.equipment_serial_number || 'S/N'}</strong> • Aberto em {new Date(selectedTicketDetail.created_at).toLocaleString('pt-BR')}
+                <p className="text-xs text-slate-400 mt-1">
+                  Número de Série: <strong className="text-slate-200 font-mono">{selectedTicketDetail.equipment_serial_number || 'S/N'}</strong> • Aberto em {new Date(selectedTicketDetail.created_at).toLocaleString('pt-BR')}
                 </p>
               </div>
 
@@ -2781,266 +2845,416 @@ export default function PortalCliente() {
                 <button
                   type="button"
                   onClick={() => handlePrintTicketReport(selectedTicketDetail)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                  title="Imprimir ou Salvar Relatório Técnico em PDF"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#007481] hover:bg-[#005d68] text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
+                  title="Imprimir Relatório Oficial / OS em PDF"
                 >
-                  <Printer className="w-4 h-4 text-[#007481]" /> Imprimir Relatório / OS
+                  <FileText className="w-4 h-4" /> Imprimir OS / PDF
                 </button>
                 <button
                   onClick={() => setSelectedTicketDetail(null)}
-                  className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+                  className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 cursor-pointer transition-colors"
+                  title="Fechar Janela"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            {/* Conteúdo com Scroll */}
-            <div className="overflow-y-auto py-5 space-y-6 pr-1 text-slate-800">
+            {/* Conteúdo com Scroll (Ficha Completa de Detalhes da OS) */}
+            <div className="overflow-y-auto p-5 sm:p-6 space-y-5 bg-slate-50/50 text-slate-800">
               
-              {/* =============================================================== */}
-              {/* 🕒 LINHA DO TEMPO COMPLETA DE TUDO QUE ACONTECEU NO CHAMADO      */}
-              {/* =============================================================== */}
-              <div>
-                <h4 className="text-xs font-black uppercase text-[#007481] tracking-wider mb-4 flex items-center gap-2">
-                  <Clock className="w-4 h-4" /> Linha do Tempo & Histórico do Atendimento
-                </h4>
-
-                <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-                  
-                  {/* Etapa 1: Abertura do Chamado */}
-                  <div className="relative">
-                    <div className="absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full bg-teal-100 border-2 border-[#007481] flex items-center justify-center text-[#007481]">
-                      <Check className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
-                        <span className="font-extrabold text-sm text-slate-900">1. Chamado Aberto pelo Cliente</span>
-                        <span className="text-[11px] text-slate-500 font-medium">
-                          {new Date(selectedTicketDetail.created_at).toLocaleString('pt-BR')}
-                        </span>
-                      </div>
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
-                        <div>
-                          <span className="text-slate-500 font-semibold">Relato / Descrição da Solicitação:</span>
-                          <p className="text-slate-800 mt-0.5 font-medium leading-relaxed">
-                            {selectedTicketDetail.description || 'Sem descrição informada.'}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-4 pt-1 text-[11px] text-slate-600 border-t border-slate-200">
-                          <span>Prioridade: <strong className="text-slate-900">{selectedTicketDetail.priority}</strong></span>
-                          <span>Horímetro: <strong className="text-slate-900">{selectedTicketDetail.hour_meter ? `${selectedTicketDetail.hour_meter} h` : 'Não informado'}</strong></span>
-                          <span>Origem: <strong className="text-slate-900">Portal do Cliente</strong></span>
-                        </div>
-                      </div>
-                    </div>
+              {/* 1. DADOS DO CLIENTE & LOCALIZAÇÃO */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-[#007481]" /> 1. Dados do Cliente & Contato
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">Informações do Solicitante</span>
+                </div>
+                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Empresa / Razão Social</span>
+                    <span className="font-extrabold text-slate-900 text-sm">{clientData?.razao_social || clientData?.name || 'Cliente Cadastrado'}</span>
                   </div>
-
-                  {/* Etapa 2: Atribuição Técnica & Agendamento */}
-                  <div className="relative">
-                    <div className={`absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      selectedTicketDetail.assigned_technician
-                        ? 'bg-teal-100 border-[#007481] text-[#007481]'
-                        : 'bg-slate-100 border-slate-300 text-slate-400'
-                    }`}>
-                      <User className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
-                        <span className="font-extrabold text-sm text-slate-900">2. Triagem & Agendamento Técnico</span>
-                        {selectedTicketDetail.scheduled_date && (
-                          <span className="text-[11px] text-slate-500 font-medium">
-                            Agendado para: {new Date(selectedTicketDetail.scheduled_date).toLocaleDateString('pt-BR')}
-                          </span>
-                        )}
-                      </div>
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs space-y-2">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
-                            <span className="text-slate-500">Técnico Especialista Designado:</span>
-                            <div className="text-sm font-bold text-slate-900 mt-0.5">
-                              {selectedTicketDetail.assigned_technician || 'Em definição pela central de assistência'}
-                            </div>
-                          </div>
-                          {selectedTicketDetail.assigned_technician && (
-                            <a
-                              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Olá! Gostaria de falar sobre o atendimento do técnico ${selectedTicketDetail.assigned_technician} no chamado #${selectedTicketDetail.id}.`)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-lg border border-emerald-200 transition-colors w-fit"
-                            >
-                              <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-600" /> Contato Direto
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Telefone / WhatsApp</span>
+                    <span className="font-semibold text-slate-800">{clientData?.phone || 'Não informado'}</span>
                   </div>
-
-                  {/* Etapa 3: Orçamento e Peças (se houver proposta vinculada) */}
-                  {selectedTicketDetail.budget_grand_total ? (
-                    <div className="relative">
-                      <div className="absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full bg-emerald-100 border-2 border-emerald-600 flex items-center justify-center text-emerald-600">
-                        <DollarSign className="w-3.5 h-3.5" />
-                      </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">E-mail Cadastrado</span>
+                    <span className="font-semibold text-slate-800">{clientData?.email || 'Não informado'}</span>
+                  </div>
+                  {(clientData?.address || clientData?.endereco) && (
+                    <div className="sm:col-span-2 md:col-span-3 pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
-                        <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
-                          <span className="font-extrabold text-sm text-slate-900">3. Proposta & Peças Vinculadas</span>
-                          <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                            Status: {selectedTicketDetail.budget_status || 'Aprovado'}
-                          </span>
-                        </div>
-                        <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 text-xs space-y-2">
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
-                            <div className="bg-white p-2 rounded-lg border border-emerald-100">
-                              <span className="text-slate-500 text-[10px] uppercase font-bold block">Peças / Insumos</span>
-                              <span className="font-extrabold text-slate-900">{formatCurrency(selectedTicketDetail.budget_total_parts || 0)}</span>
-                            </div>
-                            <div className="bg-white p-2 rounded-lg border border-emerald-100">
-                              <span className="text-slate-500 text-[10px] uppercase font-bold block">Mão de Obra Técnica</span>
-                              <span className="font-extrabold text-slate-900">{formatCurrency(selectedTicketDetail.budget_total_labor || 0)}</span>
-                            </div>
-                            <div className="bg-white p-2 rounded-lg border border-emerald-200">
-                              <span className="text-emerald-700 text-[10px] uppercase font-black block">Investimento Total</span>
-                              <span className="font-black text-emerald-700 text-sm">{formatCurrency(selectedTicketDetail.budget_grand_total)}</span>
-                            </div>
-                          </div>
-                        </div>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Endereço de Atendimento</span>
+                        <span className="font-medium text-slate-700">{clientData.address || clientData.endereco}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clientData.address || clientData.endereco)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                        >
+                          Google Maps ↗
+                        </a>
+                        <span className="text-slate-300">|</span>
+                        <a
+                          href={`https://waze.com/ul?q=${encodeURIComponent(clientData.address || clientData.endereco)}&navigate=yes`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-bold text-cyan-600 hover:text-cyan-800 hover:underline flex items-center gap-1"
+                        >
+                          Waze ↗
+                        </a>
                       </div>
                     </div>
-                  ) : null}
-
-                  {/* Etapa 4: Conclusão & Laudo Técnico */}
-                  <div className="relative">
-                    <div className={`absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      (selectedTicketDetail.status || '').toLowerCase().includes('conclu')
-                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
-                        : 'bg-slate-100 border-slate-300 text-slate-400'
-                    }`}>
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
-                        <span className="font-extrabold text-sm text-slate-900">
-                          {(selectedTicketDetail.status || '').toLowerCase().includes('conclu')
-                            ? '4. Atendimento Concluído & Laudo Técnico'
-                            : '4. Execução Técnica & Fechamento'}
-                        </span>
-                        {selectedTicketDetail.closed_at && (
-                          <span className="text-[11px] text-slate-500 font-medium">
-                            Concluído em: {new Date(selectedTicketDetail.closed_at).toLocaleString('pt-BR')}
-                          </span>
-                        )}
-                      </div>
-
-                      {(selectedTicketDetail.status || '').toLowerCase().includes('conclu') ? (
-                        <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 text-xs space-y-3">
-                          <div>
-                            <span className="text-emerald-900 font-bold uppercase text-[10px] tracking-wider block mb-1">
-                              Laudo Técnico de Execução / Resolução:
-                            </span>
-                            <div className="bg-white p-3 rounded-lg border border-emerald-200 text-slate-800 font-medium leading-relaxed whitespace-pre-line">
-                              {selectedTicketDetail.resolution_notes || 'Atendimento técnico finalizado com testes operacionais de funcionamento do equipamento.'}
-                            </div>
-                          </div>
-
-                          {(selectedTicketDetail.signed_by_name || selectedTicketDetail.client_signature) && (
-                            <div className="pt-2 border-t border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                              <div>
-                                <span className="text-[10px] uppercase font-bold text-slate-500 block">Comprovante de Recebimento no Local:</span>
-                                <div className="font-bold text-slate-800">
-                                  {selectedTicketDetail.signed_by_name || 'Responsável'} {selectedTicketDetail.signed_by_document ? `(Doc: ${selectedTicketDetail.signed_by_document})` : ''}
-                                </div>
-                              </div>
-                              {selectedTicketDetail.client_signature && (
-                                <div className="text-right">
-                                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">Assinatura Digital Coletada:</span>
-                                  <img 
-                                    src={selectedTicketDetail.client_signature} 
-                                    alt="Assinatura do Recebedor" 
-                                    className="h-12 border border-slate-200 rounded-lg p-1 bg-white inline-block shadow-2xs"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-500 italic">
-                          O atendimento ainda está em andamento. O laudo técnico com o parecer completo do especialista e o comprovante de assinatura serão publicados aqui assim que o serviço for concluído.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
+                  )}
                 </div>
               </div>
 
-              {/* =============================================================== */}
-              {/* 📸 GALERIA DE FOTOS E VÍDEOS (DO CLIENTE E DOS TÉCNICOS)        */}
-              {/* =============================================================== */}
-              <div className="pt-4 border-t border-slate-200">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-black uppercase text-[#007481] tracking-wider flex items-center gap-2">
-                    <Camera className="w-4 h-4" /> Fotos e Vídeos do Atendimento ({parseTicketMedia(selectedTicketDetail.evidence_photos).length})
-                  </h4>
-                  <span className="text-[11px] text-slate-500">
-                    Clique na mídia para visualizar em tela cheia
+              {/* 2. EQUIPAMENTO RELACIONADO */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Wrench className="w-4 h-4 text-[#007481]" /> 2. Equipamento Objeto do Atendimento
                   </span>
+                  <span className="text-[11px] text-slate-400 font-medium">Park de Máquinas</span>
                 </div>
-
-                {parseTicketMedia(selectedTicketDetail.evidence_photos).length === 0 ? (
-                  <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-500">
-                    <Camera className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    Nenhuma foto ou vídeo anexado a este chamado.
+                <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Equipamento</span>
+                    <span className="font-bold text-slate-900">{selectedTicketDetail.equipment_name || 'Lavadora de Pisos / Varredeira'}</span>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {parseTicketMedia(selectedTicketDetail.evidence_photos).map((media, idx) => {
-                      const isVid = isVideoMedia(media);
-                      return (
-                        <div
-                          key={idx}
-                          onClick={() => setActiveMediaLightbox(media)}
-                          className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square bg-slate-900 cursor-pointer shadow-xs hover:shadow-md transition-all hover:scale-[1.02]"
-                        >
-                          {isVid ? (
-                            <div className="w-full h-full relative flex items-center justify-center bg-slate-950">
-                              <video src={media} className="w-full h-full object-cover opacity-80" />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-colors">
-                                <div className="w-10 h-10 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                  <Play className="w-5 h-5 ml-0.5 fill-current" />
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Marca / Fabricante</span>
+                    <span className="font-bold text-slate-900">{selectedTicketDetail.equipment_brand || 'Tennant'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Modelo</span>
+                    <span className="font-bold text-slate-900">{selectedTicketDetail.equipment_model || 'Não especificado'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Número de Série (S/N)</span>
+                    <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 inline-block">
+                      {selectedTicketDetail.equipment_serial_number || 'S/N'}
+                    </span>
+                  </div>
+                  {selectedTicketDetail.hour_meter && (
+                    <div className="col-span-2 sm:col-span-4 pt-2 border-t border-slate-100 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-slate-400" />
+                      <span className="text-[11px] text-slate-500 font-semibold">Horímetro Operacional Informado:</span>
+                      <strong className="text-slate-900 font-bold">{selectedTicketDetail.hour_meter} horas</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 3. DADOS DE ATENDIMENTO TÉCNICO */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#007481]" /> 3. Dados de Atendimento Técnico
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">Assistência Técnica Autorizada</span>
+                </div>
+                <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Técnico Responsável</span>
+                    <span className="font-bold text-slate-900 flex items-center gap-1">
+                      <User className="w-3.5 h-3.5 text-[#007481]" />
+                      {selectedTicketDetail.assigned_technician || 'Aguardando designação'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Contato do Técnico</span>
+                    <span className="font-medium text-slate-700">
+                      {selectedTicketDetail.technician_phone || '(41) 98508-3658'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Data de Agendamento</span>
+                    <span className="font-medium text-slate-800">
+                      {selectedTicketDetail.scheduled_date ? new Date(selectedTicketDetail.scheduled_date).toLocaleString('pt-BR') : 'A definir pela equipe'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Data de Conclusão</span>
+                    <span className="font-medium text-slate-800">
+                      {selectedTicketDetail.closed_at ? new Date(selectedTicketDetail.closed_at).toLocaleString('pt-BR') : ((selectedTicketDetail.status || '').toLowerCase().includes('conclu') ? 'Finalizado' : 'Em andamento')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. DEFEITO RELATADO / SOLICITAÇÃO INICIAL */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" /> 4. Defeito Relatado / Solicitação Inicial
+                  </span>
+                  <span className="text-[11px] text-slate-400">Registrado na abertura</span>
+                </div>
+                <div className="p-4 bg-amber-50/15">
+                  <p className="text-xs text-slate-800 font-medium leading-relaxed whitespace-pre-line">
+                    {selectedTicketDetail.description || 'Nenhum defeito detalhado informado.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* 5. ORÇAMENTO & PROPOSTA TÉCNICA VINCULADA (quando houver) */}
+              {selectedTicketDetail.budget_grand_total ? (
+                <div className="border border-emerald-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                  <div className="bg-emerald-50 px-4 py-2.5 border-b border-emerald-200 flex items-center justify-between">
+                    <span className="text-xs font-black text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <DollarSign className="w-4 h-4 text-emerald-600" /> 5. Orçamento & Proposta Técnica Vinculada
+                    </span>
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                      Status da Proposta: {selectedTicketDetail.budget_status || 'Aprovado'}
+                    </span>
+                  </div>
+                  <div className="p-4 bg-emerald-50/30">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-2xs">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Peças & Componentes</span>
+                        <span className="font-bold text-slate-800">{formatCurrency(selectedTicketDetail.budget_parts_total || selectedTicketDetail.budget_total_parts || 0)}</span>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-2xs">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Mão de Obra Especializada</span>
+                        <span className="font-bold text-slate-800">{formatCurrency(selectedTicketDetail.budget_total_labor || 0)}</span>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-emerald-300 shadow-2xs">
+                        <span className="text-[10px] uppercase font-black text-emerald-600 block mb-0.5">Investimento Total</span>
+                        <span className="font-black text-emerald-700 text-base">{formatCurrency(selectedTicketDetail.budget_grand_total)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* 6. LAUDO TÉCNICO & RELATÓRIO DE RESOLUÇÃO */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> 6. Laudo Técnico de Execução & Parecer Especialista
+                  </span>
+                  <span className="text-[11px] text-slate-400">Assistência Autorizada Tennant</span>
+                </div>
+                <div className="p-4">
+                  {selectedTicketDetail.resolution_notes ? (
+                    <div className="bg-emerald-50/40 p-4 rounded-xl border border-emerald-200 text-xs text-slate-800 font-medium leading-relaxed whitespace-pre-line">
+                      {selectedTicketDetail.resolution_notes}
+                    </div>
+                  ) : (selectedTicketDetail.status || '').toLowerCase().includes('conclu') ? (
+                    <div className="bg-emerald-50/40 p-4 rounded-xl border border-emerald-200 text-xs text-slate-800 font-medium">
+                      Atendimento técnico finalizado com testes operacionais de funcionamento do equipamento no local.
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-500 italic">
+                      Atendimento técnico em andamento. O laudo técnico e parecer final serão registrados pelo especialista ao término da manutenção.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 7. EVIDÊNCIAS FOTOGRÁFICAS & VÍDEOS */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-[#007481]" /> 7. Evidências Fotográficas e Vídeos ({parseTicketMedia(selectedTicketDetail.evidence_photos).length})
+                  </span>
+                  <span className="text-[11px] text-slate-400">Clique na foto/vídeo para visualizar ampliado</span>
+                </div>
+                <div className="p-4">
+                  {parseTicketMedia(selectedTicketDetail.evidence_photos).length === 0 ? (
+                    <div className="p-6 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-400">
+                      <Camera className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                      Nenhuma foto ou vídeo anexado a este chamado.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {parseTicketMedia(selectedTicketDetail.evidence_photos).map((media, idx) => {
+                        const isVid = isVideoMedia(media);
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => setActiveMediaLightbox(media)}
+                            className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square bg-slate-900 cursor-pointer shadow-xs hover:shadow-md transition-all hover:scale-[1.02]"
+                          >
+                            {isVid ? (
+                              <div className="w-full h-full relative flex items-center justify-center bg-slate-950">
+                                <video src={media} className="w-full h-full object-cover opacity-80" />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/20 transition-colors">
+                                  <div className="w-10 h-10 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                    <Play className="w-5 h-5 ml-0.5 fill-current" />
+                                  </div>
+                                </div>
+                                <span className="absolute bottom-1.5 left-1.5 bg-black/80 text-white text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-1">
+                                  <Video className="w-3 h-3" /> VÍDEO
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="w-full h-full relative">
+                                <img src={media} alt={`Evidência ${idx + 1}`} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                  <Eye className="w-6 h-6 text-white drop-shadow" />
                                 </div>
                               </div>
-                              <span className="absolute bottom-1.5 left-1.5 bg-black/80 text-white text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-1">
-                                <Video className="w-3 h-3" /> VÍDEO
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="w-full h-full relative">
-                              <img src={media} alt={`Evidência ${idx + 1}`} className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                <Eye className="w-6 h-6 text-white drop-shadow" />
-                              </div>
-                            </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 8. ASSINATURAS & TERMO DE RECEBIMENTO */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-[#007481]" /> 8. Termo de Recebimento & Assinaturas Digitais
+                  </span>
+                  <span className="text-[11px] text-slate-400">Validade Jurídica & Operacional</span>
+                </div>
+                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 text-center flex flex-col items-center justify-between min-h-[140px]">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Técnico Responsável</span>
+                    <div className="my-2">
+                      <div className="text-xs font-bold text-[#007481]">
+                        {selectedTicketDetail.assigned_technician || 'Técnico Especialista Clean Tech Pro'}
+                      </div>
+                      <span className="text-[10px] text-slate-400 italic block mt-0.5">Assinado Digitalmente no Sistema</span>
+                    </div>
+                    <div className="w-full border-t border-slate-300 pt-2 text-[10px] text-slate-500 font-semibold">
+                      Clean Tech Pro • Autorizada Tennant
+                    </div>
+                  </div>
+
+                  <div className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 text-center flex flex-col items-center justify-between min-h-[140px]">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Recebedor no Local / Cliente</span>
+                    <div className="my-2">
+                      {selectedTicketDetail.client_signature ? (
+                        <img
+                          src={selectedTicketDetail.client_signature}
+                          alt="Assinatura do Recebedor"
+                          className="h-14 max-w-[200px] object-contain border border-slate-200 rounded bg-white p-1 mx-auto shadow-2xs"
+                        />
+                      ) : (
+                        <span className="text-xs text-slate-400 italic block my-3">Assinatura digital não coletada</span>
+                      )}
+                      <div className="text-xs font-bold text-slate-800 mt-1">
+                        {selectedTicketDetail.signed_by_name || 'Responsável pelo Recebimento'}
+                      </div>
+                      {selectedTicketDetail.signed_by_document && (
+                        <span className="text-[10px] text-slate-500 block">Doc: {selectedTicketDetail.signed_by_document}</span>
+                      )}
+                    </div>
+                    <div className="w-full border-t border-slate-300 pt-2 text-[10px] text-slate-500 font-semibold">
+                      Comprovante de Execução de Serviços
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 9. LINHA DO TEMPO & HISTÓRICO DO ATENDIMENTO */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-[#007481]" /> 9. Linha do Tempo & Histórico das Etapas
+                  </span>
+                  <span className="text-[11px] text-slate-400">Rastreabilidade Completa</span>
+                </div>
+                <div className="p-4 sm:p-5">
+                  <div className="relative pl-6 sm:pl-8 space-y-5 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                    
+                    {/* Etapa 1 */}
+                    <div className="relative">
+                      <div className="absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full bg-teal-100 border-2 border-[#007481] flex items-center justify-center text-[#007481]">
+                        <Check className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center justify-between gap-1 mb-0.5">
+                          <span className="font-extrabold text-xs text-slate-900">1. Chamado Aberto no Portal</span>
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            {new Date(selectedTicketDetail.created_at).toLocaleString('pt-BR')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600">Chamado registrado com sucesso no sistema da assistência técnica autorizada.</p>
+                      </div>
+                    </div>
+
+                    {/* Etapa 2 */}
+                    <div className="relative">
+                      <div className={`absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        selectedTicketDetail.assigned_technician
+                          ? 'bg-teal-100 border-[#007481] text-[#007481]'
+                          : 'bg-slate-100 border-slate-300 text-slate-400'
+                      }`}>
+                        <User className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center justify-between gap-1 mb-0.5">
+                          <span className="font-extrabold text-xs text-slate-900">2. Triagem & Agendamento Técnico</span>
+                          {selectedTicketDetail.scheduled_date && (
+                            <span className="text-[11px] text-slate-500 font-medium">
+                              Agendado: {new Date(selectedTicketDetail.scheduled_date).toLocaleDateString('pt-BR')}
+                            </span>
                           )}
                         </div>
-                      );
-                    })}
+                        <p className="text-xs text-slate-600">
+                          {selectedTicketDetail.assigned_technician 
+                            ? `Técnico especialista designado: ${selectedTicketDetail.assigned_technician}` 
+                            : 'Em análise e roteirização pela central operacional.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Etapa 3 */}
+                    <div className="relative">
+                      <div className={`absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        (selectedTicketDetail.status || '').toLowerCase().includes('conclu')
+                          ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                          : 'bg-slate-100 border-slate-300 text-slate-400'
+                      }`}>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center justify-between gap-1 mb-0.5">
+                          <span className="font-extrabold text-xs text-slate-900">
+                            {(selectedTicketDetail.status || '').toLowerCase().includes('conclu')
+                              ? '3. Atendimento Concluído & Laudo Homologado'
+                              : '3. Execução Técnica no Local'}
+                          </span>
+                          {selectedTicketDetail.closed_at && (
+                            <span className="text-[11px] text-slate-500 font-medium">
+                              {new Date(selectedTicketDetail.closed_at).toLocaleString('pt-BR')}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-600">
+                          {(selectedTicketDetail.status || '').toLowerCase().includes('conclu')
+                            ? 'Manutenção finalizada, laudo técnico emitido e termo de recebimento registrado.'
+                            : 'Ordem de serviço em atendimento com nossa equipe de especialistas.'}
+                        </p>
+                      </div>
+                    </div>
+
                   </div>
-                )}
+                </div>
               </div>
 
             </div>
 
-            {/* Rodapé do Modal */}
-            <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* Rodapé do Modal com Ações */}
+            <div className="p-4 sm:p-5 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={() => handlePrintTicketReport(selectedTicketDetail)}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#007481] hover:bg-[#005d68] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all cursor-pointer"
               >
-                <Printer className="w-4 h-4" /> Imprimir Relatório Oficial
+                <Printer className="w-4 h-4" /> Imprimir Relatório Oficial / OS (PDF)
               </button>
 
               <div className="w-full sm:w-auto flex items-center gap-2">
@@ -3055,7 +3269,7 @@ export default function PortalCliente() {
                 <button
                   type="button"
                   onClick={() => setSelectedTicketDetail(null)}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                 >
                   Fechar
                 </button>
