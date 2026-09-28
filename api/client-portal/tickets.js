@@ -66,6 +66,7 @@ export default async function handler(req, res) {
           b.created_at as budget_created_at
         FROM service_tickets st
         LEFT JOIN equipments e ON st.equipment_id = e.id
+        LEFT JOIN technicians t ON st.technician_id = t.id
         LEFT JOIN LATERAL (
           SELECT id, grand_total, total_parts, total_labor, status, created_at
           FROM budgets 
@@ -73,7 +74,8 @@ export default async function handler(req, res) {
           ORDER BY id DESC
           LIMIT 1
         ) b ON true
-        WHERE st.client_id = $1
+        WHERE st.client_id::text = $1::text
+           OR st.equipment_id IN (SELECT id FROM equipments WHERE client_id::text = $1::text)
         ORDER BY st.created_at DESC
       `;
       const ticketsRes = await dbClient.query(ticketsQuery, [clientId]);

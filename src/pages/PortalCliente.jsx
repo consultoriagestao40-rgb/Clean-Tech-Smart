@@ -201,6 +201,7 @@ export default function PortalCliente() {
   const [selectedEquipmentDetail, setSelectedEquipmentDetail] = useState(null);
   const [equipmentHistoryData, setEquipmentHistoryData] = useState(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState('');
 
   // Tickets & Data
   const [tickets, setTickets] = useState([]);
@@ -527,6 +528,8 @@ export default function PortalCliente() {
 
   const openEquipmentDetails = async (eq) => {
     setSelectedEquipmentDetail(eq);
+    setEquipmentHistoryData(null);
+    setHistoryError('');
     setLoadingHistory(true);
     try {
       const res = await fetch(`/api/client-portal/equipment-history?equipment_id=${eq.id}`, {
@@ -535,9 +538,12 @@ export default function PortalCliente() {
       const data = await res.json();
       if (data.success) {
         setEquipmentHistoryData(data);
+      } else {
+        setHistoryError(data.error || 'Erro ao consultar histórico do equipamento.');
       }
     } catch (err) {
       console.error('Erro ao buscar histórico do equipamento:', err);
+      setHistoryError('Falha na comunicação ao buscar o histórico.');
     } finally {
       setLoadingHistory(false);
     }
@@ -2248,6 +2254,11 @@ export default function PortalCliente() {
                   <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin text-[#007481]" />
                   Calculando histórico de manutenções e diagnóstico de viabilidade...
                 </div>
+              ) : historyError ? (
+                <div className="p-8 text-center bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-700">
+                  <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-rose-500" />
+                  {historyError}
+                </div>
               ) : equipmentHistoryData ? (
                 <>
                   {/* =========================================================== */}
@@ -2341,11 +2352,27 @@ export default function PortalCliente() {
                               <span className="font-bold text-slate-900 text-xs">
                                 Chamado #{hist.id} • {hist.ticket_type}
                               </span>
-                              <span className="text-[11px] text-slate-500">
-                                {new Date(hist.created_at).toLocaleDateString('pt-BR')}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  (hist.status || '').toLowerCase().includes('conclu')
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                    : 'bg-amber-100 text-amber-800 border border-amber-200'
+                                }`}>
+                                  {hist.status || 'Aberto'}
+                                </span>
+                                <span className="text-[11px] text-slate-500">
+                                  {new Date(hist.created_at).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
                             </div>
                             <p className="text-xs text-slate-600">{hist.description}</p>
+
+                            {hist.assigned_technician && (
+                              <div className="text-[11px] text-[#007481] font-medium flex items-center gap-1.5 pt-1">
+                                <User className="w-3.5 h-3.5" />
+                                <span>Técnico Responsável: <strong className="text-slate-800">{hist.assigned_technician}</strong></span>
+                              </div>
+                            )}
 
                             {hist.budget_grand_total && (
                               <div className="pt-2 border-t border-slate-200 flex justify-between text-xs">

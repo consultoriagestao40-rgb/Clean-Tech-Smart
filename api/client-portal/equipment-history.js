@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     // 1. Verify equipment belongs to this client
     const eqRes = await dbClient.query(`
       SELECT * FROM equipments 
-      WHERE id = $1 AND client_id = $2
+      WHERE id = $1 AND client_id::text = $2::text
       LIMIT 1
     `, [equipmentId, clientId]);
 
@@ -76,6 +76,7 @@ export default async function handler(req, res) {
         b.total_labor as budget_total_labor,
         b.status as budget_status
       FROM service_tickets st
+      LEFT JOIN technicians t ON st.technician_id = t.id
       LEFT JOIN LATERAL (
         SELECT id, grand_total, total_parts, total_labor, status
         FROM budgets 
@@ -83,9 +84,9 @@ export default async function handler(req, res) {
         ORDER BY id DESC
         LIMIT 1
       ) b ON true
-      WHERE st.equipment_id = $1 AND st.client_id = $2
+      WHERE st.equipment_id = $1
       ORDER BY st.created_at DESC
-    `, [equipmentId, clientId]);
+    `, [equipmentId]);
 
     const tickets = historyRes.rows;
 
