@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, ShieldAlert, Check, Link2, Clock, Copy, Sparkles, Layers, Receipt } from 'lucide-react';
+import { 
+  Plus, Search, Loader2, Edit, X, Trash2, FileText, ArrowLeft, Printer, ShieldAlert, 
+  Check, Link2, Clock, Copy, Sparkles, Layers, Receipt,
+  Truck, PackageCheck, AlertCircle, Wrench, CheckCircle2, RefreshCw
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function PropostasLocacao() {
@@ -13,6 +17,20 @@ export default function PropostasLocacao() {
   const [machineModels, setMachineModels] = useState([]);
   const [rentalPrices, setRentalPrices] = useState([]);
   const [equipments, setEquipments] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
+
+  // Modal de Alocação de Ativo & Chamado de Entrega Técnica
+  const [isAllocateModalOpen, setIsAllocateModalOpen] = useState(false);
+  const [isSavingAllocation, setIsSavingAllocation] = useState(false);
+  const [proposalToAllocate, setProposalToAllocate] = useState(null);
+  const [allocateForm, setAllocateForm] = useState({
+    equipment_id: '',
+    scheduled_date: new Date().toISOString().split('T')[0],
+    technician_id: '',
+    technician_name: '',
+    create_delivery_ticket: true,
+    delivery_notes: ''
+  });
 
   // Modal / Form state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -170,10 +188,70 @@ export default function PropostasLocacao() {
       const pricingRes = await fetch('/api/get-rental-prices');
       const pricingData = await pricingRes.json();
       if (pricingData.rentalPrices) setRentalPrices(pricingData.rentalPrices);
+
+      const techRes = await fetch('/api/get-technicians');
+      const techData = await techRes.json();
+      if (techData.technicians) setTechnicians(techData.technicians);
     } catch (error) {
       console.error('Erro ao carregar dependências:', error);
     }
   }
+
+  // ----------------------------------------------------
+  // ALOCAÇÃO DE ATIVO REAL DO PARQUE E CHAMADO DE ENTREGA
+  // ----------------------------------------------------
+  const handleOpenAllocateModal = (p) => {
+    setProposalToAllocate(p);
+    setAllocateForm({
+      equipment_id: p.equipment_id ? String(p.equipment_id) : '',
+      scheduled_date: new Date().toISOString().split('T')[0],
+      technician_id: '',
+      technician_name: '',
+      create_delivery_ticket: true,
+      delivery_notes: `Entrega técnica e instalação para o cliente ${p.client_name || ''}.`
+    });
+    setIsAllocateModalOpen(true);
+  };
+
+  const handleSaveAllocation = async (e) => {
+    e.preventDefault();
+    if (!allocateForm.equipment_id) {
+      alert('Por favor, selecione um ativo disponível no parque.');
+      return;
+    }
+
+    setIsSavingAllocation(true);
+    try {
+      const res = await fetch('/api/allocate-rental-equipment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          proposal_id: proposalToAllocate.id,
+          equipment_id: allocateForm.equipment_id,
+          scheduled_date: allocateForm.scheduled_date,
+          technician_id: allocateForm.technician_id || null,
+          technician_name: allocateForm.technician_name || null,
+          create_delivery_ticket: allocateForm.create_delivery_ticket,
+          delivery_notes: allocateForm.delivery_notes
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || 'Ativo alocado e chamado de entrega gerado com sucesso!');
+        setIsAllocateModalOpen(false);
+        fetchProposals();
+        loadFormDependencies();
+      } else {
+        alert('Erro ao alocar ativo: ' + (data.error || 'Erro desconhecido'));
+      }
+    } catch (err) {
+      console.error('Erro na alocacao do ativo:', err);
+      alert('Erro de comunicação ao alocar ativo.');
+    } finally {
+      setIsSavingAllocation(false);
+    }
+  };
 
   const calculateItemPrice = (rentalPriceId, periodMonths, customMarkup = null) => {
     if (!rentalPriceId) return '';
@@ -1605,6 +1683,49 @@ body{padding-top:60px}
                             <p className="text-xxs text-gray-500 mt-1 truncate font-medium" title={displayMachine}>
                               ⚙️ {displayMachine}
                             </p>
+
+                            {/* Informação do Ativo Alocado ou Ação de Alocação */}
+                            {['Fechada', 'Aprovada', 'Contrato'].includes(colStatus || p.status) && (
+                              p.equipment_id ? (
+                                <div className="mt-1.5 p-1.5 rounded-lg bg-teal-50 border border-teal-200 text-[#007481] text-[10px] space-y-1">
+                                  <div className="flex items-center justify-between font-bold">
+                                    <span className="flex items-center gap-1 truncate" title={`${p.equipment_name || 'Ativo'} (S/N: ${p.equipment_serial || 'S/N'})`}>
+                                      <Truck className="w-3 h-3 text-[#007481] shrink-0" />
+                                      <span className="truncate">Ativo: {p.equipment_name}</span>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenAllocateModal(p)}
+                                      className="text-teal-700 hover:text-teal-900 font-normal underline text-[9px] shrink-0 cursor-pointer"
+                                      title="Trocar/Atualizar Ativo Alocado"
+                                    >
+                                      Trocar
+                                    </button>
+                                  </div>
+                                  <div className="text-slate-600 font-mono text-[9px]">
+                                    S/N: {p.equipment_serial || 'S/N'}
+                                  </div>
+                                  {p.delivery_ticket_id && (
+                                    <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-700 pt-0.5 border-t border-teal-100">
+                                      <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                                      <Link to="/gestao-chamados" className="hover:underline">
+                                        OS Entrega #{p.delivery_ticket_id} ({p.delivery_ticket_status || 'Aberto'})
+                                      </Link>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenAllocateModal(p)}
+                                  className="w-full mt-2 flex items-center justify-center gap-1.5 bg-[#007481] hover:bg-[#005d68] text-white py-1.5 px-2 rounded-lg text-[10px] font-bold shadow-xs transition-colors cursor-pointer"
+                                  title="Alocar ativo do parque para entrega desta locação"
+                                >
+                                  <Truck className="w-3 h-3" />
+                                  <span>Alocar Ativo &amp; Entrega</span>
+                                </button>
+                              )
+                            )}
                           </div>
 
                           {/* Horizontal row for basic info at the same height */}
@@ -1643,23 +1764,33 @@ body{padding-top:60px}
                                   <Edit className="w-3.5 h-3.5" />
                                 </button>
                                 {['Fechada', 'Aprovada', 'Contrato'].includes(colStatus || p.status) && (
-                                  p.invoice_id ? (
-                                    <Link 
-                                      to="/faturas"
-                                      className="p-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-md transition-colors inline-flex items-center"
-                                      title={`Fatura #${p.invoice_id} gerada - Ver em Faturas`}
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenAllocateModal(p)}
+                                      className="p-1.5 bg-teal-50 text-[#007481] hover:bg-teal-100 rounded-md transition-colors inline-flex items-center cursor-pointer"
+                                      title={p.equipment_id ? "Ativo Alocado - Ver / Alterar" : "Alocar Ativo & Abrir Chamado de Entrega"}
                                     >
-                                      <Receipt className="w-3.5 h-3.5 text-blue-600" />
-                                    </Link>
-                                  ) : (
-                                    <Link 
-                                      to={`/faturas?faturar_locacao=${p.id}`}
-                                      className="p-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-md transition-colors inline-flex items-center"
-                                      title="Faturar Locação & Criar Venda no Conta Azul"
-                                    >
-                                      <Receipt className="w-3.5 h-3.5 text-indigo-600" />
-                                    </Link>
-                                  )
+                                      <Truck className="w-3.5 h-3.5" />
+                                    </button>
+                                    {p.invoice_id ? (
+                                      <Link 
+                                        to="/faturas"
+                                        className="p-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-md transition-colors inline-flex items-center"
+                                        title={`Fatura #${p.invoice_id} gerada - Ver em Faturas`}
+                                      >
+                                        <Receipt className="w-3.5 h-3.5 text-blue-600" />
+                                      </Link>
+                                    ) : (
+                                      <Link 
+                                        to={`/faturas?faturar_locacao=${p.id}`}
+                                        className="p-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-md transition-colors inline-flex items-center"
+                                        title="Faturar Locação & Criar Venda no Conta Azul"
+                                      >
+                                        <Receipt className="w-3.5 h-3.5 text-indigo-600" />
+                                      </Link>
+                                    )}
+                                  </>
                                 )}
                               </div>
                               <button 
@@ -1731,19 +1862,48 @@ body{padding-top:60px}
                             </span>
                           )}
                         </div>
-                        {p.equipment_name && (
-                          <div className="text-[11px] text-blue-600 font-bold flex items-center gap-1 mt-0.5">
-                            <span>Ativo: {p.equipment_name}</span>
-                            {p.equipment_serial && <span className="text-gray-400 font-medium">(S/N: {p.equipment_serial})</span>}
-                            {p.equipment_ownership === 'sublocado' && <span className="px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded text-[9px] font-bold">SUBLOCADO</span>}
+                        {p.equipment_name ? (
+                          <div className="text-[11px] text-teal-700 font-bold flex flex-col gap-0.5 mt-1">
+                            <span className="flex items-center gap-1">
+                              <Truck className="w-3 h-3 text-[#007481]" />
+                              Ativo: {p.equipment_name}
+                              {p.equipment_serial && <span className="text-gray-500 font-normal font-mono">(S/N: {p.equipment_serial})</span>}
+                            </span>
+                            {p.delivery_ticket_id && (
+                              <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                                OS Entrega #{p.delivery_ticket_id} ({p.delivery_ticket_status || 'Aberto'})
+                              </span>
+                            )}
                           </div>
-                        )}
+                        ) : ['Fechada', 'Aprovada', 'Contrato'].includes(p.status) ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAllocateModal(p)}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-md mt-1 cursor-pointer"
+                            title="Clique para alocar uma máquina disponível no parque"
+                          >
+                            <AlertCircle className="w-3 h-3 text-amber-600" />
+                            Aguardando Ativo do Parque
+                          </button>
+                        ) : null}
                       </td>
                       <td className="px-6 py-4 text-gray-600 font-medium">{displayPeriod}</td>
                       <td className="px-6 py-4 text-right font-bold text-blue-600">{displayValue}</td>
                       <td className="px-6 py-4 text-gray-500 text-xs">{p.contract_type}</td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end space-x-2">
+                          {['Fechada', 'Aprovada', 'Contrato'].includes(p.status) && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAllocateModal(p)}
+                              className="flex items-center px-2.5 py-1.5 bg-teal-50 text-[#007481] hover:bg-teal-100 border border-teal-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                              title={p.equipment_id ? "Ativo Alocado - Ver / Trocar" : "Alocar Ativo do Parque & Abrir Chamado de Entrega"}
+                            >
+                              <Truck className="w-3.5 h-3.5 mr-1" />
+                              {p.equipment_id ? 'Ativo' : 'Alocar Ativo'}
+                            </button>
+                          )}
                           <button 
                             onClick={() => handleCopyPublicLink(p.id)}
                             className="flex items-center px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-colors"
@@ -2608,6 +2768,185 @@ body{padding-top:60px}
                 >
                   {isSavingMachineModel ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                   <span>Salvar Modelo</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Alocar Ativo Real do Parque & Agendar Entrega Técnica */}
+      {isAllocateModalOpen && proposalToAllocate && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner">
+                  <PackageCheck className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base leading-tight">Alocar Ativo & Agendar Entrega</h3>
+                  <p className="text-xs text-emerald-100 mt-0.5">
+                    Proposta #{proposalToAllocate.id} • {proposalToAllocate.client_name || 'Cliente'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsAllocateModalOpen(false)}
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveAllocation} className="p-6 space-y-4">
+              {/* Context Summary */}
+              <div className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-xl text-xs space-y-1">
+                <div className="flex justify-between items-center text-emerald-900 font-semibold">
+                  <span>Equipamento da Proposta:</span>
+                  <span className="text-emerald-800 font-bold">
+                    {proposalToAllocate.equipment_name || (proposalToAllocate.items && proposalToAllocate.items[0]?.description) || 'Máquina Solicitada'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-emerald-700 text-[11px]">
+                  <span>Prazo / Período:</span>
+                  <span>{proposalToAllocate.rental_period || 'Curto/Médio Prazo'}</span>
+                </div>
+                {proposalToAllocate.equipment_id && (
+                  <div className="flex justify-between items-center text-amber-800 text-[11px] pt-1 border-t border-emerald-100 font-medium">
+                    <span>Ativo Atualmente Vinculado:</span>
+                    <span className="font-mono bg-amber-100 px-1.5 py-0.5 rounded text-amber-900">
+                      ID #{proposalToAllocate.equipment_id}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Equipment Selection */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  1. Selecionar Ativo Físico do Parque <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={allocateForm.equipment_id}
+                  onChange={(e) => setAllocateForm(prev => ({ ...prev, equipment_id: e.target.value }))}
+                  className="w-full px-3 py-2.5 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium text-gray-800 shadow-xs"
+                >
+                  <option value="">Selecione a máquina disponível no estoque físico...</option>
+                  {equipments.map(eq => {
+                    const isAvailable = eq.status === 'Disponível' || !eq.status;
+                    const isCurrent = String(proposalToAllocate.equipment_id) === String(eq.id);
+                    const tag = isCurrent ? '[ATUALMENTE NESTA PROPOSTA]' : isAvailable ? '✓ [DISPONÍVEL]' : `[STATUS: ${eq.status?.toUpperCase()}]`;
+                    return (
+                      <option key={eq.id} value={eq.id}>
+                        {tag} {eq.name} (Série/Patrimônio: {eq.serial_number || 'S/N'})
+                      </option>
+                    );
+                  })}
+                </select>
+                <p className="text-[11px] text-gray-500 mt-1">
+                  💡 Ao alocar, o status desta máquina no parque passará automaticamente para <strong className="text-emerald-700">"Locado"</strong> associada ao cliente.
+                </p>
+              </div>
+
+              {/* Ticket Checkbox */}
+              <div className="pt-2 border-t border-gray-100">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={allocateForm.create_delivery_ticket}
+                    onChange={(e) => setAllocateForm(prev => ({ ...prev, create_delivery_ticket: e.target.checked }))}
+                    className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+                  />
+                  <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                    <Truck className="w-3.5 h-3.5 text-emerald-600" />
+                    Abrir Chamado Técnico de Entrega / Expedição
+                  </span>
+                </label>
+              </div>
+
+              {/* Delivery Details */}
+              {allocateForm.create_delivery_ticket && (
+                <div className="space-y-3 bg-gray-50/80 p-3.5 rounded-xl border border-gray-200/80">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-700 mb-1">
+                        Data Prevista da Entrega
+                      </label>
+                      <input
+                        type="date"
+                        value={allocateForm.scheduled_date}
+                        onChange={(e) => setAllocateForm(prev => ({ ...prev, scheduled_date: e.target.value }))}
+                        className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-700 mb-1">
+                        Técnico / Motorista Responsável
+                      </label>
+                      <select
+                        value={allocateForm.technician_id}
+                        onChange={(e) => {
+                          const tech = technicians.find(t => String(t.id) === String(e.target.value));
+                          setAllocateForm(prev => ({
+                            ...prev,
+                            technician_id: e.target.value,
+                            technician_name: tech ? (tech.name || tech.full_name) : ''
+                          }));
+                        }}
+                        className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white"
+                      >
+                        <option value="">A definir / Qualquer técnico...</option>
+                        {technicians.map(t => (
+                          <option key={t.id} value={t.id}>{t.name || t.full_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-700 mb-1">
+                      Instruções de Entrega / Observações
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={allocateForm.delivery_notes}
+                      onChange={(e) => setAllocateForm(prev => ({ ...prev, delivery_notes: e.target.value }))}
+                      placeholder="Ex: Entrega no galpão 2, procurar o encarregado Roberto para assinatura do termo..."
+                      className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end items-center gap-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAllocateModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingAllocation}
+                  className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl flex items-center gap-2 shadow-sm transition-all disabled:opacity-50"
+                >
+                  {isSavingAllocation ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Alocando Ativo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Confirmar Alocação & Expedição</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

@@ -13,6 +13,10 @@ export default async function handler(req, res) {
   }
 
   try {
+    await pool.query(`
+      ALTER TABLE rental_proposals ADD COLUMN IF NOT EXISTS delivery_ticket_id INT;
+    `);
+
     const { rows } = await pool.query(`
       SELECT rp.*, 
              c.name as client_name, 
@@ -22,12 +26,16 @@ export default async function handler(req, res) {
              eq.name as equipment_name,
              eq.serial_number as equipment_serial,
              eq.ownership_type as equipment_ownership,
-             eq.status as equipment_status
+             eq.status as equipment_status,
+             st.status as delivery_ticket_status,
+             st.scheduled_date as delivery_scheduled_date,
+             st.technician_name as delivery_technician_name
       FROM rental_proposals rp
       LEFT JOIN clients c ON rp.client_id::text = c.id::text
       LEFT JOIN machine_models mm ON rp.machine_model_id = mm.id
       LEFT JOIN rental_prices r ON rp.rental_price_id = r.id
       LEFT JOIN equipments eq ON rp.equipment_id = eq.id
+      LEFT JOIN service_tickets st ON rp.delivery_ticket_id = st.id
       ORDER BY rp.created_at DESC
     `);
     return res.status(200).json({ proposals: rows });

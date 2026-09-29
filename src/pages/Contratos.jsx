@@ -3,7 +3,8 @@ import {
   Plus, Loader2, ArrowLeft, Edit, ChevronDown, ChevronRight, Package, Printer, Play, 
   Square, CheckCircle, Ban, Trash2, DollarSign, TrendingUp, TrendingDown, Percent, 
   Calendar, Clock, AlertTriangle, Bell, Eye, FileText, CheckCircle2, AlertCircle, 
-  CreditCard, Send, RefreshCw, X, ShieldCheck, Sparkles, Building2
+  CreditCard, Send, RefreshCw, X, ShieldCheck, Sparkles, Building2,
+  Layers, Truck, ArrowRightLeft, Repeat, Wrench, Check
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -12,6 +13,7 @@ export default function Contratos() {
   const [invoices, setInvoices] = useState([]);
   const [dbClients, setDbClients] = useState([]);
   const [dbEquipments, setDbEquipments] = useState([]);
+  const [dbTechnicians, setDbTechnicians] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedRows, setExpandedRows] = useState({});
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(null);
@@ -23,15 +25,20 @@ export default function Contratos() {
   const [equipSearch, setEquipSearch] = useState('');
   const [serieSearch, setSerieSearch] = useState('');
 
-  // Modal de Cadastro Direto de Contrato em Andamento
+  // Modal de Cadastro Direto de Contrato em Andamento (Suporta múltiplos ativos)
   const [isDirectModalOpen, setIsDirectModalOpen] = useState(false);
   const [isSavingDirectContract, setIsSavingDirectContract] = useState(false);
   const [directForm, setDirectForm] = useState({
     client_id: '',
     client_name: '',
-    equipment_id: '',
-    equipment_name: '',
-    serial_number: '',
+    equipments: [
+      {
+        equipment_id: '',
+        equipment_name: '',
+        serial_number: '',
+        price: ''
+      }
+    ],
     monthly_value: '',
     payment_method: 'Boleto', // Boleto, Pix, Transferência
     total_installments: 12,
@@ -48,6 +55,20 @@ export default function Contratos() {
   // Modal de Detalhes do Contrato
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedContractForDetails, setSelectedContractForDetails] = useState(null);
+
+  // Modal de Substituição de Ativo do Contrato (Troca / Manutenção)
+  const [isReplaceModalOpen, setIsReplaceModalOpen] = useState(false);
+  const [isSavingReplacement, setIsSavingReplacement] = useState(false);
+  const [equipmentToReplace, setEquipmentToReplace] = useState(null);
+  const [replaceForm, setReplaceForm] = useState({
+    new_equipment_id: '',
+    reason_type: 'manutencao', // 'manutencao' | 'troca'
+    reason_description: '',
+    replacement_date: new Date().toISOString().split('T')[0],
+    create_ticket: true,
+    technician_id: '',
+    technician_name: ''
+  });
 
   // Modal de Emissão Rápida de Fatura
   const [isEmitModalOpen, setIsEmitModalOpen] = useState(false);
@@ -74,11 +95,12 @@ export default function Contratos() {
   async function fetchAllData() {
     setIsLoading(true);
     try {
-      const [cRes, iRes, clRes, eqRes] = await Promise.all([
+      const [cRes, iRes, clRes, eqRes, tecRes] = await Promise.all([
         fetch('/api/get-contracts'),
         fetch('/api/get-invoices'),
         fetch('/api/get-clients'),
-        fetch('/api/get-equipments')
+        fetch('/api/get-equipments'),
+        fetch('/api/get-technicians')
       ]);
 
       if (cRes.ok) {
@@ -96,6 +118,10 @@ export default function Contratos() {
       if (eqRes.ok) {
         const data = await eqRes.json();
         if (data.equipments) setDbEquipments(data.equipments);
+      }
+      if (tecRes && tecRes.ok) {
+        const data = await tecRes.json();
+        if (data.technicians) setDbTechnicians(data.technicians);
       }
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
@@ -417,6 +443,113 @@ export default function Contratos() {
   };
 
   // ----------------------------------------------------
+  // GESTÃO DE MÚLTIPLOS ATIVOS NO CONTRATO DIRETO
+  // ----------------------------------------------------
+  const handleAddDirectEquipment = () => {
+    setDirectForm(prev => ({
+      ...prev,
+      equipments: [
+        ...prev.equipments,
+        { equipment_id: '', equipment_name: '', serial_number: '', price: '' }
+      ]
+    }));
+  };
+
+  const handleRemoveDirectEquipment = (index) => {
+    setDirectForm(prev => {
+      const updated = prev.equipments.filter((_, idx) => idx !== index);
+      return {
+        ...prev,
+        equipments: updated.length > 0 ? updated : [{ equipment_id: '', equipment_name: '', serial_number: '', price: '' }]
+      };
+    });
+  };
+
+  const handleSelectDirectEquipment = (index, selId) => {
+    const found = dbEquipments.find(e => String(e.id) === String(selId));
+    setDirectForm(prev => {
+      const updated = [...prev.equipments];
+      updated[index] = {
+        ...updated[index],
+        equipment_id: selId,
+        equipment_name: found ? (found.name || found.model) : updated[index].equipment_name,
+        serial_number: found?.serial_number || updated[index].serial_number
+      };
+      return { ...prev, equipments: updated };
+    });
+  };
+
+  const handleUpdateDirectEquipment = (index, field, value) => {
+    setDirectForm(prev => {
+      const updated = [...prev.equipments];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, equipments: updated };
+    });
+  };
+
+  // ----------------------------------------------------
+  // SUBSTITUIÇÃO DE ATIVO DO CONTRATO (MANUTENÇÃO / TROCA)
+  // ----------------------------------------------------
+  const handleOpenReplaceModal = (eq, index, ctr) => {
+    setEquipmentToReplace({ ...eq, index });
+    setReplaceForm({
+      new_equipment_id: '',
+      reason_type: 'manutencao',
+      reason_description: '',
+      replacement_date: new Date().toISOString().split('T')[0],
+      create_ticket: true,
+      technician_id: '',
+      technician_name: ''
+    });
+    setIsReplaceModalOpen(true);
+  };
+
+  const handleConfirmReplacement = async (e) => {
+    e.preventDefault();
+    if (!replaceForm.new_equipment_id) {
+      alert('Por favor, selecione o novo equipamento do parque.');
+      return;
+    }
+
+    setIsSavingReplacement(true);
+    try {
+      const res = await fetch('/api/contracts/replace-equipment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contract_id: selectedContractForDetails.id,
+          old_equipment_id: equipmentToReplace.equipment_id || null,
+          old_equipment_serial: equipmentToReplace.serial_number || '',
+          new_equipment_id: replaceForm.new_equipment_id,
+          reason_type: replaceForm.reason_type,
+          reason_description: replaceForm.reason_description,
+          replacement_date: replaceForm.replacement_date,
+          create_ticket: replaceForm.create_ticket,
+          technician_id: replaceForm.technician_id || null,
+          technician_name: replaceForm.technician_name || null
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || 'Ativo substituído com sucesso no contrato!');
+        setIsReplaceModalOpen(false);
+        if (data.contract) {
+          setSelectedContractForDetails(data.contract);
+        }
+        fetchAllData();
+      } else {
+        alert('Erro ao substituir ativo: ' + (data.error || 'Erro desconhecido'));
+      }
+    } catch (err) {
+      console.error('Erro na substituicao:', err);
+      alert('Erro de comunicacao ao substituir ativo.');
+    } finally {
+      setIsSavingReplacement(false);
+    }
+  };
+
+  // ----------------------------------------------------
   // CADASTRO DIRETO DE CONTRATO EM ANDAMENTO
   // ----------------------------------------------------
   const handleSaveDirectContract = async (e) => {
@@ -453,23 +586,29 @@ export default function Contratos() {
       const dtReadjust = new Date(directForm.start_date || new Date());
       dtReadjust.setFullYear(dtReadjust.getFullYear() + 1);
 
-      let selectedEqName = directForm.equipment_name;
-      if (directForm.equipment_id) {
-        const found = dbEquipments.find(eq => String(eq.id) === String(directForm.equipment_id));
-        if (found) {
-          selectedEqName = found.name;
-        }
-      }
-      if (!selectedEqName) selectedEqName = 'Equipamento de Locação';
+      // Processar múltiplos ativos cadastrados
+      const totalEqs = (directForm.equipments || []).length || 1;
+      const defaultUnitPrice = monthlyVal / totalEqs;
 
-      const equipments = [{
-        equipment_id: directForm.equipment_id || null,
-        name: selectedEqName,
-        serial_number: directForm.serial_number || '-',
-        price: monthlyVal,
-        prev_entrega: directForm.start_date,
-        prev_retirada: calculatedExpiry
-      }];
+      const equipments = (directForm.equipments || []).map(eqItem => {
+        let selectedEqName = eqItem.equipment_name;
+        if (eqItem.equipment_id) {
+          const found = dbEquipments.find(eq => String(eq.id) === String(eqItem.equipment_id));
+          if (found) {
+            selectedEqName = found.name || found.model;
+          }
+        }
+        if (!selectedEqName) selectedEqName = 'Equipamento de Locação';
+
+        return {
+          equipment_id: eqItem.equipment_id || null,
+          name: selectedEqName,
+          serial_number: eqItem.serial_number || '-',
+          price: eqItem.price ? parseFloat(eqItem.price) : defaultUnitPrice,
+          prev_entrega: directForm.start_date,
+          prev_retirada: calculatedExpiry
+        };
+      });
 
       const payload = {
         client_id: directForm.client_id || 'new',
@@ -490,7 +629,7 @@ export default function Contratos() {
         current_installment: currInst,
         equipments,
         services: [],
-        observations: directForm.observations || `Contrato em andamento cadastrado diretamente (Parcela ${currInst}/${totalInst})`
+        observations: directForm.observations || `Contrato em andamento cadastrado diretamente com ${equipments.length} ativo(s) (Parcela ${currInst}/${totalInst})`
       };
 
       const res = await fetch('/api/save-contract', {
@@ -501,14 +640,14 @@ export default function Contratos() {
 
       if (res.ok) {
         const data = await res.json();
-        alert(`Contrato ${data.contract?.code || ''} cadastrado com sucesso!`);
+        alert(`Contrato ${data.contract?.code || ''} cadastrado com sucesso com ${equipments.length} ativo(s) vinculado(s)!`);
         setIsDirectModalOpen(false);
         setDirectForm({
           client_id: '',
           client_name: '',
-          equipment_id: '',
-          equipment_name: '',
-          serial_number: '',
+          equipments: [
+            { equipment_id: '', equipment_name: '', serial_number: '', price: '' }
+          ],
           monthly_value: '',
           payment_method: 'Boleto',
           total_installments: 12,
@@ -1204,51 +1343,106 @@ export default function Contratos() {
                 </div>
               </div>
 
-              {/* Bloco 2: Equipamento e Série */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Equipamento da Locação
-                  </label>
-                  <select
-                    value={directForm.equipment_id}
-                    onChange={e => {
-                      const selId = e.target.value;
-                      const eq = dbEquipments.find(item => String(item.id) === String(selId));
-                      setDirectForm(prev => ({
-                        ...prev,
-                        equipment_id: selId,
-                        equipment_name: eq ? eq.name : prev.equipment_name,
-                        serial_number: eq?.serial_number || prev.serial_number
-                      }));
-                    }}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-medium mb-1.5"
+              {/* Bloco 2: Ativos da Locação (Suporte a múltiplos ativos no contrato) */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Layers className="w-4 h-4 text-[#007481]" />
+                      Ativos Vinculados ao Contrato ({directForm.equipments.length})
+                    </label>
+                    <p className="text-[11px] text-gray-500">
+                      Adicione todos os equipamentos/máquinas que fazem parte deste contrato.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddDirectEquipment}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold bg-[#007481] hover:bg-[#005d68] text-white rounded-xl shadow-xs transition-colors cursor-pointer"
                   >
-                    <option value="">Selecione do inventário ou digite abaixo...</option>
-                    {dbEquipments.map(eq => (
-                      <option key={eq.id} value={eq.id}>{eq.name} ({eq.serial_number || 'S/N'})</option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="Descrição manual do equipamento..."
-                    value={directForm.equipment_name}
-                    onChange={e => setDirectForm(prev => ({ ...prev, equipment_name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
-                  />
+                    <Plus className="w-3.5 h-3.5" /> Adicionar Outro Ativo
+                  </button>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Nº de Série / Patrimônio
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: SN-849202"
-                    value={directForm.serial_number}
-                    onChange={e => setDirectForm(prev => ({ ...prev, serial_number: e.target.value }))}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-                  />
+                <div className="space-y-3">
+                  {directForm.equipments.map((eqItem, idx) => (
+                    <div key={idx} className="bg-white border border-gray-200 rounded-xl p-3.5 shadow-xs space-y-2 relative">
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <span className="text-xs font-black text-gray-800 flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-teal-50 border border-teal-200 text-[#007481] flex items-center justify-center text-[10px]">
+                            {idx + 1}
+                          </span>
+                          Ativo #{idx + 1}
+                        </span>
+                        {directForm.equipments.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDirectEquipment(idx)}
+                            className="text-red-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                            title="Remover este ativo do contrato"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                            Equipamento do Parque de Ativos
+                          </label>
+                          <select
+                            value={eqItem.equipment_id}
+                            onChange={e => handleSelectDirectEquipment(idx, e.target.value)}
+                            className="w-full px-2.5 py-2 border border-gray-200 rounded-xl text-xs bg-white focus:ring-2 focus:ring-[#007481] outline-none font-medium mb-1.5"
+                          >
+                            <option value="">Selecione do inventário ou digite abaixo...</option>
+                            {dbEquipments.map(eq => (
+                              <option key={eq.id} value={eq.id}>
+                                {eq.name} - Chassi: {eq.serial_number || 'S/N'} ({eq.status || 'Disponível'})
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="text"
+                            placeholder="Ou modelo/descrição manual..."
+                            value={eqItem.equipment_name}
+                            onChange={e => handleUpdateDirectEquipment(idx, 'equipment_name', e.target.value)}
+                            className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-[#007481] outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-gray-600 mb-1">
+                              Nº de Série / Chassi / Patrimônio
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Ex: 30201525"
+                              value={eqItem.serial_number}
+                              onChange={e => handleUpdateDirectEquipment(idx, 'serial_number', e.target.value)}
+                              className="w-full px-2.5 py-2 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-800 focus:ring-2 focus:ring-[#007481] outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] text-gray-500 mb-0.5">
+                              Preço Unitário da Máquina (Opcional - R$)
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              placeholder="Se vazio, rateia o total"
+                              value={eqItem.price}
+                              onChange={e => handleUpdateDirectEquipment(idx, 'price', e.target.value)}
+                              className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-[#007481] outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -1531,9 +1725,18 @@ export default function Contratos() {
             {/* Grid 2: Equipamentos da Locação & Painel Financeiro */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               
-              {/* Equipamentos */}
+              {/* Equipamentos da Locação & Ações de Substituição */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500">Equipamentos da Locação</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-[#007481]" />
+                    Equipamentos da Locação (Ativos)
+                  </h4>
+                  <span className="text-[11px] text-gray-400">
+                    Clique em Substituir para manutenção ou troca
+                  </span>
+                </div>
+
                 {(() => {
                   const eqs = typeof selectedContractForDetails.equipments === 'string' 
                     ? JSON.parse(selectedContractForDetails.equipments || '[]') 
@@ -1543,19 +1746,88 @@ export default function Contratos() {
                     return <p className="text-xs text-gray-400 bg-gray-50 p-4 rounded-xl">Nenhum equipamento vinculado.</p>;
                   }
 
-                  return eqs.map((eq, i) => (
-                    <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex justify-between items-center">
-                      <div>
-                        <p className="font-bold text-gray-900 text-sm">{eq.name || 'Equipamento'}</p>
-                        {eq.serial_number && <p className="text-xs text-gray-500 mt-0.5">Nº Série: {eq.serial_number}</p>}
-                        <p className="text-xs text-blue-600 font-semibold mt-1">Preço Locação: {formatCurrency(eq.price)}</p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">
-                          Entrega: {formatDate(eq.prev_entrega)} • Retirada: {formatDate(eq.prev_retirada)}
-                        </p>
-                      </div>
-                      <span className="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-semibold">Ativo</span>
+                  return (
+                    <div className="space-y-2.5">
+                      {eqs.map((eq, i) => (
+                        <div key={i} className="bg-white border border-gray-200 hover:border-teal-300 rounded-xl p-3.5 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-colors">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-gray-900 text-sm">{eq.name || 'Equipamento'}</p>
+                              <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold">
+                                Ativo #{i + 1}
+                              </span>
+                            </div>
+                            {eq.serial_number && (
+                              <p className="text-xs text-slate-700 font-mono font-bold mt-1">
+                                Chassi / Série: <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-900">{eq.serial_number}</span>
+                              </p>
+                            )}
+                            <div className="flex items-center gap-3 mt-1 text-xs">
+                              {eq.price && <span className="text-[#007481] font-semibold">Valor: {formatCurrency(eq.price)}</span>}
+                              {eq.prev_entrega && (
+                                <span className="text-gray-400 text-[11px]">
+                                  Entrega: {formatDate(eq.prev_entrega)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReplaceModal(eq, i, selectedContractForDetails)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs whitespace-nowrap self-end sm:self-center"
+                            title="Substituir este equipamento por defeito (manutenção) ou troca definitiva"
+                          >
+                            <Repeat className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Substituir Ativo</span>
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ));
+                  );
+                })()}
+
+                {/* Histórico de Substituições do Contrato */}
+                {(() => {
+                  const reps = typeof selectedContractForDetails.replacements === 'string'
+                    ? JSON.parse(selectedContractForDetails.replacements || '[]')
+                    : selectedContractForDetails.replacements || [];
+
+                  if (reps.length === 0) return null;
+
+                  return (
+                    <div className="mt-4 pt-3 border-t border-gray-100">
+                      <h5 className="text-[11px] font-bold uppercase tracking-wider text-amber-800 mb-2 flex items-center gap-1">
+                        <Repeat className="w-3 h-3 text-amber-600" />
+                        Histórico de Substituições Realizadas ({reps.length})
+                      </h5>
+                      <div className="space-y-2">
+                        {reps.map((rep, rIdx) => (
+                          <div key={rIdx} className="bg-amber-50/50 border border-amber-200/80 rounded-lg p-2.5 text-xs space-y-1">
+                            <div className="flex items-center justify-between font-bold text-gray-800">
+                              <span className="flex items-center gap-1">
+                                {rep.reason_type === 'manutencao' ? '🛠️ Manutenção Corretiva' : '🔄 Troca / Upgrade'}
+                              </span>
+                              <span className="text-[11px] text-gray-500 font-normal">{formatDate(rep.date)}</span>
+                            </div>
+                            <div className="text-[11px] text-gray-700">
+                              Saiu: <strong className="text-red-700">{rep.old_equipment?.name} (S/N: {rep.old_equipment?.serial_number})</strong>
+                              {' ➔ '}
+                              Entrou: <strong className="text-emerald-700">{rep.new_equipment?.name} (S/N: {rep.new_equipment?.serial_number})</strong>
+                            </div>
+                            {rep.reason_description && (
+                              <p className="text-[10px] text-gray-500 italic">Motivo: {rep.reason_description}</p>
+                            )}
+                            {rep.ticket_id && (
+                              <div className="text-[10px] font-bold text-[#007481] pt-0.5">
+                                Chamado Técnico Vinculado: #{rep.ticket_id}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
                 })()}
               </div>
 
@@ -1631,6 +1903,244 @@ export default function Contratos() {
                 </button>
               </div>
             </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 4: SUBSTITUIÇÃO DE ATIVO DO CONTRATO (MANUTENÇÃO / TROCA) */}
+      {/* ======================================================== */}
+      {isReplaceModalOpen && equipmentToReplace && selectedContractForDetails && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-gray-100 p-6 space-y-5">
+            
+            <div className="flex justify-between items-start border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Repeat className="w-5 h-5 text-amber-600" />
+                  Substituir Ativo do Contrato
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Contrato {selectedContractForDetails.code} — {selectedContractForDetails.client_name}
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsReplaceModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Caixa Informativa do Ativo Atual */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                Ativo Atual (Saindo do Cliente)
+              </span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-black text-slate-900">{equipmentToReplace.name || 'Equipamento'}</h4>
+                  <p className="text-xs text-slate-600 font-mono font-bold mt-0.5">
+                    Chassi / Série: {equipmentToReplace.serial_number || 'S/N'}
+                  </p>
+                </div>
+                <span className="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">
+                  Em Substituição
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmReplacement} className="space-y-4">
+              
+              {/* Motivo da Substituição */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Motivo da Substituição <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className={`flex flex-col p-3 rounded-xl border cursor-pointer transition-all ${
+                    replaceForm.reason_type === 'manutencao'
+                      ? 'border-amber-500 bg-amber-50/50 shadow-xs'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}>
+                    <input 
+                      type="radio" 
+                      name="reason_type" 
+                      value="manutencao" 
+                      checked={replaceForm.reason_type === 'manutencao'}
+                      onChange={() => setReplaceForm(prev => ({ ...prev, reason_type: 'manutencao' }))}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 mb-1">
+                      <Wrench className="w-4 h-4 text-amber-600" />
+                      Manutenção Corretiva
+                    </div>
+                    <span className="text-[11px] text-gray-500 leading-tight">
+                      Máquina com defeito/pane. O ativo antigo entrará em status <strong>Manutenção</strong> no parque.
+                    </span>
+                  </label>
+
+                  <label className={`flex flex-col p-3 rounded-xl border cursor-pointer transition-all ${
+                    replaceForm.reason_type === 'troca'
+                      ? 'border-blue-500 bg-blue-50/50 shadow-xs'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}>
+                    <input 
+                      type="radio" 
+                      name="reason_type" 
+                      value="troca" 
+                      checked={replaceForm.reason_type === 'troca'}
+                      onChange={() => setReplaceForm(prev => ({ ...prev, reason_type: 'troca' }))}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 mb-1">
+                      <Repeat className="w-4 h-4 text-blue-600" />
+                      Troca Definitiva / Upgrade
+                    </div>
+                    <span className="text-[11px] text-gray-500 leading-tight">
+                      Devolução ou upgrade comercial. O ativo antigo voltará como <strong>Disponível</strong> no parque.
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Novo Ativo do Parque de Máquinas */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Novo Ativo do Parque (Substituto) <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={replaceForm.new_equipment_id}
+                  onChange={e => setReplaceForm(prev => ({ ...prev, new_equipment_id: e.target.value }))}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs bg-white focus:ring-2 focus:ring-[#007481] outline-none font-medium"
+                >
+                  <option value="">Selecione o equipamento disponível no parque...</option>
+                  <optgroup label="🟢 Ativos Disponíveis no Parque (Prontos)">
+                    {dbEquipments
+                      .filter(eq => (eq.status || '').toLowerCase().includes('dispon') || !eq.status)
+                      .map(eq => (
+                        <option key={eq.id} value={eq.id}>
+                          {eq.name} - Chassi: {eq.serial_number || 'S/N'} ({eq.brand || 'Tennant'})
+                        </option>
+                      ))}
+                  </optgroup>
+                  <optgroup label="Outros Ativos do Inventário">
+                    {dbEquipments
+                      .filter(eq => !(eq.status || '').toLowerCase().includes('dispon') && eq.status)
+                      .map(eq => (
+                        <option key={eq.id} value={eq.id}>
+                          {eq.name} - Chassi: {eq.serial_number || 'S/N'} (Status atual: {eq.status})
+                        </option>
+                      ))}
+                  </optgroup>
+                </select>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  💡 Este ativo entrará imediatamente como <strong>Locado</strong> no cliente {selectedContractForDetails.client_name}.
+                </p>
+              </div>
+
+              {/* Data e Técnico */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Data da Troca
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={replaceForm.replacement_date}
+                    onChange={e => setReplaceForm(prev => ({ ...prev, replacement_date: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#007481] outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Técnico Responsável
+                  </label>
+                  <select
+                    value={replaceForm.technician_id}
+                    onChange={e => {
+                      const selId = e.target.value;
+                      const tec = dbTechnicians.find(t => String(t.id) === String(selId));
+                      setReplaceForm(prev => ({
+                        ...prev,
+                        technician_id: selId,
+                        technician_name: tec ? tec.name : ''
+                      }));
+                    }}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs bg-white focus:ring-2 focus:ring-[#007481] outline-none"
+                  >
+                    <option value="">A designar...</option>
+                    {dbTechnicians.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Justificativa / Laudo do Motivo */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Detalhes / Laudo da Troca
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Ex: Motor de tração apresentou ruído excessivo. Enviada máquina reserva para não interromper a operação do cliente."
+                  value={replaceForm.reason_description}
+                  onChange={e => setReplaceForm(prev => ({ ...prev, reason_description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-[#007481] outline-none"
+                />
+              </div>
+
+              {/* Checkbox: Criar Chamado Técnico Automático */}
+              <div className="bg-teal-50/70 border border-teal-200 rounded-xl p-3 flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  id="chk_create_ticket"
+                  checked={replaceForm.create_ticket}
+                  onChange={e => setReplaceForm(prev => ({ ...prev, create_ticket: e.target.checked }))}
+                  className="mt-0.5 h-4 w-4 text-[#007481] rounded border-gray-300 focus:ring-[#007481] cursor-pointer"
+                />
+                <label htmlFor="chk_create_ticket" className="text-xs text-teal-950 font-medium cursor-pointer">
+                  <strong>Abrir Chamado Técnico de Troca &amp; Retirada</strong>
+                  <span className="block text-[11px] text-teal-800">
+                    Cria automaticamente uma ordem de serviço para a equipe ir ao cliente coletar a máquina avariada e entregar a substituta.
+                  </span>
+                </label>
+              </div>
+
+              {/* Botões de Ação */}
+              <div className="flex justify-end items-center gap-3 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsReplaceModalOpen(false)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 font-semibold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingReplacement}
+                  className="px-5 py-2.5 bg-[#007481] hover:bg-[#005d68] text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingReplacement ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Substituindo Ativo...
+                    </>
+                  ) : (
+                    <>
+                      <Repeat className="w-4 h-4" />
+                      Confirmar Substituição do Ativo
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </form>
 
           </div>
         </div>
