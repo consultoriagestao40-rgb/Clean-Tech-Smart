@@ -73,6 +73,7 @@ export default function Sidebar() {
     { name: 'Clientes', path: '/clientes', icon: <Users size={20} /> },
     { name: 'Técnicos', path: '/tecnicos', icon: <User size={20} /> },
     { name: 'Equipamentos', path: '/equipamentos', icon: <Package size={20} /> },
+    { name: 'Estoque', path: '/estoque', icon: <Boxes size={20} /> },
     { name: 'Tabela Locação', path: '/tabela-locacao', icon: <Coins size={20} /> },
     { name: 'Catálogo Máquinas', path: '/modelos-maquinas', icon: <Layout size={20} /> },
     { name: 'Landing Pages (LPs)', path: '/configurar-lp-a260', icon: <Globe size={20} /> },
